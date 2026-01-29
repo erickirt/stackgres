@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 
 import io.stackgres.common.crd.Condition;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
+import io.stackgres.common.crd.sgdbops.DbOpsOperation;
 import io.stackgres.common.crd.sgdbops.DbOpsStatusCondition;
 import io.stackgres.common.crd.sgdbops.DbOpsStatusCondition.Status;
 import io.stackgres.common.crd.sgdbops.DbOpsStatusCondition.Type;
@@ -25,9 +26,9 @@ import io.stackgres.operatorframework.resource.ResourceUtil;
 public interface DbOpsUtil {
 
   List<String> ROLLOUT_OPS = List.of(
-      "restart",
-      "securityUpgrade",
-      "minorVersionUpgrade");
+      DbOpsOperation.RESTART.toString(),
+      DbOpsOperation.SECURITY_UPGRADE.toString(),
+      DbOpsOperation.MINOR_VERSION_UPGRADE.toString());
 
   Pattern UPPERCASE_LETTER_PATTERN = Pattern.compile("([A-Z])");
 
