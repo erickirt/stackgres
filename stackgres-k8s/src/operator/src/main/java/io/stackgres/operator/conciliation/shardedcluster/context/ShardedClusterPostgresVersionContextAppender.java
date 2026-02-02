@@ -21,6 +21,7 @@ import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterStatus;
 import io.stackgres.common.event.EventEmitter;
 import io.stackgres.operator.conciliation.ContextAppender;
+import io.stackgres.operator.conciliation.cluster.context.ClusterPostgresVersionContextAppender;
 import io.stackgres.operator.conciliation.shardedcluster.StackGresShardedClusterContext.Builder;
 import io.stackgres.operator.validation.ValidationUtil;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -32,17 +33,8 @@ import org.jooq.lambda.tuple.Tuple2;
 public class ShardedClusterPostgresVersionContextAppender
     extends ContextAppender<StackGresShardedCluster, Builder> {
 
-  private static final String PG_14_CREATE_CONCURRENT_INDEX_BUG =
-      "Please, use PostgreSQL 14.4 since it fixes an issue"
-          + " with CREATE INDEX CONCURRENTLY and REINDEX CONCURRENTLY that"
-          + " could cause silent data corruption of indexes. For more info"
-          + " see https://www.postgresql.org/about/news/postgresql-144-released-2470/.";
-  public static final Map<String, String> BUGGY_PG_VERSIONS = Map.ofEntries(
-      Map.entry("14.0", PG_14_CREATE_CONCURRENT_INDEX_BUG),
-      Map.entry("14.1", PG_14_CREATE_CONCURRENT_INDEX_BUG),
-      Map.entry("14.2", PG_14_CREATE_CONCURRENT_INDEX_BUG),
-      Map.entry("14.3", PG_14_CREATE_CONCURRENT_INDEX_BUG)
-      );
+  public static final Map<String, String> BUGGY_PG_VERSIONS =
+      ClusterPostgresVersionContextAppender.BUGGY_PG_VERSIONS;
 
   private final Map<StackGresComponent, Map<StackGresVersion, List<String>>>
       supportedPostgresVersions;
@@ -52,6 +44,8 @@ public class ShardedClusterPostgresVersionContextAppender
   private final ShardedClusterShardsPostgresConfigContextAppender clusterShardsPostgresConfigContextAppender;
   private final ShardedClusterRestoreBackupContextAppender clusterRestoreBackupContextAppender;
   private final ShardedClusterExtensionsContextAppender clusterExtensionsContextAppender;
+  private final ShardedClusterCoordinatorClusterContextAppender clusterCoordinatorContextAppender;
+  private final ShardedClusterShardsClustersContextAppender clusterShardsContextAppender;
 
   @Inject
   public ShardedClusterPostgresVersionContextAppender(
@@ -59,13 +53,17 @@ public class ShardedClusterPostgresVersionContextAppender
       ShardedClusterCoordinatorPostgresConfigContextAppender clusterCoordinatorPostgresConfigContextAppender,
       ShardedClusterShardsPostgresConfigContextAppender clusterShardsPostgresConfigContextAppender,
       ShardedClusterRestoreBackupContextAppender clusterRestoreBackupContextAppender,
-      ShardedClusterExtensionsContextAppender clusterExtensionsContextAppender) {
+      ShardedClusterExtensionsContextAppender clusterExtensionsContextAppender,
+      ShardedClusterCoordinatorClusterContextAppender clusterCoordinatorContextAppender,
+      ShardedClusterShardsClustersContextAppender clusterShardsContextAppender) {
     this(
         eventController,
         clusterCoordinatorPostgresConfigContextAppender,
         clusterShardsPostgresConfigContextAppender,
         clusterRestoreBackupContextAppender,
         clusterExtensionsContextAppender,
+        clusterCoordinatorContextAppender,
+        clusterShardsContextAppender,
         ValidationUtil.SUPPORTED_POSTGRES_VERSIONS);
   }
 
@@ -75,12 +73,16 @@ public class ShardedClusterPostgresVersionContextAppender
       ShardedClusterShardsPostgresConfigContextAppender clusterShardsPostgresConfigContextAppender,
       ShardedClusterRestoreBackupContextAppender clusterRestoreBackupContextAppender,
       ShardedClusterExtensionsContextAppender clusterExtensionsContextAppender,
+      ShardedClusterCoordinatorClusterContextAppender clusterCoordinatorContextAppender,
+      ShardedClusterShardsClustersContextAppender clusterShardsContextAppender,
       Map<StackGresComponent, Map<StackGresVersion, List<String>>> supportedPostgresVersions) {
     this.eventController = eventController;
     this.clusterCoordinatorPostgresConfigContextAppender = clusterCoordinatorPostgresConfigContextAppender;
     this.clusterShardsPostgresConfigContextAppender = clusterShardsPostgresConfigContextAppender;
     this.clusterRestoreBackupContextAppender = clusterRestoreBackupContextAppender;
     this.clusterExtensionsContextAppender = clusterExtensionsContextAppender;
+    this.clusterCoordinatorContextAppender = clusterCoordinatorContextAppender;
+    this.clusterShardsContextAppender = clusterShardsContextAppender;
     this.supportedPostgresVersions = supportedPostgresVersions;
   }
 
@@ -168,6 +170,8 @@ public class ShardedClusterPostgresVersionContextAppender
       clusterRestoreBackupContextAppender.appendContext(cluster, contextBuilder, version);
       clusterExtensionsContextAppender.appendContext(cluster, contextBuilder, version,
           buildVersion, previousVersion, previousBuildVersion);
+      clusterCoordinatorContextAppender.appendContext(cluster, contextBuilder);
+      clusterShardsContextAppender.appendContext(cluster, contextBuilder);
     }
 
     if ((version == null && previousVersion.isEmpty())

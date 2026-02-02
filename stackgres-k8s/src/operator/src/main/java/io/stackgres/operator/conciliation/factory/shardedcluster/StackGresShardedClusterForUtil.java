@@ -562,6 +562,18 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
       setOverridesAnnotations(specOverride, spec, index);
     }
     if (specOverride.getPodsForShards() != null) {
+      if (specOverride.getPodsForShards().getLivenessProbe() != null) {
+        spec.getPods().setLivenessProbe(
+            specOverride.getPodsForShards().getLivenessProbe());
+      }
+      if (specOverride.getPodsForShards().getReadinessProbe() != null) {
+        spec.getPods().setReadinessProbe(
+            specOverride.getPodsForShards().getReadinessProbe());
+      }
+      if (specOverride.getPodsForShards().getTerminationGracePeriodSeconds() != null) {
+        spec.getPods().setTerminationGracePeriodSeconds(
+            specOverride.getPodsForShards().getTerminationGracePeriodSeconds());
+      }
       if (specOverride.getPodsForShards().getDisableConnectionPooling() != null) {
         spec.getPods().setDisableConnectionPooling(
             specOverride.getPodsForShards().getDisableConnectionPooling());
@@ -588,6 +600,10 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
         if (specOverride.getPodsForShards().getPersistentVolume().getStorageClass() != null) {
           spec.getPods().getPersistentVolume().setStorageClass(
               specOverride.getPodsForShards().getPersistentVolume().getStorageClass());
+        }
+        if (specOverride.getPodsForShards().getPersistentVolume().getFsGroupChangePolicy() != null) {
+          spec.getPods().getPersistentVolume().setFsGroupChangePolicy(
+              specOverride.getPodsForShards().getPersistentVolume().getFsGroupChangePolicy());
         }
       }
       if (specOverride.getPodsForShards().getResources() != null) {
