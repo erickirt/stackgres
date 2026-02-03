@@ -173,20 +173,36 @@ public class ClusterConciliator extends AbstractConciliator<StackGresCluster> {
         return true;
       }
       final OwnerReference clusterOwnerReference = ResourceUtil.getOwnerReference(config);
-      final boolean anyPodOrPvcWithMissingOwner = deployedResourcesCache
+      final boolean anyPodWithMissingOwner = deployedResourcesCache
           .stream()
           .map(DeployedResource::foundDeployed)
-          .filter(this::isPodOrPvc)
-          .filter(foundDeployedResource -> hasLabels(genericLabels, foundDeployedResource))
+          .filter(this::isPod)
+          .filter(foundDeployedResource -> hasLabels(clusterPodsLabels, foundDeployedResource))
           .anyMatch(foundDeployedResource -> isMissingOwner(
               foundDeployedResource, clusterOwnerReference));
-      if (anyPodOrPvcWithMissingOwner && LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Will force StatefulSet reconciliation since a pod or pvc is"
+      if (anyPodWithMissingOwner && LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Will force StatefulSet reconciliation since a pod is"
             + " missing owner reference for SGCluster {}.{}",
             config.getMetadata().getNamespace(),
             config.getMetadata().getName());
       }
-      if (anyPodOrPvcWithMissingOwner) {
+      if (anyPodWithMissingOwner) {
+        return true;
+      }
+      final boolean anyPvcWithMissingOwner = deployedResourcesCache
+          .stream()
+          .map(DeployedResource::foundDeployed)
+          .filter(this::isPvc)
+          .filter(foundDeployedResource -> hasLabels(genericLabels, foundDeployedResource))
+          .anyMatch(foundDeployedResource -> isMissingOwner(
+              foundDeployedResource, clusterOwnerReference));
+      if (anyPvcWithMissingOwner && LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Will force StatefulSet reconciliation since a pvc is"
+            + " missing owner reference for SGCluster {}.{}",
+            config.getMetadata().getNamespace(),
+            config.getMetadata().getName());
+      }
+      if (anyPvcWithMissingOwner) {
         return true;
       }
     }
@@ -225,7 +241,12 @@ public class ClusterConciliator extends AbstractConciliator<StackGresCluster> {
         .isPresent();
   }
 
-  private boolean isPodOrPvc(HasMetadata foundDeployedResource) {
+  private boolean isPod(HasMetadata foundDeployedResource) {
+    return foundDeployedResource instanceof Pod
+        || foundDeployedResource instanceof PersistentVolumeClaim;
+  }
+
+  private boolean isPvc(HasMetadata foundDeployedResource) {
     return foundDeployedResource instanceof Pod
         || foundDeployedResource instanceof PersistentVolumeClaim;
   }

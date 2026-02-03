@@ -14,22 +14,27 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Endpoints;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
 import io.stackgres.common.PatroniUtil;
 import io.stackgres.common.StackGresContext;
+import io.stackgres.common.StackGresProperty;
+import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.crd.Condition;
 import io.stackgres.common.crd.sgcluster.ClusterDbOpsRestartStatus;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterDbOpsStatus;
 import io.stackgres.common.crd.sgcluster.StackGresClusterStatus;
 import io.stackgres.common.crd.sgdbops.DbOpsMethodType;
+import io.stackgres.common.crd.sgdbops.DbOpsOperation;
 import io.stackgres.common.crd.sgdbops.DbOpsRestartStatus;
 import io.stackgres.common.crd.sgdbops.DbOpsStatusCondition;
 import io.stackgres.common.crd.sgdbops.StackGresDbOps;
@@ -163,10 +168,49 @@ public class DbOpsStatusManager
         .filter(pod -> !ClusterRolloutUtil.getRestartReasons(
             cluster, statefulSet, pod, patroniMembers).requiresRestart())
         .toList();
+    final boolean securityUpgradeWasApplied;
+    if (Objects.equals(
+        DbOpsOperation.SECURITY_UPGRADE.toString(),
+        source.getSpec().getOp())) {
+      securityUpgradeWasApplied = podsReadyAndUpdated
+          .stream()
+          .allMatch(pod -> Optional.of(pod)
+              .map(Pod::getMetadata)
+              .map(ObjectMeta::getAnnotations)
+              .map(Map::entrySet)
+              .stream()
+              .flatMap(Set::stream)
+              .anyMatch(Map.entry(
+                  StackGresContext.VERSION_KEY,
+                  StackGresProperty.OPERATOR_VERSION.getString())::equals));
+    } else {
+      securityUpgradeWasApplied = true;
+    }
+    final boolean minorVersionUpgradeWasApplied;
+    if (Objects.equals(
+        DbOpsOperation.MINOR_VERSION_UPGRADE.toString(),
+        source.getSpec().getOp())) {
+      final String targetPatroniImage = StackGresUtil.getPatroniImageName(
+          cluster,
+          source.getSpec().getMinorVersionUpgrade().getPostgresVersion());
+      minorVersionUpgradeWasApplied = podsReadyAndUpdated
+          .stream()
+          .allMatch(pod -> Optional.of(pod)
+              .map(Pod::getSpec)
+              .map(PodSpec::getContainers)
+              .stream()
+              .flatMap(List::stream)
+              .map(Container::getImage)
+              .anyMatch(targetPatroniImage::equals));
+    } else {
+      minorVersionUpgradeWasApplied = true;
+    }
     if (source.getStatus() == null) {
       source.setStatus(new StackGresDbOpsStatus());
     }
     if ((primaryIsReadyAndUpdated || primaryIsExternal)
+        && securityUpgradeWasApplied
+        && minorVersionUpgradeWasApplied
         && pods.size() == podsReadyAndUpdated.size()) {
       updateCondition(getRolloutCompleted(), source);
       if (Optional.ofNullable(cluster.getMetadata().getAnnotations())
