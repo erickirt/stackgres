@@ -70,7 +70,7 @@
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_DEPLOY != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_DEPLOY != "true" && $CI_COMMIT_TAG )
@@ -89,7 +89,7 @@
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_DEPLOY != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_DEPLOY != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -167,7 +167,7 @@ release admin-ui image amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_DEPLOY != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_DEPLOY != "true" && $CI_COMMIT_TAG )
@@ -186,7 +186,7 @@ release admin-ui image amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_DEPLOY != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_DEPLOY && $DO_ARM )
@@ -204,7 +204,7 @@ release admin-ui image amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_DEPLOY != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_DEPLOY && $DO_NATIVE && $DO_ARM )
@@ -281,7 +281,7 @@ release admin-ui image arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         (  $SKIP_DEPLOY != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_DEPLOY && $DO_ARM )
@@ -296,7 +296,7 @@ release admin-ui image arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_DEPLOY != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_DEPLOY != "true" && $CI_COMMIT_TAG )
@@ -312,7 +312,7 @@ release admin-ui image arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_DEPLOY != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_DEPLOY != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -369,7 +369,7 @@ release admin-ui image multi archs:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_DEPLOY != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_DEPLOY != "true" && $CI_COMMIT_TAG )
@@ -389,7 +389,7 @@ release admin-ui image multi archs:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_DEPLOY != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_DEPLOY != "true" && $CI_COMMIT_TAG )
@@ -409,7 +409,7 @@ release admin-ui image multi archs:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_DEPLOY != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_DEPLOY && $DO_ARM )
@@ -451,7 +451,7 @@ release operator openshift bundle image arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_DEPLOY != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_DEPLOY != "true" && $CI_COMMIT_TAG )

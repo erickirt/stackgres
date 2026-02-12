@@ -104,7 +104,7 @@ build ci image arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM ) )
@@ -131,7 +131,7 @@ build builder image arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM ) )

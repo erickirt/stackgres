@@ -56,7 +56,7 @@
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" ) )
   artifacts:
@@ -80,7 +80,7 @@
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -105,7 +105,7 @@
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_ARM ) )
@@ -120,7 +120,7 @@
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM ) )
@@ -137,7 +137,7 @@
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) ) )
@@ -152,7 +152,7 @@
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) ) )
@@ -164,7 +164,7 @@ e2e tests jvm 1 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST != "ui" ) )
@@ -176,7 +176,7 @@ e2e tests jvm 2 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST == null
@@ -189,7 +189,7 @@ e2e tests jvm 3 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST == null
@@ -202,7 +202,7 @@ e2e tests jvm 4 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST == null
@@ -215,7 +215,7 @@ e2e tests jvm 5 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST == null
@@ -228,7 +228,7 @@ e2e tests jvm 6 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST == null
@@ -242,7 +242,7 @@ e2e ex tests jvm 1 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST == null ) )
@@ -255,7 +255,7 @@ e2e ex tests jvm 2 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST == null
@@ -269,7 +269,7 @@ e2e ex tests jvm 3 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST == null
@@ -283,7 +283,7 @@ e2e ex tests jvm 4 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST == null
@@ -297,7 +297,7 @@ e2e ex tests jvm 5 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST == null
@@ -311,7 +311,7 @@ e2e ex tests jvm 6 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST == null
@@ -327,7 +327,7 @@ e2e ui chrome tests jvm amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST == null || $E2E_TEST =~ /(^ui$|^ui | ui | ui$)/ ) )
@@ -342,7 +342,7 @@ e2e ui firefox tests jvm amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" )
        && ( $E2E_TEST == null || $E2E_TEST =~ /(^ui$|^ui | ui | ui$)/ ) )
@@ -359,7 +359,7 @@ e2e tests native 2 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -374,7 +374,7 @@ e2e tests native 3 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -389,7 +389,7 @@ e2e tests native 4 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -404,7 +404,7 @@ e2e tests native 5 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -419,7 +419,7 @@ e2e tests native 6 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -435,7 +435,7 @@ e2e ex tests native 1 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -450,7 +450,7 @@ e2e ex tests native 2 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -466,7 +466,7 @@ e2e ex tests native 3 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -482,7 +482,7 @@ e2e ex tests native 4 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -498,7 +498,7 @@ e2e ex tests native 5 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -514,7 +514,7 @@ e2e ex tests native 6 amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -532,7 +532,7 @@ e2e ui chrome tests native amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -549,7 +549,7 @@ e2e ui firefox tests native amd64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
@@ -563,7 +563,7 @@ e2e tests jvm 1 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -576,7 +576,7 @@ e2e tests jvm 2 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -590,7 +590,7 @@ e2e tests jvm 3 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -604,7 +604,7 @@ e2e tests jvm 4 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -618,7 +618,7 @@ e2e tests jvm 5 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -632,7 +632,7 @@ e2e tests jvm 6 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -647,7 +647,7 @@ e2e ex tests jvm 1 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -661,7 +661,7 @@ e2e ex tests jvm 2 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -676,7 +676,7 @@ e2e ex tests jvm 3 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -691,7 +691,7 @@ e2e ex tests jvm 4 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -706,7 +706,7 @@ e2e ex tests jvm 5 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -721,7 +721,7 @@ e2e ex tests jvm 6 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -738,7 +738,7 @@ e2e ui chrome tests jvm arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -754,7 +754,7 @@ e2e ui firefox tests jvm arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || $DO_ARM )
@@ -772,7 +772,7 @@ e2e tests native 2 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) )
@@ -786,7 +786,7 @@ e2e tests native 3 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) )
@@ -800,7 +800,7 @@ e2e tests native 4 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) )
@@ -814,7 +814,7 @@ e2e tests native 5 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) )
@@ -828,7 +828,7 @@ e2e tests native 6 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) )
@@ -843,7 +843,7 @@ e2e ex tests native 1 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) )
@@ -857,7 +857,7 @@ e2e ex tests native 2 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) )
@@ -872,7 +872,7 @@ e2e ex tests native 3 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) )
@@ -887,7 +887,7 @@ e2e ex tests native 4 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) )
@@ -902,7 +902,7 @@ e2e ex tests native 5 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) )
@@ -917,7 +917,7 @@ e2e ex tests native 6 arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) )
@@ -934,7 +934,7 @@ e2e ui chrome tests native arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) )
@@ -951,7 +951,7 @@ e2e ui firefox tests native arm64:
   rules:
   - if: |
      ( ( $CI_PIPELINE_SOURCE =~ /^(push|schedule|trigger)$/ || $CI_COMMIT_TAG
-       || ( $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_SHA == null ) )
+       || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) )
