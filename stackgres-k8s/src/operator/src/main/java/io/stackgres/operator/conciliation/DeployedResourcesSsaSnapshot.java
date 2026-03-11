@@ -23,6 +23,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.stackgres.common.crd.sgcluster.StackGresCluster;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.operatorframework.resource.ResourceUtil;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
@@ -30,6 +32,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DeployedResourcesSsaSnapshot implements DeployedResourcesSnapshot {
+
+  private static final List<String> STACKGRES_FIELD_MANAGERS = List.of(
+      STACKGRES_FIELD_MANAGER,
+      StackGresCluster.KIND,
+      StackGresShardedCluster.KIND);
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(DeployedResourcesSsaSnapshot.class);
 
@@ -135,9 +142,8 @@ public class DeployedResourcesSsaSnapshot implements DeployedResourcesSnapshot {
       JsonNode fieldsV1 = managedFieldsEntry.get("fieldsV1");
       if (subresource == null
           && manager != null
-          && Objects.equals(
-              manager.asText(),
-              STACKGRES_FIELD_MANAGER)) {
+          && STACKGRES_FIELD_MANAGERS
+          .contains(manager.asText())) {
         if (anyManagedFieldsDiff(defaultsMap, "", fieldsV1, requiredResourceNode, deployedResourceNode)) {
           return true;
         }
