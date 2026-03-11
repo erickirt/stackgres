@@ -37,8 +37,6 @@ import io.stackgres.common.StackGresPort;
 import io.stackgres.common.StackGresProperty;
 import io.stackgres.common.StackGresVolume;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
-import io.stackgres.common.crd.sgcluster.StackGresClusterConfigurations;
-import io.stackgres.common.crd.sgcluster.StackGresClusterPatroni;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPods;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPodsScheduling;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
@@ -243,10 +241,6 @@ public class ClusterPodTemplateSpecFactory
         .withSetHostnameAsFQDN(Optional.ofNullable(cluster.getSpec())
             .map(StackGresClusterSpec::getPods)
             .map(StackGresClusterPods::getSetHostnameAsFqdn)
-            .or(() -> Optional.ofNullable(cluster.getSpec())
-                .map(StackGresClusterSpec::getConfigurations)
-                .map(StackGresClusterConfigurations::getPatroni)
-                .map(StackGresClusterPatroni::getConnectUsingFqdn))
             .orElse(null))
         .withHostNetwork(Optional.ofNullable(cluster.getSpec())
             .map(StackGresClusterSpec::getPods)

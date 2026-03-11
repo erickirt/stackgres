@@ -2095,8 +2095,6 @@ spec:
                             type: boolean
                             description: |
                               Configure Patroni to use FQDN instead of the Pod's assigned IPs to connect between Patroni and Postgres instances.
-                              
-                              When this property is set the property `setHostnameAsFQDN` will be enabled for the SGCluster's Pods and the property `hostname` will be set to the name of the SGCluster if not already set.
                           dynamicConfig:
                             type: object
                             description: |
