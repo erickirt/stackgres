@@ -2,18 +2,22 @@
 
 e2e_test_install() {
   kubectl create namespace "$CLUSTER_NAMESPACE"
+
+  install_prometheus_operator
+
   create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "$(( 1 + ${E2E_PGBENCH_CITUS_SHARDS:-2} ))" 1 \
     --set-string instanceProfiles[0].name=size-s \
     --set-string instanceProfiles[0].cpu=500m \
     --set-string instanceProfiles[0].memory=2Gi \
     --set nonProductionOptions.disablePatroniResourceRequirements=false \
     --set nonProductionOptions.disableClusterResourceRequirements=true \
+    --set cluster.configurations.observability.prometheusAutobind=true \
     --set-string 'configurations.postgresconfig.postgresql\.conf.max_connections='"${E2E_PGBENCH_MAX_CONNECTIONS:-104}" \
     --set-string 'configurations.postgresconfig.postgresql\.conf.citus\.max_shared_pool_size='"${E2E_PGBENCH_CITUS_MAX_SHARED_POOL_SIZE:-${E2E_PGBENCH_MAX_CONNECTIONS:-104}}" \
     --set-string 'configurations.postgresconfig.postgresql\.conf.citus\.max_adaptive_executor_pool_size='"${E2E_PGBENCH_MAX_ADAPTIVE_EXECUTOR_POOL_SIZE:-16}" \
-    --set-string 'configurations.postgresconfig.postgresql\.conf.citus\.executor_slow_start_interval='"${E2E_PGBENCH_EXECUTOR_SLOW_START_INTERVAL:-10ms}" \
-    --set-string 'configurations.postgresconfig.postgresql\.conf.citus\.max_cached_conns_per_worker='"${E2E_PGBENCH_MAX_CACHED_CONNS_PER_WORKER:-1}" \
-    --set-string 'configurations.postgresconfig.postgresql\.conf.citus\.force_max_query_parallelization='"${E2E_PGBENCH_FORCE_MAX_QUERY_PARALLELIZATION:-off}" \
+    --set-string 'configurations.postgresconfig.postgresql\.conf.citus\.executor_slow_start_interval='"${E2E_PGBENCH_CITUS_EXECUTOR_SLOW_START_INTERVAL:-10ms}" \
+    --set-string 'configurations.postgresconfig.postgresql\.conf.citus\.max_cached_conns_per_worker='"${E2E_PGBENCH_CITUS_MAX_CACHED_CONNS_PER_WORKER:-1}" \
+    --set-string 'configurations.postgresconfig.postgresql\.conf.citus\.force_max_query_parallelization='"${E2E_PGBENCH_CITUS_FORCE_MAX_QUERY_PARALLELIZATION:-off}" \
     --set-string 'configurations.poolingconfig.pgBouncer.pgbouncer\.ini.default_pool_size='"${E2E_PGBENCH_DEFAULT_POOL_SIZE:-100}" \
     --set-string 'cluster.autoscaling.mode=none'
 
@@ -111,8 +115,25 @@ benchmark_cluster() {
              VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
            END;
       ' > /tmp/script"
+  if [ "$E2E_PGBENCH_CITUS_USE_AGGREGATED_QUERIES" = true ]
+  then
+    kubectl exec -n "$CLUSTER_NAMESPACE" psql -q\
+      -- bash -c "printf %s '
+            BEGIN;
+            SELECT max(abalance) FROM pgbench_accounts;
+            END;
+        ' > /tmp/script2"
+  fi
   kubectl exec -n "$CLUSTER_NAMESPACE" psql -q\
-    -- bash -c "PGPASSWORD=$PGPASSWORD pgbench -T '$((E2E_TIMEOUT / 2))' -d citus -C -c 20 -j 20 --file=/tmp/script --progress=5 --log --log-prefix=/tmp/pgbench_log --failures-detailed --aggregate-interval='$((E2E_TIMEOUT / 20))' -h $CLUSTER_NAME" 2>&1 | tee "$LOG_PATH/bench" &
+    -- env PGPASSWORD="$PGPASSWORD" pgbench -T "$((E2E_TIMEOUT / 2))" -d citus \
+    -C -c 20 -j 20 \
+    --file=/tmp/script@100 \
+    $([ "$E2E_PGBENCH_CITUS_USE_AGGREGATED_QUERIES" != true ] || printf %s "--file=/tmp/script2@${E2E_PGBENCH_CITUS_AGGREGATED_QUERIES_WEIGHT:-10}") \
+    --progress=5 \
+    --log --log-prefix=/tmp/pgbench_log \
+    --failures-detailed \
+    --aggregate-interval="$((E2E_TIMEOUT / 20))" \
+    -h "$CLUSTER_NAME" 2>&1 | tee "$LOG_PATH/bench" &
   BENCH_PID="$!"
   trap_kill "$BENCH_PID"
   if wait_until eval '! kill -0 "$BENCH_PID"' \
