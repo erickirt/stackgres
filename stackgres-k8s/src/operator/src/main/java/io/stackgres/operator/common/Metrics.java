@@ -192,7 +192,12 @@ public class Metrics extends AbstractMetrics {
   public void setWatchCacheSize(
       Class<?> customResourceClass, long size) {
     String singular = HasMetadata.getSingular(customResourceClass);
-    watchCaches.get(customResourceClass).size = size;
+    var watchCache = watchCaches.get(customResourceClass);
+    if (watchCache == null) {
+      watchCache = new ResourceCache();
+      watchCaches.put(customResourceClass, watchCache);
+    }
+    watchCache.size = size;
     registryGauge(
         "watch_cache_size",
         List.of(new ImmutableTag("resource", singular)),
@@ -211,12 +216,16 @@ public class Metrics extends AbstractMetrics {
       long indexSameMajorBuildsSize,
       long indexAnyVersionsSize,
       long publishersSize) {
-    String uriName = uri.toASCIIString();
     var extensionMetadataCache = extensionMetadataCaches.get(uri);
+    if (extensionMetadataCache == null) {
+      extensionMetadataCache = new ExtensionMetadataCache();
+      extensionMetadataCaches.put(uri, extensionMetadataCache);
+    }
     extensionMetadataCache.indexSize = indexSize;
     extensionMetadataCache.indexSameMajorBuildsSize = indexSameMajorBuildsSize;
     extensionMetadataCache.indexAnyVersionsSize = indexAnyVersionsSize;
     extensionMetadataCache.publishersSize = publishersSize;
+    final String uriName = uri.toASCIIString();
     registryGauge(
         "extension_metadata_cache_index_size",
         List.of(new ImmutableTag("uri", uriName)),
