@@ -64,6 +64,7 @@ import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOpsList;
 import io.stackgres.common.crd.sgstream.StackGresStream;
 import io.stackgres.common.crd.sgstream.StackGresStreamList;
 import io.stackgres.operator.common.DbOpsUtil;
+import io.stackgres.operator.common.Metrics;
 import io.stackgres.operator.common.ResourceWatcherFactory;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
 import io.stackgres.operator.conciliation.backup.BackupReconciliator;
@@ -119,6 +120,7 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
   private final Map<String, StackGresStream> streams =
       Collections.synchronizedMap(new HashMap<>());
   private final DeployedResourcesCache deployedResourcesCache;
+  private final Metrics metrics;
 
   @Inject
   public DefaultOperatorWatchersHandler(
@@ -133,7 +135,8 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
       ShardedDbOpsReconciliator shardedDbOpsReconciliatorCycle,
       StreamReconciliator streamReconciliatorCycle,
       ResourceWatcherFactory watcherFactory,
-      DeployedResourcesCache deployedResourcesCache) {
+      DeployedResourcesCache deployedResourcesCache,
+      Metrics metrics) {
     this.client = client;
     this.configReconciliatorCycle = configReconciliatorCycle;
     this.clusterReconciliatorCycle = clusterReconciliatorCycle;
@@ -146,6 +149,7 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
     this.streamReconciliatorCycle = streamReconciliatorCycle;
     this.watcherFactory = watcherFactory;
     this.deployedResourcesCache = deployedResourcesCache;
+    this.metrics = metrics;
   }
 
   @Override
@@ -379,77 +383,183 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
   }
 
   private BiConsumer<Action, StackGresConfig> putConfig() {
-    return (action, config) -> configs.put(resourceId(config), config);
+    return (action, config) -> putConfig(config);
+  }
+
+  private StackGresConfig putConfig(StackGresConfig config) {
+    configs.put(resourceId(config), config);
+    metrics.setWatchCacheSize(config.getClass(), configs.size());
+    return config;
   }
 
   private BiConsumer<Action, StackGresCluster> putCluster() {
-    return (action, cluster) -> clusters.put(resourceId(cluster), cluster);
+    return (action, cluster) -> putCluster(cluster);
+  }
+
+  private StackGresCluster putCluster(StackGresCluster cluster) {
+    clusters.put(resourceId(cluster), cluster);
+    metrics.setWatchCacheSize(cluster.getClass(), configs.size());
+    return cluster;
   }
 
   private BiConsumer<Action, StackGresDistributedLogs> putDistributedLogs() {
-    return (action, distributedLogs) -> this.distributedLogs
-        .put(resourceId(distributedLogs), distributedLogs);
+    return (action, distributedLogs) -> putDistributedLogs(distributedLogs);
+  }
+
+  private StackGresDistributedLogs putDistributedLogs(StackGresDistributedLogs distributedLogs) {
+    this.distributedLogs.put(resourceId(distributedLogs), distributedLogs);
+    metrics.setWatchCacheSize(distributedLogs.getClass(), this.distributedLogs.size());
+    return distributedLogs;
   }
 
   private BiConsumer<Action, StackGresBackup> putBackup() {
-    return (action, backup) -> backups.put(resourceId(backup), backup);
+    return (action, backup) -> putBackup(backup);
+  }
+
+  private StackGresBackup putBackup(StackGresBackup backup) {
+    backups.put(resourceId(backup), backup);
+    metrics.setWatchCacheSize(backup.getClass(), backups.size());
+    return backup;
   }
 
   private BiConsumer<Action, StackGresDbOps> putDbOps() {
-    return (action, dbOps) -> this.dbOps.put(resourceId(dbOps), dbOps);
+    return (action, dbOps) -> putDbOps(dbOps);
+  }
+
+  private StackGresDbOps putDbOps(StackGresDbOps dbOps) {
+    this.dbOps.put(resourceId(dbOps), dbOps);
+    metrics.setWatchCacheSize(dbOps.getClass(), this.dbOps.size());
+    return dbOps;
   }
 
   private BiConsumer<Action, StackGresShardedCluster> putShardedCluster() {
-    return (action, cluster) -> shardedClusters.put(resourceId(cluster), cluster);
+    return (action, cluster) -> putShardedCluster(cluster);
+  }
+
+  private StackGresShardedCluster putShardedCluster(StackGresShardedCluster cluster) {
+    shardedClusters.put(resourceId(cluster), cluster);
+    metrics.setWatchCacheSize(cluster.getClass(), shardedClusters.size());
+    return cluster;
   }
 
   private BiConsumer<Action, StackGresShardedBackup> putShardedBackup() {
-    return (action, backup) -> shardedBackups.put(resourceId(backup), backup);
+    return (action, backup) -> putShardedBackup(backup);
+  }
+
+  private StackGresShardedBackup putShardedBackup(StackGresShardedBackup backup) {
+    shardedBackups.put(resourceId(backup), backup);
+    metrics.setWatchCacheSize(backup.getClass(), shardedBackups.size());
+    return backup;
   }
 
   private BiConsumer<Action, StackGresShardedDbOps> putShardedDbOps() {
-    return (action, dbOps) -> shardedDbOps.put(resourceId(dbOps), dbOps);
+    return (action, dbOps) -> putShardedDbOps(dbOps);
+  }
+
+  private StackGresShardedDbOps putShardedDbOps(StackGresShardedDbOps dbOps) {
+    shardedDbOps.put(resourceId(dbOps), dbOps);
+    metrics.setWatchCacheSize(dbOps.getClass(), shardedDbOps.size());
+    return dbOps;
   }
 
   private BiConsumer<Action, StackGresStream> putStream() {
-    return (action, stream) -> this.streams.put(resourceId(stream), stream);
+    return (action, stream) -> putStream(stream);
+  }
+
+  private StackGresStream putStream(StackGresStream stream) {
+    streams.put(resourceId(stream), stream);
+    metrics.setWatchCacheSize(stream.getClass(), streams.size());
+    return stream;
   }
 
   private BiConsumer<Action, StackGresConfig> removeConfig() {
-    return (action, config) -> configs.remove(resourceId(config));
+    return (action, config) -> removeConfig(config);
+  }
+
+  private StackGresConfig removeConfig(StackGresConfig config) {
+    configs.remove(resourceId(config));
+    metrics.setWatchCacheSize(config.getClass(), configs.size());
+    return config;
   }
 
   private BiConsumer<Action, StackGresCluster> removeCluster() {
-    return (action, cluster) -> clusters.remove(resourceId(cluster));
+    return (action, cluster) -> removeCluster(cluster);
+  }
+
+  private StackGresCluster removeCluster(StackGresCluster cluster) {
+    clusters.remove(resourceId(cluster));
+    metrics.setWatchCacheSize(cluster.getClass(), clusters.size());
+    return cluster;
   }
 
   private BiConsumer<Action, StackGresDistributedLogs> removeDistributedLogs() {
-    return (action, distributedLogs) -> this.distributedLogs
-        .remove(resourceId(distributedLogs));
+    return (action, distributedLogs) -> removeDistributedLogs(distributedLogs);
+  }
+
+  private StackGresDistributedLogs removeDistributedLogs(StackGresDistributedLogs distributedLogs) {
+    this.distributedLogs.remove(resourceId(distributedLogs));
+    metrics.setWatchCacheSize(distributedLogs.getClass(), this.distributedLogs.size());
+    return distributedLogs;
   }
 
   private BiConsumer<Action, StackGresBackup> removeBackup() {
-    return (action, backup) -> backups.remove(resourceId(backup));
+    return (action, backup) -> removeBackup(backup);
+  }
+
+  private StackGresBackup removeBackup(StackGresBackup backup) {
+    backups.remove(resourceId(backup));
+    metrics.setWatchCacheSize(backup.getClass(), backups.size());
+    return backup;
   }
 
   private BiConsumer<Action, StackGresDbOps> removeDbOps() {
-    return (action, dbOps) -> this.dbOps.remove(resourceId(dbOps));
+    return (action, dbOps) -> removeDbOps(dbOps);
+  }
+
+  private StackGresDbOps removeDbOps(StackGresDbOps dbOps) {
+    this.dbOps.remove(resourceId(dbOps));
+    metrics.setWatchCacheSize(dbOps.getClass(), this.dbOps.size());
+    return dbOps;
   }
 
   private BiConsumer<Action, StackGresShardedCluster> removeShardedCluster() {
-    return (action, cluster) -> shardedClusters.remove(resourceId(cluster));
+    return (action, cluster) -> removeShardedCluster(cluster);
+  }
+
+  private StackGresShardedCluster removeShardedCluster(StackGresShardedCluster cluster) {
+    shardedClusters.remove(resourceId(cluster));
+    metrics.setWatchCacheSize(cluster.getClass(), shardedClusters.size());
+    return cluster;
   }
 
   private BiConsumer<Action, StackGresShardedBackup> removeShardedBackup() {
-    return (action, backup) -> shardedBackups.remove(resourceId(backup));
+    return (action, backup) -> removeShardedBackup(backup);
+  }
+
+  private StackGresShardedBackup removeShardedBackup(StackGresShardedBackup backup) {
+    shardedBackups.remove(resourceId(backup));
+    metrics.setWatchCacheSize(backup.getClass(), shardedBackups.size());
+    return backup;
   }
 
   private BiConsumer<Action, StackGresShardedDbOps> removeShardedDbOps() {
-    return (action, dbOps) -> shardedDbOps.remove(resourceId(dbOps));
+    return (action, dbOps) -> removeShardedDbOps(dbOps);
+  }
+
+  private StackGresShardedDbOps removeShardedDbOps(StackGresShardedDbOps dbOps) {
+    shardedDbOps.remove(resourceId(dbOps));
+    metrics.setWatchCacheSize(dbOps.getClass(), shardedDbOps.size());
+    return dbOps;
   }
 
   private BiConsumer<Action, StackGresStream> removeStream() {
-    return (action, stream) -> this.streams.remove(resourceId(stream));
+    return (action, stream) -> removeStream(stream);
+  }
+
+  private StackGresStream removeStream(StackGresStream stream) {
+    streams.remove(resourceId(stream));
+    metrics.setWatchCacheSize(stream.getClass(), streams.size());
+    return stream;
   }
 
   private BiConsumer<Action, StackGresConfig> reconcileConfig() {

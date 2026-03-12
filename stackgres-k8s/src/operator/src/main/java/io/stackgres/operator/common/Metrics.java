@@ -5,9 +5,12 @@
 
 package io.stackgres.operator.common;
 
+import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -33,10 +36,27 @@ public class Metrics extends AbstractMetrics {
 
   private Map<Class<?>, Reconciliation> reconciliations;
 
+  private Cache<?, ?> reconciliationCache;
+
+  private Map<Class<?>, ResourceCache> watchCaches;
+
+  private Map<URI, ExtensionMetadataCache> extensionMetadataCaches;
+
   static class Reconciliation {
     private long totalPerformed = 0;
     private long totalErrors = 0;
     private long lastDuration;
+  }
+
+  static class ResourceCache {
+    private long size = 0;
+  }
+
+  static class ExtensionMetadataCache {
+    private long indexSize = 0;
+    private long indexSameMajorBuildsSize = 0;
+    private long indexAnyVersionsSize = 0;
+    private long publishersSize = 0;
   }
 
   @Inject
@@ -56,6 +76,8 @@ public class Metrics extends AbstractMetrics {
         StackGresStream.class)
         .map(customResourceClass -> Tuple.tuple(customResourceClass, new Reconciliation()))
         .toMap(Tuple2::v1, Tuple2::v2);
+    watchCaches = new HashMap<>();
+    extensionMetadataCaches = new HashMap<>();
   }
 
   public void incrementReconciliationTotalPerformed(
@@ -67,46 +89,6 @@ public class Metrics extends AbstractMetrics {
         List.of(new ImmutableTag("resource", singular)),
         this,
         metrics -> metrics.getReconciliationTotalPerformed(customResourceClass));
-  }
-
-  public long getReconciliationConfigTotalPerformed() {
-    return getReconciliationTotalPerformed(StackGresConfig.class);
-  }
-
-  public long getReconciliationClusterTotalPerformed() {
-    return getReconciliationTotalPerformed(StackGresCluster.class);
-  }
-
-  public long getReconciliationShardedClusterTotalPerformed() {
-    return getReconciliationTotalPerformed(StackGresShardedCluster.class);
-  }
-
-  public long getReconciliationDistributedLogsTotalPerformed() {
-    return getReconciliationTotalPerformed(StackGresDistributedLogs.class);
-  }
-
-  public long getReconciliationBackupTotalPerformed() {
-    return getReconciliationTotalPerformed(StackGresBackup.class);
-  }
-
-  public long getReconciliationDbOpsTotalPerformed() {
-    return getReconciliationTotalPerformed(StackGresDbOps.class);
-  }
-
-  public long getReconciliationShardedBackupTotalPerformed() {
-    return getReconciliationTotalPerformed(StackGresShardedBackup.class);
-  }
-
-  public long getReconciliationShardedDbOpsTotalPerformed() {
-    return getReconciliationTotalPerformed(StackGresShardedDbOps.class);
-  }
-
-  public long getReconciliationScriptTotalPerformed() {
-    return getReconciliationTotalPerformed(StackGresScript.class);
-  }
-
-  public long getReconciliationStreamTotalPerformed() {
-    return getReconciliationTotalPerformed(StackGresStream.class);
   }
 
   private long getReconciliationTotalPerformed(
@@ -123,46 +105,6 @@ public class Metrics extends AbstractMetrics {
         List.of(new ImmutableTag("resource", singular)),
         this,
         metrics -> metrics.getReconciliationTotalErrors(customResourceClass));
-  }
-
-  public long getReconciliationConfigTotalErrors() {
-    return getReconciliationTotalErrors(StackGresConfig.class);
-  }
-
-  public long getReconciliationClusterTotalErrors() {
-    return getReconciliationTotalErrors(StackGresCluster.class);
-  }
-
-  public long getReconciliationShardedClusterTotalErrors() {
-    return getReconciliationTotalErrors(StackGresShardedCluster.class);
-  }
-
-  public long getReconciliationDistributedLogsTotalErrors() {
-    return getReconciliationTotalErrors(StackGresDistributedLogs.class);
-  }
-
-  public long getReconciliationBackupTotalErrors() {
-    return getReconciliationTotalErrors(StackGresBackup.class);
-  }
-
-  public long getReconciliationDbOpsTotalErrors() {
-    return getReconciliationTotalErrors(StackGresDbOps.class);
-  }
-
-  public long getReconciliationShardedBackupTotalErrors() {
-    return getReconciliationTotalErrors(StackGresShardedBackup.class);
-  }
-
-  public long getReconciliationShardedDbOpsTotalErrors() {
-    return getReconciliationTotalErrors(StackGresShardedDbOps.class);
-  }
-
-  public long getReconciliationScriptTotalErrors() {
-    return getReconciliationTotalErrors(StackGresScript.class);
-  }
-
-  public long getReconciliationStreamTotalErrors() {
-    return getReconciliationTotalErrors(StackGresStream.class);
   }
 
   private long getReconciliationTotalErrors(
@@ -182,49 +124,139 @@ public class Metrics extends AbstractMetrics {
         metrics -> metrics.getReconciliationLastDuration(customResourceClass));
   }
 
-  public long getReconciliationConfigLastDuration() {
-    return getReconciliationLastDuration(StackGresConfig.class);
-  }
-
-  public long getReconciliationClusterLastDuration() {
-    return getReconciliationLastDuration(StackGresCluster.class);
-  }
-
-  public long getReconciliationShardedClusterLastDuration() {
-    return getReconciliationLastDuration(StackGresShardedCluster.class);
-  }
-
-  public long getReconciliationDistributedLogsLastDuration() {
-    return getReconciliationLastDuration(StackGresDistributedLogs.class);
-  }
-
-  public long getReconciliationBackupLastDuration() {
-    return getReconciliationLastDuration(StackGresBackup.class);
-  }
-
-  public long getReconciliationDbOpsLastDuration() {
-    return getReconciliationLastDuration(StackGresDbOps.class);
-  }
-
-  public long getReconciliationShardedBackupLastDuration() {
-    return getReconciliationLastDuration(StackGresShardedBackup.class);
-  }
-
-  public long getReconciliationShardedDbOpsLastDuration() {
-    return getReconciliationLastDuration(StackGresShardedDbOps.class);
-  }
-
-  public long getReconciliationScriptLastDuration() {
-    return getReconciliationLastDuration(StackGresScript.class);
-  }
-
-  public long getReconciliationStreamLastDuration() {
-    return getReconciliationLastDuration(StackGresStream.class);
-  }
-
   private long getReconciliationLastDuration(
       Class<?> customResourceClass) {
     return reconciliations.get(customResourceClass).lastDuration;
+  }
+
+  public void registerReconciliationCache(Cache<?, ?> reconciliationCache) {
+    this.reconciliationCache = reconciliationCache;
+    registryGauge(
+        "reconciliation_cache_estimated_size",
+        this,
+        metrics -> metrics.reconciliationCache.estimatedSize());
+    registryGauge(
+        "reconciliation_cache_average_load_penalty",
+        this,
+        metrics -> metrics.reconciliationCache.stats().averageLoadPenalty());
+    registryGauge(
+        "reconciliation_cache_hit_rate",
+        this,
+        metrics -> metrics.reconciliationCache.stats().hitRate());
+    registryGauge(
+        "reconciliation_cache_load_failure_rate",
+        this,
+        metrics -> metrics.reconciliationCache.stats().loadFailureRate());
+    registryGauge(
+        "reconciliation_cache_miss_rate",
+        this,
+        metrics -> metrics.reconciliationCache.stats().missRate());
+    registryGauge(
+        "reconciliation_cache_eviction_weight",
+        this,
+        metrics -> metrics.reconciliationCache.stats().evictionCount());
+    registryGauge(
+        "reconciliation_cache_eviction_count",
+        this,
+        metrics -> metrics.reconciliationCache.stats().evictionWeight());
+    registryGauge(
+        "reconciliation_cache_hit_count",
+        this,
+        metrics -> metrics.reconciliationCache.stats().hitCount());
+    registryGauge(
+        "reconciliation_cache_load_count",
+        this,
+        metrics -> metrics.reconciliationCache.stats().loadCount());
+    registryGauge(
+        "reconciliation_cache_load_failure_count",
+        this,
+        metrics -> metrics.reconciliationCache.stats().loadFailureCount());
+    registryGauge(
+        "reconciliation_cache_load_success_count",
+        this,
+        metrics -> metrics.reconciliationCache.stats().loadSuccessCount());
+    registryGauge(
+        "reconciliation_cache_miss_count",
+        this,
+        metrics -> metrics.reconciliationCache.stats().missCount());
+    registryGauge(
+        "reconciliation_cache_request_count",
+        this,
+        metrics -> metrics.reconciliationCache.stats().requestCount());
+    registryGauge(
+        "reconciliation_cache_total_load_time",
+        this,
+        metrics -> metrics.reconciliationCache.stats().totalLoadTime());
+  }
+
+  public void setWatchCacheSize(
+      Class<?> customResourceClass, long size) {
+    String singular = HasMetadata.getSingular(customResourceClass);
+    watchCaches.get(customResourceClass).size = size;
+    registryGauge(
+        "watch_cache_size",
+        List.of(new ImmutableTag("resource", singular)),
+        this,
+        metrics -> metrics.getWatchCacheSize(customResourceClass));
+  }
+
+  private long getWatchCacheSize(
+      Class<?> customResourceClass) {
+    return watchCaches.get(customResourceClass).size;
+  }
+
+  public void setExtensionMetadataCacheValues(
+      URI uri,
+      long indexSize,
+      long indexSameMajorBuildsSize,
+      long indexAnyVersionsSize,
+      long publishersSize) {
+    String uriName = uri.toASCIIString();
+    var extensionMetadataCache = extensionMetadataCaches.get(uri);
+    extensionMetadataCache.indexSize = indexSize;
+    extensionMetadataCache.indexSameMajorBuildsSize = indexSameMajorBuildsSize;
+    extensionMetadataCache.indexAnyVersionsSize = indexAnyVersionsSize;
+    extensionMetadataCache.publishersSize = publishersSize;
+    registryGauge(
+        "extension_metadata_cache_index_size",
+        List.of(new ImmutableTag("uri", uriName)),
+        this,
+        metrics -> metrics.getExtensionMetadataCacheIndexSize(uri));
+    registryGauge(
+        "extension_metadata_cache_index_same_major_builds_size",
+        List.of(new ImmutableTag("uri", uriName)),
+        this,
+        metrics -> metrics.getExtensionMetadataCacheIndexSameMajorBuildsSize(uri));
+    registryGauge(
+        "extension_metadata_cache_index_any_versions_size_size",
+        List.of(new ImmutableTag("uri", uriName)),
+        this,
+        metrics -> metrics.getExtensionMetadataCacheIndexAnyVersionsSize(uri));
+    registryGauge(
+        "extension_metadata_cache_publishers_size",
+        List.of(new ImmutableTag("uri", uriName)),
+        this,
+        metrics -> metrics.getExtensionMetadataCachePublishersSize(uri));
+  }
+
+  private long getExtensionMetadataCacheIndexSize(
+      URI uri) {
+    return extensionMetadataCaches.get(uri).indexSize;
+  }
+
+  private long getExtensionMetadataCacheIndexSameMajorBuildsSize(
+      URI uri) {
+    return extensionMetadataCaches.get(uri).indexSameMajorBuildsSize;
+  }
+
+  private long getExtensionMetadataCacheIndexAnyVersionsSize(
+      URI uri) {
+    return extensionMetadataCaches.get(uri).indexAnyVersionsSize;
+  }
+
+  private long getExtensionMetadataCachePublishersSize(
+      URI uri) {
+    return extensionMetadataCaches.get(uri).publishersSize;
   }
 
 }

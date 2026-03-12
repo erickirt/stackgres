@@ -43,6 +43,7 @@ import io.stackgres.common.labels.ClusterLabelMapper;
 import io.stackgres.common.patroni.PatroniCtl;
 import io.stackgres.common.patroni.PatroniCtlInstance;
 import io.stackgres.common.resource.CustomResourceFinder;
+import io.stackgres.operator.common.Metrics;
 import io.stackgres.operator.conciliation.AbstractDeployedResourcesScanner;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
 import io.stackgres.operator.conciliation.DeployedResourcesFullCache;
@@ -79,6 +80,9 @@ class ClusterConciliatorTest {
 
   @Mock
   private PatroniCtlInstance patroniCtlInstance;
+
+  @Mock
+  private Metrics metrics;
 
   private DeployedResourcesCache deployedResourcesCache;
 
@@ -727,7 +731,7 @@ class ClusterConciliatorTest {
       List<HasMetadata> deployed,
       List<HasMetadata> foundDeployed) {
     deployedResourcesCache = new DeployedResourcesFullCache(
-        new OperatorPropertyContext(), JsonUtil.jsonMapper());
+        new OperatorPropertyContext(), JsonUtil.jsonMapper(), metrics);
     required.forEach(resource -> resource.getMetadata().setManagedFields(null));
     deployed.stream()
         .filter(this::hasControllerOwnerReference)

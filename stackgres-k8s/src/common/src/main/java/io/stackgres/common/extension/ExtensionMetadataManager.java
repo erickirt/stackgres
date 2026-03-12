@@ -163,7 +163,7 @@ public abstract class ExtensionMetadataManager {
                 indexUri, StackGresExtensions.class);
             ExtensionMetadataCache current = ExtensionMetadataCache.from(
                 extensionsRepositoryUri, repositoryExtensions);
-            uriCache.put(extensionsRepositoryUri, current);
+            putExtensionMetadataCache(extensionsRepositoryUri, current);
             updated = true;
           }
         }
@@ -184,11 +184,17 @@ public abstract class ExtensionMetadataManager {
       for (URI extensionsRepositoryUri : extensionsRepositoryUris) {
         mergedCache.merge(uriCache.get(extensionsRepositoryUri));
       }
-      uriCache.put(LATEST_MERGED_CACHE_URI, mergedCache);
+      putExtensionMetadataCache(LATEST_MERGED_CACHE_URI, mergedCache);
       return mergedCache;
     }
 
     return uriCache.get(LATEST_MERGED_CACHE_URI);
+  }
+
+  protected void putExtensionMetadataCache(
+      URI uri,
+      ExtensionMetadataCache cache) {
+    uriCache.put(uri, cache);
   }
 
   public StackGresExtensionPublisher getPublisher(String publisher) {
@@ -196,7 +202,7 @@ public abstract class ExtensionMetadataManager {
         .orElseThrow(() -> new RuntimeException("Publisher " + publisher + " was not found"));
   }
 
-  static class ExtensionMetadataCache {
+  protected static class ExtensionMetadataCache {
     final Instant created;
     final Map<StackGresExtensionIndex, StackGresExtensionMetadata> index;
     final Map<StackGresExtensionIndexSameMajorBuild, List<StackGresExtensionMetadata>>
@@ -230,6 +236,22 @@ public abstract class ExtensionMetadataManager {
 
     public Instant getCreated() {
       return created;
+    }
+
+    public Map<StackGresExtensionIndex, StackGresExtensionMetadata> getIndex() {
+      return index;
+    }
+
+    public Map<StackGresExtensionIndexSameMajorBuild, List<StackGresExtensionMetadata>> getIndexSameMajorBuilds() {
+      return indexSameMajorBuilds;
+    }
+
+    public Map<StackGresExtensionIndexAnyVersion, List<StackGresExtensionMetadata>> getIndexAnyVersions() {
+      return indexAnyVersions;
+    }
+
+    public Map<String, StackGresExtensionPublisher> getPublishers() {
+      return publishers;
     }
 
     void merge(ExtensionMetadataCache other) {

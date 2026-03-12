@@ -18,15 +18,33 @@ import org.jooq.lambda.Seq;
 @Singleton
 public class OperatorExtensionMetadataManager extends ExtensionMetadataManager {
 
+  private final Metrics metrics;
+
   @Inject
-  public OperatorExtensionMetadataManager(OperatorPropertyContext propertyContext,
-      WebClientFactory webClientFactory) {
+  public OperatorExtensionMetadataManager(
+      OperatorPropertyContext propertyContext,
+      WebClientFactory webClientFactory,
+      Metrics metrics) {
     super(
         webClientFactory,
         Seq.of(propertyContext.getStringArray(
             OperatorProperty.EXTENSIONS_REPOSITORY_URLS))
             .map(URI::create)
             .toList());
+    this.metrics = metrics;
+  }
+
+  @Override
+  protected void putExtensionMetadataCache(
+      URI uri,
+      ExtensionMetadataCache cache) {
+    super.putExtensionMetadataCache(uri, cache);
+    metrics.setExtensionMetadataCacheValues(
+        uri,
+        cache.getIndex().size(),
+        cache.getIndexSameMajorBuilds().size(),
+        cache.getIndexAnyVersions().size(),
+        cache.getPublishers().size());
   }
 
 }

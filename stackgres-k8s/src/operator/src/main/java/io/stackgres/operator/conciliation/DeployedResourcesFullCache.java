@@ -24,6 +24,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import io.fabric8.kubernetes.api.model.Endpoints;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.stackgres.common.OperatorProperty;
+import io.stackgres.operator.common.Metrics;
 import io.stackgres.operator.configuration.OperatorPropertyContext;
 import jakarta.inject.Inject;
 import org.jooq.lambda.Seq;
@@ -42,7 +43,8 @@ public class DeployedResourcesFullCache implements DeployedResourcesCache {
   @Inject
   public DeployedResourcesFullCache(
       OperatorPropertyContext propertyContext,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      Metrics metrics) {
     var cacheBuilder = Caffeine.newBuilder();
     this.objectMapper = objectMapper;
     propertyContext.get(
@@ -54,6 +56,7 @@ public class DeployedResourcesFullCache implements DeployedResourcesCache {
         .map(Integer::valueOf)
         .ifPresent(size -> cacheBuilder.maximumSize(size));
     this.cache = cacheBuilder.build();
+    metrics.registerReconciliationCache(cache);
   }
 
   public void put(
