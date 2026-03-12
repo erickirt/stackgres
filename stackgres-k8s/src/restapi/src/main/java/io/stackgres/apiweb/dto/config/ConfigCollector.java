@@ -24,6 +24,8 @@ public class ConfigCollector {
 
   private String name;
 
+  private Boolean alwaysEnabled;
+
   private ConfigCollectorReceiver receivers;
 
   private Map<String, String> annotations;
@@ -56,6 +58,14 @@ public class ConfigCollector {
 
   public void setName(String name) {
     this.name = name;
+  }
+
+  public Boolean getAlwaysEnabled() {
+    return alwaysEnabled;
+  }
+
+  public void setAlwaysEnabled(Boolean alwaysEnabled) {
+    this.alwaysEnabled = alwaysEnabled;
   }
 
   public ConfigCollectorReceiver getReceivers() {
