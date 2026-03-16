@@ -103,6 +103,12 @@ then
   POD_DATA_PV_NAME_ENV_VAR="POD_$(printf %s "$POD_NAME" | tr '-' '_')_DATA_PV_NAME"
   touch "$PG_DATA_PATH/.already_restored_from_volume_snapshot_$(eval "printf %s \"\$$POD_DATA_PV_NAME_ENV_VAR\"")"
 else
+  if [ -d "$PG_DATA_PATH" ]
+  then
+    echo "Removing existing $PG_DATA_PATH"
+    rm -rf "$PG_DATA_PATH"
+  fi
+
   wal-g backup-fetch "$PG_DATA_PATH" "$REPLICATION_INITIALIZATION_BACKUP_NAME"
 fi
 REPLICATION_INITIALIZATION_FROM_BACKUP_EOF
@@ -151,6 +157,12 @@ set -e
 if [ "x$SHELL_XTRACE" = x-x ]
 then
   set -x
+fi
+
+if [ -d "$PG_DATA_PATH" ]
+then
+  echo "Removing existing $PG_DATA_PATH"
+  rm -rf "$PG_DATA_PATH"
 fi
 
 cat << PGPASS_REPLICAS_EOF > "$PG_BASE_PATH/pgpass-replicas"
