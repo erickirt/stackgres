@@ -5,9 +5,12 @@
 
 package io.stackgres.common.patroni;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -22,12 +25,15 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.PatroniUtil;
+import io.stackgres.common.StackGresContext;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterConfigurations;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPatroni;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPatroniConfig;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
+import io.stackgres.common.kubernetesclient.KubernetesClientUtil;
 import io.stackgres.common.labels.LabelFactoryForCluster;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.Unchecked;
@@ -45,6 +51,11 @@ public class PatroniCtlKubernetesInstance implements PatroniCtlInstance {
   final Integer group;
   final String primaryName;
   final String configName;
+  final String failoverName;
+  final Duration patroniCtlTimeout = Duration
+      .ofSeconds(OperatorProperty.PATRONI_CTL_TIMEOUT.get()
+      .map(Long::parseLong)
+      .orElse(60L));
 
   protected PatroniCtlKubernetesInstance(
       KubernetesClient client,
@@ -67,6 +78,7 @@ public class PatroniCtlKubernetesInstance implements PatroniCtlInstance {
         .orElse(null);
     this.primaryName = Optional.ofNullable(group).map(group -> scope + "-" + group).orElse(scope);
     this.configName = Optional.ofNullable(group).map(group -> scope + "-" + group).orElse(scope) + "-config";
+    this.failoverName = Optional.ofNullable(group).map(group -> scope + "-" + group).orElse(scope) + "-failover";
   }
 
   @Override
@@ -173,12 +185,101 @@ public class PatroniCtlKubernetesInstance implements PatroniCtlInstance {
 
   @Override
   public void restart(String username, String password, String member) {
-    patroniCtlBinaryInstance.restart(username, password, member);
+    final Instant now = Instant.now();
+    KubernetesClientUtil.retryOnConflict(() -> client.pods()
+        .inNamespace(namespace)
+        .withName(member)
+        .edit(endpoints -> {
+          var annotations = Optional.of(endpoints)
+              .map(Pod::getMetadata)
+              .map(ObjectMeta::getAnnotations)
+              .map(HashMap::new)
+              .orElseGet(HashMap::new);
+          var patroniOperation = Optional.ofNullable(annotations.get(StackGresContext.PATRONI_OPERATION_KEY))
+              .map(objectMapper::valueToTree)
+              .filter(ObjectNode.class::isInstance)
+              .map(ObjectNode.class::cast)
+              .orElseGet(objectMapper::createObjectNode);
+          if (!Objects.equals(
+              Optional.ofNullable(patroniOperation.get("type"))
+              .map(JsonNode::asText)
+              .orElse(null),
+              "restart")) {
+            patroniOperation.put("type", "restart");
+            patroniOperation.put("issued", now.toString());
+            annotations.put(StackGresContext.PATRONI_OPERATION_KEY, patroniOperation.toString());
+          }
+          return endpoints
+            .edit()
+            .editMetadata()
+            .withAnnotations(annotations)
+            .endMetadata()
+            .build();
+        }));
+    while (true) {
+      if (Optional.ofNullable(client.pods()
+          .inNamespace(namespace)
+          .withName(member)
+          .get())
+          .map(Pod::getMetadata)
+          .map(ObjectMeta::getAnnotations)
+          .map(annotations -> annotations.get(StackGresContext.PATRONI_OPERATION_KEY))
+          .map(Unchecked.function(objectMapper::readTree))
+          .map(patroniOperation -> patroniOperation.get("type"))
+          .map(JsonNode::asText)
+          .filter("restart"::equals)
+          .isEmpty()) {
+        return;
+      }
+      if (now.plus(patroniCtlTimeout).isBefore(Instant.now())) {
+        throw new RuntimeException("Restart operation timed out after "
+            + patroniCtlTimeout.getSeconds() + " seconds");
+      }
+      Unchecked.runnable(() -> Thread.sleep(1000));
+    }
   }
 
   @Override
   public void switchover(String username, String password, String leader, String candidate) {
-    patroniCtlBinaryInstance.switchover(username, password, leader, candidate);
+    final Instant now = Instant.now();
+    client.endpoints()
+        .inNamespace(namespace)
+        .withName(failoverName)
+        .edit(endpoints -> {
+          var annotations = Optional.of(endpoints)
+              .map(Endpoints::getMetadata)
+              .map(ObjectMeta::getAnnotations)
+              .map(HashMap::new)
+              .orElseGet(HashMap::new);
+          annotations.putAll(
+              Map.of(
+                  "leader", leader,
+                  "member", candidate,
+                  "schduled_at", now.toString()));
+          return endpoints
+            .edit()
+            .editMetadata()
+            .withAnnotations(annotations)
+            .endMetadata()
+            .build();
+        });
+    while (true) {
+      if (Optional.ofNullable(client.endpoints()
+          .inNamespace(namespace)
+          .withName(failoverName)
+          .get())
+          .map(Endpoints::getMetadata)
+          .map(ObjectMeta::getAnnotations)
+          .map(annotations -> annotations.get("scheduled_at"))
+          .isEmpty()) {
+        return;
+      }
+      if (now.plus(patroniCtlTimeout).isBefore(Instant.now())) {
+        throw new RuntimeException("Switchover operation timed out after "
+            + patroniCtlTimeout.getSeconds() + " seconds");
+      }
+      Unchecked.runnable(() -> Thread.sleep(1000));
+    }
   }
 
   @Override

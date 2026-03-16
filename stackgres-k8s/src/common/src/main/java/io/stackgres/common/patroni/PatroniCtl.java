@@ -62,4 +62,14 @@ public class PatroniCtl {
     return instance;
   }
 
+  public PatroniCtlInstance binaryInstanceFor(StackGresCluster cluster) {
+    var instance = new PatroniCtlBinaryInstance(
+        objectMapper,
+        yamlMapper,
+        clusterLabelFactory,
+        cluster);
+    instance.writeConfig();
+    return instance;
+  }
+
 }
