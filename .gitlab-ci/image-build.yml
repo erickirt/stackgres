@@ -8,8 +8,9 @@
       [ "$DEBUG" != true ] || set -x
       export IMAGE_TAG="${CI_COMMIT_TAG:-"$CI_COMMIT_SHORT_SHA"}$IMAGE_SUFFIX"
       export IMAGE_NAME="$CI_REGISTRY/$SG_CI_PROJECT_PATH/$IMAGE_BASE_NAME:$IMAGE_TAG"
-      mkdir -p $HOME/.docker                                                                                                                                                                               
-      cat "$DOCKER_AUTH_CONFIG" > "$HOME/.docker/config.json"                                                                                                                                              
+      mkdir -p $HOME/.docker
+      cat "$DOCKER_AUTH_CONFIG" > "$HOME/.docker/config.json"
+      unset DOCKER_AUTH_CONFIG
       echo | docker login "$CI_REGISTRY" || \
         docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
       flock "$LOCK_FILE" \
@@ -18,7 +19,7 @@
       HASH_IMAGE_NAME="$(sh stackgres-k8s/ci/build/build-functions.sh image_name "$IMAGE_MODULE_NAME")"
       docker pull "$HASH_IMAGE_NAME"
       docker tag "$HASH_IMAGE_NAME" "$IMAGE_NAME"
-      docker push "$IMAGE_NAME"
+      docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$IMAGE_NAME"
   retry: 2
 
 .build image multi archs:
@@ -31,8 +32,9 @@
       export IMAGE_TAG="${CI_COMMIT_TAG:-"$CI_COMMIT_SHORT_SHA"}$IMAGE_SUFFIX"
       export IMAGE_NAME="$IMAGE_BASE_NAME:$IMAGE_TAG"
       export TARGET_IMAGE_NAME="$CI_REGISTRY/$SG_CI_PROJECT_PATH/$IMAGE_NAME"
-      mkdir -p $HOME/.docker                                                                                                                                                                               
-      cat "$DOCKER_AUTH_CONFIG" > "$HOME/.docker/config.json"                                                                                                                                              
+      mkdir -p $HOME/.docker
+      cat "$DOCKER_AUTH_CONFIG" > "$HOME/.docker/config.json"
+      unset DOCKER_AUTH_CONFIG
       echo | docker login "$CI_REGISTRY" || \
         docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
       cd stackgres-k8s/src
@@ -47,7 +49,7 @@
       then
         docker pull registry.gitlab.com/ongresinc/stackgres/placeholder
         docker tag registry.gitlab.com/ongresinc/stackgres/placeholder "$TARGET_IMAGE_NAME"
-        docker push "$TARGET_IMAGE_NAME"
+        docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$TARGET_IMAGE_NAME"
       fi
       docker manifest rm "$TARGET_IMAGE_NAME" 2>/dev/null || true
       docker manifest create "$TARGET_IMAGE_NAME" $(

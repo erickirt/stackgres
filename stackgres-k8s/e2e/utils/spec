@@ -577,7 +577,7 @@ store_test_results() {
     IMAGE_NAME="$(grep "^$SPEC_NAME=" "$TARGET_PATH/test-result-images" \
       | cut -d = -f 2-)"
     docker tag registry.access.redhat.com/ubi8-micro:8.8-7 "$IMAGE_NAME"
-    docker push "$IMAGE_NAME"
+    docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$IMAGE_NAME"
   done < "$TARGET_PATH/uniq-passed-tests"
 }
 
@@ -603,7 +603,7 @@ store_test_result() {
   docker image registry.access.redhat.com/ubi8-micro:8.8-7 > /dev/null 2>&1 \
     || docker pull registry.access.redhat.com/ubi8-micro:8.8-7
   docker tag registry.access.redhat.com/ubi8-micro:8.8-7 "$IMAGE_NAME"
-  docker push "$IMAGE_NAME"
+  docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$IMAGE_NAME"
 }
 
 add_already_passed_tests_to_report() {

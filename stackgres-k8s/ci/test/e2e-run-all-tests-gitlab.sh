@@ -58,8 +58,9 @@ export K8S_ARCH_VERSION="$(eval "printf %s \"\$K8S_$(uname -m | tr '[a-z]' '[A-Z
 export K8S_VERSION="${K8S_ARCH_VERSION:-$K8S_VERSION}"
 
 run_all_tests_loop() {
-  mkdir -p $HOME/.docker                                                                                                                                                                               
-  cat "$DOCKER_AUTH_CONFIG" > "$HOME/.docker/config.json"                                                                                                                                              
+  mkdir -p $HOME/.docker
+  cat "$DOCKER_AUTH_CONFIG" > "$HOME/.docker/config.json"
+  unset DOCKER_AUTH_CONFIG
   echo | docker login "$CI_REGISTRY" || \
     docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
   if [ -n "$EXTRA_REGISTRY_USER" ] && [ -n "$EXTRA_REGISTRY_PASSWORD" ] && [ -n "$EXTRA_REGISTRY" ]
