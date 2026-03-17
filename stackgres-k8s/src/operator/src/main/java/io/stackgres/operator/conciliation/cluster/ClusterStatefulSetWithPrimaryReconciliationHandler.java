@@ -322,7 +322,7 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
         .filter(ClusterRolloutUtil::isPodInFailedPhase);
     if (foundPrimaryPodAndPendingRestartAndFailed.isPresent()) {
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Restarting primary Pod {} since pending restart and failed",
+        LOGGER.debug("Re-creating primary Pod {} since pending restart and failed",
             foundPrimaryPodAndPendingRestartAndFailed.get().getMetadata().getName());
       }
       handler.delete(context, foundPrimaryPodAndPendingRestartAndFailed.get());
@@ -342,7 +342,7 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
     if (foundPrimaryPod.isEmpty()
         && anyOtherPodAndPendingRestartAndFailed.isPresent()) {
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Restarting non primary Pod {} since pending restart and failed",
+        LOGGER.debug("Re-creating non primary Pod {} since pending restart and failed (primary not found)",
             anyOtherPodAndPendingRestartAndFailed.get().getMetadata().getName());
       }
       handler.delete(context, anyOtherPodAndPendingRestartAndFailed.get());
@@ -357,7 +357,7 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
     if (foundPrimaryPod.isEmpty()
         && anyOtherPodAndPendingRestart.isPresent()) {
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Restarting non primary Pod {} since pending restart",
+        LOGGER.debug("Re-creating non primary Pod {} since pending restart due to spec changes (primary not found)",
             anyOtherPodAndPendingRestart.get().getMetadata().getName());
       }
       handler.delete(context, anyOtherPodAndPendingRestart.get());
@@ -380,7 +380,7 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
     if (foundPrimaryPod.isEmpty()
         && anyOtherPodAndPendingRestartAnyReason.isPresent()) {
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Restarting non primary Pod {} since pending restart",
+        LOGGER.debug("Re-creating non primary Pod {} since pending restart (primary not found)",
             anyOtherPodAndPendingRestartAnyReason.get().getMetadata().getName());
       }
       handler.delete(context, anyOtherPodAndPendingRestartAnyReason.get());
@@ -417,7 +417,7 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
     if (foundPrimaryPod.isPresent()
         && anyOtherPodAndPendingRestartAndFailed.isPresent()) {
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Restarting non primary Pod {} since pending restart and failed",
+        LOGGER.debug("Re-creating non primary Pod {} since pending restart and failed",
             anyOtherPodAndPendingRestartAndFailed.get().getMetadata().getName());
       }
       handler.delete(context, anyOtherPodAndPendingRestartAndFailed.get());
@@ -426,7 +426,7 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
     if (foundPrimaryPod.isPresent()
         && anyOtherPodAndPendingRestartAnyReason.isPresent()) {
       if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Restarting non primary Pod {} since pending restart",
+        LOGGER.debug("Re-creating non primary Pod {} since pending restart",
             anyOtherPodAndPendingRestartAnyReason.get().getMetadata().getName());
       }
       handler.delete(context, anyOtherPodAndPendingRestartAnyReason.get());
@@ -481,7 +481,7 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
         return;
       } else {
         if (LOGGER.isDebugEnabled()) {
-          LOGGER.debug("Restarting primary Pod {} since pending restart",
+          LOGGER.debug("Re-creating primary Pod {} since pending restart",
               foundPrimaryPodAndPendingRestart.get().getMetadata().getName());
         }
         handler.delete(context, foundPrimaryPodAndPendingRestart.get());
