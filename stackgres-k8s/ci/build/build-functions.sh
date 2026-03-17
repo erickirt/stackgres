@@ -973,7 +973,7 @@ docker_build() {
 }
 
 docker_push() {
-  docker push "$@"
+  docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$@"
 }
 
 docker_platform() {
