@@ -32,8 +32,8 @@ import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.ResourceFinder;
 import io.stackgres.common.resource.ResourceScanner;
 import io.stackgres.operator.common.ClusterRolloutUtil;
-import io.stackgres.operator.common.ClusterRolloutUtil.RestartReason;
-import io.stackgres.operator.common.ClusterRolloutUtil.RestartReasons;
+import io.stackgres.operator.common.ClusterRolloutUtil.ClusterRestartReason;
+import io.stackgres.operator.common.ClusterRolloutUtil.ClusterRestartReasons;
 import io.stackgres.operator.conciliation.StatusManager;
 import io.stackgres.operator.conciliation.factory.cluster.ServiceBindingSecret;
 import io.stackgres.operatorframework.resource.ConditionUpdater;
@@ -86,7 +86,7 @@ public class ClusterStatusManager
     source.getStatus().setBinding(new StackGresClusterServiceBindingStatus());
     source.getStatus().getBinding().setName(ServiceBindingSecret.name(source));
     StatusContext context = getStatusContext(source);
-    RestartReasons restartReasons = getRestartReasons(source, context);
+    ClusterRestartReasons restartReasons = getRestartReasons(source, context);
     if (restartReasons.requiresRestart()) {
       updateCondition(getPodRequiresRestart(), source);
     } else {
@@ -193,10 +193,10 @@ public class ClusterStatusManager
   /**
    * Check pending restart status condition.
    */
-  public RestartReasons getRestartReasons(StackGresCluster cluster, StatusContext context) {
-    RestartReasons reasons = ClusterRolloutUtil.getRestartReasons(
+  public ClusterRestartReasons getRestartReasons(StackGresCluster cluster, StatusContext context) {
+    ClusterRestartReasons reasons = ClusterRolloutUtil.getClusterRestartReasons(
         context.cluster(), context.statefulSet(), context.pods(), context.patroniMembers());
-    for (RestartReason reason : reasons.getReasons()) {
+    for (ClusterRestartReason reason : reasons.getReasons()) {
       switch (reason) {
         case PATRONI:
           LOGGER.debug("Cluster {} requires restart due to patroni's indication",
