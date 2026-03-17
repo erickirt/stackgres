@@ -248,6 +248,14 @@ fi
   - encoding: UTF8
   - locale: C.UTF-8
   - data-checksums
+$(
+  if [ "${POSTGRES_VERSION%.*}" -ge 17 ]
+  then
+    cat << LOCAL_PROVIDER_EOF
+  - locale-provider: builtin
+LOCAL_PROVIDER_EOF
+  fi
+)
   pg_hba:
   - 'host all all 0.0.0.0/0 md5'
   - 'host all all ::/0 md5'

@@ -106,6 +106,7 @@ public class PatroniConfigMap implements VolumeFactory<StackGresClusterContext> 
         .orElse(false);
 
     Map<String, String> data = new HashMap<>();
+    data.putAll(context.getEnvironmentVariables());
     data.put("PATRONI_CONFIG_FILE", ClusterPath.PATRONI_CONFIG_FILE_PATH.path());
     data.put("PATRONI_INITIAL_CONFIG", PatroniUtil.getInitialConfig(
         cluster, labelFactory, yamlMapper, objectMapper));
