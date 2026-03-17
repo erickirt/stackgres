@@ -30,6 +30,7 @@ public enum OperatorProperty implements StackGresPropertyReader {
   ERROR_SLEEP_MILLISECONDS("stackgres.errorSleepMilliseconds"),
   ERROR_INITIAL_SLEEP_MILLISECONDS("stackgres.errorInitialSleepMilliseconds"),
   ERROR_MAX_SLEEP_MILLISECONDS("stackgres.errorMaxSleepMilliseconds"),
+  ERROR_MAX_RETRIES("stackgres.errorMaxRetries"),
   LOCK_POLL_INTERVAL("stackgres.lockPollInterval"),
   LOCK_DURATION("stackgres.lockDuration"),
   RECONCILIATION_CACHE_EXPIRATION("stackgres.reconciliationCacheExpiration"),
