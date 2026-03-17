@@ -254,8 +254,7 @@ public class PatroniCtlKubernetesInstance implements PatroniCtlInstance {
           annotations.putAll(
               Map.of(
                   "leader", leader,
-                  "member", candidate,
-                  "schduled_at", now.toString()));
+                  "member", candidate));
           return endpoints
             .edit()
             .editMetadata()
@@ -270,7 +269,7 @@ public class PatroniCtlKubernetesInstance implements PatroniCtlInstance {
           .get())
           .map(Endpoints::getMetadata)
           .map(ObjectMeta::getAnnotations)
-          .map(annotations -> annotations.get("scheduled_at"))
+          .map(annotations -> annotations.get("leader"))
           .isEmpty()) {
         return;
       }
