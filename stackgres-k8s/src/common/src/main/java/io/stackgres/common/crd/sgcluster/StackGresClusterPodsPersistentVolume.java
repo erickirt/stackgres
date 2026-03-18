@@ -30,6 +30,8 @@ public class StackGresClusterPodsPersistentVolume {
 
   private String storageClass;
 
+  private String volumeAttributesClassName;
+
   private String fsGroupChangePolicy;
 
   public String getSize() {
@@ -48,6 +50,14 @@ public class StackGresClusterPodsPersistentVolume {
     this.storageClass = storageClass;
   }
 
+  public String getVolumeAttributesClassName() {
+    return volumeAttributesClassName;
+  }
+
+  public void setVolumeAttributesClassName(String volumeAttributesClassName) {
+    this.volumeAttributesClassName = volumeAttributesClassName;
+  }
+
   public String getFsGroupChangePolicy() {
     return fsGroupChangePolicy;
   }
@@ -58,7 +68,7 @@ public class StackGresClusterPodsPersistentVolume {
 
   @Override
   public int hashCode() {
-    return Objects.hash(fsGroupChangePolicy, size, storageClass);
+    return Objects.hash(fsGroupChangePolicy, size, storageClass, volumeAttributesClassName);
   }
 
   @Override
@@ -71,7 +81,8 @@ public class StackGresClusterPodsPersistentVolume {
     }
     StackGresClusterPodsPersistentVolume other = (StackGresClusterPodsPersistentVolume) obj;
     return Objects.equals(fsGroupChangePolicy, other.fsGroupChangePolicy)
-        && Objects.equals(size, other.size) && Objects.equals(storageClass, other.storageClass);
+        && Objects.equals(size, other.size) && Objects.equals(storageClass, other.storageClass)
+        && Objects.equals(volumeAttributesClassName, other.volumeAttributesClassName);
   }
 
   @Override

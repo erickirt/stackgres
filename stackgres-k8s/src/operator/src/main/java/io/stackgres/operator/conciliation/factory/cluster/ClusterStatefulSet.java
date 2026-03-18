@@ -97,9 +97,6 @@ public class ClusterStatefulSet
 
     StorageConfig dataStorageConfig = ImmutableStorageConfig.builder()
         .size(persistentVolume.getSize())
-        .storageClass(Optional.ofNullable(
-            persistentVolume.getStorageClass())
-            .orElse(null))
         .build();
 
     final Map<String, String> labels = labelFactory.clusterLabels(cluster);
@@ -110,7 +107,8 @@ public class ClusterStatefulSet
     final PersistentVolumeClaimSpecBuilder volumeClaimSpec = new PersistentVolumeClaimSpecBuilder()
         .withAccessModes("ReadWriteOnce")
         .withResources(dataStorageConfig.getVolumeResourceRequirements())
-        .withStorageClassName(dataStorageConfig.getStorageClass())
+        .withStorageClassName(persistentVolume.getStorageClass())
+        .withVolumeAttributesClassName(persistentVolume.getVolumeAttributesClassName())
         .withDataSource(context.getRestoreBackup()
             .filter(backpup -> context.getCurrentInstances() < 1)
             .or(context::getReplicationInitializationBackup)
