@@ -102,5 +102,7 @@ EOF
 
   helm install --namespace "$MINIO_NAMESPACE" "$MINIO_NAME" \
     "$E2E_PATH/helm/minio-8.0.10.tgz" -f "$LOG_PATH/minio.yaml" \
+    --set-string image.repository=docker.io/minio/minio \
+    --set-string mcImage.repository=docker.io/minio/mc \
     "$@"
 }
