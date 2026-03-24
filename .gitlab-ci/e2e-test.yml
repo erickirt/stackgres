@@ -10,7 +10,7 @@
     E2E_JOB: ""
     IS_NATIVE: "false"
     IS_WEB: "false"
-    GIT_CLONE_PATH: $CI_BUILDS_DIR/$CI_JOB_ID
+    GIT_CLONE_PATH: $CI_BUILDS_DIR/$CI_CONCURRENT_ID/$CI_PROJECT_PATH
   timeout: 1 hour
   script:
     - |
