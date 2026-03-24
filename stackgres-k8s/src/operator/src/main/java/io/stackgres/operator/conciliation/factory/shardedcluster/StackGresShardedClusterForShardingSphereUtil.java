@@ -111,7 +111,7 @@ public interface StackGresShardedClusterForShardingSphereUtil extends StackGresS
   static StackGresCluster getShardsCluster(StackGresShardedCluster cluster, int index) {
     return UTIL.getShardsCluster(cluster, index);
   }
-  
+
   static ComputeNode getCoordinatorComputeNode(
       StackGresShardedClusterContext context,
       Map<String, String> coordinatorLabelsWithoutUid) {

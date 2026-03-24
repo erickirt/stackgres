@@ -605,6 +605,10 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
           spec.getPods().getPersistentVolume().setStorageClass(
               specOverride.getPodsForShards().getPersistentVolume().getStorageClass());
         }
+        if (specOverride.getPodsForShards().getPersistentVolume().getVolumeAttributesClassName() != null) {
+          spec.getPods().getPersistentVolume().setVolumeAttributesClassName(
+              specOverride.getPodsForShards().getPersistentVolume().getVolumeAttributesClassName());
+        }
         if (specOverride.getPodsForShards().getPersistentVolume().getFsGroupChangePolicy() != null) {
           spec.getPods().getPersistentVolume().setFsGroupChangePolicy(
               specOverride.getPodsForShards().getPersistentVolume().getFsGroupChangePolicy());
