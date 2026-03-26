@@ -223,23 +223,20 @@ public class Envoy implements ContainerFactory<ClusterContainerContext>,
     final StackGresCluster stackGresCluster = context.getSource();
 
     final ObjectNode envoyConfig;
-    try {
-      envoyConfig = (ObjectNode) yamlMapper
-          .readTree(Envoy.class.getResource("/envoy/envoy.yaml"));
+    try (var is = Envoy.class.getResourceAsStream("/envoy/envoy.yaml")) {
+      envoyConfig = (ObjectNode) yamlMapper.readTree(is);
     } catch (Exception ex) {
       throw new IllegalArgumentException("couldn't read envoy config file", ex);
     }
     final ObjectNode envoyConfigLds;
-    try {
-      envoyConfigLds = (ObjectNode) yamlMapper
-          .readTree(Envoy.class.getResource("/envoy/envoy-lds.yaml"));
+    try (var is = Envoy.class.getResourceAsStream("/envoy/envoy-lds.yaml")) {
+      envoyConfigLds = (ObjectNode) yamlMapper.readTree(is);
     } catch (Exception ex) {
       throw new IllegalArgumentException("couldn't read envoy config file", ex);
     }
     final ObjectNode envoyConfigCds;
-    try {
-      envoyConfigCds = (ObjectNode) yamlMapper
-          .readTree(Envoy.class.getResource("/envoy/envoy-cds.yaml"));
+    try (var is = Envoy.class.getResourceAsStream("/envoy/envoy-cds.yaml")) {
+      envoyConfigCds = (ObjectNode) yamlMapper.readTree(is);
     } catch (Exception ex) {
       throw new IllegalArgumentException("couldn't read envoy config file", ex);
     }
