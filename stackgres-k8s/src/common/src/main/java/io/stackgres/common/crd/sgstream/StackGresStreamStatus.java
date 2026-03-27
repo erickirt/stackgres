@@ -26,8 +26,7 @@ import jakarta.validation.Valid;
 public class StackGresStreamStatus {
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  @Valid
-  private List<Condition> conditions = new ArrayList<>();
+  private List<@Valid Condition> conditions = new ArrayList<>();
 
   @Valid
   private StackGresStreamSnapshotStatus snapshot;

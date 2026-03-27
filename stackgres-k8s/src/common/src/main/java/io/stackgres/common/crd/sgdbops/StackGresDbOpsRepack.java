@@ -23,8 +23,7 @@ import jakarta.validation.Valid;
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresDbOpsRepack extends StackGresDbOpsRepackConfig {
 
-  @Valid
-  private List<StackGresDbOpsRepackDatabase> databases;
+  private List<@Valid StackGresDbOpsRepackDatabase> databases;
 
   public List<StackGresDbOpsRepackDatabase> getDatabases() {
     return databases;

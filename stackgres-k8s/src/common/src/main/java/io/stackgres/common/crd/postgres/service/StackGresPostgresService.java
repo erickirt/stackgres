@@ -43,8 +43,7 @@ public class StackGresPostgresService extends ServiceSpec {
 
   protected StackGresPostgresServiceNodePort nodePorts;
 
-  @Valid
-  private List<CustomServicePort> customPorts;
+  private List<@Valid CustomServicePort> customPorts;
 
   public StackGresPostgresService() {
     super();

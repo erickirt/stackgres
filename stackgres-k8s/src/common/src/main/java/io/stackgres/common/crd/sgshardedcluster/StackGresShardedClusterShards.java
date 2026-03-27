@@ -45,8 +45,7 @@ public class StackGresShardedClusterShards extends StackGresClusterSpec {
   @Valid
   private StackGresShardedClusterReplication replicationForShards;
 
-  @Valid
-  private List<StackGresShardedClusterShard> overrides;
+  private List<@Valid StackGresShardedClusterShard> overrides;
 
   @ReferencedField("replication.syncInstances")
   interface SyncInstances extends FieldReference { }

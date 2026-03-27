@@ -29,8 +29,7 @@ public class StackGresShardedClusterPostgresShardsServices {
   @NotNull(message = "primaries is required")
   private StackGresPostgresService primaries;
 
-  @Valid
-  private List<CustomServicePort> customPorts;
+  private List<@Valid CustomServicePort> customPorts;
 
   public StackGresPostgresService getPrimaries() {
     return primaries;

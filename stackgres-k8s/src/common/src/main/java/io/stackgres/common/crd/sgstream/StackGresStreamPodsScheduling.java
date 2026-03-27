@@ -31,8 +31,7 @@ public class StackGresStreamPodsScheduling {
 
   private Map<String, String> nodeSelector;
 
-  @Valid
-  private List<Toleration> tolerations;
+  private List<@Valid Toleration> tolerations;
 
   @Valid
   private NodeAffinity nodeAffinity;
@@ -45,8 +44,7 @@ public class StackGresStreamPodsScheduling {
   @Valid
   private PodAntiAffinity podAntiAffinity;
 
-  @Valid
-  private List<TopologySpreadConstraint> topologySpreadConstraints;
+  private List<@Valid TopologySpreadConstraint> topologySpreadConstraints;
 
   public Map<String, String> getNodeSelector() {
     return nodeSelector;

@@ -30,18 +30,15 @@ public class StackGresShardedClusterStatus {
 
   @JsonProperty("conditions")
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  @Valid
-  private List<Condition> conditions = new ArrayList<>();
+  private List<@Valid Condition> conditions = new ArrayList<>();
 
   private String postgresVersion;
 
   private String buildVersion;
 
-  @Valid
-  private List<StackGresClusterInstalledExtension> extensions;
+  private List<@Valid StackGresClusterInstalledExtension> extensions;
 
-  @Valid
-  private List<StackGresShardedClusterClusterStatus> clusterStatuses;
+  private List<@Valid StackGresShardedClusterClusterStatus> clusterStatuses;
 
   @Valid
   @Deprecated(forRemoval = true)

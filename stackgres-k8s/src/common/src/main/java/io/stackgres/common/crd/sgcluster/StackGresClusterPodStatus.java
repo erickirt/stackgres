@@ -36,8 +36,7 @@ public class StackGresClusterPodStatus {
 
   private Boolean pendingRestart;
 
-  @Valid
-  private List<StackGresClusterInstalledExtension> installedPostgresExtensions;
+  private List<@Valid StackGresClusterInstalledExtension> installedPostgresExtensions;
 
   @JsonIgnore
   @AssertTrue(message = "installedPostgresExtensions must contain extensions with unique names.")

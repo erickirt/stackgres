@@ -41,11 +41,9 @@ public class StackGresClusterStatus {
   private String labelSelector;
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  @Valid
-  private List<Condition> conditions = new ArrayList<>();
+  private List<@Valid Condition> conditions = new ArrayList<>();
 
-  @Valid
-  private List<StackGresClusterPodStatus> podStatuses;
+  private List<@Valid StackGresClusterPodStatus> podStatuses;
 
   @Valid
   private StackGresClusterDbOpsStatus dbOps;

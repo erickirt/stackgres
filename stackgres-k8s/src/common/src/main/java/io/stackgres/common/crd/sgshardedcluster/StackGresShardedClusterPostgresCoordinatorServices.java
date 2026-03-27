@@ -32,8 +32,7 @@ public class StackGresShardedClusterPostgresCoordinatorServices {
   @NotNull(message = "primary is required")
   private StackGresPostgresService primary;
 
-  @Valid
-  private List<CustomServicePort> customPorts;
+  private List<@Valid CustomServicePort> customPorts;
 
   public StackGresPostgresService getAny() {
     return any;

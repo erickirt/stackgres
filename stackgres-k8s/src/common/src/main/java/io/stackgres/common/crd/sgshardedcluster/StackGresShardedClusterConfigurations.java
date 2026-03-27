@@ -27,8 +27,7 @@ import jakarta.validation.Valid;
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresShardedClusterConfigurations {
 
-  @Valid
-  private List<StackGresShardedClusterBackupConfiguration> backups;
+  private List<@Valid StackGresShardedClusterBackupConfiguration> backups;
 
   @Valid
   private StackGresClusterCredentials credentials;

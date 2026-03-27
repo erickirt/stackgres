@@ -32,8 +32,7 @@ public class StackGresClusterUpdateStrategy {
       message = "method must be one of InPlace or ReducedImpact")
   private String method;
 
-  @Valid
-  private List<StackGresClusterUpdateStrategySchedule> schedule;
+  private List<@Valid StackGresClusterUpdateStrategySchedule> schedule;
 
   public String getType() {
     return type;

@@ -32,8 +32,7 @@ import jakarta.validation.constraints.AssertTrue;
 public class StackGresDbOpsStatus {
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  @Valid
-  private List<Condition> conditions = new ArrayList<>();
+  private List<@Valid Condition> conditions = new ArrayList<>();
 
   private Integer opRetries;
 

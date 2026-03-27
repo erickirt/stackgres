@@ -39,8 +39,7 @@ public class StackGresClusterReplication {
   @Min(value = 1)
   private Integer syncInstances;
 
-  @Valid
-  private List<StackGresClusterReplicationGroup> groups;
+  private List<@Valid StackGresClusterReplicationGroup> groups;
 
   @Valid
   private StackGresClusterReplicationInitialization initialization;

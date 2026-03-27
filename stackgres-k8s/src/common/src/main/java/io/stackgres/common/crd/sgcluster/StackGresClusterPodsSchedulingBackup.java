@@ -30,8 +30,7 @@ public class StackGresClusterPodsSchedulingBackup {
 
   private Map<String, String> nodeSelector;
 
-  @Valid
-  private List<Toleration> tolerations;
+  private List<@Valid Toleration> tolerations;
 
   @Valid
   private NodeAffinity nodeAffinity;

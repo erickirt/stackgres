@@ -35,8 +35,7 @@ public class StackGresClusterPostgres {
   @Valid
   private StackGresClusterSsl ssl;
 
-  @Valid
-  private List<StackGresClusterExtension> extensions;
+  private List<@Valid StackGresClusterExtension> extensions;
 
   public String getVersion() {
     return version;

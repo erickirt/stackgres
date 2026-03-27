@@ -35,8 +35,7 @@ public class StackGresClusterManagedScriptEntryStatus {
 
   private String completedAt;
 
-  @Valid
-  private List<StackGresClusterManagedScriptEntryScriptStatus> scripts;
+  private List<@Valid StackGresClusterManagedScriptEntryScriptStatus> scripts;
 
   public Integer getId() {
     return id;

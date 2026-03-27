@@ -34,8 +34,7 @@ public class StackGresDbOpsMajorVersionUpgrade {
   @NotEmpty(message = "postgresVersion must not be empty")
   private String postgresVersion;
 
-  @Valid
-  private List<StackGresClusterExtension> postgresExtensions;
+  private List<@Valid StackGresClusterExtension> postgresExtensions;
 
   @NotEmpty(message = "sgPostgresConfig must not be empty")
   private String sgPostgresConfig;
@@ -48,8 +47,7 @@ public class StackGresDbOpsMajorVersionUpgrade {
 
   private Boolean check;
 
-  @Valid
-  private List<StackGresClusterInstalledExtension> toInstallPostgresExtensions;
+  private List<@Valid StackGresClusterInstalledExtension> toInstallPostgresExtensions;
 
   private Integer maxErrorsAfterUpgrade;
 

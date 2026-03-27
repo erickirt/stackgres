@@ -61,14 +61,11 @@ public class StackGresClusterPods {
   @Valid
   private StackGresClusterPodsScheduling scheduling;
 
-  @Valid
-  private List<CustomVolume> customVolumes;
+  private List<@Valid CustomVolume> customVolumes;
 
-  @Valid
-  private List<CustomContainer> customContainers;
+  private List<@Valid CustomContainer> customContainers;
 
-  @Valid
-  private List<CustomContainer> customInitContainers;
+  private List<@Valid CustomContainer> customInitContainers;
 
   @Valid
   private Map<String, List<CustomVolumeMount>> customVolumeMounts;

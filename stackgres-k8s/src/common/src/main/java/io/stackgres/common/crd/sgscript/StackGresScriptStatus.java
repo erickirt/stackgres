@@ -24,8 +24,7 @@ import jakarta.validation.Valid;
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresScriptStatus {
 
-  @Valid
-  private List<StackGresScriptEntryStatus> scripts = new ArrayList<>();
+  private List<@Valid StackGresScriptEntryStatus> scripts = new ArrayList<>();
 
   public List<StackGresScriptEntryStatus> getScripts() {
     return scripts;

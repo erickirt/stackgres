@@ -63,8 +63,7 @@ public class StackGresDistributedLogsSpec {
   @Valid
   private StackGresClusterSpecMetadata metadata;
 
-  @Valid
-  private List<StackGresClusterInstalledExtension> toInstallPostgresExtensions;
+  private List<@Valid StackGresClusterInstalledExtension> toInstallPostgresExtensions;
 
   public String getProfile() {
     return profile;

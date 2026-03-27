@@ -23,8 +23,7 @@ import jakarta.validation.Valid;
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresClusterManagedSqlStatus {
 
-  @Valid
-  private List<StackGresClusterManagedScriptEntryStatus> scripts;
+  private List<@Valid StackGresClusterManagedScriptEntryStatus> scripts;
 
   public List<StackGresClusterManagedScriptEntryStatus> getScripts() {
     return scripts;

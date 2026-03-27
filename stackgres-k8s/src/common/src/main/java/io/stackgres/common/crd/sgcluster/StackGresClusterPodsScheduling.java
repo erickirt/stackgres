@@ -31,8 +31,7 @@ public class StackGresClusterPodsScheduling {
 
   private Map<String, String> nodeSelector;
 
-  @Valid
-  private List<Toleration> tolerations;
+  private List<@Valid Toleration> tolerations;
 
   @Valid
   private NodeAffinity nodeAffinity;
@@ -51,8 +50,7 @@ public class StackGresClusterPodsScheduling {
   @Valid
   private PodAntiAffinity podAntiAffinity;
 
-  @Valid
-  private List<TopologySpreadConstraint> topologySpreadConstraints;
+  private List<@Valid TopologySpreadConstraint> topologySpreadConstraints;
 
   @Valid
   private StackGresClusterPodsSchedulingBackup backup;

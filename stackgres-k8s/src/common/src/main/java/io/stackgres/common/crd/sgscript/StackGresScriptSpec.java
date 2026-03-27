@@ -29,8 +29,7 @@ public class StackGresScriptSpec {
   private Boolean continueOnError;
 
   @NotNull(message = "scripts section cannot be null")
-  @Valid
-  private List<StackGresScriptEntry> scripts;
+  private List<@Valid StackGresScriptEntry> scripts;
 
   public Boolean isManagedVersions() {
     return managedVersions;

@@ -27,17 +27,13 @@ import jakarta.validation.Valid;
 public class StackGresDistributedLogsStatus {
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  @Valid
-  private List<Condition> conditions = new ArrayList<>();
+  private List<@Valid Condition> conditions = new ArrayList<>();
 
-  @Valid
-  private List<StackGresClusterPodStatus> podStatuses;
+  private List<@Valid StackGresClusterPodStatus> podStatuses;
 
-  @Valid
-  private List<StackGresDistributedLogsStatusDatabase> databases = new ArrayList<>();
+  private List<@Valid StackGresDistributedLogsStatusDatabase> databases = new ArrayList<>();
 
-  @Valid
-  private List<StackGresDistributedLogsStatusCluster> connectedClusters = new ArrayList<>();
+  private List<@Valid StackGresDistributedLogsStatusCluster> connectedClusters = new ArrayList<>();
 
   private String postgresVersion;
 

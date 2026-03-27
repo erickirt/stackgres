@@ -37,8 +37,7 @@ public class StackGresClusterConfigurations {
 
   private StackGresPoolingConfigSpec pooling;
 
-  @Valid
-  private List<StackGresClusterBackupConfiguration> backups;
+  private List<@Valid StackGresClusterBackupConfiguration> backups;
 
   @Valid
   private StackGresClusterPatroni patroni;
