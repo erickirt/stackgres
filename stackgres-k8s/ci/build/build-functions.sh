@@ -2,6 +2,18 @@
 # shellcheck disable=SC2039
 # shellcheck disable=SC2016
 
+# Enable POSIX sh compatibility when running under zsh.
+# This script uses only POSIX shell features (plus local variables) and relies on:
+#   SH_WORD_SPLIT  - unquoted $VAR undergoes word splitting (for x in $LIST)
+#   NO_NOMATCH     - unmatched globs expand to themselves instead of erroring
+#   NO_BANG_HIST   - disable ! history expansion (used in .dockerignore: !path)
+#   POSIX_BUILTINS - POSIX-compliant builtin behavior
+# shellcheck disable=SC2034
+if [ -n "$ZSH_VERSION" ]; then
+  emulate sh
+  setopt SH_WORD_SPLIT NO_NOMATCH NO_BANG_HIST POSIX_BUILTINS
+fi
+
 BUILDER_VERSION=1.0.0
 
 set -e
