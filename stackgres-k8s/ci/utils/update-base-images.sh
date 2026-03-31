@@ -1,4 +1,9 @@
 #!/bin/sh
+set -e
+
+[ "$DEBUG" != true ] || set -x
+
+cd "$(dirname "$0")/../../.." || exit 1
 
 IMAGES="$(yq -r '.[".images"]|to_entries[]|.value' stackgres-k8s/ci/build/config.yml)"
 for IMAGE in $IMAGES
@@ -44,3 +49,5 @@ do
   sed -n "s#$OLD_IMAGE_PATTERN#$NEW_IMAGE_PATTERN#p" stackgres-k8s/ci/build/config.yml
   sed -i "s#$OLD_IMAGE_PATTERN#$NEW_IMAGE_PATTERN#" stackgres-k8s/ci/build/config.yml
 done
+
+sh stackgres-k8s/ci/utils/pin-base-images.sh
