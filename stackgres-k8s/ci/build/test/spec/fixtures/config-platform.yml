@@ -1,4 +1,5 @@
 target_image: busybox:latest
+build_repository: registry.example.com/test/build
 platforms:
   - linux/x86_64
   - linux/aarch64

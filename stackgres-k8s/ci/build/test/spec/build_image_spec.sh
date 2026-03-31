@@ -70,7 +70,7 @@ EOF
       SKIP_PUSH=""
       build_image module-a >/dev/null 2>&1
       When call grep -c "docker_push" "$DOCKER_CALL_LOG"
-      The output should equal "1"
+      The output should equal "2"
     End
   End
 
