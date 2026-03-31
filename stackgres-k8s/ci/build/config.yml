@@ -7,6 +7,7 @@
   admin_ui_build_image: &admin_ui_build_image registry.access.redhat.com/ubi8/nodejs-20:1-1778648142
   admin_ui_nginx_image: &admin_ui_nginx_image registry.access.redhat.com/ubi8/nginx-124:1-1778762590
   pglambda_nodejs_image: &pglambda_nodejs_image registry.access.redhat.com/ubi8/nodejs-18:1-140
+build_repository: registry.gitlab.com/ongresinc/stackgres/build
 platforms:
   - linux/x86_64
   - linux/aarch64
