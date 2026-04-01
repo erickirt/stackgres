@@ -459,16 +459,6 @@ build_image() {
 push_build_image() {
   local IMAGE_NAME="$1"
   docker_push "$IMAGE_NAME"
-  local IMAGE_DIGEST
-  IMAGE_DIGEST="$(find_image_digest "$IMAGE_NAME")"
-  IMAGE_DIGEST="$(printf "$IMAGE_DIGEST" | cut -d = -f 2- | tr : -)"
-  if [ -z "$IMAGE_DIGEST" ]
-  then
-    echo "Image digest for $IMAGE_NAME was not found"
-    return 1
-  fi
-  docker_tag "$IMAGE_NAME" "$IMAGE_NAME-$IMAGE_DIGEST"
-  docker_push "$IMAGE_NAME-$IMAGE_DIGEST"
 }
 
 extract_all() {
@@ -692,17 +682,8 @@ find_image_digests() {
     sort "$1" | uniq \
       | grep "^${BUILD_REPOSITORY%/}/" \
       | grep -v "@sha256:" \
-      | while read -r IMAGE_NAME
-        do
-          local TAG="${IMAGE_NAME##*:}"
-          if grep -q "^$TAG-sha256-" "stackgres-k8s/ci/build/target/registry-tags" 2>/dev/null
-          then
-            printf '%s=sha256:%s\n' "$IMAGE_NAME" "${TAG#*-sha256-}" \
-              > "stackgres-k8s/ci/build/target/image-digests.${IMAGE_NAME##*/}"
-          else
-            find_image_digest "$IMAGE_NAME"
-          fi
-        done
+      | xargs -I @ -P 16 sh $(! echo $- | grep -q x || printf %s "-x") \
+        -c 'IMAGE_NAME="@"; if grep -q "^${IMAGE_NAME##*:}$" "stackgres-k8s/ci/build/target/registry-tags" 2>/dev/null; then find_image_digest "$IMAGE_NAME"; fi'
     sort "$1" | uniq \
       | grep -v "^${BUILD_REPOSITORY%/}/" \
       | grep -v "@sha256:" \
