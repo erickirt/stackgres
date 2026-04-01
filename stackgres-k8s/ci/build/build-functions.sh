@@ -7,6 +7,7 @@ BUILDER_VERSION=1.0.0
 set -e
 
 export BUILD_UID="${BUILD_UID:-$(id -u):$(ls -n /var/run/docker.sock | cut -d ' ' -f 4)}"
+export DOCKER_CLI_HINTS=false
 
 [ "$DEBUG" != true ] || set -x
 
@@ -417,6 +418,7 @@ build_image() {
   echo "Image $IMAGE_NAME"
   echo "Source image $SOURCE_IMAGE_NAME"
   echo
+  local BUILD_SKIPPED=false
   if {
       [ "$DO_BUILD" != true ] \
         && ! printf " $DO_BUILD_MODULES " | grep -qF " $MODULE " \
@@ -424,7 +426,8 @@ build_image() {
     }
   then
     echo "Already exists on remote repository. Just extracting..."
-    copy_from_image "$SOURCE_IMAGE_NAME"
+    copy_from_image "$IMAGE_NAME"
+    BUILD_SKIPPED=true
   else
     if {
         [ "$DO_BUILD" != true ] \
@@ -433,24 +436,39 @@ build_image() {
       }
     then
       echo "Already exists locally. Just extracting ..."
-      copy_from_image "$SOURCE_IMAGE_NAME"
+      copy_from_image "$IMAGE_NAME"
+      BUILD_SKIPPED=true
     else
       echo "Building $MODULE ..."
       build_module_image "$MODULE" "$SOURCE_IMAGE_NAME" "$IMAGE_NAME"
     fi
-    if [ "$SKIP_PUSH" != true ]
+    if [ "$SKIP_PUSH" != true ] || [ "$DO_PUSH" = true ]
     then
-      docker_push "$IMAGE_NAME"
-      local IMAGE_DIGEST
-      IMAGE_DIGEST="$(find_image_digest "$IMAGE_NAME")"
-      IMAGE_DIGEST="$(printf "$IMAGE_DIGEST" | cut -d = -f 2- | tr : -)"
-      docker_tag "$IMAGE_NAME" "$IMAGE_NAME-$IMAGE_DIGEST"
-      docker_push "$IMAGE_NAME-$IMAGE_DIGEST"
+      push_build_image "$IMAGE_NAME"
     fi
+  fi
+  if [ "$BUILD_SKIPPED" = true ] && [ "$DO_PUSH" = true ]
+  then
+    push_build_image "$IMAGE_NAME"
   fi
   echo
   echo "--------------------------------------------------------------------------------------------------------------------------------"
   echo
+}
+
+push_build_image() {
+  local IMAGE_NAME="$1"
+  docker_push "$IMAGE_NAME"
+  local IMAGE_DIGEST
+  IMAGE_DIGEST="$(find_image_digest "$IMAGE_NAME")"
+  IMAGE_DIGEST="$(printf "$IMAGE_DIGEST" | cut -d = -f 2- | tr : -)"
+  if [ -z "$IMAGE_DIGEST" ]
+  then
+    echo "Image digest for $IMAGE_NAME was not found"
+    return 1
+  fi
+  docker_tag "$IMAGE_NAME" "$IMAGE_NAME-$IMAGE_DIGEST"
+  docker_push "$IMAGE_NAME-$IMAGE_DIGEST"
 }
 
 extract_all() {
