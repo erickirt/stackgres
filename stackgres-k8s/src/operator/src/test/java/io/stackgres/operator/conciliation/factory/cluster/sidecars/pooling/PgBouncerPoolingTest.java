@@ -101,13 +101,10 @@ class PgBouncerPoolingTest {
     assertEquals(StackGresContainer.PGBOUNCER.getName(), container.getName());
 
     List<ContainerPort> ports = container.getPorts();
-    assertEquals(2, ports.size());
+    assertEquals(1, ports.size());
     assertEquals(EnvoyUtil.POSTGRES_PORT_NAME, ports.get(0).getName());
     assertEquals(EnvoyUtil.PG_POOL_PORT, ports.get(0).getContainerPort());
     assertEquals("TCP", ports.get(0).getProtocol());
-    assertEquals(EnvoyUtil.PATRONI_RESTAPI_PORT_NAME, ports.get(1).getName());
-    assertEquals(EnvoyUtil.PATRONI_PORT, ports.get(1).getContainerPort());
-    assertEquals("TCP", ports.get(1).getProtocol());
   }
 
   @Test
