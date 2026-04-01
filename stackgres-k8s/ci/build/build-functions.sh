@@ -181,7 +181,7 @@ EOF
    "  > "stackgres-k8s/ci/build/target/$MODULE-build-env"
   # shellcheck disable=SC2046
   docker_run -i $(! test -t 1 || printf %s '-t') --rm \
-    --platform "${BUILD_PLATFORM:-$(get_platform)}" \
+    --platform "$(docker_platform "${BUILD_PLATFORM:-$(get_platform)}")" \
     $([ "$SKIP_REMOTE_MANIFEST" = true ] || printf %s '--pull always') \
     --volume "/var/run/docker.sock:/var/run/docker.sock" \
     --volume "${PROJECT_PATH:-$(pwd)}:/project" \
@@ -290,7 +290,7 @@ EOF
   # shellcheck disable=SC2046
   docker_build $DOCKER_BUILD_OPTS -t "$IMAGE_NAME" \
     $([ "$SKIP_REMOTE_MANIFEST" = true ] || printf %s '--pull') \
-    --platform "${BUILD_PLATFORM:-$(get_platform)}" \
+    --platform "$(docker_platform "${BUILD_PLATFORM:-$(get_platform)}")" \
     --build-arg "BUILD_UID=${BUILD_UID%:*}" \
     --build-arg "TARGET_IMAGE_NAME=$TARGET_IMAGE_NAME" \
     $(jq -r ".modules[\"$MODULE\"].dockerfile.args
@@ -476,7 +476,7 @@ build_image() {
 
 push_build_image() {
   local IMAGE_NAME="$1"
-  docker_push "$IMAGE_NAME"
+  docker_push --platform "$(docker_platform "${BUILD_PLATFORM:-$(get_platform)}")" "$IMAGE_NAME"
 }
 
 extract_all() {
@@ -849,7 +849,8 @@ retrieve_image_manifest() {
         REGISTRY_PORT="$(docker_inspect "$REGISTRY_CONTAINER_ID" | jq '.[0].NetworkSettings.Ports["5000/tcp"][0].HostPort' -r)"
         REGISTRY_IMAGE_NAME="localhost:$REGISTRY_PORT/$(printf %s "${IMAGE_NAME%:*}" | tr '/:' '_'):${IMAGE_NAME##*:}"
         docker_tag "$IMAGE_NAME" "$REGISTRY_IMAGE_NAME"
-        docker_push "$REGISTRY_IMAGE_NAME"
+        REGISTRY_IMAGE_PLATFORM="$(get_image_platform "$REGISTRY_IMAGE_NAME")"
+        docker_push --platform "$REGISTRY_IMAGE_PLATFORM" "$REGISTRY_IMAGE_NAME"
         docker_inspect "$REGISTRY_IMAGE_NAME" \
           > "stackgres-k8s/ci/build/target/manifest.local.${IMAGE_NAME##*/}"
         docker_rm -fv "$REGISTRY_CONTAINER_ID"
@@ -937,7 +938,12 @@ docker_build() {
 }
 
 docker_push() {
-  docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$@"
+  docker push "$@"
+}
+
+docker_platform() {
+  local PLATFORM="$1"
+  printf "${PLATFORM%/*}/$(printf %s "${PLATFORM#*/}" | grep -qxF aarch64 && printf arm64 || printf amd64)"
 }
 
 docker_tag() {
