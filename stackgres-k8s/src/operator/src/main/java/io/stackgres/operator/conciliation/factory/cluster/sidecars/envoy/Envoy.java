@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.common.collect.ImmutableList;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
@@ -219,6 +220,8 @@ public class Envoy implements ContainerFactory<ClusterContainerContext>,
             .build());
   }
 
+  @SuppressFBWarnings(value = "REC_CATCH_EXCEPTION",
+      justification = "False positive")
   private HasMetadata buildSource(StackGresClusterContext context) {
     final StackGresCluster stackGresCluster = context.getSource();
 
