@@ -245,11 +245,11 @@ modules:
     path: stackgres-k8s/src/restapi
     artifacts:
       - stackgres-k8s/src/restapi/target/stackgres-restapi-runner
-  stream-native:
-    <<: *native
-    path: stackgres-k8s/src/stream
-    artifacts:
-      - stackgres-k8s/src/stream/target/stackgres-stream-runner
+#  stream-native:
+#    <<: *native
+#    path: stackgres-k8s/src/stream
+#    artifacts:
+#      - stackgres-k8s/src/stream/target/stackgres-stream-runner
   cluster-controller-native:
     <<: *native
     path: stackgres-k8s/src/cluster-controller
@@ -361,20 +361,20 @@ modules:
       0: stackgres-k8s/src/restapi/src/main/docker/LICENCE
       1: stackgres-k8s/src/restapi/target/stackgres-restapi-runner
       2: stackgres-k8s/src/restapi/src/main/docker/stackgres-restapi.native.sh
-  stream-native-image: &stream-native-image
-    <<: *operator-native-image
-    path: stackgres-k8s/src/stream
-    dockerfile:
-      <<: *native-image-dockerfile
-      path: stackgres-k8s/src/stream/src/main/docker/Dockerfile.native
-      args:
-        <<: *native-image-args
-        STACKGRES_VERSION: $(sh stackgres-k8s/ci/build/version.sh stream)
-        BUILD_HASH: $(sh stackgres-k8s/ci/build/build-functions.sh get_module_hash "$MODULE")
-    artifacts: &stream-native-image-artifacts
-      0: stackgres-k8s/src/stream/src/main/docker/LICENCE
-      1: stackgres-k8s/src/stream/target/stackgres-stream-runner
-      2: stackgres-k8s/src/stream/src/main/docker/stackgres-stream.native.sh
+#  stream-native-image: &stream-native-image
+#    <<: *operator-native-image
+#    path: stackgres-k8s/src/stream
+#    dockerfile:
+#      <<: *native-image-dockerfile
+#      path: stackgres-k8s/src/stream/src/main/docker/Dockerfile.native
+#      args:
+#        <<: *native-image-args
+#        STACKGRES_VERSION: $(sh stackgres-k8s/ci/build/version.sh stream)
+#        BUILD_HASH: $(sh stackgres-k8s/ci/build/build-functions.sh get_module_hash "$MODULE")
+#    artifacts: &stream-native-image-artifacts
+#      0: stackgres-k8s/src/stream/src/main/docker/LICENCE
+#      1: stackgres-k8s/src/stream/target/stackgres-stream-runner
+#      2: stackgres-k8s/src/stream/src/main/docker/stackgres-stream.native.sh
   cluster-controller-native-image: &cluster-controller-native-image
     <<: *operator-native-image
     path: stackgres-k8s/src/cluster-controller
@@ -561,12 +561,12 @@ modules:
     artifacts:
       <<: *restapi-native-image-artifacts
       999: stackgres-k8s/src/restapi/pom.xml
-  stream-native-release-image:
-    <<: *stream-native-image
-    type: native-release-image
-    artifacts:
-      <<: *stream-native-image-artifacts
-      999: stackgres-k8s/src/stream/pom.xml
+#  stream-native-release-image:
+#    <<: *stream-native-image
+#    type: native-release-image
+#    artifacts:
+#      <<: *stream-native-image-artifacts
+#      999: stackgres-k8s/src/stream/pom.xml
   cluster-controller-native-release-image:
     <<: *cluster-controller-native-image
     type: native-release-image
