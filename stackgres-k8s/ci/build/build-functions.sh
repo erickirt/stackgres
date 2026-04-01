@@ -444,6 +444,7 @@ build_image() {
       local IMAGE_DIGEST
       IMAGE_DIGEST="$(find_image_digest "$IMAGE_NAME")"
       IMAGE_DIGEST="$(printf "$IMAGE_DIGEST" | cut -d = -f 2- | tr : -)"
+      docker_tag "$IMAGE_NAME" "$IMAGE_NAME-$IMAGE_DIGEST"
       docker_push "$IMAGE_NAME-$IMAGE_DIGEST"
     fi
   fi
