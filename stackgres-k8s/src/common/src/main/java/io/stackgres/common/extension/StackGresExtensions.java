@@ -26,11 +26,9 @@ import org.jooq.lambda.Seq;
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresExtensions {
 
-  @Valid
-  private List<StackGresExtensionPublisher> publishers;
+  private List<@Valid StackGresExtensionPublisher> publishers;
 
-  @Valid
-  private List<StackGresExtension> extensions;
+  private List<@Valid StackGresExtension> extensions;
 
   @JsonIgnore
   @AssertTrue(message = "elements of publishers must have a unique id.")

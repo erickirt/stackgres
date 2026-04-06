@@ -46,8 +46,7 @@ public class StackGresExtension {
   private List<String> tags;
 
   @NotEmpty(message = "versions is required and must not be empty")
-  @Valid
-  private List<StackGresExtensionVersion> versions;
+  private List<@Valid StackGresExtensionVersion> versions;
 
   private Map<String, String> channels;
 

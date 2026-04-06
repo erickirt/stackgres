@@ -30,8 +30,7 @@ public class StackGresExtensionVersion {
   private List<String> extraMounts;
 
   @NotEmpty(message = "availableFor is required and must not be empty")
-  @Valid
-  private List<StackGresExtensionVersionTarget> availableFor;
+  private List<@Valid StackGresExtensionVersionTarget> availableFor;
 
   public String getVersion() {
     return version;
