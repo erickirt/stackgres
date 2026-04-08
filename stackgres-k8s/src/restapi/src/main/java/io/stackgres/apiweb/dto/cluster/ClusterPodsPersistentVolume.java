@@ -19,6 +19,8 @@ public class ClusterPodsPersistentVolume {
 
   private String volumeAttributesClassName;
 
+  private ClusterPodsPersistentVolumeIoLimits ioLimits;
+
   private String fsGroupChangePolicy;
 
   public void setStorageClass(String storageClass) {
@@ -43,6 +45,14 @@ public class ClusterPodsPersistentVolume {
 
   public void setVolumeAttributesClassName(String volumeAttributesClassName) {
     this.volumeAttributesClassName = volumeAttributesClassName;
+  }
+
+  public ClusterPodsPersistentVolumeIoLimits getIoLimits() {
+    return ioLimits;
+  }
+
+  public void setIoLimits(ClusterPodsPersistentVolumeIoLimits ioLimits) {
+    this.ioLimits = ioLimits;
   }
 
   public String getFsGroupChangePolicy() {

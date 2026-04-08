@@ -39,6 +39,7 @@ public class ClusterControllerReconciliator
   private final ClusterExtensionReconciliator extensionReconciliator;
   private final PgBouncerReconciliator pgbouncerReconciliator;
   private final ClusterPersistentVolumeSizeReconciliator pvcSizeReconciliator;
+  private final IoLimitsReconciliator ioLimitsReconciliator;
   private final PatroniReconciliator patroniReconciliator;
   private final ManagedSqlReconciliator managedSqlReconciliator;
   private final SslReconciliator sslReconciliator;
@@ -59,6 +60,7 @@ public class ClusterControllerReconciliator
     this.extensionReconciliator = parameters.extensionReconciliator;
     this.pgbouncerReconciliator = parameters.pgbouncerReconciliator;
     this.pvcSizeReconciliator = parameters.clusterPersistentVolumeSizeReconciliator;
+    this.ioLimitsReconciliator = parameters.ioLimitsReconciliator;
     this.patroniReconciliator = parameters.patroniReconciliator;
     this.managedSqlReconciliator = parameters.managedSqlReconciliator;
     this.sslReconciliator = parameters.sslReconciliator;
@@ -83,6 +85,7 @@ public class ClusterControllerReconciliator
     this.extensionReconciliator = null;
     this.pgbouncerReconciliator = null;
     this.pvcSizeReconciliator = null;
+    this.ioLimitsReconciliator = null;
     this.patroniReconciliator = null;
     this.managedSqlReconciliator = null;
     this.sslReconciliator = null;
@@ -129,27 +132,31 @@ public class ClusterControllerReconciliator
       cluster.getStatus().getPodStatuses().add(podStatus);
     }
 
-    ReconciliationResult<Boolean> postgresBootstrapReconciliatorResult =
+    var postgresBootstrapReconciliatorResult =
         postgresBootstrapReconciliator.reconcile(client, context);
-    ReconciliationResult<Boolean> extensionReconciliationResult =
+    var extensionReconciliationResult =
         extensionReconciliator.reconcile(client, context);
-    ReconciliationResult<Void> pgbouncerReconciliationResult =
+    var pgbouncerReconciliationResult =
         pgbouncerReconciliator.reconcile(client, context);
-    ReconciliationResult<Boolean> patroniReconciliationResult =
+    var pvcSizeReconciliatorResult =
+        pvcSizeReconciliator.reconcile(client, propertyContext);
+    var ioLimitsReconciliatorResult =
+        ioLimitsReconciliator.reconcile(client, context);
+    var patroniReconciliationResult =
         patroniReconciliator.reconcile(client, context);
-    ReconciliationResult<Boolean> managedSqlReconciliationResult =
+    var managedSqlReconciliationResult =
         managedSqlReconciliator.reconcile(client, context);
-    ReconciliationResult<Void> postgresSslReconciliationResult =
+    var postgresSslReconciliationResult =
         sslReconciliator.reconcile(client, context);
-    ReconciliationResult<Void> patroniStandbyReconciliatorResult =
+    var patroniStandbyReconciliatorResult =
         patroniStandbyReconciliator.reconcile(client, context);
-    ReconciliationResult<Void> patroniConfigReconciliationResult =
+    var patroniConfigReconciliationResult =
         patroniConfigReconciliator.reconcile(client, context);
-    ReconciliationResult<Void> patroniMajorVersionUpgradeReconciliatorResult =
+    var patroniMajorVersionUpgradeReconciliatorResult =
         patroniMajorVersionUpgradeReconciliator.reconcile(client, context);
-    ReconciliationResult<Void> patroniBackupFailoverRestartReconciliatorResult =
+    var patroniBackupFailoverRestartReconciliatorResult =
         patroniBackupFailoverRestartReconciliator.reconcile(client, context);
-    ReconciliationResult<Void> patroniOperationReconciliatorResult =
+    var patroniOperationReconciliatorResult =
         patroniOperationReconciliator.reconcile(client, context);
 
     StackGresCluster updatedCluster = cluster;
@@ -188,8 +195,6 @@ public class ClusterControllerReconciliator
           }));
     }
 
-    var pvcSizeReconciliatorResult = pvcSizeReconciliator.reconcile(client, propertyContext);
-
     var result = postgresBootstrapReconciliatorResult
         .join(extensionReconciliationResult)
         .join(pgbouncerReconciliationResult)
@@ -201,7 +206,8 @@ public class ClusterControllerReconciliator
         .join(patroniMajorVersionUpgradeReconciliatorResult)
         .join(patroniBackupFailoverRestartReconciliatorResult)
         .join(patroniOperationReconciliatorResult)
-        .join(pvcSizeReconciliatorResult);
+        .join(pvcSizeReconciliatorResult)
+        .join(ioLimitsReconciliatorResult);
     if (result.success()) {
       writeCustomResource(logger, objectMapper, updatedCluster);
     }
@@ -248,6 +254,7 @@ public class ClusterControllerReconciliator
     @Inject PgBouncerReconciliator pgbouncerReconciliator;
     @Inject ClusterControllerPropertyContext propertyContext;
     @Inject ClusterPersistentVolumeSizeReconciliator clusterPersistentVolumeSizeReconciliator;
+    @Inject IoLimitsReconciliator ioLimitsReconciliator;
     @Inject PatroniReconciliator patroniReconciliator;
     @Inject ManagedSqlReconciliator managedSqlReconciliator;
     @Inject SslReconciliator sslReconciliator;

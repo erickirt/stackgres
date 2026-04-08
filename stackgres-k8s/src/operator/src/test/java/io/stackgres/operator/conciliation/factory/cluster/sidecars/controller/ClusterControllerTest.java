@@ -5,19 +5,29 @@
 
 package io.stackgres.operator.conciliation.factory.cluster.sidecars.controller;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Map;
+
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.stackgres.common.ClusterControllerProperty;
 import io.stackgres.common.ClusterPath;
 import io.stackgres.common.StackGresContainer;
+import io.stackgres.common.StackGresContext;
 import io.stackgres.common.StackGresModules;
 import io.stackgres.common.StackGresVolume;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
+import io.stackgres.common.crd.sgcluster.StackGresClusterPodsPersistentVolumeIoLimitsBuilder;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgprofile.StackGresProfile;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
+import io.stackgres.operator.conciliation.factory.CgroupMounts;
 import io.stackgres.operator.conciliation.factory.PostgresDataMounts;
 import io.stackgres.operator.conciliation.factory.PostgresSocketMounts;
 import io.stackgres.operator.conciliation.factory.UserOverrideMounts;
@@ -42,12 +52,15 @@ class ClusterControllerTest {
   @Mock
   private PostgresSocketMounts postgresSocketMounts;
 
+  @Mock
+  private CgroupMounts cgroupMounts;
+
   private ClusterController clusterController;
 
   @BeforeEach
   void setUp() {
     clusterController = new ClusterController(
-        postgresDataMounts, userOverrideMounts, postgresSocketMounts);
+        postgresDataMounts, userOverrideMounts, postgresSocketMounts, cgroupMounts);
   }
 
   @Test
@@ -132,6 +145,93 @@ class ClusterControllerTest {
         container.getVolumeMounts().stream()
             .anyMatch(vm -> vm.getMountPath().equals(ClusterPath.PATRONI_CONFIG_PATH.path())),
         "Should contain patroni config mount path");
+  }
+
+  @Test
+  void getContainer_whenIoLimitsSet_shouldSetApplyIoLimitsEnvVarToTrue() {
+    ClusterContainerContext context = getClusterContainerContext();
+    context.getClusterContext().getCluster().getSpec().getPods()
+        .getPersistentVolume().setIoLimits(
+            new StackGresClusterPodsPersistentVolumeIoLimitsBuilder()
+            .withReadIops(100)
+            .build());
+
+    Container container = clusterController.getContainer(context);
+
+    String applyIoLimitsValue = container.getEnv().stream()
+        .filter(env -> env.getName().equals(
+            ClusterControllerProperty.CLUSTER_CONTROLLER_APPLY_IO_LIMITS
+                .getEnvironmentVariableName()))
+        .findFirst()
+        .orElseThrow()
+        .getValue();
+    Assertions.assertEquals(Boolean.TRUE.toString(), applyIoLimitsValue);
+  }
+
+  @Test
+  void getContainer_whenNoIoLimitsSet_shouldSetApplyIoLimitsEnvVarToFalse() {
+    ClusterContainerContext context = getClusterContainerContext();
+
+    Container container = clusterController.getContainer(context);
+
+    String applyIoLimitsValue = container.getEnv().stream()
+        .filter(env -> env.getName().equals(
+            ClusterControllerProperty.CLUSTER_CONTROLLER_APPLY_IO_LIMITS
+                .getEnvironmentVariableName()))
+        .findFirst()
+        .orElseThrow()
+        .getValue();
+    Assertions.assertEquals(Boolean.FALSE.toString(), applyIoLimitsValue);
+  }
+
+  @Test
+  void getContainer_whenIoLimitsSet_shouldIncludeCgroupVolumeMounts() {
+    when(cgroupMounts.getVolumeMounts(any()))
+        .thenReturn(List.of(
+            new VolumeMountBuilder()
+                .withName(StackGresVolume.CGROUP.getName())
+                .withMountPath(ClusterPath.HOST_CGROUP_PATH.path())
+                .build()));
+    ClusterContainerContext context = getClusterContainerContext();
+    context.getClusterContext().getCluster().getSpec().getPods()
+        .getPersistentVolume().setIoLimits(
+            new StackGresClusterPodsPersistentVolumeIoLimitsBuilder()
+            .withReadIops(100)
+            .build());
+
+    Container container = clusterController.getContainer(context);
+
+    Assertions.assertTrue(
+        container.getVolumeMounts().stream()
+            .map(VolumeMount::getName)
+            .anyMatch(name -> name.equals(StackGresVolume.CGROUP.getName())),
+        "Should contain cgroup volume mount when IO limits are set");
+  }
+
+  @Test
+  void getContainer_whenNoIoLimitsSet_shouldNotIncludeCgroupVolumeMounts() {
+    ClusterContainerContext context = getClusterContainerContext();
+
+    Container container = clusterController.getContainer(context);
+
+    Assertions.assertFalse(
+        container.getVolumeMounts().stream()
+            .map(VolumeMount::getName)
+            .anyMatch(name -> name.equals(StackGresVolume.CGROUP.getName())),
+        "Should not contain cgroup volume mount when IO limits are not set");
+  }
+
+  @Test
+  void getComponentVersions_shouldReturnClusterControllerVersion() {
+    ClusterContainerContext context = getClusterContainerContext();
+
+    Map<String, String> versions = clusterController.getComponentVersions(context);
+
+    Assertions.assertTrue(
+        versions.containsKey(StackGresContext.CLUSTER_CONTROLLER_VERSION_KEY));
+    Assertions.assertEquals(
+        StackGresModules.CLUSTER_CONTROLLER.getVersion(),
+        versions.get(StackGresContext.CLUSTER_CONTROLLER_VERSION_KEY));
   }
 
   private ClusterContainerContext getClusterContainerContext() {

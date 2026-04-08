@@ -27,7 +27,6 @@ import io.stackgres.common.crd.sgprofile.StackGresProfile;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
 import io.stackgres.operator.conciliation.factory.TemplatesMounts;
-import io.stackgres.operator.conciliation.factory.UserOverrideMounts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,9 +42,6 @@ class SetupFilesystemTest {
   @Mock
   private TemplatesMounts templateMounts;
 
-  @Mock
-  private UserOverrideMounts containerUserOverrideMounts;
-
   private SetupFilesystem setupFilesystem;
 
   private StackGresCluster cluster;
@@ -53,7 +49,7 @@ class SetupFilesystemTest {
   @BeforeEach
   void setUp() {
     setupFilesystem = new SetupFilesystem(
-        postgresExtensionsMounts, templateMounts, containerUserOverrideMounts);
+        postgresExtensionsMounts, templateMounts);
     cluster = Fixtures.cluster().loadDefault().get();
 
     lenient().when(postgresExtensionsMounts.getDerivedEnvVars(any()))
