@@ -39,11 +39,9 @@ public class StackGresProfileSpec {
   @Valid
   private StackGresProfileHugePages hugePages;
 
-  @Valid
-  private Map<String, StackGresProfileContainer> containers;
+  private Map<String, @Valid StackGresProfileContainer> containers;
 
-  @Valid
-  private Map<String, StackGresProfileContainer> initContainers;
+  private Map<String, @Valid StackGresProfileContainer> initContainers;
 
   @Valid
   private StackGresProfileRequests requests;

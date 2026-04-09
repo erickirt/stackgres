@@ -61,28 +61,22 @@ public class StackGresClusterPods {
   @Valid
   private StackGresClusterPodsScheduling scheduling;
 
-  private List<@Valid CustomVolume> customVolumes;
+  private List<CustomVolume> customVolumes;
 
-  private List<@Valid CustomContainer> customContainers;
+  private List<CustomContainer> customContainers;
 
-  private List<@Valid CustomContainer> customInitContainers;
+  private List<CustomContainer> customInitContainers;
 
-  @Valid
   private Map<String, List<CustomVolumeMount>> customVolumeMounts;
 
-  @Valid
   private Map<String, List<CustomVolumeMount>> customInitVolumeMounts;
 
-  @Valid
   private Map<String, List<CustomEnvVar>> customEnv;
 
-  @Valid
   private Map<String, List<CustomEnvVar>> customInitEnv;
 
-  @Valid
   private Map<String, List<CustomEnvFromSource>> customEnvFrom;
 
-  @Valid
   private Map<String, List<CustomEnvFromSource>> customInitEnvFrom;
 
   private Long terminationGracePeriodSeconds;

@@ -13,7 +13,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.StackGresUtil;
 import io.sundr.builder.annotations.Buildable;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
 @RegisterForReflection
@@ -27,10 +26,8 @@ public class StackGresPoolingConfigPgBouncerPgbouncerIni {
   @NotNull(message = "pgbouncer should not be null")
   private Map<String, String> pgbouncer;
 
-  @Valid
   private Map<String, Map<String, String>> databases;
 
-  @Valid
   private Map<String, Map<String, String>> users;
 
   public Map<String, String> getPgbouncer() {

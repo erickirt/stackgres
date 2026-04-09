@@ -27,11 +27,9 @@ public class StackGresProfileRequests {
 
   private String memory;
 
-  @Valid
-  private Map<String, StackGresProfileContainer> containers;
+  private Map<String, @Valid StackGresProfileContainer> containers;
 
-  @Valid
-  private Map<String, StackGresProfileContainer> initContainers;
+  private Map<String, @Valid StackGresProfileContainer> initContainers;
 
   public String getCpu() {
     return cpu;

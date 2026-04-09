@@ -66,9 +66,8 @@ public class StackGresClusterSpec {
   @Valid
   private StackGresClusterDistributedLogs distributedLogs;
 
-  @Valid
   @Deprecated(forRemoval = true)
-  private List<StackGresClusterInstalledExtension> toInstallPostgresExtensions;
+  private List<@Valid StackGresClusterInstalledExtension> toInstallPostgresExtensions;
 
   @Valid
   private StackGresClusterNonProduction nonProductionOptions;

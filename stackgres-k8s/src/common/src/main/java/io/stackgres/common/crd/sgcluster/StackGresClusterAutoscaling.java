@@ -39,11 +39,9 @@ public class StackGresClusterAutoscaling {
 
   private Integer maxInstances;
 
-  @Valid
-  private Map<String, StackGresClusterAutoscalingVerticalBound> minAllowed;
+  private Map<String, @Valid StackGresClusterAutoscalingVerticalBound> minAllowed;
 
-  @Valid
-  private Map<String, StackGresClusterAutoscalingVerticalBound> maxAllowed;
+  private Map<String, @Valid StackGresClusterAutoscalingVerticalBound> maxAllowed;
 
   private StackGresClusterAutoscalingHorizontal horizontal;
 

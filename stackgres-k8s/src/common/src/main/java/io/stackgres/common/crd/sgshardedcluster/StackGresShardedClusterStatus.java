@@ -40,9 +40,8 @@ public class StackGresShardedClusterStatus {
 
   private List<@Valid StackGresShardedClusterClusterStatus> clusterStatuses;
 
-  @Valid
   @Deprecated(forRemoval = true)
-  private List<StackGresClusterInstalledExtension> toInstallPostgresExtensions;
+  private List<@Valid StackGresClusterInstalledExtension> toInstallPostgresExtensions;
 
   @Valid
   private StackGresClusterServiceBindingStatus binding;
