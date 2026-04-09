@@ -5,7 +5,7 @@ e2e_test_install() {
 
   install_prometheus_operator
 
-  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "$(( 1 + ${E2E_PGBENCH_CITUS_SHARDS:-2} ))" 1 \
+  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "$(( 1 + ${E2E_PGBENCH_CITUS_SHARDS:-2} + ${E2E_PGBENCH_CITUS_QUERY_ROUTERS:-0} ))" 1 \
     --set-string instanceProfiles[0].name=size-s \
     --set-string instanceProfiles[0].cpu=500m \
     --set-string instanceProfiles[0].memory=2Gi \
@@ -20,6 +20,32 @@ e2e_test_install() {
     --set-string 'configurations.postgresconfig.postgresql\.conf.citus\.force_max_query_parallelization='"${E2E_PGBENCH_CITUS_FORCE_MAX_QUERY_PARALLELIZATION:-off}" \
     --set-string 'configurations.poolingconfig.pgBouncer.pgbouncer\.ini.default_pool_size='"${E2E_PGBENCH_DEFAULT_POOL_SIZE:-100}" \
     --set-string 'cluster.autoscaling.mode=none'
+
+  kubectl patch sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --type merge -p 'spec: { coordinator: { managedSql: { scripts: [ { sgScript: set-query-routers } ] } } }'
+
+  cat << EOF | kubectl create -f -
+apiVersion: stackgres.io/v1
+kind: SGScript
+metadata:
+  namespace: "$CLUSTER_NAMESPACE"
+  name: set-query-routers
+spec:
+  scripts:
+  - database: citus
+    retryOnError: true
+    script: |
+      DO \$\$BEGIN
+        SELECT citus_set_node_property(nodename, nodeport, 'shouldhaveshards', false)
+        FROM pg_dist_node
+        WHERE groupid IN (SELECT generate_series($((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2})), $((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2} + ${E2E_PGBENCH_CITUS_QUERY_ROUTERS:-0} - 1))));
+
+        IF ${E2E_PGBENCH_CITUS_QUERY_ROUTERS:-0} <> (SELECT COUNT(*)
+            FROM pg_dist_node
+            WHERE groupid IN (SELECT generate_series($((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2})), $((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2} + ${E2E_PGBENCH_CITUS_QUERY_ROUTERS:-0} - 1))))) THEN
+          RAISE EXCEPTION 'Still not reached the expected number of query routers, retry later';
+        END IF;
+      END\$\$;
+EOF
 
   deploy_psql_pod "$CLUSTER_NAMESPACE"
 
@@ -115,7 +141,7 @@ benchmark_cluster() {
              VALUES (:tid, :bid, :aid, :delta, CURRENT_TIMESTAMP);
            END;
       ' > /tmp/script"
-  if [ "$E2E_PGBENCH_CITUS_USE_AGGREGATED_QUERIES" = true ]
+  if [ "$E2E_PGBENCH_CITUS_MODE" = aggregated_queries ]
   then
     kubectl exec -n "$CLUSTER_NAMESPACE" psql -q\
       -- bash -c "printf %s '
@@ -123,12 +149,24 @@ benchmark_cluster() {
             SELECT max(abalance) FROM pgbench_accounts;
             END;
         ' > /tmp/script2"
+  elif [ "$E2E_PGBENCH_CITUS_MODE" = copy ]
+  then
+    kubectl exec -n "$CLUSTER_NAMESPACE" psql -q\
+      -- bash -c "printf %s '
+            BEGIN;
+            \set bid random(1, 1 * :scale - 100000)
+            \set tid (:bid - 1) * 10 + random(1, 100000)
+            \set aid (:bid - 1) * 100000 + random(1, 100000)
+            \set delta random(-5000, 5000)
+            COPY (SELECT bid, :tid, :aid, :delta FROM generate_series(:bid, :bid + 100000) AS bid ) TO pgbench_history;
+            END;
+        ' > /tmp/script2"
   fi
   kubectl exec -n "$CLUSTER_NAMESPACE" psql -q\
     -- env PGPASSWORD="$PGPASSWORD" pgbench -T "$((E2E_TIMEOUT / 2))" -d citus \
     -C -c 20 -j 20 \
     --file=/tmp/script@100 \
-    $([ "$E2E_PGBENCH_CITUS_USE_AGGREGATED_QUERIES" != true ] || printf %s "--file=/tmp/script2@${E2E_PGBENCH_CITUS_AGGREGATED_QUERIES_WEIGHT:-10}") \
+    $([ "$E2E_PGBENCH_CITUS_MODE" != aggregated_queries ] || printf %s "--file=/tmp/script2@${E2E_PGBENCH_CITUS_AGGREGATED_QUERIES_WEIGHT:-10}") \
     --progress=5 \
     --log --log-prefix=/tmp/pgbench_log \
     --failures-detailed \
