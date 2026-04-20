@@ -31,6 +31,8 @@ public class ConfigSpec {
 
   private Boolean disableCrdsAndWebhooksUpdate;
 
+  private Boolean enableConversionWebhooks;
+
   private Boolean allowImpersonationForRestApi;
 
   private String sgConfigNamespace;
@@ -119,6 +121,14 @@ public class ConfigSpec {
 
   public void setDisableCrdsAndWebhooksUpdate(Boolean disableCrdsAndWebhooksUpdate) {
     this.disableCrdsAndWebhooksUpdate = disableCrdsAndWebhooksUpdate;
+  }
+
+  public Boolean getEnableConversionWebhooks() {
+    return enableConversionWebhooks;
+  }
+
+  public void setEnableConversionWebhooks(Boolean enableConversionWebhooks) {
+    this.enableConversionWebhooks = enableConversionWebhooks;
   }
 
   public Boolean getAllowImpersonationForRestApi() {

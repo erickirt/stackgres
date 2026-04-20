@@ -38,6 +38,8 @@ public class StackGresConfigSpec {
 
   private Boolean disableCrdsAndWebhooksUpdate;
 
+  private Boolean enableConversionWebhooks;
+
   private Boolean allowImpersonationForRestApi;
 
   private String sgConfigNamespace;
@@ -126,6 +128,14 @@ public class StackGresConfigSpec {
 
   public void setDisableCrdsAndWebhooksUpdate(Boolean disableCrdsAndWebhooksUpdate) {
     this.disableCrdsAndWebhooksUpdate = disableCrdsAndWebhooksUpdate;
+  }
+
+  public Boolean getEnableConversionWebhooks() {
+    return enableConversionWebhooks;
+  }
+
+  public void setEnableConversionWebhooks(Boolean enableConversionWebhooks) {
+    this.enableConversionWebhooks = enableConversionWebhooks;
   }
 
   public Boolean getAllowImpersonationForRestApi() {
@@ -268,9 +278,9 @@ public class StackGresConfigSpec {
   public int hashCode() {
     return Objects.hash(adminui, allowImpersonationForRestApi, allowedNamespaceLabelSelector,
         allowedNamespaces, authentication, cert, collector, containerRegistry, deploy, developer,
-        disableClusterRole, disableCrdsAndWebhooksUpdate, extensions, grafana, imagePullPolicy,
-        imagePullSecrets, jobs, operator, prometheus, rbac, restapi, serviceAccount,
-        sgConfigNamespace, shardingSphere);
+        disableClusterRole, disableCrdsAndWebhooksUpdate, enableConversionWebhooks, extensions,
+        grafana, imagePullPolicy, imagePullSecrets, jobs, operator, prometheus, rbac, restapi,
+        serviceAccount, sgConfigNamespace, shardingSphere);
   }
 
   @Override
@@ -292,6 +302,7 @@ public class StackGresConfigSpec {
         && Objects.equals(deploy, other.deploy) && Objects.equals(developer, other.developer)
         && Objects.equals(disableClusterRole, other.disableClusterRole)
         && Objects.equals(disableCrdsAndWebhooksUpdate, other.disableCrdsAndWebhooksUpdate)
+        && Objects.equals(enableConversionWebhooks, other.enableConversionWebhooks)
         && Objects.equals(extensions, other.extensions) && Objects.equals(grafana, other.grafana)
         && Objects.equals(imagePullPolicy, other.imagePullPolicy)
         && Objects.equals(imagePullSecrets, other.imagePullSecrets)
