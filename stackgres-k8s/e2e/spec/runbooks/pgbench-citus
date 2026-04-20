@@ -19,7 +19,8 @@ e2e_test_install() {
     --set-string 'configurations.postgresconfig.postgresql\.conf.citus\.max_cached_conns_per_worker='"${E2E_PGBENCH_CITUS_MAX_CACHED_CONNS_PER_WORKER:-1}" \
     --set-string 'configurations.postgresconfig.postgresql\.conf.citus\.force_max_query_parallelization='"${E2E_PGBENCH_CITUS_FORCE_MAX_QUERY_PARALLELIZATION:-off}" \
     --set-string 'configurations.poolingconfig.pgBouncer.pgbouncer\.ini.default_pool_size='"${E2E_PGBENCH_DEFAULT_POOL_SIZE:-100}" \
-    --set-string 'cluster.autoscaling.mode=none'
+    --set-string 'cluster.autoscaling.mode=none' \
+    --set-string 'cluster.extensions[0].name=pg_cron'
 
   kubectl patch sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --type merge -p 'spec: { coordinator: { managedSql: { scripts: [ { sgScript: set-query-routers } ] } } }'
 
@@ -31,20 +32,37 @@ metadata:
   name: set-query-routers
 spec:
   scripts:
-  - database: citus
-    retryOnError: true
+  - retryOnError: true
     script: |
-      DO \$\$BEGIN
-        SELECT citus_set_node_property(nodename, nodeport, 'shouldhaveshards', false)
-        FROM pg_dist_node
-        WHERE groupid IN (SELECT generate_series($((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2})), $((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2} + ${E2E_PGBENCH_CITUS_QUERY_ROUTERS:-0} - 1))));
-
-        IF ${E2E_PGBENCH_CITUS_QUERY_ROUTERS:-0} <> (SELECT COUNT(*)
-            FROM pg_dist_node
-            WHERE groupid IN (SELECT generate_series($((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2})), $((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2} + ${E2E_PGBENCH_CITUS_QUERY_ROUTERS:-0} - 1))))) THEN
-          RAISE EXCEPTION 'Still not reached the expected number of query routers, retry later';
+      CREATE EXTENSION IF NOT EXISTS pg_cron;
+      DO \$setup\$BEGIN
+        IF EXISTS (SELECT * FROM cron.job WHERE jobname = 'update-query-routers-flags') THEN
+          SELECT alter_schedule(
+            jobid,
+            '30 seconds',
+            \$sql\$
+              DO \$\$BEGIN
+                SELECT citus_set_node_property(nodename, nodeport, 'shouldhaveshards', false)
+                FROM pg_dist_node
+                WHERE shouldhaveshards AND groupid IN (SELECT generate_series($((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2})), $((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2} + ${E2E_PGBENCH_CITUS_QUERY_ROUTERS:-0} - 1))));
+              END\$\$
+            \$sql\$,
+            'citus')
+          FROM cron.job WHERE jobname = 'update-query-routers-flags';
+        ELSE
+          SELECT cron_schedule(
+            'update-query-routers-flags',
+            '30 seconds',
+            \$sql\$
+              DO \$\$BEGIN
+                SELECT citus_set_node_property(nodename, nodeport, 'shouldhaveshards', false)
+                FROM pg_dist_node
+                WHERE shouldhaveshards AND groupid IN (SELECT generate_series($((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2})), $((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2} + ${E2E_PGBENCH_CITUS_QUERY_ROUTERS:-0} - 1))));
+              END\$\$
+            \$sql\$,
+            'citus');
         END IF;
-      END\$\$;
+      END\$setup\$;
 EOF
 
   deploy_psql_pod "$CLUSTER_NAMESPACE"
