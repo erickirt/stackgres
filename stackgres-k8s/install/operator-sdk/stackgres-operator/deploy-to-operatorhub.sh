@@ -6,5 +6,6 @@ FORK_GIT_URL="${FORK_GIT_URL:-$1}"
 PROJECT_NAME="stackgres"
 DO_PIN_IMAGES=false
 PREVIOUS_VERSION=none
+DO_ONBOARD_FBC=false
 
 . "$(dirname "$0")/deploy.sh"
