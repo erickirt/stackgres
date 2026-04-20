@@ -332,6 +332,19 @@ Finally delete the SGConfig StackGres custom resource:
 kubectl delete sgconfig -n openshift-operators stackgres
 ```
 
+#### Uninstall operator using OpenShift Web Console
+
+This operation can be also performed on OpenShift 4.x using the OpenShift Web Console
+by uninstalling the StackGres operator from the "Ecosystem > Installed Operators" section
+as showed in the image below:
+
+![Uninstall operator from the OpenShift Web Console](operator-hub-openshift-uninstall-operator.jpeg)
+
+The OpenShift Web Console offers the ability to also remove all the StackGres custom resources
+by checking the "" checkbox:
+
+![Delete all operand instances](operator-hub-openshift-uninstall-delete-all-operand-instances.jpeg)
+
 ## Cleanup unnamespaced resources
 
 Follow this section in order to remove unnamespaced resources.
