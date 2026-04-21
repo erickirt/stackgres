@@ -134,15 +134,6 @@ spec:
 EOF
 ```
 
-> Alternatively you may install the StackGres Operator from the OpenShift Web Console by following these steps:
->
-> 1. Search the StackGres Operator from the OperatorHub tab
-     >     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-install.jpeg)
-> 2. After selecting it click on the "Install" button
-     >     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-install-2.jpeg)
-> 3. Then use the default setting and click on the "Install" button
-     >     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-install-3.jpeg)
-
 To proceed with the installation follow the same steps as already explained in the [Installation via OperatorHub](#installation-via-operatorhub) but replacing the namespace with `openshift-operators`:
 
 ```shell
@@ -241,4 +232,3 @@ Follow the same steps as explained in the [Migrate from global to scoped install
 >     ![Do NOT select "Delete all operand instances for this operator"](operator-hub-openshift-migration-global-scoped-uninstall-detail.jpeg)
 
 > **IMPORTANT** If the namespace of the scoped operator installation changed you MUST also remove the `SGConfig` resource present in the namespace of the global operator before the uninstallation of the global operator.
-
