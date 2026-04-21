@@ -20,7 +20,10 @@ e2e_test_install() {
     --set-string 'configurations.postgresconfig.postgresql\.conf.citus\.force_max_query_parallelization='"${E2E_PGBENCH_CITUS_FORCE_MAX_QUERY_PARALLELIZATION:-off}" \
     --set-string 'configurations.poolingconfig.pgBouncer.pgbouncer\.ini.default_pool_size='"${E2E_PGBENCH_DEFAULT_POOL_SIZE:-100}" \
     --set-string 'cluster.autoscaling.mode=none' \
-    --set-string 'cluster.extensions[0].name=pg_cron'
+    --set-string 'configurations.postgresconfig.postgresql\.conf.cron\.database_name=postgres' \
+    --set-string 'configurations.postgresconfig.postgresql\.conf.cron\.host=/var/run/postgresql' \
+    --set-string 'configurations.postgresconfig.postgresql\.conf.shared_preload_libraries=pg_cron' \
+    --set-string 'cluster.postgres.extensions[0].name=pg_cron'
 
   kubectl patch sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --type merge -p 'spec: { coordinator: { managedSql: { scripts: [ { sgScript: set-query-routers } ] } } }'
 
@@ -37,12 +40,12 @@ spec:
       CREATE EXTENSION IF NOT EXISTS pg_cron;
       DO \$setup\$BEGIN
         IF EXISTS (SELECT * FROM cron.job WHERE jobname = 'update-query-routers-flags') THEN
-          SELECT alter_schedule(
+          PERFORM cron.alter_job(
             jobid,
             '30 seconds',
             \$sql\$
               DO \$\$BEGIN
-                SELECT citus_set_node_property(nodename, nodeport, 'shouldhaveshards', false)
+                PERFORM citus_set_node_property(nodename, nodeport, 'shouldhaveshards', false)
                 FROM pg_dist_node
                 WHERE shouldhaveshards AND groupid IN (SELECT generate_series($((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2})), $((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2} + ${E2E_PGBENCH_CITUS_QUERY_ROUTERS:-0} - 1))));
               END\$\$
@@ -50,12 +53,12 @@ spec:
             'citus')
           FROM cron.job WHERE jobname = 'update-query-routers-flags';
         ELSE
-          SELECT cron_schedule(
+          PERFORM cron.schedule_in_database(
             'update-query-routers-flags',
             '30 seconds',
             \$sql\$
               DO \$\$BEGIN
-                SELECT citus_set_node_property(nodename, nodeport, 'shouldhaveshards', false)
+                PERFORM citus_set_node_property(nodename, nodeport, 'shouldhaveshards', false)
                 FROM pg_dist_node
                 WHERE shouldhaveshards AND groupid IN (SELECT generate_series($((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2})), $((1 + ${E2E_PGBENCH_CITUS_SHARDS:-2} + ${E2E_PGBENCH_CITUS_QUERY_ROUTERS:-0} - 1))));
               END\$\$
