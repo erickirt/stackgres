@@ -36,3 +36,19 @@ Upgrading an operator serves two purposes:
 * Operator upgrade: to upgrade to another version of the operator
 
 After upgrading the operator have a look at the [following steps]({{% relref "16-upgrade#following-steps-after-operator-upgrade" %}}).
+
+#### Upgrade via OpenShift Web Console
+
+Alternatively you may install the StackGres Operator from the OpenShift Web Console by following these steps:
+
+1. Search the StackGres Operator from the OperatorHub tab and click on the "upgrade available" link:
+
+>     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-upgrade.jpeg)
+
+2. Click on the "Preview InstallPlan" button
+
+>     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-upgrade-2.jpeg)
+
+3. Review the install plan and click on the "Approve" button
+
+>     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-upgrade-3.jpeg)

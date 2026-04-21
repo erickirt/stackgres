@@ -120,7 +120,7 @@ EOF
 > 3. Then use the default setting and click on the "Install" button
      >     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-install-3.jpeg)
 
-To proceed with the installation you will have to patch the `InstallPlan` that has been created by the OLM operator:
+To proceed with the installation follow the same steps as already explained in the [Installation via OperatorHub](#installation-via-operatorhub) but replacing the namespace with `openshift-operators`:
 
 ```
 kubectl get -n openshift-operators installplan -o name \
@@ -166,4 +166,48 @@ EOF
 ```
 kubectl get service -n openshift-operators stackgres-restapi --template '{{ (index .spec.ports 0).nodePort }}{{ printf "\n" }}'
 ```
+
+#### Installation via OpenShift Web Console
+
+Alternatively you may install the StackGres Operator from the OpenShift Web Console by following these steps:
+
+1. Search the StackGres Operator from the OperatorHub tab
+
+>     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-install.jpeg)
+
+2. After selecting it click on the "Install" button
+
+>     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-install-2.jpeg)
+
+3. Then use the All namespaces or specific namespace installation mode (depending on your requirements), set the manual update approval option and click on the "Install" button
+
+>     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-install-3.jpeg)
+
+4. Accept the installation plan by clicking on the "Approve" button
+
+>     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-install-4.jpeg)
+
+5. Optionally configure the Subscription by cliking on the "Edit Subscription" button and editing the YAML in the editor that will appear:
+
+>     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-install-5.jpeg)
+
+## Migrate from global to scoped installation
+
+When installing the operator you may chose to [install it globally or scoped to a set of namespaces](https://olm.operatorframework.io/docs/advanced-tasks/operator-scoping-with-operatorgroups) using OperatorGroup.
+
+In some cases you may need to migrate from a global operator installation to a scoped operator installation. The operation is as easy as uninstalling the global operator and re-installing it as a scoped operator. Before proceeding make sure to create a backup of the Subscription YAML in order to be able to recover the `config` section when re-installing it.
+
+> **IMPORTANT** If the namespace of the scoped operator installation changed you MUST also remove the `SGConfig` resource present in the namespace of the global operator before the uninstallation of the global operator.
+
+### Migrate from global to scoped installation on OpenShift 4.x
+
+Follow the same steps as explained in the [Migrate from global to scoped installation section](#migrate-from-global-to-scoped-installation).
+
+### Migrate from global to scoped installation via OpenShift Web Console
+
+1. From the OpenShift Web Console make sure that during uninstalling the global operator you do NOT check the box for "Delete all operand instances for this operator":
+
+>     ![Do NOT select "Delete all operand instances for this operator"](operator-hub-openshift-migration-global-scoped-uninstall-detail.jpeg)
+
+> **IMPORTANT** If the namespace of the scoped operator installation changed you MUST also remove the `SGConfig` resource present in the namespace of the global operator before the uninstallation of the global operator.
 
