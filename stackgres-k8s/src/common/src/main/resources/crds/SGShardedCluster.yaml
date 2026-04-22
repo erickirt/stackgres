@@ -13,7 +13,7 @@ spec:
     shortNames:
       - sgscl
   versions:
-  - name: v1alpha1
+  - name: v1beta1
     served: true
     storage: true
     additionalPrinterColumns:
@@ -162,7 +162,7 @@ spec:
                       **Exmaple:**
 
                       ``` yaml
-                      apiVersion: stackgres.io/v1alpha1
+                      apiVersion: stackgres.io/v1beta1
                       kind: SGShardedCluster
                       metadata:
                         name: stackgres
@@ -200,7 +200,7 @@ spec:
                       **Example:**
 
                       ```yaml
-                      apiVersion: stackgres.io/v1alpha1
+                      apiVersion: stackgres.io/v1beta1
                       kind: SGShardedCluster
                       metadata:
                         name: stackgres
@@ -564,7 +564,7 @@ spec:
                   **Example:**
 
                   ``` yaml
-                  apiVersion: stackgres.io/v1alpha1
+                  apiVersion: stackgres.io/v1beta1
                   kind: SGShardedCluster
                   metadata:
                     name: stackgres
@@ -921,7 +921,7 @@ spec:
                       **Example:**
 
                       ```yaml
-                      apiVersion: stackgres.io/v1alpha1
+                      apiVersion: stackgres.io/v1beta1
                       kind: SGShardedCluster
                       metadata:
                         name: stackgres
@@ -991,7 +991,7 @@ spec:
                       **Example:**
 
                       ```yaml
-                      apiVersion: stackgres.io/v1alpha1
+                      apiVersion: stackgres.io/v1beta1
                       kind: SGShardedCluster
                       metadata:
                         name: stackgres
@@ -1162,7 +1162,7 @@ spec:
                   From external instance and storage:
 
                   ```yaml
-                  apiVersion: stackgres.io/v1alpha1
+                  apiVersion: stackgres.io/v1beta1
                   kind: SGShardedCluster
                   metadata:
                     name: stackgres
@@ -3422,7 +3422,7 @@ spec:
                   **Example:**
 
                   ```yaml
-                  apiVersion: stackgres.io/v1alpha1
+                  apiVersion: stackgres.io/v1beta1
                   kind: SGShardedCluster
                   metadata:
                     name: stackgres

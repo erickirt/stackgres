@@ -52,7 +52,7 @@ DDP provides functions to manage data distribution across shards:
 Create the SGShardedCluster resource:
 
 ```yaml
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: cluster

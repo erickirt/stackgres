@@ -65,7 +65,7 @@ SELECT create_reference_table('geo_ips');
 Adding a new shard is simple - increase the `clusters` field value in the `shards` section:
 
 ```yaml
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: my-sharded-cluster
@@ -128,7 +128,7 @@ CALL alter_old_partitions_set_access_method(
 Create the SGShardedCluster resource:
 
 ```yaml
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: cluster

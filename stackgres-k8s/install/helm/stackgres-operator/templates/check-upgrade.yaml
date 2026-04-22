@@ -15,7 +15,7 @@
     {{ end }}
   {{ end }}
 {{ end }}
-{{ $shardedclusters := lookup "stackgres.io/v1alpha1" "SGShardedCluster" "" "" }}
+{{ $shardedclusters := lookup "stackgres.io/v1beta1" "SGShardedCluster" "" "" }}
 {{ if $shardedclusters }}
   {{ if $shardedclusters.items }}
     {{ range $shardedcluster := $shardedclusters.items }}

@@ -842,7 +842,7 @@ update_empty_distributedlogs() {
 
 create_empty_sharded_cluster() {
   cat << EOF > "$LOG_PATH/create-empty-sharded-cluster.yaml"
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: $CLUSTER_NAME
@@ -970,7 +970,7 @@ EOF
 
 update_empty_sharded_cluster() {
   cat << EOF > "$LOG_PATH/update-empty-sharded-cluster.yaml"
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: $CLUSTER_NAME
@@ -1045,7 +1045,7 @@ EOF
 
 create_sharded_cluster_with_previous_postgres_version() {
   cat << EOF > "$LOG_PATH/create-sharded-cluster-with-previous-postgres-version.yaml"
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: $CLUSTER_NAME

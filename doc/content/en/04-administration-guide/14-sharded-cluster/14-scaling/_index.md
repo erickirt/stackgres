@@ -24,7 +24,7 @@ SGShardedCluster supports multiple scaling dimensions:
 To add more shard clusters, increase the `clusters` value:
 
 ```yaml
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: my-sharded-cluster

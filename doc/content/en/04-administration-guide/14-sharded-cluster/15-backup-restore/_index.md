@@ -23,7 +23,7 @@ Each SGShardedBackup creates multiple underlying SGBackup resources (one per sha
 Before creating backups, configure object storage in your sharded cluster:
 
 ```yaml
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: my-sharded-cluster
@@ -74,7 +74,7 @@ spec:
 Configure automated backups in the sharded cluster spec:
 
 ```yaml
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: my-sharded-cluster
@@ -147,7 +147,7 @@ kubectl get sgbackup -l stackgres.io/shardedbackup-name=manual-backup
 To restore a sharded cluster from backup, create a new SGShardedCluster with restore configuration:
 
 ```yaml
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: restored-sharded-cluster
