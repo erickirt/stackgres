@@ -30,6 +30,8 @@ import jakarta.validation.constraints.AssertTrue;
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresShardedClusterCoordinator extends StackGresClusterSpec {
 
+  private String clusterName;
+
   @JsonProperty("configurations")
   @Valid
   private StackGresShardedClusterCoordinatorConfigurations configurationsForCoordinator;
@@ -96,6 +98,14 @@ public class StackGresShardedClusterCoordinator extends StackGresClusterSpec {
         || getInstances() > replicationForCoordinator.getSyncInstances();
   }
 
+  public String getClusterName() {
+    return clusterName;
+  }
+
+  public void setClusterName(String clusterName) {
+    this.clusterName = clusterName;
+  }
+
   public StackGresShardedClusterCoordinatorConfigurations getConfigurationsForCoordinator() {
     return configurationsForCoordinator;
   }
@@ -118,7 +128,8 @@ public class StackGresShardedClusterCoordinator extends StackGresClusterSpec {
   public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
-    result = prime * result + Objects.hash(configurationsForCoordinator, replicationForCoordinator);
+    result = prime * result
+        + Objects.hash(clusterName, configurationsForCoordinator, replicationForCoordinator);
     return result;
   }
 
@@ -134,7 +145,8 @@ public class StackGresShardedClusterCoordinator extends StackGresClusterSpec {
       return false;
     }
     StackGresShardedClusterCoordinator other = (StackGresShardedClusterCoordinator) obj;
-    return Objects.equals(configurationsForCoordinator, other.configurationsForCoordinator)
+    return Objects.equals(clusterName, other.clusterName)
+        && Objects.equals(configurationsForCoordinator, other.configurationsForCoordinator)
         && Objects.equals(replicationForCoordinator, other.replicationForCoordinator);
   }
 

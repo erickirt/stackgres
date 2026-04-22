@@ -205,7 +205,7 @@ class ShardedClusterRestoreBackupContextAppenderTest {
         assertThrows(IllegalArgumentException.class, () -> contextAppender.appendContext(
             cluster, contextBuilder, cluster.getSpec().getPostgres().getVersion()));
     assertEquals("In SGShardedBackup backup sgBackups must be an array of"
-        + " size 3 (the coordinator plus the number of shards) but was 2", ex.getMessage());
+        + " size 3 (the coordinator plus the number of workers) but was 2", ex.getMessage());
   }
 
   @Test
@@ -236,7 +236,7 @@ class ShardedClusterRestoreBackupContextAppenderTest {
         assertThrows(IllegalArgumentException.class, () -> contextAppender.appendContext(
             cluster, contextBuilder, cluster.getSpec().getPostgres().getVersion()));
     assertEquals("In SGShardedBackup backup sgBackups must be an array of"
-        + " size 3 (the coordinator plus the number of shards) but was 4", ex.getMessage());
+        + " size 3 (the coordinator plus the number of workers) but was 4", ex.getMessage());
   }
 
 }

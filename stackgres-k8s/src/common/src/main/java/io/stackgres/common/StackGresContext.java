@@ -49,7 +49,7 @@ public interface StackGresContext {
   String SHARDED_CLUSTER_NAMESPACE_KEY = "shardedcluster-namespace";
   String SHARDED_CLUSTER_DEFAULT_CONFIG_KEY = "shardedcluster-default-config";
   String COORDINATOR_KEY = "coordinator";
-  String SHARDS_KEY = "shards";
+  String WORKERS_KEY = "workers";
   String SHARDED_BACKUP_KEY = "sharded-backup";
   String SHARDED_DBOPS_KEY = "sharded-db-ops";
   String SCHEDULED_SHARDED_BACKUP_KEY = "scheduled-sharded-backup";

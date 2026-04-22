@@ -15,7 +15,7 @@ import io.stackgres.common.crd.postgres.service.StackGresPostgresService;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresCoordinatorServices;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresServices;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresShardsServices;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresWorkersServices;
 import io.stackgres.operator.common.StackGresShardedClusterReview;
 import io.stackgres.operator.common.fixture.AdmissionReviewFixtures;
 import io.stackgres.testutil.JsonUtil;
@@ -59,8 +59,8 @@ class DefaultPostgresServicesMutatorTest {
     assertEquals("NodeSelector", pgServices.getCoordinator().getAny().getType());
     assertEquals(Boolean.TRUE, pgServices.getCoordinator().getPrimary().getEnabled());
     assertEquals("LoadBalancing", pgServices.getCoordinator().getPrimary().getType());
-    assertEquals(Boolean.FALSE, pgServices.getShards().getPrimaries().getEnabled());
-    assertEquals("ClusterIP", pgServices.getShards().getPrimaries().getType());
+    assertEquals(Boolean.FALSE, pgServices.getWorkers().getPrimaries().getEnabled());
+    assertEquals("ClusterIP", pgServices.getWorkers().getPrimaries().getType());
   }
 
   @Test
@@ -81,8 +81,8 @@ class DefaultPostgresServicesMutatorTest {
     assertEquals("ClusterIP", pgServices.getCoordinator().getAny().getType());
     assertEquals(Boolean.TRUE, pgServices.getCoordinator().getPrimary().getEnabled());
     assertEquals("ClusterIP", pgServices.getCoordinator().getPrimary().getType());
-    assertEquals(Boolean.FALSE, pgServices.getShards().getPrimaries().getEnabled());
-    assertEquals("ClusterIP", pgServices.getShards().getPrimaries().getType());
+    assertEquals(Boolean.FALSE, pgServices.getWorkers().getPrimaries().getEnabled());
+    assertEquals("ClusterIP", pgServices.getWorkers().getPrimaries().getType());
   }
 
   @Test
@@ -99,8 +99,8 @@ class DefaultPostgresServicesMutatorTest {
     assertEquals("ClusterIP", pgServices.getCoordinator().getAny().getType());
     assertEquals(Boolean.TRUE, pgServices.getCoordinator().getPrimary().getEnabled());
     assertEquals("ClusterIP", pgServices.getCoordinator().getPrimary().getType());
-    assertEquals(Boolean.TRUE, pgServices.getShards().getPrimaries().getEnabled());
-    assertEquals("ClusterIP", pgServices.getShards().getPrimaries().getType());
+    assertEquals(Boolean.TRUE, pgServices.getWorkers().getPrimaries().getEnabled());
+    assertEquals("ClusterIP", pgServices.getWorkers().getPrimaries().getType());
   }
 
   @Test
@@ -118,12 +118,12 @@ class DefaultPostgresServicesMutatorTest {
     assertEquals("ClusterIP", pgServices.getCoordinator().getAny().getType());
     assertEquals(Boolean.TRUE, pgServices.getCoordinator().getPrimary().getEnabled());
     assertEquals("ClusterIP", pgServices.getCoordinator().getPrimary().getType());
-    assertEquals(Boolean.FALSE, pgServices.getShards().getPrimaries().getEnabled());
-    assertEquals("LoadBalancing", pgServices.getShards().getPrimaries().getType());
+    assertEquals(Boolean.FALSE, pgServices.getWorkers().getPrimaries().getEnabled());
+    assertEquals("LoadBalancing", pgServices.getWorkers().getPrimaries().getType());
   }
 
   @Test
-  void clusterWithPostgresServiceNoShards_shouldSetValue() {
+  void clusterWithPostgresServiceNoWorkers_shouldSetValue() {
     StackGresPostgresService primary = new StackGresPostgresService();
     primary.setEnabled(Boolean.FALSE);
     primary.setType("LoadBalancing");
@@ -137,8 +137,8 @@ class DefaultPostgresServicesMutatorTest {
     assertEquals("ClusterIP", pgServices.getCoordinator().getAny().getType());
     assertEquals(Boolean.FALSE, pgServices.getCoordinator().getPrimary().getEnabled());
     assertEquals("LoadBalancing", pgServices.getCoordinator().getPrimary().getType());
-    assertEquals(Boolean.TRUE, pgServices.getShards().getPrimaries().getEnabled());
-    assertEquals("ClusterIP", pgServices.getShards().getPrimaries().getType());
+    assertEquals(Boolean.TRUE, pgServices.getWorkers().getPrimaries().getEnabled());
+    assertEquals("ClusterIP", pgServices.getWorkers().getPrimaries().getType());
   }
 
   @Test
@@ -155,8 +155,8 @@ class DefaultPostgresServicesMutatorTest {
     assertEquals("ClusterIP", pgServices.getCoordinator().getAny().getType());
     assertEquals(Boolean.TRUE, pgServices.getCoordinator().getPrimary().getEnabled());
     assertEquals("LoadBalancing", pgServices.getCoordinator().getPrimary().getType());
-    assertEquals(Boolean.TRUE, pgServices.getShards().getPrimaries().getEnabled());
-    assertEquals("ClusterIP", pgServices.getShards().getPrimaries().getType());
+    assertEquals(Boolean.TRUE, pgServices.getWorkers().getPrimaries().getEnabled());
+    assertEquals("ClusterIP", pgServices.getWorkers().getPrimaries().getType());
   }
 
   private void setPostgresServices(
@@ -166,10 +166,10 @@ class DefaultPostgresServicesMutatorTest {
     StackGresShardedClusterPostgresServices postgresServices =
         new StackGresShardedClusterPostgresServices();
     postgresServices.setCoordinator(new StackGresShardedClusterPostgresCoordinatorServices());
-    postgresServices.setShards(new StackGresShardedClusterPostgresShardsServices());
+    postgresServices.setWorkers(new StackGresShardedClusterPostgresWorkersServices());
     postgresServices.getCoordinator().setAny(any);
     postgresServices.getCoordinator().setPrimary(primary);
-    postgresServices.getShards().setPrimaries(primaries);
+    postgresServices.getWorkers().setPrimaries(primaries);
 
     review.getRequest().getObject().getSpec().setPostgresServices(postgresServices);
   }

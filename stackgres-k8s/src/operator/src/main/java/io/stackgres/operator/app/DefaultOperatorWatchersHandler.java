@@ -707,10 +707,10 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
             shardedCluster.getSpec().getCoordinator().getSgInstanceProfile(),
             instanceProfile.getMetadata().getName())
             || Objects.equals(
-                shardedCluster.getSpec().getShards().getSgInstanceProfile(),
+                shardedCluster.getSpec().getWorkers().getSgInstanceProfile(),
                 instanceProfile.getMetadata().getName())
             || Optional.ofNullable(shardedCluster.getSpec()
-                .getShards().getOverrides()).orElse(List.of())
+                .getWorkers().getOverrides()).orElse(List.of())
             .stream().anyMatch(spec -> Objects
                 .equals(
                     spec.getSgInstanceProfile(),
@@ -732,14 +732,14 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
               Optional.of(postgresConfig.getMetadata().getName()))
               || Objects.equals(
                   Optional.ofNullable(
-                      shardedCluster.getSpec().getShards().getConfigurations())
+                      shardedCluster.getSpec().getWorkers().getConfigurations())
                   .map(StackGresClusterConfigurations::getSgPostgresConfig),
                   Optional.of(postgresConfig.getMetadata().getName()))
-              || Optional.ofNullable(shardedCluster.getSpec().getShards().getOverrides())
+              || Optional.ofNullable(shardedCluster.getSpec().getWorkers().getOverrides())
                   .orElse(List.of())
-                  .stream().anyMatch(spec -> spec.getConfigurationsForShards() != null
+                  .stream().anyMatch(spec -> spec.getConfigurationsForWorkers() != null
                       && Objects.equals(
-                          spec.getConfigurationsForShards().getSgPostgresConfig(),
+                          spec.getConfigurationsForWorkers().getSgPostgresConfig(),
                           postgresConfig.getMetadata().getName()));
         })
         .forEach(shardedCluster -> reconcileShardedCluster().accept(action, shardedCluster));
@@ -758,14 +758,14 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
             Optional.of(poolingConfig.getMetadata().getName()))
             || Objects.equals(
                 Optional.ofNullable(
-                    shardedCluster.getSpec().getShards().getConfigurations())
+                    shardedCluster.getSpec().getWorkers().getConfigurations())
                 .map(StackGresClusterConfigurations::getSgPoolingConfig),
                 Optional.of(poolingConfig.getMetadata().getName()))
-            || Optional.ofNullable(shardedCluster.getSpec().getShards().getOverrides())
+            || Optional.ofNullable(shardedCluster.getSpec().getWorkers().getOverrides())
                 .orElse(List.of())
-                .stream().anyMatch(spec -> spec.getConfigurationsForShards() != null
+                .stream().anyMatch(spec -> spec.getConfigurationsForWorkers() != null
                     && Objects.equals(
-                        spec.getConfigurationsForShards().getSgPoolingConfig(),
+                        spec.getConfigurationsForWorkers().getSgPoolingConfig(),
                         poolingConfig.getMetadata().getName())))
         .forEach(shardedCluster -> reconcileShardedCluster().accept(action, shardedCluster));
   }
@@ -799,13 +799,13 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
             .flatMap(List::stream)
             .map(StackGresClusterManagedScriptEntry::getSgScript)
             .anyMatch(script.getMetadata().getName()::equals)
-            || Optional.ofNullable(cluster.getSpec().getShards().getManagedSql())
+            || Optional.ofNullable(cluster.getSpec().getWorkers().getManagedSql())
             .map(StackGresClusterManagedSql::getScripts)
             .stream()
             .flatMap(List::stream)
             .map(StackGresClusterManagedScriptEntry::getSgScript)
             .anyMatch(script.getMetadata().getName()::equals)
-            || Optional.ofNullable(cluster.getSpec().getShards().getOverrides())
+            || Optional.ofNullable(cluster.getSpec().getWorkers().getOverrides())
             .stream()
             .flatMap(List::stream)
             .flatMap(override -> Optional.ofNullable(override.getManagedSql())

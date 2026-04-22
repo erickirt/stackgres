@@ -13,9 +13,9 @@ import io.stackgres.common.crd.sgcluster.StackGresClusterPods;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterConfigurations;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterShard;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterShards;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorker;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.operator.common.StackGresShardedClusterReview;
 import io.stackgres.operatorframework.admissionwebhook.Operation;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -55,17 +55,17 @@ public class ObservabilityMutator implements ShardedClusterMutator {
               .map(StackGresClusterPods::getDisableMetricsExporter)
               .filter(disableMetricsExporter -> disableMetricsExporter)
               .or(() -> Optional.of(resource.getSpec())
-                  .map(StackGresShardedClusterSpec::getShards)
-                  .map(StackGresShardedClusterShards::getPods)
+                  .map(StackGresShardedClusterSpec::getWorkersOrShards)
+                  .map(StackGresShardedClusterWorkers::getPods)
                   .map(StackGresClusterPods::getDisableMetricsExporter)
                   .filter(disableMetricsExporter -> disableMetricsExporter))
               .or(() -> Optional.of(resource.getSpec())
-                  .map(StackGresShardedClusterSpec::getShards)
-                  .map(StackGresShardedClusterShards::getOverrides)
+                  .map(StackGresShardedClusterSpec::getWorkersOrShards)
+                  .map(StackGresShardedClusterWorkers::getOverrides)
                   .stream()
                   .flatMap(List::stream)
                   .flatMap(override -> Optional.of(override)
-                      .map(StackGresShardedClusterShard::getPods)
+                      .map(StackGresShardedClusterWorker::getPods)
                       .map(StackGresClusterPods::getDisableMetricsExporter)
                       .filter(disableMetricsExporter -> disableMetricsExporter)
                       .stream())
@@ -78,17 +78,17 @@ public class ObservabilityMutator implements ShardedClusterMutator {
         .ifPresent(pods -> pods.setDisableMetricsExporter(
             resource.getSpec().getConfigurations().getObservability().getDisableMetrics()));
     Optional.of(resource.getSpec())
-        .map(StackGresShardedClusterSpec::getShards)
-        .map(StackGresShardedClusterShards::getPods)
+        .map(StackGresShardedClusterSpec::getWorkersOrShards)
+        .map(StackGresShardedClusterWorkers::getPods)
         .ifPresent(pods -> pods.setDisableMetricsExporter(
             resource.getSpec().getConfigurations().getObservability().getDisableMetrics()));
     Optional.of(resource.getSpec())
-        .map(StackGresShardedClusterSpec::getShards)
-        .map(StackGresShardedClusterShards::getOverrides)
+        .map(StackGresShardedClusterSpec::getWorkersOrShards)
+        .map(StackGresShardedClusterWorkers::getOverrides)
         .stream()
         .flatMap(List::stream)
         .forEach(override -> Optional.of(override)
-            .map(StackGresShardedClusterShard::getPods)
+            .map(StackGresShardedClusterWorker::getPods)
             .ifPresent(pods -> pods.setDisableMetricsExporter(
                 resource.getSpec().getConfigurations().getObservability().getDisableMetrics())));
 

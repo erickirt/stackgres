@@ -114,7 +114,7 @@ abstract class AbstractShardedClusterRequiredResourcesGeneratorTest {
         cluster.getMetadata().getNamespace()))
         .thenReturn(Optional.of(this.instanceProfile));
     when(profileFinder.findByNameAndNamespace(
-        cluster.getSpec().getShards().getSgInstanceProfile(),
+        cluster.getSpec().getWorkers().getSgInstanceProfile(),
         cluster.getMetadata().getNamespace()))
         .thenReturn(Optional.of(this.instanceProfile));
   }
@@ -125,7 +125,7 @@ abstract class AbstractShardedClusterRequiredResourcesGeneratorTest {
         cluster.getMetadata().getNamespace()))
         .thenReturn(Optional.of(this.postgresConfig));
     when(postgresConfigFinder.findByNameAndNamespace(
-        cluster.getSpec().getShards().getConfigurations().getSgPostgresConfig(),
+        cluster.getSpec().getWorkers().getConfigurations().getSgPostgresConfig(),
         cluster.getMetadata().getNamespace()))
         .thenReturn(Optional.of(this.postgresConfig));
   }
@@ -136,7 +136,7 @@ abstract class AbstractShardedClusterRequiredResourcesGeneratorTest {
         cluster.getMetadata().getNamespace()))
         .thenReturn(Optional.of(this.poolingConfig));
     when(poolingConfigFinder.findByNameAndNamespace(
-        cluster.getSpec().getShards().getConfigurations().getSgPoolingConfig(),
+        cluster.getSpec().getWorkers().getConfigurations().getSgPoolingConfig(),
         cluster.getMetadata().getNamespace()))
         .thenReturn(Optional.of(this.poolingConfig));
   }

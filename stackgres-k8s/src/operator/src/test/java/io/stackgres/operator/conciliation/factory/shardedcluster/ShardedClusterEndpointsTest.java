@@ -52,7 +52,7 @@ class ShardedClusterEndpointsTest {
     cluster = Fixtures.shardedCluster().loadDefault().get();
     when(context.getSource()).thenReturn(cluster);
     when(context.getCoordinatorPrimaryEndpoints()).thenReturn(Optional.empty());
-    when(context.getShardsPrimaryEndpoints()).thenReturn(List.of());
+    when(context.getWorkersPrimaryEndpoints()).thenReturn(List.of());
   }
 
   @Test
@@ -81,19 +81,19 @@ class ShardedClusterEndpointsTest {
   }
 
   @Test
-  void generateResource_shouldHaveCorrectShardsEndpointsName() {
+  void generateResource_shouldHaveCorrectWorkersEndpointsName() {
     List<HasMetadata> resources =
         shardedClusterEndpoints.generateResource(context).toList();
 
     String expectedName =
-        StackGresShardedClusterUtil.primariesShardsServiceName(cluster);
-    HasMetadata shardsEndpoints = resources.stream()
+        StackGresShardedClusterUtil.primariesWorkersServiceName(cluster);
+    HasMetadata workersEndpoints = resources.stream()
         .filter(r -> r.getMetadata().getName().equals(expectedName))
         .findFirst()
         .orElseThrow();
-    assertEquals(expectedName, shardsEndpoints.getMetadata().getName());
+    assertEquals(expectedName, workersEndpoints.getMetadata().getName());
     assertEquals(cluster.getMetadata().getNamespace(),
-        shardsEndpoints.getMetadata().getNamespace());
+        workersEndpoints.getMetadata().getNamespace());
   }
 
   @Test
@@ -141,14 +141,14 @@ class ShardedClusterEndpointsTest {
                 .build())
             .build())
         .build();
-    lenient().when(context.getShardsPrimaryEndpoints())
+    lenient().when(context.getWorkersPrimaryEndpoints())
         .thenReturn(List.of(shard0Endpoints, shard1Endpoints));
 
     List<HasMetadata> resources =
         shardedClusterEndpoints.generateResource(context).toList();
 
     String expectedName =
-        StackGresShardedClusterUtil.primariesShardsServiceName(cluster);
+        StackGresShardedClusterUtil.primariesWorkersServiceName(cluster);
     Endpoints result = resources.stream()
         .filter(r -> r.getMetadata().getName().equals(expectedName))
         .map(Endpoints.class::cast)

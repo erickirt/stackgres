@@ -84,7 +84,7 @@ public class ShardedClusterRestoreBackupContextAppender {
             + " with version " + backupMajorVersion);
       }
 
-      int clusters = 1 + cluster.getSpec().getShards().getClusters();
+      int clusters = 1 + cluster.getSpec().getWorkers().getClusters();
       var sgBackups = foundRestoreBackup
           .map(StackGresShardedBackup::getStatus)
           .map(StackGresShardedBackupStatus::getSgBackups)
@@ -95,7 +95,7 @@ public class ShardedClusterRestoreBackupContextAppender {
         throw new IllegalArgumentException(
             "In " + StackGresShardedBackup.KIND + " " + restoreBackup.getMetadata().getName()
             + " sgBackups must be an array of size " + clusters
-            + " (the coordinator plus the number of shards)"
+            + " (the coordinator plus the number of workers)"
             + " but was " + Optional.ofNullable(sgBackups)
             .map(List::size)
             .orElse(null));

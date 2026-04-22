@@ -17,31 +17,31 @@ class StackGresShardedClusterTestUtil {
 
   static StackGresShardedCluster createShardedCluster() {
     var shardedCluster = createWithRandomData(StackGresShardedCluster.class);
-    List<String> sgBackups = Seq.range(0, shardedCluster.getSpec().getShards().getClusters() + 1)
+    List<String> sgBackups = Seq.range(0, shardedCluster.getSpec().getWorkers().getClusters() + 1)
         .<String>map(index -> ModelTestUtil.generateRandom(String.class))
         .toList();
-    List<String> hosts = Seq.range(0, shardedCluster.getSpec().getShards().getClusters() + 1)
+    List<String> hosts = Seq.range(0, shardedCluster.getSpec().getWorkers().getClusters() + 1)
         .<String>map(index -> ModelTestUtil.generateRandom(String.class))
         .toList();
-    List<Integer> ports = Seq.range(0, shardedCluster.getSpec().getShards().getClusters() + 1)
+    List<Integer> ports = Seq.range(0, shardedCluster.getSpec().getWorkers().getClusters() + 1)
         .<Integer>map(index -> ModelTestUtil.generateRandom(Integer.class))
         .toList();
-    List<String> paths = Seq.range(0, shardedCluster.getSpec().getShards().getClusters() + 1)
+    List<String> paths = Seq.range(0, shardedCluster.getSpec().getWorkers().getClusters() + 1)
         .<String>map(index -> ModelTestUtil.generateRandom(String.class))
         .toList();
     shardedCluster.getSpec().getReplicateFrom().getInstance().getExternal().setHosts(hosts);
     shardedCluster.getSpec().getReplicateFrom().getInstance().getExternal().setPorts(ports);
     shardedCluster.getSpec().getReplicateFrom().getStorage().setPaths(paths);
     shardedCluster.getStatus().setSgBackups(sgBackups);
-    Seq.seq(shardedCluster.getSpec().getShards().getOverrides())
+    Seq.seq(shardedCluster.getSpec().getWorkers().getOverrides())
         .zipWithIndex()
         .forEach(override -> override.v1.setIndex(
-            shardedCluster.getSpec().getShards().getClusters() - override.v2.intValue() - 1));
-    shardedCluster.getSpec().getShards().setOverrides(
-        shardedCluster.getSpec().getShards().getOverrides()
+            shardedCluster.getSpec().getWorkers().getClusters() - override.v2.intValue() - 1));
+    shardedCluster.getSpec().getWorkers().setOverrides(
+        shardedCluster.getSpec().getWorkers().getOverrides()
         .subList(0, Math.min(
-            shardedCluster.getSpec().getShards().getOverrides().size(),
-            shardedCluster.getSpec().getShards().getClusters())));
+            shardedCluster.getSpec().getWorkers().getOverrides().size(),
+            shardedCluster.getSpec().getWorkers().getClusters())));
     return shardedCluster;
   }
 

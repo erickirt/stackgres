@@ -243,7 +243,7 @@ spec:
     pods:
       persistentVolume:
         size: '50Gi'
-  shards:
+  workers:
     pods:
       persistentVolume:
         size: '100Gi'  # Each shard gets this size

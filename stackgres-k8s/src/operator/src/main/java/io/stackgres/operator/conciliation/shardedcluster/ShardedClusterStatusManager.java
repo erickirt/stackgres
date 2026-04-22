@@ -121,7 +121,7 @@ public class ShardedClusterStatusManager
         .map(size -> size > clusters.size())
         .orElse(false)) {
       return false;
-    } else  if (source.getSpec().getShards().getClusters() + 1 != clusters.size()) {
+    } else  if (source.getSpec().getWorkers().getClusters() + 1 != clusters.size()) {
       return false;
     }
     return clusters.stream()

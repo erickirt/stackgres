@@ -22,24 +22,24 @@ spec:
       jsonPath: .status.postgresVersion
     - name: instances
       type: integer
-      jsonPath: .spec.coordinator.instances + (.spec.shards.clusters * .spec.shards.instancesPerCluster) 
+      jsonPath: .spec.coordinator.instances + (.spec.workers.clusters * .spec.workers.instancesPerCluster) 
     - name: Profile
       type: string
-      jsonPath: .spec.coordinator.sgInstanceProfile + ", " + .spec.shards.sgInstanceProfile 
+      jsonPath: .spec.coordinator.sgInstanceProfile + ", " + .spec.workers.sgInstanceProfile 
     - name: Disk
       type: string
-      jsonPath: .spec.coordinator.pods.persistentVolume.size + ", " + .spec.shards.pods.persistentVolume.size
+      jsonPath: .spec.coordinator.pods.persistentVolume.size + ", " + .spec.workers.pods.persistentVolume.size
     - name: prometheus-autobind
       type: string
       jsonPath: .spec.configurations.observability.prometheusAutobind
       priority: 1
     - name: pool-config
       type: string
-      jsonPath: .spec.coordinator.configurations.sgPoolingConfig + ", " + .spec.shards.configurations.sgPoolingConfig
+      jsonPath: .spec.coordinator.configurations.sgPoolingConfig + ", " + .spec.workers.configurations.sgPoolingConfig
       priority: 1
     - name: postgres-config
       type: string
-      jsonPath: .spec.coordinator.configurations.sgPostgresConfig + ", " + .spec.shards.configurations.sgPostgresConfig
+      jsonPath: .spec.coordinator.configurations.sgPostgresConfig + ", " + .spec.workers.configurations.sgPostgresConfig
       priority: 1
     schema:
       openAPIV3Schema:
@@ -61,7 +61,7 @@ spec:
             type: object
             description: |
               Specification of the desired behavior of a StackGres sharded cluster.
-            required: ["database", "postgres", "coordinator", "shards"]
+            required: ["database", "postgres", "coordinator"]
             properties:
               profile:
                 type: string
@@ -111,13 +111,13 @@ spec:
                   
                   **DDP**
                   
-                  DDP (Distributed Data Partitioning) allows you to distribute data across different physical nodes to improve the query performance of high data volumes, taking advantage of distinct nodes’ resources. Using the entry point named coordinator in charge of sending/distributing the queries to different nodes named shards.
+                  DDP (Distributed Data Partitioning) allows you to distribute data across different physical nodes to improve the query performance of high data volumes, taking advantage of distinct nodes’ resources. Using the entry point named coordinator in charge of sending/distributing the queries to different nodes named workers.
                   
                   **ShardingSphere**
                   
                   Apache ShardingSphere is an ecosystem to transform any database into a distributed database system, and enhance it with sharding, elastic scaling, encryption features & more.
                   
-                  StackGres implementation of ShardingSphere as a sharding technology uses the [ShardingSphere Proxy](https://shardingsphere.apache.org/document/current/en/quick-start/shardingsphere-proxy-quick-start/) as an entry point to distribute SQL traffic among the shards.
+                  StackGres implementation of ShardingSphere as a sharding technology uses the [ShardingSphere Proxy](https://shardingsphere.apache.org/document/current/en/quick-start/shardingsphere-proxy-quick-start/) as an entry point to distribute SQL traffic among the workers.
                   
                   This implementation requires the [ShardingSphere Operator](https://shardingsphere.apache.org/oncloud/current/en/user-manual/cn-sn-operator/) to be installed and will create a ComputeNode
               database:
@@ -509,27 +509,27 @@ spec:
                           required:
                             - port
                           type: object
-                  shards:
+                  workers: &workersServices
                     type: object
                     description: |
-                      Configuration for the shards services
+                      Configuration for the workers services
                     properties:
                       primaries:
                         type: object
                         description: |
-                          Configure the shards service to any primary in the shards with the name as the SGShardedCluster plus the `-shards` suffix.
+                          Configure the workers service to any primary in the workers with the name as the SGShardedCluster plus the `-workers` suffix.
                           
-                          It provides a stable connection (regardless of primary failures or switchovers) to read-write Postgres servers of any shard cluster. Read-write servers are load-balanced via this service.
+                          It provides a stable connection (regardless of primary failures or switchovers) to read-write Postgres servers of any worker SGCluster. Read-write servers are load-balanced via this service.
 
                           See also https://kubernetes.io/docs/concepts/services-networking/service/
                         properties: *service-properties
                       customPorts:
                         type: array
                         description: |
-                          The list of custom ports that will be exposed by the shards services.
+                          The list of custom ports that will be exposed by the workers services.
                           
                           The names of custom ports will be prefixed with the string `c-` so they do not
-                            conflict with ports defined for the shards services.
+                            conflict with ports defined for the workers services.
                           
                           The names of target ports will be prefixed with the string `c-` so that the ports
                             that can be referenced in this section will be only those defined under
@@ -541,10 +541,10 @@ spec:
                           See: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#serviceport-v1-core
                         items:
                           description: |
-                            A custom port that will be exposed by the Postgres shards services.
+                            A custom port that will be exposed by the Postgres workers services.
 
                             The name of the custom port will be prefixed with the string `c-` so it does not
-                              conflict with ports defined for the shards services.
+                              conflict with ports defined for the workers services.
 
                             The name of target port will be prefixed with the string `c-` so that the port
                               that can be referenced in this section will be only those defined under
@@ -556,6 +556,12 @@ spec:
                           required:
                             - port
                           type: object
+                  shards:
+                    <<: *workersServices
+                    description: |
+                      **Deprecated** use `workers` instead.
+
+                      Configuration for the workers services
               configurations:
                 type: object
                 description: |
@@ -623,7 +629,7 @@ spec:
                         cronSchedule:
                           type: string
                           description: |
-                            Continuous Archiving backups are composed of periodic *base backups* and all the WAL segments produced in between those base backups for the coordinator and each shard. This parameter specifies at what time and with what frequency to start performing a new base backup.
+                            Continuous Archiving backups are composed of periodic *base backups* and all the WAL segments produced in between those base backups for the coordinator and each worker. This parameter specifies at what time and with what frequency to start performing a new base backup.
                             
                             Use cron syntax (`m h dom mon dow`) for this parameter, i.e., 5 values separated by spaces:
                             *  `m`: minute, 0 to 59.
@@ -686,7 +692,7 @@ spec:
 
                             When provided will indicate where the backups and WAL files will be stored.
                             
-                            The first path indicate the coordinator path and the other paths indicate the shards paths
+                            The first path indicate the coordinator path and the other paths indicate the workers paths
 
                             > **WARNING**: Most users should leave this field empty since having it manually set could be dangerous. If the value is repeated due to re-creating an SGShardedCluster or
                              re-using the same value in another SGShardedCluster and you may get a mixed WAL history with unrecoverable backups.
@@ -934,7 +940,7 @@ spec:
                               customAnnotations: customAnnotationValue
                             coordinatorAnyService:
                               customAnnotations: customAnnotationValue
-                            shardsPrimariesService:
+                            workersPrimariesService:
                               customAnnotations: customAnnotationValue
                       ```
                     properties:
@@ -978,11 +984,17 @@ spec:
                         description: Custom Kubernetes [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/).
                         additionalProperties:
                           type: string
-                      shardsPrimariesService:
+                      workersPrimariesService: &workersPrimariesServiceAnnotations
                         type: object
                         description: Custom Kubernetes [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/).
                         additionalProperties:
                           type: string
+                      shardsPrimariesService:
+                        <<: *workersPrimariesServiceAnnotations
+                        description: |
+                          **Deprecated** use `workersPrimariesService` instead.
+
+                          Custom Kubernetes [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/).
                   labels:
                     type: object
                     description: |
@@ -1044,11 +1056,17 @@ spec:
                         description: Custom Kubernetes [labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/).
                         additionalProperties:
                           type: string
-                      shardsPrimariesService:
+                      workersPrimariesService: &workersPrimariesServiceLabels
                         type: object
                         description: Custom Kubernetes [labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/).
                         additionalProperties:
                           type: string
+                      shardsPrimariesService:
+                        <<: *workersPrimariesServiceLabels
+                        description: |
+                          **Deprecated** use `workersPrimariesService` instead.
+                          
+                          Custom Kubernetes [labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/).
               replicateFrom:
                 type: object
                 description: |
@@ -1063,7 +1081,7 @@ spec:
                   From SGShardedCluster instance:
 
                   ```yaml
-                  apiVersion: stackgres.io/v1
+                  apiVersion: stackgres.io/v1beta1
                   kind: SGShardedCluster
                   metadata:
                     name: stackgres
@@ -1079,7 +1097,7 @@ spec:
                   From external sharded cluster instance:
 
                   ```yaml
-                  apiVersion: stackgres.io/v1
+                  apiVersion: stackgres.io/v1beta1
                   kind: SGShardedCluster
                   metadata:
                     name: stackgres
@@ -1118,7 +1136,7 @@ spec:
                   From Storage:
 
                   ```yaml
-                  apiVersion: stackgres.io/v1
+                  apiVersion: stackgres.io/v1beta1
                   kind: SGShardedCluster
                   metadata:
                     name: stackgres
@@ -1407,9 +1425,17 @@ spec:
               coordinator:
                 type: object
                 description: |
-                  The coordinator is a StackGres cluster responsible for coordinating data storage and access from the shards.
+                  The coordinator is a StackGres cluster responsible for coordinating data storage and access from the workers.
                 required: ["instances", "pods"]
                 properties:
+                  clusterName:
+                    type: string
+                    description: |
+                      Name of coordinator StackGres cluster.
+
+                      When this name is specified it will be used as the coordinator SGCluster name.
+
+                      **This field can only be set on creation.**
                   instances:
                     type: integer
                     minimum: 0
@@ -1563,7 +1589,7 @@ spec:
                     description: |
                       This section allows referencing SQL scripts that will be applied to the cluster live.
 
-                      If sharding type is `shardingsphere` then this section will be applied to the first cluster shard.
+                      If sharding type is `shardingsphere` then this section will be applied to the first cluster worker.
                        In this case the database postgres will also provide a foreign server called `shardingsphere` and
                        the superuser user mappings that will allow running DistQL queries using command like the following:
                       
@@ -1694,7 +1720,7 @@ spec:
                         type: boolean
                         default: false
                         description: |
-                          **Deprecated** use instead .spec.configurations.observability.disableMetrics.
+                          **Deprecated** use `.spec.configurations.observability.disableMetrics` instead.
                       disablePostgresUtil:
                         type: boolean
                         default: false
@@ -1785,8 +1811,8 @@ spec:
                               priorityClassName: *priorityClassName
                               runtimeClassName: *runtimeClassName
                               schedulerName: *schedulerName
-                              nodeSelector: *node-affinity
-                              tolerations: *node-affinity
+                              tolerations: *tolerations
+                              nodeSelector: *node-selector
                               nodeAffinity: *node-affinity
                               podAffinity: *pod-affinity
                               podAntiAffinity: *pod-anti-affinity
@@ -1914,7 +1940,7 @@ spec:
                       customInitContainers:
                         type: array
                         description: |
-                          A list of custom application init containers that run within the shards cluster's Pods. The
+                          A list of custom application init containers that run within the workers cluster's Pods. The
                             custom init containers will run following the defined sequence at the end of
                             cluster's Pods init containers.
                           
@@ -2536,24 +2562,33 @@ spec:
                             description: Custom Kubernetes [labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/).
                             additionalProperties:
                               type: string
-              shards:
+              workers: &workers
                 type: object
                 description: |
-                  The shards are a group of StackGres clusters where the partitioned data chunks are stored.
+                  The workers are a group of StackGres clusters where the partitioned data chunks are stored.
                   
-                  When referring to the cluster in the descriptions below it applies to any shard's StackGres cluster.
+                  When referring to the cluster in the descriptions below it applies to any worker's StackGres cluster.
                 required: ["clusters", "instancesPerCluster", "pods"]
                 properties:
                   clusters:
                     type: integer
                     minimum: 0
                     description: |
-                      Number of shard's StackGres clusters
+                      Number of worker's StackGres clusters
+                  clusterNameTemplate:
+                    type: string
+                    description: |
+                      Name template of worker's StackGres clusters.
+
+                      The SGCluster name will be created using the name template and the index (starting at 0) as a suffix.
+                      For instance with a `clusterNameTemplate` set to `myworker` the first SGCluster name will be `myworker0`.
+
+                      **This field can only be set on creation.**
                   instancesPerCluster:
                     type: integer
                     minimum: 0
                     description: |
-                      Number of StackGres instances per shard's StackGres cluster. Each instance contains one Postgres server.
+                      Number of StackGres instances per worker's StackGres cluster. Each instance contains one Postgres server.
                         Out of all of the Postgres servers, one is elected as the primary, the rest remain as read-only replicas.
                   autoscaling: *autoscaling
                   sgInstanceProfile:
@@ -2669,7 +2704,7 @@ spec:
                         type: boolean
                         default: false
                         description: |
-                          **Deprecated** use instead .spec.configurations.observability.disableMetrics.
+                          **Deprecated** use `.spec.configurations.observability.disableMetrics` instead.
                       disablePostgresUtil:
                         type: boolean
                         default: false
@@ -2733,7 +2768,7 @@ spec:
                         type: array
                         description: |
                           A list of custom volumes that may be used along with any container defined in
-                            customInitContainers or customContainers sections for the shards.
+                            customInitContainers or customContainers sections for the workers.
                           
                           The name used in this section will be prefixed with the string `c-` so that when
                             referencing them in the customInitContainers or customContainers sections the name used
@@ -2795,7 +2830,7 @@ spec:
                       customContainers:
                         type: array
                         description: |
-                          A list of custom application containers that run within the shards cluster's Pods.
+                          A list of custom application containers that run within the workers cluster's Pods.
                           
                           The name used in this section will be prefixed with the string `c-` so that when
                             referencing them in the .spec.containers section of SGInstanceProfile the name used
@@ -2907,7 +2942,7 @@ spec:
                   replication: *replication
                   metadata:
                     type: object
-                    description: Metadata information from shards cluster created resources.
+                    description: Metadata information from workers cluster created resources.
                     properties:
                       annotations:
                         type: object
@@ -2980,23 +3015,23 @@ spec:
                   overrides:
                     type: array
                     description: |
-                      Any shard can be overridden by this section.
+                      Any worker can be overridden by this section.
                     items:
                       type: object
                       description: |
-                        Any shard can be overridden by this section.
+                        Any worker can be overridden by this section.
                       required: ["index"]
                       properties:
                         index:
                           type: integer
                           minimum: 0
                           description: |
-                            Identifier of the shard StackGres cluster to override (starting from 0)
+                            Identifier of the worker StackGres cluster to override (starting from 0)
                         instancesPerCluster:
                           type: integer
                           minimum: 0
                           description: |
-                            Number of StackGres instances per shard's StackGres cluster. Each instance contains one Postgres server.
+                            Number of StackGres instances per worker's StackGres cluster. Each instance contains one Postgres server.
                               Out of all of the Postgres servers, one is elected as the primary, the rest remain as read-only replicas.
                         autoscaling: *autoscaling
                         sgInstanceProfile:
@@ -3105,7 +3140,7 @@ spec:
                               type: boolean
                               default: false
                               description: |
-                                **Deprecated** use instead .spec.configurations.observability.disableMetrics.
+                                **Deprecated** use `.spec.configurations.observability.disableMetrics` instead.
                             disablePostgresUtil:
                               type: boolean
                               default: false
@@ -3169,7 +3204,7 @@ spec:
                               type: array
                               description: |
                                 A list of custom volumes that may be used along with any container defined in
-                                  customInitContainers or customContainers sections for the shards.
+                                  customInitContainers or customContainers sections for the workers.
                                 
                                 The name used in this section will be prefixed with the string `c-` so that when
                                   referencing them in the customInitContainers or customContainers sections the name used
@@ -3231,7 +3266,7 @@ spec:
                             customContainers:
                               type: array
                               description: |
-                                A list of custom application containers that run within the shards cluster's Pods.
+                                A list of custom application containers that run within the workers cluster's Pods.
                                 
                                 The name used in this section will be prefixed with the string `c-` so that when
                                   referencing them in the .spec.containers section of SGInstanceProfile the name used
@@ -3344,7 +3379,7 @@ spec:
                         replication: *replication
                         metadata:
                           type: object
-                          description: Metadata information from shards cluster created resources.
+                          description: Metadata information from workers cluster created resources.
                           properties:
                             annotations:
                               type: object
@@ -3414,6 +3449,14 @@ spec:
                                   description: Custom Kubernetes [labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/).
                                   additionalProperties:
                                     type: string
+              shards:
+                <<: *workers
+                description: |
+                  **Deprecated** use `workers` instead.
+
+                  The workers are a group of StackGres clusters where the partitioned data chunks are stored.
+                  
+                  When referring to the cluster in the descriptions below it applies to any worker's StackGres cluster.
               distributedLogs:
                 type: object
                 description: |
@@ -3549,7 +3592,7 @@ spec:
                           **Example:**
 
                           ```yaml
-                          apiVersion: stackgres.io/v1
+                          apiVersion: stackgres.io/v1beta1
                           kind: SGShardedCluster
                           metadata:
                             name: stackgres

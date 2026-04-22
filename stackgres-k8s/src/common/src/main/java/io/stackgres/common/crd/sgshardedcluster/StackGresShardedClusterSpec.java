@@ -26,6 +26,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
 
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -70,9 +71,13 @@ public class StackGresShardedClusterSpec {
   @Valid
   private StackGresShardedClusterCoordinator coordinator;
 
-  @NotNull(message = "shards is required")
+  @NotNull(message = "workers is required")
   @Valid
-  private StackGresShardedClusterShards shards;
+  private StackGresShardedClusterWorkers workers;
+
+  @Null(message = "shards is deprecated use workers instead")
+  @Valid
+  private StackGresShardedClusterWorkers shards;
 
   @Valid
   private StackGresShardedClusterInitialData initialData;
@@ -126,23 +131,23 @@ public class StackGresShardedClusterSpec {
 
   @JsonIgnore
   private boolean isShardsSupportingRequiredSynchronousReplicas() {
-    return shards == null
-        || shards.getReplication() != null
+    return workers == null
+        || workers.getReplication() != null
         || replication == null
         || !replication.isSynchronousMode()
         || replication.getSyncInstances() == null
-        || shards.getInstancesPerCluster() > replication.getSyncInstances();
+        || workers.getInstancesPerCluster() > replication.getSyncInstances();
   }
 
   @JsonIgnore
   private boolean isOverridesShardsSupportingRequiredSynchronousReplicas() {
-    return shards == null
-        || Optional.of(shards)
-        .map(StackGresShardedClusterShards::getOverrides)
+    return workers == null
+        || Optional.of(workers)
+        .map(StackGresShardedClusterWorkers::getOverrides)
         .stream()
         .flatMap(List::stream)
         .allMatch(ovverideShard -> ovverideShard.getReplication() != null
-        || shards.getReplication() != null
+        || workers.getReplication() != null
         || replication == null
         || !replication.isSynchronousMode()
         || replication.getSyncInstances() == null
@@ -230,11 +235,26 @@ public class StackGresShardedClusterSpec {
     this.coordinator = coordinator;
   }
 
-  public StackGresShardedClusterShards getShards() {
+  public StackGresShardedClusterWorkers getWorkers() {
+    return workers;
+  }
+
+  @JsonIgnore
+  public StackGresShardedClusterWorkers getWorkersOrShards() {
+    return workers != null ? workers : shards;
+  }
+
+  public void setWorkers(StackGresShardedClusterWorkers workers) {
+    this.workers = workers;
+  }
+
+  @Deprecated
+  public StackGresShardedClusterWorkers getShards() {
     return shards;
   }
 
-  public void setShards(StackGresShardedClusterShards shards) {
+  @Deprecated
+  public void setShards(StackGresShardedClusterWorkers shards) {
     this.shards = shards;
   }
 
@@ -266,7 +286,7 @@ public class StackGresShardedClusterSpec {
   public int hashCode() {
     return Objects.hash(configurations, coordinator, database, distributedLogs, initialData,
         metadata, nonProductionOptions, postgres, postgresServices, profile, replicateFrom,
-        replication, shards, type);
+        replication, shards, type, workers);
   }
 
   @Override
@@ -290,7 +310,7 @@ public class StackGresShardedClusterSpec {
         && Objects.equals(profile, other.profile)
         && Objects.equals(replicateFrom, other.replicateFrom)
         && Objects.equals(replication, other.replication) && Objects.equals(shards, other.shards)
-        && Objects.equals(type, other.type);
+        && Objects.equals(type, other.type) && Objects.equals(workers, other.workers);
   }
 
   @Override

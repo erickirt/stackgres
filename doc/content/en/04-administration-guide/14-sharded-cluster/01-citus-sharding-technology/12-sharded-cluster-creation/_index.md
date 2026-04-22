@@ -99,7 +99,7 @@ spec:
     managedSql:
       scripts:
       - sgScript: cluster-scripts
-  shards:
+  workers:
     clusters: 3
     instancesPerCluster: 2
     sgInstanceProfile: 'size-small'

@@ -14,7 +14,7 @@ A sharded cluster is a cluster that implements database sharding. Database shard
 
 ## How is Sharded Cluster implemented
 
-A sharded cluster is implemented by creating an SGCluster called coordinator and one or more SGCluster called shards. The coordinator, as the name implies, coordinates the shards where the data is
+A sharded cluster is implemented by creating an SGCluster called coordinator and one or more SGCluster called workers. The coordinator, as the name implies, coordinates the workers where the data is
  actually stored. StackGres takes care of creating the dependent SGCluster by following the specification set in the SGShardedCluster.
 
 The SGShardedCluster can define the type of sharding (that is the internal sharding implementation used) and the database to be sharded.
@@ -33,9 +33,7 @@ StackGres sharded cluster uses the [Patroni integration for Citus](https://patro
 
 **Architecture:**
 - **Coordinator:** A special SGCluster that coordinates queries and manages metadata
-- **Shards:** Worker nodes implemented as a group of SGClusters where distributed data lives
-
-> **Terminology note:** Citus documentation calls "shards" the distributed partitions of a table. Each worker contains multiple distributed partitions of a single distributed table. In StackGres documentation, we use "distributed partitions" to avoid confusion.
+- **Workers:** Worker nodes implemented as a group of SGClusters where distributed data lives
 
 For more details about Citus sharding technology see the [official Citus documentation](https://docs.citusdata.com/) and have a look at the [Citus sharding technology]({{% relref "04-administration-guide/14-sharded-cluster/01-citus-sharding-technology" %}}) section.
 
@@ -43,11 +41,11 @@ For more details about Citus sharding technology see the [official Citus documen
 
 Apache ShardingSphere is an ecosystem to transform any database into a distributed database system, and enhance it with sharding, elastic scaling, encryption features and more.
 
-StackGres implementation of ShardingSphere as a sharding technology uses the [ShardingSphere Proxy](https://shardingsphere.apache.org/document/current/en/quick-start/shardingsphere-proxy-quick-start/) as an entry point to distribute SQL traffic among the shards. This implementation requires the [ShardingSphere Operator](https://shardingsphere.apache.org/oncloud/current/en/user-manual/cn-sn-operator/) to be installed and will create a ComputeNode for coordination.
+StackGres implementation of ShardingSphere as a sharding technology uses the [ShardingSphere Proxy](https://shardingsphere.apache.org/document/current/en/quick-start/shardingsphere-proxy-quick-start/) as an entry point to distribute SQL traffic among the workers. This implementation requires the [ShardingSphere Operator](https://shardingsphere.apache.org/oncloud/current/en/user-manual/cn-sn-operator/) to be installed and will create a ComputeNode for coordination.
 
 **Architecture:**
 - **Coordinator:** A ShardingSphere Proxy ComputeNode that routes and distributes SQL queries
-- **Shards:** PostgreSQL clusters implemented as a group of SGClusters where distributed data lives
+- **Workers:** PostgreSQL clusters implemented as a group of SGClusters where distributed data lives
 
 For more details about ShardingSphere sharding technology see the [official Apache ShardingSphere documentation](https://shardingsphere.apache.org/document/current/en/overview/) and have a look at the [ShardingSphere sharding technology]({{% relref "04-administration-guide/14-sharded-cluster/02-shardingsphere-sharding-technology" %}}) section.
 
@@ -59,7 +57,7 @@ DDP is an SQL-only extension that leverages Postgres core functionalities like p
 
 **Architecture:**
 - **Coordinator:** A standard SGCluster that uses `postgres_fdw` to route queries to shard nodes
-- **Shards:** PostgreSQL clusters implemented as a group of SGClusters where distributed data lives, accessed via foreign data wrappers
+- **Workers:** PostgreSQL clusters implemented as a group of SGClusters where distributed data lives, accessed via foreign data wrappers
 
 For more details about DDP sharding technology have a look at the [DDP sharding technology]({{% relref "04-administration-guide/14-sharded-cluster/03-ddp-sharding-technology" %}}) section.
 
@@ -69,4 +67,4 @@ A sharded cluster creates the following Services:
 
 - **Main Service** (same name as SGShardedCluster): Points to the primary Pod of the coordinator for read/write queries and for command queries
 - **`-any` Service**: Points to all Pods of the coordinator
-- **`-primaries` Service**: Points to all primary Pods of the shards (for Citus this can be also used for read/write queries)
+- **`-primaries` Service**: Points to all primary Pods of the workers (for Citus this can be also used for read/write queries)

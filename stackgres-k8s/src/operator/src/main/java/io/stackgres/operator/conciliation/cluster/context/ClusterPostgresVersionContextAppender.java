@@ -233,7 +233,7 @@ public class ClusterPostgresVersionContextAppender
       clusterRestoreBackupContextAppender.appendContext(cluster, contextBuilder, version);
       clusterObjectStorageContextAppender.appendContext(cluster, contextBuilder, version);
       clusterExtensionsContextAppender.appendContext(cluster, contextBuilder, version,
-          buildVersion, previousVersion, previousBuildVersion);
+          buildVersion, previousVersion, previousBuildVersion, cluster);
     }
 
     if ((version == null && previousVersion.isEmpty())

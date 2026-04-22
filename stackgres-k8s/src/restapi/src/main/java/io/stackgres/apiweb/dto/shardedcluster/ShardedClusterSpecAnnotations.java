@@ -20,6 +20,8 @@ public class ShardedClusterSpecAnnotations extends ClusterSpecAnnotations {
 
   private Map<String, String> coordinatorAnyService;
 
+  private Map<String, String> workersPrimariesService;
+
   private Map<String, String> shardsPrimariesService;
 
   public Map<String, String> getCoordinatorPrimaryService() {
@@ -36,6 +38,14 @@ public class ShardedClusterSpecAnnotations extends ClusterSpecAnnotations {
 
   public void setCoordinatorAnyService(Map<String, String> coordinatorAnyService) {
     this.coordinatorAnyService = coordinatorAnyService;
+  }
+
+  public Map<String, String> getWorkersPrimariesService() {
+    return workersPrimariesService;
+  }
+
+  public void setWorkersPrimariesService(Map<String, String> workersPrimariesService) {
+    this.workersPrimariesService = workersPrimariesService;
   }
 
   public Map<String, String> getShardsPrimariesService() {

@@ -39,10 +39,10 @@ public class ShardedClusters implements ResourceGenerator<StackGresShardedCluste
           coordinator.getMetadata().setLabels(labelFactory.coordinatorLabels(context.getSource()));
           return coordinator;
         })
-        .append(context.getShards().stream()
-            .map(shards -> {
-              shards.getMetadata().setLabels(labelFactory.shardsLabels(context.getSource()));
-              return shards;
+        .append(context.getWorkers().stream()
+            .map(workers -> {
+              workers.getMetadata().setLabels(labelFactory.workersLabels(context.getSource()));
+              return workers;
             }));
   }
 

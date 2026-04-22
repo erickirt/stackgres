@@ -5,7 +5,11 @@
 
 package io.stackgres.common;
 
+import java.util.Optional;
+
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.operatorframework.resource.ResourceUtil;
 
 public interface StackGresShardedClusterUtil {
@@ -15,14 +19,10 @@ public interface StackGresShardedClusterUtil {
   int LAST_RESERVER_SCRIPT_ID = 9;
 
   static String getClusterName(StackGresShardedCluster cluster, int index) {
-    return getClusterName(cluster.getMetadata().getName(), index);
-  }
-
-  static String getClusterName(String name, int index) {
     if (index == 0) {
-      return getCoordinatorClusterName(name);
+      return getCoordinatorClusterName(cluster);
     }
-    return getShardClusterName(name, index - 1);
+    return getWorkerClusterName(cluster, index - 1);
   }
 
   static String getCoordinatorClusterName(StackGresShardedCluster cluster) {
@@ -33,32 +33,30 @@ public interface StackGresShardedClusterUtil {
     return name + "-coord";
   }
 
-  static String getShardClusterName(StackGresShardedCluster cluster, int shardIndex) {
-    return getShardClusterName(cluster.getMetadata().getName(), shardIndex);
+  static String getWorkerClusterName(StackGresShardedCluster cluster, int workerIndex) {
+    return getWorkerClusterName(cluster, String.valueOf(workerIndex));
   }
 
-  static String getShardClusterName(StackGresShardedCluster cluster, String shardIndex) {
-    return getShardClusterName(cluster.getMetadata().getName(), shardIndex);
-  }
-
-  static String getShardClusterName(String name, int shardIndex) {
-    return getShardClusterName(name, String.valueOf(shardIndex));
-  }
-
-  static String getShardClusterName(String name, String shardIndex) {
-    return name + "-shard" + shardIndex;
+  static String getWorkerClusterName(StackGresShardedCluster cluster, String workerIndex) {
+    return Optional.of(cluster.getSpec())
+        .map(StackGresShardedClusterSpec::getWorkers)
+        .map(StackGresShardedClusterWorkers::getClusterNameTemplate)
+        .orElseGet(() -> cluster.getMetadata().getName() + "-worker") + workerIndex;
   }
 
   static String coordinatorConfigName(StackGresShardedCluster cluster) {
-    return cluster.getMetadata().getName() + "-coord";
+    return Optional.of(cluster.getSpec())
+        .map(StackGresShardedClusterSpec::getWorkers)
+        .map(StackGresShardedClusterWorkers::getClusterNameTemplate)
+        .orElseGet(() -> cluster.getMetadata().getName() + "-coord");
   }
 
   static String coordinatorScriptName(StackGresShardedCluster cluster) {
     return cluster.getMetadata().getName() + "-coord";
   }
 
-  static String shardsScriptName(StackGresShardedCluster cluster) {
-    return cluster.getMetadata().getName() + "-shards";
+  static String workersScriptName(StackGresShardedCluster cluster) {
+    return cluster.getMetadata().getName() + "-workers";
   }
 
   static String postgresSslSecretName(StackGresShardedCluster cluster) {
@@ -75,6 +73,10 @@ public interface StackGresShardedClusterUtil {
 
   static String anyCoordinatorServiceName(StackGresShardedCluster cluster) {
     return ResourceUtil.nameIsValidService(cluster.getMetadata().getName() + "-reads");
+  }
+
+  static String primariesWorkersServiceName(StackGresShardedCluster cluster) {
+    return ResourceUtil.nameIsValidService(cluster.getMetadata().getName() + "-workers");
   }
 
   static String primariesShardsServiceName(StackGresShardedCluster cluster) {

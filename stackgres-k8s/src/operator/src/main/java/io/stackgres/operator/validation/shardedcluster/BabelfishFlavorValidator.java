@@ -48,11 +48,11 @@ public class BabelfishFlavorValidator implements ShardedClusterValidator {
     }
     if (hasBabelfishFlavor
         && (review.getRequest().getObject().getSpec().getCoordinator().getInstances() > 1
-            || review.getRequest().getObject().getSpec().getShards().getInstancesPerCluster() > 1
+            || review.getRequest().getObject().getSpec().getWorkers().getInstancesPerCluster() > 1
             )) {
       failWithFields("Currently \"babelfish\" flavor only support 1 instance."
-          + " Please set \".spec.coordinator.instances\" and \".spec.shards.instancesPerCluster\""
-          + " to 1", ".spec.coordinator.instances", ".spec.shards.instancesPerCluster");
+          + " Please set \".spec.coordinator.instances\" and \".spec.workers.instancesPerCluster\""
+          + " to 1", ".spec.coordinator.instances", ".spec.workers.instancesPerCluster");
     }
   }
 

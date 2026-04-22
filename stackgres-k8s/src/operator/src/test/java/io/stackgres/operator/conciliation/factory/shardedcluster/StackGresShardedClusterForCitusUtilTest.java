@@ -7,10 +7,11 @@ package io.stackgres.operator.conciliation.factory.shardedcluster;
 
 import static io.stackgres.common.StackGresShardedClusterUtil.coordinatorConfigName;
 import static io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForCitusUtil.getCoordinatorCluster;
-import static io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForCitusUtil.getShardsCluster;
+import static io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForCitusUtil.getWorkersCluster;
 import static io.stackgres.testutil.ModelTestUtil.createWithRandomData;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.stackgres.common.StackGresShardedClusterUtil;
 import io.stackgres.common.crd.CustomServicePortBuilder;
@@ -28,7 +29,7 @@ import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinatorConfigurations;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresServicesBuilder;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterShards;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.testutil.JsonUtil;
 import org.jooq.lambda.Seq;
@@ -42,7 +43,7 @@ class StackGresShardedClusterForCitusUtilTest {
   @Test
   void givedMinimalShardedCluster_shouldGenerateCoordinatorCluster() {
     var shardedCluster = getMinimalShardedCluster();
-    var cluster = getCoordinatorCluster(JsonUtil.copy(shardedCluster));
+    var cluster = getCoordinatorCluster(JsonUtil.copy(shardedCluster), Optional.empty());
     checkCoordinatorWithGlobalSettings(
         shardedCluster,
         shardedCluster.getSpec().getCoordinator(),
@@ -72,7 +73,7 @@ class StackGresShardedClusterForCitusUtilTest {
         .endPrimary()
         .endCoordinator()
         .build());
-    var cluster = getCoordinatorCluster(JsonUtil.copy(shardedCluster));
+    var cluster = getCoordinatorCluster(JsonUtil.copy(shardedCluster), Optional.empty());
     checkCoordinatorWithGlobalSettings(
         shardedCluster,
         shardedCluster.getSpec().getCoordinator(),
@@ -105,7 +106,7 @@ class StackGresShardedClusterForCitusUtilTest {
     var coordinatorPrimary =
         shardedCluster.getSpec().getPostgresServices().getCoordinator().getPrimary();
     coordinatorPrimary.setEnabled(false);
-    var cluster = getCoordinatorCluster(JsonUtil.copy(shardedCluster));
+    var cluster = getCoordinatorCluster(JsonUtil.copy(shardedCluster), Optional.empty());
     checkCoordinatorWithGlobalSettings(
         shardedCluster,
         shardedCluster.getSpec().getCoordinator(),
@@ -141,7 +142,7 @@ class StackGresShardedClusterForCitusUtilTest {
     var coordinatorPrimary =
         shardedCluster.getSpec().getPostgresServices().getCoordinator().getPrimary();
     coordinatorPrimary.setEnabled(false);
-    var cluster = getCoordinatorCluster(JsonUtil.copy(shardedCluster));
+    var cluster = getCoordinatorCluster(JsonUtil.copy(shardedCluster), Optional.empty());
     checkCoordinatorWithGlobalSettings(
         shardedCluster,
         shardedCluster.getSpec().getCoordinator(),
@@ -163,11 +164,11 @@ class StackGresShardedClusterForCitusUtilTest {
   @Test
   void givedMinimalShardedCluster_shouldGenerateShardCluster() {
     var shardedCluster = getMinimalShardedCluster();
-    var cluster = getShardsCluster(JsonUtil.copy(shardedCluster), 0);
+    var cluster = getWorkersCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     checkClusterWithGlobalSettings(
         shardedCluster,
-        shardedCluster.getSpec().getShards(),
-        shardedCluster.getSpec().getShards().getConfigurations(),
+        shardedCluster.getSpec().getWorkers(),
+        shardedCluster.getSpec().getWorkers().getConfigurations(),
         cluster,
         1);
     Assertions.assertEquals(
@@ -187,17 +188,17 @@ class StackGresShardedClusterForCitusUtilTest {
     var shardedCluster = getMinimalShardedCluster();
     shardedCluster.getSpec().setPostgresServices(
         new StackGresShardedClusterPostgresServicesBuilder()
-        .withNewShards()
+        .withNewWorkers()
         .withNewPrimaries()
         .withEnabled(true)
         .endPrimaries()
-        .endShards()
+        .endWorkers()
         .build());
-    var cluster = getShardsCluster(JsonUtil.copy(shardedCluster), 0);
+    var cluster = getWorkersCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     checkClusterWithGlobalSettings(
         shardedCluster,
-        shardedCluster.getSpec().getShards(),
-        shardedCluster.getSpec().getShards().getConfigurations(),
+        shardedCluster.getSpec().getWorkers(),
+        shardedCluster.getSpec().getWorkers().getConfigurations(),
         cluster,
         1);
     Assertions.assertEquals(
@@ -217,17 +218,17 @@ class StackGresShardedClusterForCitusUtilTest {
     var shardedCluster = getMinimalShardedCluster();
     shardedCluster.getSpec().setPostgresServices(
         new StackGresShardedClusterPostgresServicesBuilder()
-        .withNewShards()
+        .withNewWorkers()
         .withNewPrimaries()
         .withEnabled(false)
         .endPrimaries()
-        .endShards()
+        .endWorkers()
         .build());
-    var cluster = getShardsCluster(JsonUtil.copy(shardedCluster), 0);
+    var cluster = getWorkersCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     checkClusterWithGlobalSettings(
         shardedCluster,
-        shardedCluster.getSpec().getShards(),
-        shardedCluster.getSpec().getShards().getConfigurations(),
+        shardedCluster.getSpec().getWorkers(),
+        shardedCluster.getSpec().getWorkers().getConfigurations(),
         cluster,
         1);
     Assertions.assertEquals(
@@ -251,10 +252,10 @@ class StackGresShardedClusterForCitusUtilTest {
         .withNewConfigurationsForCoordinator()
         .endConfigurationsForCoordinator()
         .endCoordinator()
-        .withNewShards()
+        .withNewWorkers()
         .withNewConfigurations()
         .endConfigurations()
-        .endShards()
+        .endWorkers()
         .endSpec()
         .build();
   }
@@ -274,8 +275,8 @@ class StackGresShardedClusterForCitusUtilTest {
         .setCustomRestoreMethods(List.of(
             createWithRandomData(StackGresClusterReplicateFromCustomRestoreMethod.class),
             createWithRandomData(StackGresClusterReplicateFromCustomRestoreMethod.class)));
-    setMinimalCoordinatorAndShards(shardedCluster);
-    var cluster = getCoordinatorCluster(JsonUtil.copy(shardedCluster));
+    setMinimalCoordinatorAndWorkers(shardedCluster);
+    var cluster = getCoordinatorCluster(JsonUtil.copy(shardedCluster), Optional.empty());
     checkCoordinatorWithGlobalSettings(
         shardedCluster,
         shardedCluster.getSpec().getCoordinator(),
@@ -308,7 +309,7 @@ class StackGresShardedClusterForCitusUtilTest {
   }
 
   @Test
-  void givedShardedClusterWithMinimalShards_shouldCopyGlobalSettings() {
+  void givedShardedClusterWithMinimalWorkers_shouldCopyGlobalSettings() {
     var shardedCluster = StackGresShardedClusterTestUtil.createShardedCluster();
     shardedCluster.getMetadata().setName(
         "sg" + shardedCluster.getMetadata().getName().toLowerCase());
@@ -322,19 +323,19 @@ class StackGresShardedClusterForCitusUtilTest {
         .setCustomRestoreMethods(List.of(
             createWithRandomData(StackGresClusterReplicateFromCustomRestoreMethod.class),
             createWithRandomData(StackGresClusterReplicateFromCustomRestoreMethod.class)));
-    setMinimalCoordinatorAndShards(shardedCluster);
-    var cluster = getShardsCluster(JsonUtil.copy(shardedCluster), 0);
+    setMinimalCoordinatorAndWorkers(shardedCluster);
+    var cluster = getWorkersCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     checkClusterWithGlobalSettings(
         shardedCluster,
-        shardedCluster.getSpec().getShards(),
-        shardedCluster.getSpec().getShards().getConfigurations(),
+        shardedCluster.getSpec().getWorkers(),
+        shardedCluster.getSpec().getWorkers().getConfigurations(),
         cluster,
         1);
     Assertions.assertEquals(
-        shardedCluster.getSpec().getPostgresServices().getShards().getPrimaries().getEnabled(),
+        shardedCluster.getSpec().getPostgresServices().getWorkers().getPrimaries().getEnabled(),
         cluster.getSpec().getPostgresServices().getPrimary().getEnabled());
     Assertions.assertEquals(
-        shardedCluster.getSpec().getPostgresServices().getShards().getCustomPorts()
+        shardedCluster.getSpec().getPostgresServices().getWorkers().getCustomPorts()
         .stream()
         .map(customPort -> new CustomServicePortBuilder(customPort)
             .withNodePort(null)
@@ -366,7 +367,7 @@ class StackGresShardedClusterForCitusUtilTest {
     shardedCluster.getSpec().getCoordinator().setReplication(null);
     shardedCluster.getSpec().getCoordinator().getReplicationForCoordinator().setRole(null);
     shardedCluster.getSpec().getCoordinator().getReplicationForCoordinator().setGroups(null);
-    var cluster = getCoordinatorCluster(JsonUtil.copy(shardedCluster));
+    var cluster = getCoordinatorCluster(JsonUtil.copy(shardedCluster), Optional.empty());
     checkCoordinatorWithSettings(
         shardedCluster,
         shardedCluster.getSpec().getCoordinator(),
@@ -378,7 +379,7 @@ class StackGresShardedClusterForCitusUtilTest {
   }
 
   @Test
-  void givedShardedClusterWithShards_shouldCopySettings() {
+  void givedShardedClusterWithWorkers_shouldCopySettings() {
     var shardedCluster = StackGresShardedClusterTestUtil.createShardedCluster();
     shardedCluster.getMetadata().setName(
         "sg" + shardedCluster.getMetadata().getName().toLowerCase());
@@ -392,23 +393,23 @@ class StackGresShardedClusterForCitusUtilTest {
         .setCustomRestoreMethods(List.of(
             createWithRandomData(StackGresClusterReplicateFromCustomRestoreMethod.class),
             createWithRandomData(StackGresClusterReplicateFromCustomRestoreMethod.class)));
-    shardedCluster.getSpec().getShards().setReplication(null);
-    shardedCluster.getSpec().getShards().getReplicationForShards().setRole(null);
-    shardedCluster.getSpec().getShards().getReplicationForShards().setGroups(null);
-    shardedCluster.getSpec().getShards().setOverrides(null);
-    var cluster = getShardsCluster(JsonUtil.copy(shardedCluster), 0);
+    shardedCluster.getSpec().getWorkers().setReplication(null);
+    shardedCluster.getSpec().getWorkers().getReplicationForWorkers().setRole(null);
+    shardedCluster.getSpec().getWorkers().getReplicationForWorkers().setGroups(null);
+    shardedCluster.getSpec().getWorkers().setOverrides(null);
+    var cluster = getWorkersCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     checkClusterWithSettings(
         shardedCluster,
-        shardedCluster.getSpec().getShards(),
-        shardedCluster.getSpec().getShards().getReplicationForShards(),
-        shardedCluster.getSpec().getShards().getConfigurations(),
-        shardedCluster.getSpec().getShards().getPods(),
+        shardedCluster.getSpec().getWorkers(),
+        shardedCluster.getSpec().getWorkers().getReplicationForWorkers(),
+        shardedCluster.getSpec().getWorkers().getConfigurations(),
+        shardedCluster.getSpec().getWorkers().getPods(),
         cluster,
         1);
   }
 
   @Test
-  void givedShardedClusterWithShardsOverrides_shouldCopyOverrideSettings() {
+  void givedShardedClusterWithWorkersOverrides_shouldCopyOverrideSettings() {
     var shardedCluster = StackGresShardedClusterTestUtil.createShardedCluster();
     shardedCluster.getMetadata().setName(
         "sg" + shardedCluster.getMetadata().getName().toLowerCase());
@@ -422,39 +423,39 @@ class StackGresShardedClusterForCitusUtilTest {
         .setCustomRestoreMethods(List.of(
             createWithRandomData(StackGresClusterReplicateFromCustomRestoreMethod.class),
             createWithRandomData(StackGresClusterReplicateFromCustomRestoreMethod.class)));
-    shardedCluster.getSpec().getShards().getOverrides().get(0)
+    shardedCluster.getSpec().getWorkers().getOverrides().get(0)
         .setIndex(0);
-    shardedCluster.getSpec().getShards().getOverrides().get(0)
+    shardedCluster.getSpec().getWorkers().getOverrides().get(0)
         .setReplication(null);
-    shardedCluster.getSpec().getShards().getOverrides().get(0)
-        .getReplicationForShards().setRole(null);
-    shardedCluster.getSpec().getShards().getOverrides().get(0)
-        .getReplicationForShards().setGroups(null);
-    var cluster = getShardsCluster(JsonUtil.copy(shardedCluster), 0);
+    shardedCluster.getSpec().getWorkers().getOverrides().get(0)
+        .getReplicationForWorkers().setRole(null);
+    shardedCluster.getSpec().getWorkers().getOverrides().get(0)
+        .getReplicationForWorkers().setGroups(null);
+    var cluster = getWorkersCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     checkClusterWithSettings(
         shardedCluster,
-        shardedCluster.getSpec().getShards().getOverrides().get(0),
-        shardedCluster.getSpec().getShards().getOverrides().get(0)
-            .getReplicationForShards(),
-        shardedCluster.getSpec().getShards().getOverrides().get(0)
-            .getConfigurationsForShards(),
-        shardedCluster.getSpec().getShards().getOverrides().get(0)
-            .getPodsForShards(),
+        shardedCluster.getSpec().getWorkers().getOverrides().get(0),
+        shardedCluster.getSpec().getWorkers().getOverrides().get(0)
+            .getReplicationForWorkers(),
+        shardedCluster.getSpec().getWorkers().getOverrides().get(0)
+            .getConfigurationsForWorkers(),
+        shardedCluster.getSpec().getWorkers().getOverrides().get(0)
+            .getPodsForWorkers(),
         cluster,
         1);
   }
 
-  private void setMinimalCoordinatorAndShards(StackGresShardedCluster shardedCluster) {
+  private void setMinimalCoordinatorAndWorkers(StackGresShardedCluster shardedCluster) {
     shardedCluster.getSpec().setCoordinator(new StackGresShardedClusterCoordinator());
     shardedCluster.getSpec().getCoordinator().setInstances(1);
     shardedCluster.getSpec().getCoordinator()
         .setConfigurationsForCoordinator(new StackGresShardedClusterCoordinatorConfigurations());
     shardedCluster.getSpec().getCoordinator().setPods(new StackGresClusterPods());
-    shardedCluster.getSpec().setShards(new StackGresShardedClusterShards());
-    shardedCluster.getSpec().getShards().setClusters(1);
-    shardedCluster.getSpec().getShards().setInstancesPerCluster(1);
-    shardedCluster.getSpec().getShards().setConfigurations(new StackGresClusterConfigurations());
-    shardedCluster.getSpec().getShards().setPods(new StackGresClusterPods());
+    shardedCluster.getSpec().setWorkers(new StackGresShardedClusterWorkers());
+    shardedCluster.getSpec().getWorkers().setClusters(1);
+    shardedCluster.getSpec().getWorkers().setInstancesPerCluster(1);
+    shardedCluster.getSpec().getWorkers().setConfigurations(new StackGresClusterConfigurations());
+    shardedCluster.getSpec().getWorkers().setPods(new StackGresClusterPods());
   }
 
   private void checkCoordinatorWithGlobalSettings(

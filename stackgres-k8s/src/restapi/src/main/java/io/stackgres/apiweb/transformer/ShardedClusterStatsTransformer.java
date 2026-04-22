@@ -26,14 +26,14 @@ public class ShardedClusterStatsTransformer
   public ShardedClusterStatsDto toDtoWithAllPodStats(
       StackGresShardedCluster source,
       List<PodStats> allCoordinatorPodStats,
-      List<PodStats> allShardsPodStats) {
+      List<PodStats> allWorkersPodStats) {
     ShardedClusterStatsDto shardedClusterStatsDto = toDto(source);
 
     shardedClusterStatsDto.setCoordinator(new ShardedClusterClusterStats());
     setAllStats(shardedClusterStatsDto.getCoordinator(), allCoordinatorPodStats);
 
-    shardedClusterStatsDto.setShards(new ShardedClusterClusterStats());
-    setAllStats(shardedClusterStatsDto.getShards(), allShardsPodStats);
+    shardedClusterStatsDto.setWorkers(new ShardedClusterClusterStats());
+    setAllStats(shardedClusterStatsDto.getWorkers(), allWorkersPodStats);
 
     return shardedClusterStatsDto;
   }

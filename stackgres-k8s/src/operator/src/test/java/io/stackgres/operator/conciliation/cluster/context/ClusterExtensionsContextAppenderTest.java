@@ -128,7 +128,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(expected, cluster);
   }
@@ -143,7 +144,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(toInstallExtensions, cluster.getStatus().getExtensions());
   }
@@ -171,7 +173,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         expectedExtensions,
@@ -210,7 +213,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(expected, cluster);
   }
@@ -254,7 +258,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions)
@@ -287,7 +292,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     cluster.getSpec().getPostgres().getExtensions()
         .forEach(anExtension -> assertNotNull(anExtension.getVersion()));
@@ -326,7 +332,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions).append(getInstalledExtensionWithoutBuild()).toList(),
@@ -370,7 +377,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions).append(getInstalledExtensionWithoutBuild()).toList(),
@@ -409,7 +417,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions)
@@ -452,7 +461,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions).append(getInstalledExtensionWithoutBuild()).toList(),
@@ -492,7 +502,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions)
@@ -535,7 +546,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions).append(getInstalledExtensionWithoutBuild()).toList(),
@@ -574,7 +586,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions).append(getInstalledExtensionWithoutBuild()).toList(),
@@ -612,7 +625,8 @@ class ClusterExtensionsContextAppenderTest {
             POSTGRES_VERSION,
             BUILD_VERSION,
             Optional.empty(),
-            Optional.empty()));
+            Optional.empty(),
+            cluster));
     assertEquals(
         "Extension was not found: test 1.7.1",
         exception.getMessage());
@@ -649,7 +663,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     cluster.getSpec().getPostgres().getExtensions()
         .forEach(anExtension -> assertNotNull(anExtension.getVersion()));
@@ -670,7 +685,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -687,7 +703,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.of(POSTGRES_VERSION),
-        Optional.of(BUILD_VERSION));
+        Optional.of(BUILD_VERSION),
+        cluster);
   }
 
   @Test
@@ -713,7 +730,8 @@ class ClusterExtensionsContextAppenderTest {
             POSTGRES_VERSION,
             BUILD_VERSION,
             Optional.empty(),
-            Optional.empty()));
+            Optional.empty(),
+            cluster));
     assertEquals(
         "Some extensions were not found: dblink 1.0.0, pg_stat_statements 1.0.0, plpgsql 1.0.0, plpython3u 1.0.0",
         exception.getMessage());

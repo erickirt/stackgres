@@ -93,7 +93,7 @@ spec:
 
 The `disableResourcesRequestsSplitFromTotal` flag can also be set on the `SGShardedCluster` cutsom resource at the following paths:
 - `SGShardedCluster.spec.coordinator.pods.resources.disableResourcesRequestsSplitFromTotal`
-- `SGShardedCluster.spec.shards.pods.resources.disableResourcesRequestsSplitFromTotal`
+- `SGShardedCluster.spec.workers.pods.resources.disableResourcesRequestsSplitFromTotal`
 - `SGDistributedLogs.spec.resources.disableResourcesRequestsSplitFromTotal`
 
 Per-container requests can be customized under `requests.containers` and `requests.initContainers`, following the same key-per-container pattern as the limits sections.

@@ -6,7 +6,7 @@
 package io.stackgres.operator.conciliation.shardedbackup;
 
 import static io.stackgres.common.StackGresShardedClusterUtil.getCoordinatorClusterName;
-import static io.stackgres.common.StackGresShardedClusterUtil.getShardClusterName;
+import static io.stackgres.common.StackGresShardedClusterUtil.getWorkerClusterName;
 
 import java.util.stream.Stream;
 
@@ -51,8 +51,8 @@ public class ShardedBackupResourceGenerationDiscovererTest
   @Override
   protected Stream<? extends HasMetadata> jobGeneratedResources() {
     return Seq.of(getCoordinatorClusterName(cluster))
-        .append(Seq.range(0, cluster.getSpec().getShards().getClusters())
-            .map(index -> getShardClusterName(cluster, index)))
+        .append(Seq.range(0, cluster.getSpec().getWorkers().getClusters())
+            .map(index -> getWorkerClusterName(cluster, index)))
         .map(n -> backup.getMetadata().getName()
             + n.substring(cluster.getMetadata().getName().length()))
         .map(backupName -> new StackGresBackupBuilder()

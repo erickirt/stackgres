@@ -38,11 +38,6 @@ public class ClusterExtensionsContextAppender extends AbstractExtensionsContextA
   }
 
   @Override
-  protected StackGresCluster getCluster(StackGresCluster inputContext) {
-    return inputContext;
-  }
-
-  @Override
   protected List<StackGresClusterExtension> getExtensions(
       StackGresCluster inputContext, String version, String buildVersion) {
     return Optional.of(inputContext)

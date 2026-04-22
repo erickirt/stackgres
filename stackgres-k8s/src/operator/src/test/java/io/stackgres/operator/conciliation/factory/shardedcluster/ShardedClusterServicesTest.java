@@ -102,11 +102,11 @@ class ShardedClusterServicesTest {
   }
 
   @Test
-  void givenShardsAnyPrimariesServiceHasNodePorts_shouldBeIncluded() {
-    enableShardsAnyPrimaryNodePorts();
+  void givenWorkersAnyPrimariesServiceHasNodePorts_shouldBeIncluded() {
+    enableWorkersAnyPrimaryNodePorts();
     final Stream<HasMetadata> services = shardedClusterServices.generateResource(shardedClusterContext);
 
-    final Service coordinatorPrimaryService = getShardsAnyPrimaryService(services);
+    final Service coordinatorPrimaryService = getWorkersAnyPrimaryService(services);
 
     final List<Integer> availableNodePorts = coordinatorPrimaryService.getSpec()
             .getPorts()
@@ -137,14 +137,14 @@ class ShardedClusterServicesTest {
             .orElseGet(() -> org.junit.jupiter.api.Assertions.fail("No postgres coordinator primary service found"));
   }
 
-  private Service getShardsAnyPrimaryService(Stream<HasMetadata> services) {
+  private Service getWorkersAnyPrimaryService(Stream<HasMetadata> services) {
     return services
             .filter(Service.class::isInstance)
             .filter(s -> s.getMetadata().getName()
-              .equals(StackGresShardedClusterUtil.primariesShardsServiceName(defaultShardedCluster)))
+              .equals(StackGresShardedClusterUtil.primariesWorkersServiceName(defaultShardedCluster)))
             .map(Service.class::cast)
             .findFirst()
-            .orElseGet(() -> org.junit.jupiter.api.Assertions.fail("No postgres shards any primary service found"));
+            .orElseGet(() -> org.junit.jupiter.api.Assertions.fail("No postgres workers any primary service found"));
   }
 
   private void enableCoordinatorAnyNodePorts() {
@@ -175,18 +175,18 @@ class ShardedClusterServicesTest {
     coordinatorPrimary.setNodePorts(nodePorts);
   }
 
-  private void enableShardsAnyPrimaryNodePorts() {
-    final StackGresPostgresService shardsAnyPrimary = defaultShardedCluster
+  private void enableWorkersAnyPrimaryNodePorts() {
+    final StackGresPostgresService workersAnyPrimary = defaultShardedCluster
             .getSpec()
             .getPostgresServices()
-            .getShards()
+            .getWorkers()
             .getPrimaries();
 
     final StackGresPostgresServiceNodePort nodePorts = new StackGresPostgresServiceNodePort();
     nodePorts.setPgport(30432);
     nodePorts.setReplicationport(30433);
 
-    shardsAnyPrimary.setNodePorts(nodePorts);
+    workersAnyPrimary.setNodePorts(nodePorts);
   }
 
   @Test

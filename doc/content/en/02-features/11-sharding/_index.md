@@ -20,7 +20,7 @@ Sharding is a database architecture pattern that partitions data horizontally ac
 A StackGres sharded cluster consists of:
 
 - **Coordinator**: Routes queries to appropriate shards
-- **Shards**: Individual PostgreSQL clusters holding data partitions
+- **Workers**: Individual PostgreSQL clusters holding data partitions
 
 ![SG Sharded Architecture](SG_StackGres_ShardedCluster_Architecture.png "StackGres-Sharded_Architecture")
 

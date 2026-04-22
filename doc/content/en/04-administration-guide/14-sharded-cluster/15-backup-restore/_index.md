@@ -161,7 +161,7 @@ spec:
     pods:
       persistentVolume:
         size: 20Gi
-  shards:
+  workers:
     clusters: 3
     instancesPerCluster: 2
     pods:

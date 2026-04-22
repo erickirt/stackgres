@@ -24,7 +24,7 @@ import io.stackgres.common.crd.postgres.service.StackGresPostgresServiceNodePort
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresCoordinatorServices;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresServices;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresShardsServices;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresWorkersServices;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpecAnnotations;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpecLabels;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpecMetadata;
@@ -76,11 +76,18 @@ public class ShardedClusterServices implements
       services = services.append(createCoordinatorPrimaryService(context));
     }
 
-    var shardsServices = context.getSource().getSpec().getPostgresServices().getShards();
-    if (Optional.of(shardsServices.getPrimaries())
+    var workersServices = context.getSource().getSpec().getPostgresServices().getWorkers();
+    if (Optional.of(workersServices.getPrimaries())
         .map(StackGresPostgresService::getEnabled)
         .orElse(true)) {
-      services = services.append(createShardsAnyPrimaryService(context));
+      services = services.append(createWorkersAnyPrimaryService(context));
+      services = services.append(
+          new ServiceBuilder(createWorkersAnyPrimaryService(context))
+          .editMetadata()
+          .withName(StackGresShardedClusterUtil.primariesShardsServiceName(
+              context.getSource()))
+          .endMetadata()
+          .build());
     }
 
     return services;
@@ -218,17 +225,17 @@ public class ShardedClusterServices implements
         .build();
   }
 
-  private Service createShardsAnyPrimaryService(StackGresShardedClusterContext context) {
+  private Service createWorkersAnyPrimaryService(StackGresShardedClusterContext context) {
     StackGresShardedCluster cluster = context.getSource();
     return new ServiceBuilder()
         .withNewMetadata()
         .withNamespace(cluster.getMetadata().getNamespace())
-        .withName(StackGresShardedClusterUtil.primariesShardsServiceName(
+        .withName(StackGresShardedClusterUtil.primariesWorkersServiceName(
             context.getSource()))
         .addToAnnotations(
             Optional.ofNullable(cluster.getSpec().getMetadata())
             .map(StackGresShardedClusterSpecMetadata::getAnnotations)
-            .map(StackGresShardedClusterSpecAnnotations::getShardsPrimariesService)
+            .map(StackGresShardedClusterSpecAnnotations::getWorkersPrimariesService)
             .orElse(Map.of()))
         .addToLabels(labelFactory.genericLabels(cluster))
         .addToLabels(
@@ -239,15 +246,15 @@ public class ShardedClusterServices implements
         .addToLabels(
             Optional.ofNullable(cluster.getSpec().getMetadata())
             .map(StackGresShardedClusterSpecMetadata::getLabels)
-            .map(StackGresShardedClusterSpecLabels::getShardsPrimariesService)
+            .map(StackGresShardedClusterSpecLabels::getWorkersPrimariesService)
             .orElse(Map.of()))
         .endMetadata()
-        .withSpec(cluster.getSpec().getPostgresServices().getShards().getPrimaries())
+        .withSpec(cluster.getSpec().getPostgresServices().getWorkers().getPrimaries())
         .editSpec()
         .addAllToPorts(List.of(
             new ServicePortBuilder()
                 .withNodePort(Optional
-                        .ofNullable(cluster.getSpec().getPostgresServices().getShards().getPrimaries())
+                        .ofNullable(cluster.getSpec().getPostgresServices().getWorkers().getPrimaries())
                         .map(StackGresPostgresService::getNodePorts)
                         .map(StackGresPostgresServiceNodePort::getPgport)
                         .orElse(null))
@@ -258,7 +265,7 @@ public class ShardedClusterServices implements
                 .build(),
             new ServicePortBuilder()
                 .withNodePort(Optional
-                        .ofNullable(cluster.getSpec().getPostgresServices().getShards().getPrimaries())
+                        .ofNullable(cluster.getSpec().getPostgresServices().getWorkers().getPrimaries())
                         .map(StackGresPostgresService::getNodePorts)
                         .map(StackGresPostgresServiceNodePort::getReplicationport)
                         .orElse(null))
@@ -269,8 +276,8 @@ public class ShardedClusterServices implements
                 .build()))
         .addAllToPorts(
             Optional.of(context.getSource().getSpec().getPostgresServices())
-            .map(StackGresShardedClusterPostgresServices::getShards)
-            .map(StackGresShardedClusterPostgresShardsServices::getCustomPorts)
+            .map(StackGresShardedClusterPostgresServices::getWorkers)
+            .map(StackGresShardedClusterPostgresWorkersServices::getCustomPorts)
             .stream()
             .flatMap(List::stream)
             .map(ServicePortBuilder::new)

@@ -156,7 +156,8 @@ class ClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getPostgresVersion(),
         cluster.getStatus().getBuildVersion(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -183,7 +184,8 @@ class ClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getPostgresVersion(),
         cluster.getStatus().getBuildVersion(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -210,7 +212,8 @@ class ClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getPostgresVersion(),
         cluster.getStatus().getBuildVersion(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -239,7 +242,8 @@ class ClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getPostgresVersion(),
         cluster.getStatus().getBuildVersion(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -267,7 +271,8 @@ class ClusterPostgresVersionContextAppenderTest {
         randomVersion,
         cluster.getStatus().getBuildVersion(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -294,7 +299,8 @@ class ClusterPostgresVersionContextAppenderTest {
         startsWith(randomMajorPostgresVersion + "."),
         eq(cluster.getStatus().getBuildVersion()),
         eq(Optional.empty()),
-        eq(Optional.empty()));
+        eq(Optional.empty()),
+        eq(cluster));
   }
 
   @Test
@@ -322,7 +328,8 @@ class ClusterPostgresVersionContextAppenderTest {
         latestVersion,
         cluster.getStatus().getBuildVersion(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -346,7 +353,7 @@ class ClusterPostgresVersionContextAppenderTest {
     verify(clusterObjectStorageContextAppender, never()).appendContext(
         any(), any(), any());
     verify(clusterExtensionsContextAppender, never()).appendContext(
-        any(), any(), any(), any(), any(), any());
+        any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -398,7 +405,7 @@ class ClusterPostgresVersionContextAppenderTest {
     verify(clusterObjectStorageContextAppender, never()).appendContext(
         any(), any(), any());
     verify(clusterExtensionsContextAppender, never()).appendContext(
-        any(), any(), any(), any(), any(), any());
+        any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -427,7 +434,7 @@ class ClusterPostgresVersionContextAppenderTest {
     verify(clusterObjectStorageContextAppender, never()).appendContext(
         any(), any(), any());
     verify(clusterExtensionsContextAppender, never()).appendContext(
-        any(), any(), any(), any(), any(), any());
+        any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -462,7 +469,8 @@ class ClusterPostgresVersionContextAppenderTest {
         targetVersion,
         cluster.getStatus().getBuildVersion(),
         Optional.of(previousVersion),
-        Optional.of(buildVersion));
+        Optional.of(buildVersion),
+        cluster);
   }
 
   @Test
@@ -493,7 +501,8 @@ class ClusterPostgresVersionContextAppenderTest {
         FIRST_PG_MINOR_VERSION,
         cluster.getStatus().getBuildVersion(),
         Optional.of(SECOND_PG_MINOR_VERSION),
-        Optional.of(buildVersion));
+        Optional.of(buildVersion),
+        cluster);
   }
 
   @Test
@@ -517,7 +526,7 @@ class ClusterPostgresVersionContextAppenderTest {
     verify(clusterObjectStorageContextAppender, never()).appendContext(
         any(), any(), any());
     verify(clusterExtensionsContextAppender, never()).appendContext(
-        any(), any(), any(), any(), any(), any());
+        any(), any(), any(), any(), any(), any(), any());
   }
 
   private static String getRandomPostgresVersion() {

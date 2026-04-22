@@ -7,15 +7,15 @@ showToc: true
 ---
 
 With every StackGres sharded cluster that you deploy a few services will be deployed along with it.
-To connect to the database, you only need to be aware of three services: the coordinator primary and any service and the shards primaries service.
+To connect to the database, you only need to be aware of three services: the coordinator primary and any service and the workers primaries service.
 
-The coordinator primary service is used to connect to the primary node of the coordinator cluster, the coordinator any service is used to access any node of the coordinator cluster and the shards primaries service is used to connect to the primary node of any shard cluster.
+The coordinator primary service is used to connect to the primary node of the coordinator cluster, the coordinator any service is used to access any node of the coordinator cluster and the workers primaries service is used to connect to the primary node of any shard cluster.
 
 The service name follow a convention that is based on the sharded cluster name and the function of the service:
 
  - `<cluster-name>` for the coordinator primary service
  - `<cluster-name>-reads` for the coordinator any service
- - `<cluster-name>-shards` for the shards primaries service
+ - `<cluster-name>-workers` for the workers primaries service
 
 All this services will accept connections to ports `5432` and `5433` where:
 

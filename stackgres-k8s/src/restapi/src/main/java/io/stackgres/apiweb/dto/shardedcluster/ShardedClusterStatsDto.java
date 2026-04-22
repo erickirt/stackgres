@@ -16,7 +16,7 @@ public class ShardedClusterStatsDto extends ResourceDto {
 
   private ShardedClusterClusterStats coordinator;
 
-  private ShardedClusterClusterStats shards;
+  private ShardedClusterClusterStats workers;
 
   public ShardedClusterClusterStats getCoordinator() {
     return coordinator;
@@ -26,12 +26,12 @@ public class ShardedClusterStatsDto extends ResourceDto {
     this.coordinator = coordinator;
   }
 
-  public ShardedClusterClusterStats getShards() {
-    return shards;
+  public ShardedClusterClusterStats getWorkers() {
+    return workers;
   }
 
-  public void setShards(ShardedClusterClusterStats shards) {
-    this.shards = shards;
+  public void setWorkers(ShardedClusterClusterStats workers) {
+    this.workers = workers;
   }
 
   @Override

@@ -23,7 +23,7 @@ DDP uses the coordinator as the entry point for all queries. The coordinator mai
 
 ### Virtual Shards
 
-DDP introduces the concept of virtual shards. Virtual shards are range partitions on the coordinator that map to foreign tables on the shard nodes. This allows fine-grained control over data distribution:
+DDP introduces the concept of virtual shards. Virtual shards are range partitions on the coordinator that map to foreign tables on the worker nodes. This allows fine-grained control over data distribution:
 
 - Multiple virtual shards can exist on a single physical shard
 - Virtual shards can be moved between physical shards for rebalancing
@@ -40,7 +40,7 @@ Each shard is connected to the coordinator via `postgres_fdw` foreign servers. D
 
 ### Data Distribution
 
-DDP provides functions to manage data distribution across shards:
+DDP provides functions to manage data distribution across workers:
 
 - `ddp_create_vs()`: Creates virtual shards with range partitioning
 - `ddp_drop_vs()`: Removes virtual shards
@@ -66,7 +66,7 @@ spec:
     pods:
       persistentVolume:
         size: '10Gi'
-  shards:
+  workers:
     clusters: 4
     instancesPerCluster: 2
     pods:
@@ -74,11 +74,11 @@ spec:
         size: '10Gi'
 ```
 
-This configuration will create a coordinator with 2 Pods and 4 shards with 2 Pods each. The coordinator uses `postgres_fdw` to connect to the shard nodes and route queries.
+This configuration will create a coordinator with 2 Pods and 4 workers with 2 Pods each. The coordinator uses `postgres_fdw` to connect to the shard nodes and route queries.
 
 ## Distributed Restore Points
 
-DDP supports creating distributed restore points across all shards using two-phase commit (2PC). This allows consistent point-in-time recovery across the entire sharded cluster:
+DDP supports creating distributed restore points across all workers using two-phase commit (2PC). This allows consistent point-in-time recovery across the entire sharded cluster:
 
 ```sql
 SELECT ddp_create_restore_point('my_restore_point');

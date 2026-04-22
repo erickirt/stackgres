@@ -78,9 +78,9 @@ public class ShardedClusterStatsDtoFinder
         .map(PodStats::fromTuple)
         .toList();
 
-    List<Tuple2<StackGresCluster, Pod>> shardsPods = clusterScanner.getResourcesWithLabels(
+    List<Tuple2<StackGresCluster, Pod>> workersPods = clusterScanner.getResourcesWithLabels(
         shardedCluster.getMetadata().getNamespace(),
-        shardedClusterLabelFactory.shardsLabels(shardedCluster))
+        shardedClusterLabelFactory.workersLabels(shardedCluster))
         .stream()
         .flatMap(cluster -> podFinder.getResourcesInNamespaceWithLabels(
             cluster.getMetadata().getNamespace(),
@@ -89,7 +89,7 @@ public class ShardedClusterStatsDtoFinder
             .map(pod -> Tuple.tuple(cluster, pod)))
         .toList();
 
-    List<PodStats> allShardsPodStats = shardsPods
+    List<PodStats> allWorkersPodStats = workersPods
         .stream()
         .map(t -> CompletableFuture.supplyAsync(() -> t.skip1().concat(getPodStats(t.v2))
             .concat(getPodPersitentVolumeClaim(t.v1, t.v2)), managedExecutor))
@@ -98,7 +98,7 @@ public class ShardedClusterStatsDtoFinder
         .toList();
 
     return shardedClusterStatsTransformer.toDtoWithAllPodStats(shardedCluster,
-        allCoordinatorPodStats, allShardsPodStats);
+        allCoordinatorPodStats, allWorkersPodStats);
   }
 
 }

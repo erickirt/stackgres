@@ -60,9 +60,9 @@ Reference tables are replicated across all worker nodes and automatically kept i
 SELECT create_reference_table('geo_ips');
 ```
 
-## Scaling Shards
+## Scaling Workers
 
-Adding a new shard is simple - increase the `clusters` field value in the `shards` section:
+Adding a new shard is simple - increase the `clusters` field value in the `workers` section:
 
 ```yaml
 apiVersion: stackgres.io/v1beta1
@@ -70,7 +70,7 @@ kind: SGShardedCluster
 metadata:
   name: my-sharded-cluster
 spec:
-  shards:
+  workers:
     clusters: 3  # Increased from 2
 ```
 
@@ -142,7 +142,7 @@ spec:
     pods:
       persistentVolume:
         size: '10Gi'
-  shards:
+  workers:
     clusters: 4
     instancesPerCluster: 2
     pods:
@@ -150,11 +150,11 @@ spec:
         size: '10Gi'
 ```
 
-This configuration will create a coordinator with 2 Pods and 4 shards with 2 Pods each.
+This configuration will create a coordinator with 2 Pods and 4 workers with 2 Pods each.
 
 By default the coordinator node has a synchronous replica to avoid losing any metadata that could break the sharded cluster.
 
-The shards are where sharded data lives and have a replica in order to provide high availability to the cluster.
+The workers are where sharded data lives and have a replica in order to provide high availability to the cluster.
 
 ![SG Sharded Cluster](SG_Sharded_Cluster.png "StackGres-Sharded_Cluster")
 

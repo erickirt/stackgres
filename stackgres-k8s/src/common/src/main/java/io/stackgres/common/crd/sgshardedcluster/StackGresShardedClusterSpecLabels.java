@@ -14,6 +14,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpecLabels;
 import io.sundr.builder.annotations.Buildable;
+import jakarta.validation.constraints.Null;
 
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -27,6 +28,9 @@ public class StackGresShardedClusterSpecLabels extends StackGresClusterSpecLabel
 
   private Map<String, String> coordinatorAnyService;
 
+  private Map<String, String> workersPrimariesService;
+
+  @Null(message = "shardsPrimariesService is deprecated use workersPrimariesService instead")
   private Map<String, String> shardsPrimariesService;
 
   public Map<String, String> getCoordinatorPrimaryService() {
@@ -45,10 +49,20 @@ public class StackGresShardedClusterSpecLabels extends StackGresClusterSpecLabel
     this.coordinatorAnyService = coordinatorAnyService;
   }
 
+  public Map<String, String> getWorkersPrimariesService() {
+    return workersPrimariesService;
+  }
+
+  public void setWorkersPrimariesService(Map<String, String> workersPrimariesService) {
+    this.workersPrimariesService = workersPrimariesService;
+  }
+
+  @Deprecated
   public Map<String, String> getShardsPrimariesService() {
     return shardsPrimariesService;
   }
 
+  @Deprecated
   public void setShardsPrimariesService(Map<String, String> shardsPrimariesService) {
     this.shardsPrimariesService = shardsPrimariesService;
   }
@@ -57,8 +71,8 @@ public class StackGresShardedClusterSpecLabels extends StackGresClusterSpecLabel
   public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
-    result = prime * result
-        + Objects.hash(coordinatorAnyService, coordinatorPrimaryService, shardsPrimariesService);
+    result = prime * result + Objects.hash(coordinatorAnyService, coordinatorPrimaryService,
+        shardsPrimariesService, workersPrimariesService);
     return result;
   }
 
@@ -76,7 +90,8 @@ public class StackGresShardedClusterSpecLabels extends StackGresClusterSpecLabel
     StackGresShardedClusterSpecLabels other = (StackGresShardedClusterSpecLabels) obj;
     return Objects.equals(coordinatorAnyService, other.coordinatorAnyService)
         && Objects.equals(coordinatorPrimaryService, other.coordinatorPrimaryService)
-        && Objects.equals(shardsPrimariesService, other.shardsPrimariesService);
+        && Objects.equals(shardsPrimariesService, other.shardsPrimariesService)
+        && Objects.equals(workersPrimariesService, other.workersPrimariesService);
   }
 
   @Override

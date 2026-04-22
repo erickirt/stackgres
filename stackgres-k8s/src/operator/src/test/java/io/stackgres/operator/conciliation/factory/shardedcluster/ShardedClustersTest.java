@@ -51,7 +51,7 @@ public class ShardedClustersTest {
     when(context.getSource()).thenReturn(shardedCluster);
     when(context.getShardedCluster()).thenReturn(shardedCluster);
     when(context.getCoordinator()).thenReturn(coordinator);
-    when(context.getShards()).thenReturn(List.of(shard0, shard1));
+    when(context.getWorkers()).thenReturn(List.of(shard0, shard1));
   }
 
   @Test
@@ -60,15 +60,15 @@ public class ShardedClustersTest {
     assertEquals(3, clusters.size());
     assertEquals(labelFactory.coordinatorLabels(shardedCluster),
         clusters.getFirst().getMetadata().getLabels());
-    assertEquals(labelFactory.shardsLabels(shardedCluster),
+    assertEquals(labelFactory.workersLabels(shardedCluster),
         clusters.get(1).getMetadata().getLabels());
-    assertEquals(labelFactory.shardsLabels(shardedCluster),
+    assertEquals(labelFactory.workersLabels(shardedCluster),
         clusters.get(2).getMetadata().getLabels());
   }
 
   @Test
-  public void generateResource_whenEmptyShards_shouldGenerateOnlyCoordinator() {
-    when(context.getShards()).thenReturn(List.of());
+  public void generateResource_whenEmptyWorkers_shouldGenerateOnlyCoordinator() {
+    when(context.getWorkers()).thenReturn(List.of());
     var clusters = shardedClusters.generateResource(context).toList();
     assertEquals(1, clusters.size());
     assertEquals(labelFactory.coordinatorLabels(shardedCluster),
@@ -82,9 +82,9 @@ public class ShardedClustersTest {
     assertEquals(3, clusters.size());
     assertEquals(labelFactory.coordinatorLabels(shardedCluster),
         clusters.getFirst().getMetadata().getLabels());
-    assertEquals(labelFactory.shardsLabels(shardedCluster),
+    assertEquals(labelFactory.workersLabels(shardedCluster),
         clusters.get(1).getMetadata().getLabels());
-    assertEquals(labelFactory.shardsLabels(shardedCluster),
+    assertEquals(labelFactory.workersLabels(shardedCluster),
         clusters.get(2).getMetadata().getLabels());
   }
 

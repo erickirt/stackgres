@@ -51,22 +51,24 @@ import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterConfigurations;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresCoordinatorServices;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresServices;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresShardsServices;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterShard;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterShards;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresWorkersServices;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterStatus;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorker;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.common.patroni.StackGresPasswordKeys;
 import org.jooq.lambda.Seq;
 
 public abstract class StackGresShardedClusterForUtil implements StackGresShardedClusterUtil {
 
-  StackGresCluster getCoordinatorCluster(StackGresShardedCluster cluster) {
+  StackGresCluster getCoordinatorCluster(
+      StackGresShardedCluster cluster,
+      Optional<StackGresShardedCluster> replicateCluster) {
     final StackGresClusterSpec spec =
         new StackGresClusterSpecBuilder(cluster.getSpec().getCoordinator())
         .withConfigurations(cluster.getSpec().getCoordinator().getConfigurationsForCoordinator())
         .build();
-    setClusterSpecFromShardedCluster(cluster, spec, 0);
+    setClusterSpecFromShardedCluster(cluster, spec, 0, replicateCluster);
     if (cluster.getSpec().getCoordinator().getReplicationForCoordinator() != null) {
       spec.setReplication(cluster.getSpec().getCoordinator().getReplicationForCoordinator());
     } else {
@@ -132,19 +134,22 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
       StackGresShardedCluster cluster,
       StackGresClusterSpec spec);
 
-  StackGresCluster getShardsCluster(StackGresShardedCluster cluster, int index) {
+  StackGresCluster getWorkersCluster(
+      StackGresShardedCluster cluster,
+      int index,
+      Optional<StackGresShardedCluster> replicateCluster) {
     final StackGresClusterSpec spec =
-        new StackGresClusterSpecBuilder(cluster.getSpec().getShards())
+        new StackGresClusterSpecBuilder(cluster.getSpec().getWorkers())
         .build();
-    setClusterSpecFromShardedCluster(cluster, spec, index + 1);
-    if (cluster.getSpec().getShards().getReplicationForShards() != null) {
-      spec.setReplication(cluster.getSpec().getShards().getReplicationForShards());
+    setClusterSpecFromShardedCluster(cluster, spec, index + 1, replicateCluster);
+    if (cluster.getSpec().getWorkers().getReplicationForWorkers() != null) {
+      spec.setReplication(cluster.getSpec().getWorkers().getReplicationForWorkers());
     } else {
       spec.setReplication(cluster.getSpec().getReplication());
     }
-    spec.setInstances(cluster.getSpec().getShards().getInstancesPerCluster());
-    Optional.of(cluster.getSpec().getShards())
-        .map(StackGresShardedClusterShards::getOverrides)
+    spec.setInstances(cluster.getSpec().getWorkers().getInstancesPerCluster());
+    Optional.of(cluster.getSpec().getWorkers())
+        .map(StackGresShardedClusterWorkers::getOverrides)
         .stream()
         .flatMap(List::stream)
         .filter(specOverride -> Objects.equals(
@@ -153,25 +158,25 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
         .findFirst()
         .ifPresent(specOverride -> setClusterSpecFromShardOverrides(
             cluster, specOverride, spec, index + 1));
-    updateShardsClusterSpec(cluster, spec, index);
-    StackGresCluster shardsCluster = new StackGresCluster();
-    shardsCluster.setMetadata(new ObjectMeta());
-    shardsCluster.getMetadata().setNamespace(cluster.getMetadata().getNamespace());
-    shardsCluster.getMetadata().setName(
-        StackGresShardedClusterUtil.getShardClusterName(cluster, index));
+    updateWorkersClusterSpec(cluster, spec, index);
+    StackGresCluster workersCluster = new StackGresCluster();
+    workersCluster.setMetadata(new ObjectMeta());
+    workersCluster.getMetadata().setNamespace(cluster.getMetadata().getNamespace());
+    workersCluster.getMetadata().setName(
+        StackGresShardedClusterUtil.getWorkerClusterName(cluster, index));
     var postgresServices = cluster.getSpec().getPostgresServices();
     spec.setPostgresServices(new StackGresPostgresServicesBuilder()
         .withNewPrimary()
         .withEnabled(
             Optional.ofNullable(postgresServices)
-            .map(StackGresShardedClusterPostgresServices::getShards)
-            .map(StackGresShardedClusterPostgresShardsServices::getPrimaries)
+            .map(StackGresShardedClusterPostgresServices::getWorkers)
+            .map(StackGresShardedClusterPostgresWorkersServices::getPrimaries)
             .map(StackGresPostgresService::getEnabled)
             .orElse(true))
         .withCustomPorts(
             Optional.ofNullable(postgresServices)
-            .map(StackGresShardedClusterPostgresServices::getShards)
-            .map(StackGresShardedClusterPostgresShardsServices::getCustomPorts)
+            .map(StackGresShardedClusterPostgresServices::getWorkers)
+            .map(StackGresShardedClusterPostgresWorkersServices::getCustomPorts)
             .map(customPorts -> customPorts
                 .stream()
                 .map(customPort -> new CustomServicePortBuilder(customPort)
@@ -184,17 +189,20 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
         .withEnabled(false)
         .endReplicas()
         .build());
-    shardsCluster.setSpec(spec);
-    return shardsCluster;
+    workersCluster.setSpec(spec);
+    return workersCluster;
   }
 
-  abstract void updateShardsClusterSpec(
+  abstract void updateWorkersClusterSpec(
       StackGresShardedCluster cluster,
       StackGresClusterSpec spec,
       int index);
 
   void setClusterSpecFromShardedCluster(
-      StackGresShardedCluster cluster, final StackGresClusterSpec spec, int index) {
+      StackGresShardedCluster cluster,
+      StackGresClusterSpec spec,
+      int index,
+      Optional<StackGresShardedCluster> replicateCluster) {
     spec.setProfile(cluster.getSpec().getProfile());
     setPostgres(cluster, spec);
     setPostgresSsl(cluster, spec);
@@ -224,7 +232,10 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
         if (cluster.getSpec().getReplicateFrom().getInstance().getSgShardedCluster() != null) {
           spec.getReplicateFrom().getInstance().setSgCluster(
               StackGresShardedClusterUtil.getClusterName(
-                  cluster.getSpec().getReplicateFrom().getInstance().getSgShardedCluster(),
+                  replicateCluster.orElseThrow(() -> new RuntimeException(
+                      "SGShardedCluster "
+                      + cluster.getSpec().getReplicateFrom().getInstance().getSgShardedCluster()
+                      + " was not found")),
                   index));
         }
       }
@@ -504,24 +515,24 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
 
   void setClusterSpecFromShardOverrides(
       StackGresShardedCluster cluster,
-      StackGresShardedClusterShard specOverride,
+      StackGresShardedClusterWorker specOverride,
       StackGresClusterSpec spec,
       int index) {
-    if (specOverride.getConfigurationsForShards() != null) {
-      if (specOverride.getConfigurationsForShards().getSgPostgresConfig() != null) {
+    if (specOverride.getConfigurationsForWorkers() != null) {
+      if (specOverride.getConfigurationsForWorkers().getSgPostgresConfig() != null) {
         spec.getConfigurations().setSgPostgresConfig(
-            specOverride.getConfigurationsForShards().getSgPostgresConfig());
+            specOverride.getConfigurationsForWorkers().getSgPostgresConfig());
       }
-      if (specOverride.getConfigurationsForShards().getSgPoolingConfig() != null) {
+      if (specOverride.getConfigurationsForWorkers().getSgPoolingConfig() != null) {
         spec.getConfigurations().setSgPoolingConfig(
-            specOverride.getConfigurationsForShards().getSgPoolingConfig());
+            specOverride.getConfigurationsForWorkers().getSgPoolingConfig());
       }
-      if (specOverride.getConfigurationsForShards().getPostgresExporter() != null) {
+      if (specOverride.getConfigurationsForWorkers().getPostgresExporter() != null) {
         var queriesFound = Optional.ofNullable(spec.getConfigurations())
             .map(StackGresClusterConfigurations::getPostgresExporter)
             .map(StackGresClusterPostgresExporter::getQueries);
         spec.getConfigurations().setPostgresExporter(
-            specOverride.getConfigurationsForShards().getPostgresExporter());
+            specOverride.getConfigurationsForWorkers().getPostgresExporter());
         spec.getConfigurations().getPostgresExporter().setQueries(
             Optional.of(spec.getConfigurations().getPostgresExporter())
             .map(StackGresClusterPostgresExporter::getQueries)
@@ -539,8 +550,8 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
     if (specOverride.getSgInstanceProfile() != null) {
       spec.setSgInstanceProfile(specOverride.getSgInstanceProfile());
     }
-    if (specOverride.getReplicationForShards() != null) {
-      spec.setReplication(specOverride.getReplicationForShards());
+    if (specOverride.getReplicationForWorkers() != null) {
+      spec.setReplication(specOverride.getReplicationForWorkers());
     }
     if (specOverride.getManagedSql() != null) {
       final String defaultScript = ManagedSqlUtil.defaultName(
@@ -565,134 +576,134 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
       setOverridesLabels(specOverride, spec, index);
       setOverridesAnnotations(specOverride, spec, index);
     }
-    if (specOverride.getPodsForShards() != null) {
-      if (specOverride.getPodsForShards().getLivenessProbe() != null) {
+    if (specOverride.getPodsForWorkers() != null) {
+      if (specOverride.getPodsForWorkers().getLivenessProbe() != null) {
         spec.getPods().setLivenessProbe(
-            specOverride.getPodsForShards().getLivenessProbe());
+            specOverride.getPodsForWorkers().getLivenessProbe());
       }
-      if (specOverride.getPodsForShards().getReadinessProbe() != null) {
+      if (specOverride.getPodsForWorkers().getReadinessProbe() != null) {
         spec.getPods().setReadinessProbe(
-            specOverride.getPodsForShards().getReadinessProbe());
+            specOverride.getPodsForWorkers().getReadinessProbe());
       }
-      if (specOverride.getPodsForShards().getTerminationGracePeriodSeconds() != null) {
+      if (specOverride.getPodsForWorkers().getTerminationGracePeriodSeconds() != null) {
         spec.getPods().setTerminationGracePeriodSeconds(
-            specOverride.getPodsForShards().getTerminationGracePeriodSeconds());
+            specOverride.getPodsForWorkers().getTerminationGracePeriodSeconds());
       }
-      if (specOverride.getPodsForShards().getDisableConnectionPooling() != null) {
+      if (specOverride.getPodsForWorkers().getDisableConnectionPooling() != null) {
         spec.getPods().setDisableConnectionPooling(
-            specOverride.getPodsForShards().getDisableConnectionPooling());
+            specOverride.getPodsForWorkers().getDisableConnectionPooling());
       }
-      if (specOverride.getPodsForShards().getDisableMetricsExporter() != null) {
+      if (specOverride.getPodsForWorkers().getDisableMetricsExporter() != null) {
         spec.getPods().setDisableMetricsExporter(
-            specOverride.getPodsForShards().getDisableMetricsExporter());
+            specOverride.getPodsForWorkers().getDisableMetricsExporter());
       }
-      if (specOverride.getPodsForShards().getDisablePostgresUtil() != null) {
+      if (specOverride.getPodsForWorkers().getDisablePostgresUtil() != null) {
         spec.getPods().setDisablePostgresUtil(
-            specOverride.getPodsForShards().getDisablePostgresUtil());
+            specOverride.getPodsForWorkers().getDisablePostgresUtil());
       }
-      if (specOverride.getPodsForShards().getManagementPolicy() != null) {
-        spec.getPods().setManagementPolicy(specOverride.getPodsForShards().getManagementPolicy());
+      if (specOverride.getPodsForWorkers().getManagementPolicy() != null) {
+        spec.getPods().setManagementPolicy(specOverride.getPodsForWorkers().getManagementPolicy());
       }
-      if (specOverride.getPodsForShards().getUpdateStrategy() != null) {
-        spec.getPods().setUpdateStrategy(specOverride.getPodsForShards().getUpdateStrategy());
+      if (specOverride.getPodsForWorkers().getUpdateStrategy() != null) {
+        spec.getPods().setUpdateStrategy(specOverride.getPodsForWorkers().getUpdateStrategy());
       }
-      if (specOverride.getPodsForShards().getPersistentVolume() != null) {
-        if (specOverride.getPodsForShards().getPersistentVolume().getSize() != null) {
+      if (specOverride.getPodsForWorkers().getPersistentVolume() != null) {
+        if (specOverride.getPodsForWorkers().getPersistentVolume().getSize() != null) {
           spec.getPods().getPersistentVolume().setSize(
-              specOverride.getPodsForShards().getPersistentVolume().getSize());
+              specOverride.getPodsForWorkers().getPersistentVolume().getSize());
         }
-        if (specOverride.getPodsForShards().getPersistentVolume().getStorageClass() != null) {
+        if (specOverride.getPodsForWorkers().getPersistentVolume().getStorageClass() != null) {
           spec.getPods().getPersistentVolume().setStorageClass(
-              specOverride.getPodsForShards().getPersistentVolume().getStorageClass());
+              specOverride.getPodsForWorkers().getPersistentVolume().getStorageClass());
         }
-        if (specOverride.getPodsForShards().getPersistentVolume().getVolumeAttributesClassName() != null) {
+        if (specOverride.getPodsForWorkers().getPersistentVolume().getVolumeAttributesClassName() != null) {
           spec.getPods().getPersistentVolume().setVolumeAttributesClassName(
-              specOverride.getPodsForShards().getPersistentVolume().getVolumeAttributesClassName());
+              specOverride.getPodsForWorkers().getPersistentVolume().getVolumeAttributesClassName());
         }
-        if (specOverride.getPodsForShards().getPersistentVolume().getFsGroupChangePolicy() != null) {
+        if (specOverride.getPodsForWorkers().getPersistentVolume().getFsGroupChangePolicy() != null) {
           spec.getPods().getPersistentVolume().setFsGroupChangePolicy(
-              specOverride.getPodsForShards().getPersistentVolume().getFsGroupChangePolicy());
+              specOverride.getPodsForWorkers().getPersistentVolume().getFsGroupChangePolicy());
         }
       }
-      if (specOverride.getPodsForShards().getResources() != null) {
+      if (specOverride.getPodsForWorkers().getResources() != null) {
         if (spec.getPods().getResources() == null) {
           spec.getPods().setResources(new StackGresClusterResources());
         }
-        if (specOverride.getPodsForShards().getResources()
+        if (specOverride.getPodsForWorkers().getResources()
             .getContainers() != null) {
           spec.getPods().getResources().setContainers(
-              specOverride.getPodsForShards().getResources().getContainers());
+              specOverride.getPodsForWorkers().getResources().getContainers());
         }
-        if (specOverride.getPodsForShards().getResources()
+        if (specOverride.getPodsForWorkers().getResources()
             .getInitContainers() != null) {
           spec.getPods().getResources().setInitContainers(
-              specOverride.getPodsForShards().getResources().getInitContainers());
+              specOverride.getPodsForWorkers().getResources().getInitContainers());
         }
-        if (specOverride.getPodsForShards().getResources()
+        if (specOverride.getPodsForWorkers().getResources()
             .getEnableClusterLimitsRequirements() != null) {
           spec.getPods().getResources().setEnableClusterLimitsRequirements(
-              specOverride.getPodsForShards().getResources().getEnableClusterLimitsRequirements());
+              specOverride.getPodsForWorkers().getResources().getEnableClusterLimitsRequirements());
         }
-        if (specOverride.getPodsForShards().getResources()
+        if (specOverride.getPodsForWorkers().getResources()
             .getDisableResourcesRequestsSplitFromTotal() != null) {
           spec.getPods().getResources().setDisableResourcesRequestsSplitFromTotal(
-              specOverride.getPodsForShards().getResources()
+              specOverride.getPodsForWorkers().getResources()
               .getDisableResourcesRequestsSplitFromTotal());
         }
-        if (specOverride.getPodsForShards().getResources()
+        if (specOverride.getPodsForWorkers().getResources()
             .getFailWhenTotalIsHigher() != null) {
           spec.getPods().getResources().setFailWhenTotalIsHigher(
-              specOverride.getPodsForShards().getResources()
+              specOverride.getPodsForWorkers().getResources()
               .getFailWhenTotalIsHigher());
         }
       }
-      if (specOverride.getPodsForShards().getScheduling() != null) {
+      if (specOverride.getPodsForWorkers().getScheduling() != null) {
         spec.getPods().setScheduling(
-            specOverride.getPodsForShards().getScheduling());
+            specOverride.getPodsForWorkers().getScheduling());
       }
-      if (specOverride.getPodsForShards().getCustomVolumes() != null) {
-        spec.getPods().setCustomVolumes(specOverride.getPodsForShards().getCustomVolumes());
+      if (specOverride.getPodsForWorkers().getCustomVolumes() != null) {
+        spec.getPods().setCustomVolumes(specOverride.getPodsForWorkers().getCustomVolumes());
       }
-      if (specOverride.getPodsForShards().getCustomContainers() != null) {
-        spec.getPods().setCustomContainers(specOverride.getPodsForShards().getCustomContainers());
+      if (specOverride.getPodsForWorkers().getCustomContainers() != null) {
+        spec.getPods().setCustomContainers(specOverride.getPodsForWorkers().getCustomContainers());
       }
-      if (specOverride.getPodsForShards().getCustomInitContainers() != null) {
+      if (specOverride.getPodsForWorkers().getCustomInitContainers() != null) {
         spec.getPods().setCustomInitContainers(
-            specOverride.getPodsForShards().getCustomInitContainers());
+            specOverride.getPodsForWorkers().getCustomInitContainers());
       }
-      if (specOverride.getPodsForShards().getCustomVolumeMounts() != null) {
-        spec.getPods().setCustomVolumeMounts(specOverride.getPodsForShards().getCustomVolumeMounts());
+      if (specOverride.getPodsForWorkers().getCustomVolumeMounts() != null) {
+        spec.getPods().setCustomVolumeMounts(specOverride.getPodsForWorkers().getCustomVolumeMounts());
       }
-      if (specOverride.getPodsForShards().getCustomInitVolumeMounts() != null) {
+      if (specOverride.getPodsForWorkers().getCustomInitVolumeMounts() != null) {
         spec.getPods().setCustomInitVolumeMounts(
-            specOverride.getPodsForShards().getCustomInitVolumeMounts());
+            specOverride.getPodsForWorkers().getCustomInitVolumeMounts());
       }
-      if (specOverride.getPodsForShards().getCustomEnv() != null) {
+      if (specOverride.getPodsForWorkers().getCustomEnv() != null) {
         spec.getPods().setCustomEnv(
-            specOverride.getPodsForShards().getCustomEnv());
+            specOverride.getPodsForWorkers().getCustomEnv());
       }
-      if (specOverride.getPodsForShards().getCustomInitEnv() != null) {
+      if (specOverride.getPodsForWorkers().getCustomInitEnv() != null) {
         spec.getPods().setCustomInitEnv(
-            specOverride.getPodsForShards().getCustomInitEnv());
+            specOverride.getPodsForWorkers().getCustomInitEnv());
       }
-      if (specOverride.getPodsForShards().getCustomEnvFrom() != null) {
+      if (specOverride.getPodsForWorkers().getCustomEnvFrom() != null) {
         spec.getPods().setCustomEnvFrom(
-            specOverride.getPodsForShards().getCustomEnvFrom());
+            specOverride.getPodsForWorkers().getCustomEnvFrom());
       }
-      if (specOverride.getPodsForShards().getCustomInitEnvFrom() != null) {
+      if (specOverride.getPodsForWorkers().getCustomInitEnvFrom() != null) {
         spec.getPods().setCustomInitEnvFrom(
-            specOverride.getPodsForShards().getCustomInitEnvFrom());
+            specOverride.getPodsForWorkers().getCustomInitEnvFrom());
       }
     }
   }
 
-  void setOverridesLabels(StackGresShardedClusterShard specOverride, StackGresClusterSpec spec, int index) {
+  void setOverridesLabels(StackGresShardedClusterWorker specOverride, StackGresClusterSpec spec, int index) {
     if (specOverride.getMetadata().getLabels() != null) {
       spec.getMetadata().setLabels(specOverride.getMetadata().getLabels());
     }
   }
 
-  void setOverridesAnnotations(StackGresShardedClusterShard specOverride, StackGresClusterSpec spec,
+  void setOverridesAnnotations(StackGresShardedClusterWorker specOverride, StackGresClusterSpec spec,
       int index) {
     if (specOverride.getMetadata().getAnnotations() != null) {
       spec.getMetadata().setAnnotations(specOverride.getMetadata().getAnnotations());

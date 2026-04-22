@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
@@ -49,7 +50,7 @@ class CoordinatorPersistentVolumeSizeExpansionValidatorTest extends
 
   @Override
   protected StackGresCluster getCluster(StackGresShardedCluster resource) {
-    return StackGresShardedClusterForCitusUtil.getCoordinatorCluster(resource);
+    return StackGresShardedClusterForCitusUtil.getCoordinatorCluster(resource, Optional.empty());
   }
 
   @Override

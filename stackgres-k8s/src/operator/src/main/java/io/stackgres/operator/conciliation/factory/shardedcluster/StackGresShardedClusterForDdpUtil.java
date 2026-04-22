@@ -61,7 +61,7 @@ public interface StackGresShardedClusterForDdpUtil extends StackGresShardedClust
     }
 
     @Override
-    void updateShardsClusterSpec(
+    void updateWorkersClusterSpec(
         StackGresShardedCluster cluster,
         StackGresClusterSpec spec,
         int index) {
@@ -74,7 +74,7 @@ public interface StackGresShardedClusterForDdpUtil extends StackGresShardedClust
               .flatMap(List::stream)
               .limit(1))
           .append(new StackGresClusterManagedScriptEntryBuilder()
-              .withSgScript(StackGresShardedClusterUtil.shardsScriptName(cluster))
+              .withSgScript(StackGresShardedClusterUtil.workersScriptName(cluster))
               .withId(1)
               .build())
           .append(Optional.ofNullable(spec.getManagedSql().getScripts())
@@ -85,12 +85,17 @@ public interface StackGresShardedClusterForDdpUtil extends StackGresShardedClust
     }
   }
 
-  static StackGresCluster getCoordinatorCluster(StackGresShardedCluster cluster) {
-    return UTIL.getCoordinatorCluster(cluster);
+  static StackGresCluster getCoordinatorCluster(
+      StackGresShardedCluster cluster,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    return UTIL.getCoordinatorCluster(cluster, replicateCluster);
   }
 
-  static StackGresCluster getShardsCluster(StackGresShardedCluster cluster, int index) {
-    return UTIL.getShardsCluster(cluster, index);
+  static StackGresCluster getWorkersCluster(
+      StackGresShardedCluster cluster,
+      int index,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    return UTIL.getWorkersCluster(cluster, index, replicateCluster);
   }
   
   static StackGresScript getCoordinatorScript(
@@ -105,18 +110,18 @@ public interface StackGresShardedClusterForDdpUtil extends StackGresShardedClust
         .withScripts(
             getDdpCreateDatabase(context, 0),
             getDdpInitScript(context, 1),
-            getDdpUpdateShardsScript(context, 2))
+            getDdpUpdateWorkersScript(context, 2))
         .endSpec()
         .build();
   }
 
-  static StackGresScript getShardsScript(
+  static StackGresScript getWorkersScript(
       StackGresShardedClusterContext context) {
     StackGresShardedCluster cluster = context.getShardedCluster();
     return new StackGresScriptBuilder()
         .withMetadata(new ObjectMetaBuilder()
             .withNamespace(cluster.getMetadata().getNamespace())
-            .withName(StackGresShardedClusterUtil.shardsScriptName(cluster))
+            .withName(StackGresShardedClusterUtil.workersScriptName(cluster))
             .build())
         .editSpec()
         .withScripts(
@@ -159,40 +164,40 @@ public interface StackGresShardedClusterForDdpUtil extends StackGresShardedClust
     return script;
   }
 
-  private static StackGresScriptEntry getDdpUpdateShardsScript(
+  private static StackGresScriptEntry getDdpUpdateWorkersScript(
       StackGresShardedClusterContext context, int id) {
     StackGresShardedCluster cluster = context.getShardedCluster();
     final StackGresScriptEntry script = new StackGresScriptEntryBuilder()
         .withId(id)
-        .withName("ddp-update-shards")
+        .withName("ddp-update-workers")
         .withRetryOnError(true)
         .withDatabase(cluster.getSpec().getDatabase())
         .withNewScriptFrom()
         .withNewSecretKeyRef()
-        .withName(getUpdateShardsSecretName(cluster))
-        .withKey("ddp-update-shards.sql")
+        .withName(getUpdateWorkersSecretName(cluster))
+        .withKey("ddp-update-workers.sql")
         .endSecretKeyRef()
         .endScriptFrom()
         .build();
     return script;
   }
 
-  static Secret getUpdateShardsSecret(
+  static Secret getUpdateWorkersSecret(
       StackGresShardedClusterContext context) {
     StackGresShardedCluster cluster = context.getShardedCluster();
     var superuserCredentials = ShardedClusterSecret.getSuperuserCredentials(context);
     final Secret secret = new SecretBuilder()
         .withNewMetadata()
         .withNamespace(cluster.getMetadata().getNamespace())
-        .withName(getUpdateShardsSecretName(cluster))
+        .withName(getUpdateWorkersSecretName(cluster))
         .endMetadata()
-        .withData(ResourceUtil.encodeSecret(Map.of("ddp-update-shards.sql",
+        .withData(ResourceUtil.encodeSecret(Map.of("ddp-update-workers.sql",
             Unchecked.supplier(() -> Resources
                 .asCharSource(StackGresShardedClusterForDdpUtil.class.getResource(
-                    "/ddp/ddp-update-shards.sql"),
+                    "/ddp/ddp-update-workers.sql"),
                     StandardCharsets.UTF_8)
                 .read()).get().formatted(
-                    cluster.getSpec().getShards().getClusters(),
+                    cluster.getSpec().getWorkers().getClusters(),
                     DSL.inline("host '" + primaryShardServiceNamePlaceholder(cluster, "%1s") + "', "
                         + "port '" + PatroniUtil.REPLICATION_SERVICE_PORT + "', "
                         + "dbname '" + cluster.getSpec().getDatabase() + "'"),
@@ -204,12 +209,12 @@ public interface StackGresShardedClusterForDdpUtil extends StackGresShardedClust
     return secret;
   }
 
-  static String getUpdateShardsSecretName(StackGresShardedCluster cluster) {
-    return StackGresShardedClusterUtil.coordinatorScriptName(cluster) + "-update-shards";
+  static String getUpdateWorkersSecretName(StackGresShardedCluster cluster) {
+    return StackGresShardedClusterUtil.coordinatorScriptName(cluster) + "-update-workers";
   }
 
   private static String primaryShardServiceNamePlaceholder(
       StackGresShardedCluster cluster, String shardIndexPlaceholder) {
-    return StackGresShardedClusterUtil.getShardClusterName(cluster, shardIndexPlaceholder);
+    return StackGresShardedClusterUtil.getWorkerClusterName(cluster, shardIndexPlaceholder);
   }
 }

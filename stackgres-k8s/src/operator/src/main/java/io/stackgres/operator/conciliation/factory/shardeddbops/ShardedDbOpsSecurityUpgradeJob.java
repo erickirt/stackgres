@@ -6,7 +6,7 @@
 package io.stackgres.operator.conciliation.factory.shardeddbops;
 
 import static io.stackgres.common.StackGresShardedClusterUtil.getCoordinatorClusterName;
-import static io.stackgres.common.StackGresShardedClusterUtil.getShardClusterName;
+import static io.stackgres.common.StackGresShardedClusterUtil.getWorkerClusterName;
 
 import java.util.List;
 import java.util.Optional;
@@ -76,8 +76,8 @@ public class ShardedDbOpsSecurityUpgradeJob extends AbstractShardedDbOpsJob {
             .withName("CLUSTER_NAMES")
             .withValue(Seq.of(getCoordinatorClusterName(context.getShardedCluster()))
                 .append(Seq.range(0, context.getShardedCluster()
-                    .getSpec().getShards().getClusters())
-                    .map(index -> getShardClusterName(context.getShardedCluster(), index)))
+                    .getSpec().getWorkers().getClusters())
+                    .map(index -> getWorkerClusterName(context.getShardedCluster(), index)))
                 .toString(" "))
             .build(),
             new EnvVarBuilder()

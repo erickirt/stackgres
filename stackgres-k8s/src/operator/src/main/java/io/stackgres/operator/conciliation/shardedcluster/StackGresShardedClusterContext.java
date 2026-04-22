@@ -50,17 +50,17 @@ public interface StackGresShardedClusterContext
 
   Optional<StackGresPoolingConfig> getCoordinatorPoolingConfig();
 
-  Optional<StackGresProfile> getShardsProfile();
+  Optional<StackGresProfile> getWorkersProfile();
 
-  Optional<StackGresPostgresConfig> getShardsPostgresConfig();
+  Optional<StackGresPostgresConfig> getWorkersPostgresConfig();
 
-  Optional<StackGresPoolingConfig> getShardsPoolingConfig();
+  Optional<StackGresPoolingConfig> getWorkersPoolingConfig();
 
-  List<StackGresCluster> getShards();
+  List<StackGresCluster> getWorkers();
 
   Optional<Endpoints> getCoordinatorPrimaryEndpoints();
 
-  List<Endpoints> getShardsPrimaryEndpoints();
+  List<Endpoints> getWorkersPrimaryEndpoints();
 
   Optional<Secret> getDatabaseSecret();
 
@@ -122,6 +122,8 @@ public interface StackGresShardedClusterContext
   Optional<String> getPostgresSslPrivateKey();
 
   List<Tuple2<String, String>> getShardingSphereAuthorityUsers();
+
+  Optional<StackGresShardedCluster> getReplicateCluster();
 
   public static class Builder extends ImmutableStackGresShardedClusterContext.Builder {
   }

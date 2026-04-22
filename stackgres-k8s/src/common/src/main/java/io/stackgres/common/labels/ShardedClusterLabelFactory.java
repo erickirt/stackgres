@@ -50,10 +50,10 @@ public class ShardedClusterLabelFactory
   }
 
   @Override
-  public Map<String, String> shardsLabels(@NotNull StackGresShardedCluster resource) {
+  public Map<String, String> workersLabels(@NotNull StackGresShardedCluster resource) {
     return ImmutableMap.<String, String>builder().putAll(genericLabels(resource))
         .put(labelMapper().resourceUidKey(resource), labelValue(resourceUid(resource)))
-        .put(labelMapper().shardsKey(resource), StackGresContext.RIGHT_VALUE)
+        .put(labelMapper().workersKey(resource), StackGresContext.RIGHT_VALUE)
         .build();
   }
 

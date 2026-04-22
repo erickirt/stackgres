@@ -15,7 +15,7 @@ SGShardedDbOps allows you to perform day-2 database operations on sharded cluste
 | Operation | Description | Use Case |
 |-----------|-------------|----------|
 | `restart` | Rolling restart of all pods | Apply configuration changes, clear memory |
-| `resharding` | Rebalance data across shards | After adding shards, optimize distribution |
+| `resharding` | Rebalance data across workers | After adding workers, optimize distribution |
 | `securityUpgrade` | Upgrade security patches | Apply security fixes |
 
 ## Restart Operation
@@ -87,7 +87,7 @@ spec:
 
 ## Resharding Operation (Citus)
 
-Resharding rebalances data distribution across shards. This is essential after adding new shards.
+Resharding rebalances data distribution across workers. This is essential after adding new workers.
 
 ### Basic Resharding
 
@@ -95,7 +95,7 @@ Resharding rebalances data distribution across shards. This is essential after a
 apiVersion: stackgres.io/v1
 kind: SGShardedDbOps
 metadata:
-  name: rebalance-shards
+  name: rebalance-workers
 spec:
   sgShardedCluster: my-sharded-cluster
   op: resharding
@@ -117,13 +117,13 @@ The `threshold` determines when rebalancing occurs based on utilization differen
 
 ### Drain-Only Mode
 
-Move all data off specific shards before removal:
+Move all data off specific workers before removal:
 
 ```yaml
 apiVersion: stackgres.io/v1
 kind: SGShardedDbOps
 metadata:
-  name: drain-shards
+  name: drain-workers
 spec:
   sgShardedCluster: my-sharded-cluster
   op: resharding
@@ -151,7 +151,7 @@ spec:
 ```
 
 Available strategies depend on Citus version:
-- `by_shard_count`: Balance number of shards (default)
+- `by_shard_count`: Balance number of workers (default)
 - `by_disk_size`: Balance disk usage
 
 ## Security Upgrade
@@ -302,7 +302,7 @@ spec:
 
 ### Post-Scaling Rebalance
 
-After adding shards, rebalance data:
+After adding workers, rebalance data:
 
 ```yaml
 apiVersion: stackgres.io/v1

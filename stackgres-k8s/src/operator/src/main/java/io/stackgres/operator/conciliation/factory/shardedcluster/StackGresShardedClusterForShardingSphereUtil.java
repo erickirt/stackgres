@@ -70,7 +70,7 @@ public interface StackGresShardedClusterForShardingSphereUtil extends StackGresS
     }
 
     @Override
-    protected void updateShardsClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
+    protected void updateWorkersClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
       if (spec.getManagedSql() == null) {
         spec.setManagedSql(new StackGresClusterManagedSql());
       }
@@ -85,7 +85,7 @@ public interface StackGresShardedClusterForShardingSphereUtil extends StackGresS
               .build())
               .filter(ignore -> index == 0))
           .append(new StackGresClusterManagedScriptEntryBuilder()
-              .withSgScript(StackGresShardedClusterUtil.shardsScriptName(cluster))
+              .withSgScript(StackGresShardedClusterUtil.workersScriptName(cluster))
               .withId(2)
               .build())
           .append(Optional.ofNullable(spec.getManagedSql().getScripts())
@@ -104,12 +104,17 @@ public interface StackGresShardedClusterForShardingSphereUtil extends StackGresS
     }
   }
 
-  static StackGresCluster getCoordinatorCluster(StackGresShardedCluster cluster) {
-    return UTIL.getCoordinatorCluster(cluster);
+  static StackGresCluster getCoordinatorCluster(
+      StackGresShardedCluster cluster,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    return UTIL.getCoordinatorCluster(cluster, replicateCluster);
   }
 
-  static StackGresCluster getShardsCluster(StackGresShardedCluster cluster, int index) {
-    return UTIL.getShardsCluster(cluster, index);
+  static StackGresCluster getWorkersCluster(
+      StackGresShardedCluster cluster,
+      int index,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    return UTIL.getWorkersCluster(cluster, index, replicateCluster);
   }
 
   static ComputeNode getCoordinatorComputeNode(
@@ -247,19 +252,19 @@ public interface StackGresShardedClusterForShardingSphereUtil extends StackGresS
         .withScripts(
             getShardingSphereCreateDatabaseScript(context, 0),
             getShardingSphereInitScript(context, 1),
-            getShardingSphereUpdateShardsScript(context, 2))
+            getShardingSphereUpdateWorkersScript(context, 2))
         .endSpec()
         .build();
   }
 
-  static StackGresScript getShardsScript(
+  static StackGresScript getWorkersScript(
       StackGresShardedClusterContext context) {
     StackGresShardedCluster cluster = context.getShardedCluster();
     return
         new StackGresScriptBuilder()
         .withMetadata(new ObjectMetaBuilder()
             .withNamespace(cluster.getMetadata().getNamespace())
-            .withName(StackGresShardedClusterUtil.shardsScriptName(cluster))
+            .withName(StackGresShardedClusterUtil.workersScriptName(cluster))
             .build())
         .editSpec()
         .withScripts(
@@ -328,40 +333,40 @@ public interface StackGresShardedClusterForShardingSphereUtil extends StackGresS
     return secret;
   }
 
-  private static StackGresScriptEntry getShardingSphereUpdateShardsScript(
+  private static StackGresScriptEntry getShardingSphereUpdateWorkersScript(
       StackGresShardedClusterContext context, int id) {
     StackGresShardedCluster cluster = context.getShardedCluster();
     final StackGresScriptEntry script = new StackGresScriptEntryBuilder()
         .withId(id)
-        .withName("shardingsphere-update-shards")
+        .withName("shardingsphere-update-workers")
         .withRetryOnError(true)
         .withDatabase(cluster.getSpec().getDatabase())
         .withNewScriptFrom()
         .withNewSecretKeyRef()
-        .withName(getUpdateShardsSecretName(cluster))
-        .withKey("shardingsphere-update-shards.sql")
+        .withName(getUpdateWorkersSecretName(cluster))
+        .withKey("shardingsphere-update-workers.sql")
         .endSecretKeyRef()
         .endScriptFrom()
         .build();
     return script;
   }
 
-  static Secret getUpdateShardsSecret(
+  static Secret getUpdateWorkersSecret(
       StackGresShardedClusterContext context) {
     StackGresShardedCluster cluster = context.getShardedCluster();
     var superuserCredentials = ShardedClusterSecret.getSuperuserCredentials(context);
     final Secret secret = new SecretBuilder()
         .withNewMetadata()
         .withNamespace(cluster.getMetadata().getNamespace())
-        .withName(getUpdateShardsSecretName(cluster))
+        .withName(getUpdateWorkersSecretName(cluster))
         .endMetadata()
-        .withData(ResourceUtil.encodeSecret(Map.of("shardingsphere-update-shards.sql",
+        .withData(ResourceUtil.encodeSecret(Map.of("shardingsphere-update-workers.sql",
             Unchecked.supplier(() -> Resources
                 .asCharSource(StackGresShardedClusterForShardingSphereUtil.class.getResource(
-                    "/shardingsphere/shardingsphere-update-shards.sql"),
+                    "/shardingsphere/shardingsphere-update-workers.sql"),
                     StandardCharsets.UTF_8)
                 .read()).get().formatted(
-                    cluster.getSpec().getShards().getClusters(),
+                    cluster.getSpec().getWorkers().getClusters(),
                     DSL.inline(primaryShardServiceNamePlaceholder(cluster, "%1s")),
                     PatroniUtil.POSTGRES_SERVICE_PORT,
                     DSL.inline(cluster.getSpec().getDatabase()),
@@ -375,13 +380,13 @@ public interface StackGresShardedClusterForShardingSphereUtil extends StackGresS
     return StackGresShardedClusterUtil.coordinatorScriptName(cluster) + "-init";
   }
 
-  static String getUpdateShardsSecretName(StackGresShardedCluster cluster) {
-    return StackGresShardedClusterUtil.coordinatorScriptName(cluster) + "-update-shards";
+  static String getUpdateWorkersSecretName(StackGresShardedCluster cluster) {
+    return StackGresShardedClusterUtil.coordinatorScriptName(cluster) + "-update-workers";
   }
 
   private static String primaryShardServiceNamePlaceholder(
       StackGresShardedCluster cluster, String shardIndexPlaceholder) {
-    return StackGresShardedClusterUtil.getShardClusterName(cluster, shardIndexPlaceholder);
+    return StackGresShardedClusterUtil.getWorkerClusterName(cluster, shardIndexPlaceholder);
   }
 
   static Role getShardingSphereOperatorRole(

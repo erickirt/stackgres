@@ -9,7 +9,7 @@ description: Details about ShardingSphere sharding technology.
 
 Apache ShardingSphere is an ecosystem to transform any database into a distributed database system, and enhance it with sharding, elastic scaling, encryption features and more.
 
-StackGres uses [ShardingSphere Proxy](https://shardingsphere.apache.org/document/current/en/quick-start/shardingsphere-proxy-quick-start/) as the coordinator entry point to distribute SQL traffic among the PostgreSQL shards. Unlike Citus, which uses a PostgreSQL extension, ShardingSphere operates as an external middleware proxy that sits between the application and the database shards.
+StackGres uses [ShardingSphere Proxy](https://shardingsphere.apache.org/document/current/en/quick-start/shardingsphere-proxy-quick-start/) as the coordinator entry point to distribute SQL traffic among the PostgreSQL workers. Unlike Citus, which uses a PostgreSQL extension, ShardingSphere operates as an external middleware proxy that sits between the application and the database workers.
 
 This implementation requires the [ShardingSphere Operator](https://shardingsphere.apache.org/oncloud/current/en/user-manual/cn-sn-operator/) to be installed in the Kubernetes cluster. StackGres will create a ComputeNode resource that the ShardingSphere Operator manages.
 
@@ -59,7 +59,7 @@ spec:
     pods:
       persistentVolume:
         size: '10Gi'
-  shards:
+  workers:
     clusters: 4
     instancesPerCluster: 2
     pods:
@@ -67,7 +67,7 @@ spec:
         size: '10Gi'
 ```
 
-This configuration will create a ShardingSphere Proxy coordinator in Cluster mode using ZooKeeper for metadata persistence, and 4 PostgreSQL shards with 2 Pods each.
+This configuration will create a ShardingSphere Proxy coordinator in Cluster mode using ZooKeeper for metadata persistence, and 4 PostgreSQL workers with 2 Pods each.
 
 ## Authority Configuration
 

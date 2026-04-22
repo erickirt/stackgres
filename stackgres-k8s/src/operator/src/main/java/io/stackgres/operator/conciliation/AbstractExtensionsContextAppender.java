@@ -39,8 +39,8 @@ public abstract class AbstractExtensionsContextAppender<C, T> {
       String postgresVersion,
       String buildVersion,
       Optional<String> previousVersion,
-      Optional<String> previousBuildVersion) {
-    StackGresCluster cluster = getCluster(inputContext);
+      Optional<String> previousBuildVersion,
+      StackGresCluster cluster) {
     List<StackGresClusterExtension> extensions = getExtensions(inputContext, postgresVersion, buildVersion);
     List<StackGresClusterInstalledExtension> missingDefaultExtensions =
         getDefaultExtensions(inputContext, postgresVersion, buildVersion)
@@ -169,8 +169,6 @@ public abstract class AbstractExtensionsContextAppender<C, T> {
         .append(defaultExtensions)
         .toList();
   }
-
-  protected abstract StackGresCluster getCluster(C inputContext);
 
   protected abstract List<ExtensionTuple> getDefaultExtensions(
       C inputContext, String version, String buildVersion);

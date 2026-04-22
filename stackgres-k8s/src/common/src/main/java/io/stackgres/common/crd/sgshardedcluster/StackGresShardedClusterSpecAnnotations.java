@@ -14,6 +14,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpecAnnotations;
 import io.sundr.builder.annotations.Buildable;
+import jakarta.validation.constraints.Null;
 
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -27,6 +28,9 @@ public class StackGresShardedClusterSpecAnnotations extends StackGresClusterSpec
 
   private Map<String, String> coordinatorAnyService;
 
+  private Map<String, String> workersPrimariesService;
+
+  @Null(message = "shardsPrimariesService is deprecated use workersPrimariesService instead")
   private Map<String, String> shardsPrimariesService;
 
   public Map<String, String> getCoordinatorPrimaryService() {
@@ -45,10 +49,20 @@ public class StackGresShardedClusterSpecAnnotations extends StackGresClusterSpec
     this.coordinatorAnyService = coordinatorAnyService;
   }
 
+  public Map<String, String> getWorkersPrimariesService() {
+    return workersPrimariesService;
+  }
+
+  public void setWorkersPrimariesService(Map<String, String> workersPrimariesService) {
+    this.workersPrimariesService = workersPrimariesService;
+  }
+
+  @Deprecated
   public Map<String, String> getShardsPrimariesService() {
     return shardsPrimariesService;
   }
 
+  @Deprecated
   public void setShardsPrimariesService(Map<String, String> shardsPrimariesService) {
     this.shardsPrimariesService = shardsPrimariesService;
   }

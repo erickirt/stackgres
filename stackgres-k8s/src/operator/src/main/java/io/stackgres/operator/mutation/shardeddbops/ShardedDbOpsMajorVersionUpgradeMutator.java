@@ -107,7 +107,7 @@ public class ShardedDbOpsMajorVersionUpgradeMutator implements ShardedDbOpsMutat
   }
 
   private int getNumberOfClusters(final StackGresShardedCluster cluster) {
-    return cluster.getSpec().getShards().getClusters() + 1;
+    return cluster.getSpec().getWorkers().getClusters() + 1;
   }
 
 }

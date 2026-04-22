@@ -36,7 +36,9 @@ public class ShardedClusterSpec {
 
   private ShardedClusterCoordinator coordinator;
 
-  private ShardedClusterShards shards;
+  private ShardedClusterWorkers workers;
+
+  private ShardedClusterWorkers shards;
 
   private ShardedClusterInitalData initialData;
 
@@ -124,11 +126,19 @@ public class ShardedClusterSpec {
     this.coordinator = coordinator;
   }
 
-  public ShardedClusterShards getShards() {
+  public ShardedClusterWorkers getWorkers() {
+    return workers;
+  }
+
+  public void setWorkers(ShardedClusterWorkers workers) {
+    this.workers = workers;
+  }
+
+  public ShardedClusterWorkers getShards() {
     return shards;
   }
 
-  public void setShards(ShardedClusterShards shards) {
+  public void setShards(ShardedClusterWorkers shards) {
     this.shards = shards;
   }
 

@@ -18,11 +18,21 @@ import io.stackgres.apiweb.dto.cluster.ClusterSpec;
     "prometheusAutobind", "nonProductionOptions", "postgresServices" })
 public class ShardedClusterCoordinator extends ClusterSpec {
 
+  private String clusterName;
+
   @JsonProperty("replication")
   private ShardedClusterReplication replicationForCoordinator;
 
   @JsonProperty("configurations")
   private ShardedClusterCoordinatorConfigurations configurationsForCoordinator;
+
+  public String getClusterName() {
+    return clusterName;
+  }
+
+  public void setClusterName(String clusterName) {
+    this.clusterName = clusterName;
+  }
 
   public ShardedClusterReplication getReplicationForCoordinator() {
     return replicationForCoordinator;
