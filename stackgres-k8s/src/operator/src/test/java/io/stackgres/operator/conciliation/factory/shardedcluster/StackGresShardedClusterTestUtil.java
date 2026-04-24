@@ -29,6 +29,7 @@ class StackGresShardedClusterTestUtil {
     List<String> paths = Seq.range(0, shardedCluster.getSpec().getWorkers().getClusters() + 1)
         .<String>map(index -> ModelTestUtil.generateRandom(String.class))
         .toList();
+    shardedCluster.getSpec().getReplicateFrom().getInstance().setSgShardedCluster(null);
     shardedCluster.getSpec().getReplicateFrom().getInstance().getExternal().setHosts(hosts);
     shardedCluster.getSpec().getReplicateFrom().getInstance().getExternal().setPorts(ports);
     shardedCluster.getSpec().getReplicateFrom().getStorage().setPaths(paths);

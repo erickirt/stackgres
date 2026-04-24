@@ -64,7 +64,7 @@
               "type": "ClusterIP"
             }
           },
-          "shards": {
+          "workers": {
             "primaries": {
               "enabled": true,
               "type": "ClusterIP"
@@ -88,7 +88,7 @@
             }
           }
         },
-        "shards": {
+        "workers": {
           "clusters": 2,
           "instancesPerCluster": 1,
           "sgInstanceProfile": "size-s",
@@ -138,7 +138,7 @@
               "type": "ClusterIP"
             }
           },
-          "shards": {
+          "workers": {
             "primaries": {
               "enabled": true,
               "type": "ClusterIP"
@@ -162,7 +162,7 @@
             }
           }
         },
-        "shards": {
+        "workers": {
           "clusters": 2,
           "instancesPerCluster": 1,
           "sgInstanceProfile": "size-s",

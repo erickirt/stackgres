@@ -64,7 +64,7 @@
               "type": "ClusterIP"
             }
           },
-          "shards": {
+          "workers": {
             "primaries": {
               "enabled": true,
               "type": "ClusterIP"
@@ -100,7 +100,7 @@
             }
           }
         },
-        "shards": {
+        "workers": {
           "managedSql": {
             "scripts": [{
               "id": 10,

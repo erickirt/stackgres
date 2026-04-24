@@ -12,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -134,6 +135,8 @@ class ShardedClusterPostgresVersionContextAppenderTest {
         clusterWorkersContextAppender,
         clusterExtensionsContextAppender,
         ALL_SUPPORTED_POSTGRES_VERSIONS);
+    lenient().when(clusterCoordinatorContextAppender.appendContext(any(), any(), any()))
+        .thenReturn(coordinator);
   }
 
   @Test
