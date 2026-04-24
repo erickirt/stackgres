@@ -40,6 +40,7 @@ class ClusterPodSecurityFactoryTest {
   void setUp() {
     cluster = Fixtures.cluster().loadDefault().get();
     when(clusterContext.getSource()).thenReturn(cluster);
+    when(clusterContext.getCluster()).thenReturn(cluster);
   }
 
   @Test

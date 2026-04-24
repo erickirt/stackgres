@@ -37,10 +37,10 @@ class PatroniStaticVolumesFactoryTest {
   }
 
   @Test
-  void buildVolumes_shouldReturnNineVolumes() {
+  void buildVolumes_shouldReturnTenVolumes() {
     List<VolumePair> volumes = factory.buildVolumes(context).toList();
 
-    assertEquals(9, volumes.size());
+    assertEquals(10, volumes.size());
   }
 
   @Test
@@ -75,6 +75,7 @@ class PatroniStaticVolumesFactoryTest {
     Set<String> expectedVolumeNames = Set.of(
         StackGresVolume.POSTGRES_SOCKET.getName(),
         StackGresVolume.DSHM.getName(),
+        StackGresVolume.CGROUP.getName(),
         StackGresVolume.SHARED.getName(),
         StackGresVolume.EMPTY_BASE.getName(),
         StackGresVolume.USER.getName(),
