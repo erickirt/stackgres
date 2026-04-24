@@ -44,7 +44,7 @@ public final class StackGresShardedCluster
 
   public static final String KIND = "SGShardedCluster";
 
-  public static final String VERSION = "v1alpha1";
+  public static final String VERSION = "v1beta1";
 
   @NotNull(message = "spec is required")
   @Valid

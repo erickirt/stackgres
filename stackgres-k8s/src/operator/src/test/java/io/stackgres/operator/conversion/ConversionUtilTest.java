@@ -29,7 +29,7 @@ public class ConversionUtilTest {
 
   @Test
   void alphaVersion_shouldNotFail() {
-    assertEquals(V1ALPHA1_AS_NUMBER, ConversionUtil.apiVersionAsNumber("stackgres.io/v1beta1"));
+    assertEquals(V1ALPHA1_AS_NUMBER, ConversionUtil.apiVersionAsNumber("stackgres.io/v1alpha1"));
   }
 
   @Test
@@ -37,7 +37,7 @@ public class ConversionUtilTest {
     assertTrue(ConversionUtil.apiVersionAsNumber("stackgres.io/v1") > ConversionUtil
         .apiVersionAsNumber("stackgres.io/v1beta1"));
     assertTrue(ConversionUtil.apiVersionAsNumber("stackgres.io/v1") > ConversionUtil
-        .apiVersionAsNumber("stackgres.io/v1beta1"));
+        .apiVersionAsNumber("stackgres.io/v1alpha1"));
   }
 
   @Test
@@ -45,14 +45,14 @@ public class ConversionUtilTest {
     assertTrue(ConversionUtil.apiVersionAsNumber("stackgres.io/v1beta1") < ConversionUtil
         .apiVersionAsNumber("stackgres.io/v1"));
     assertTrue(ConversionUtil.apiVersionAsNumber("stackgres.io/v1beta1") > ConversionUtil
-        .apiVersionAsNumber("stackgres.io/v1beta1"));
+        .apiVersionAsNumber("stackgres.io/v1alpha1"));
   }
 
   @Test
   void alphaVersionComparison_shouldNotFail() {
-    assertTrue(ConversionUtil.apiVersionAsNumber("stackgres.io/v1beta1") < ConversionUtil
+    assertTrue(ConversionUtil.apiVersionAsNumber("stackgres.io/v1alpha1") < ConversionUtil
         .apiVersionAsNumber("stackgres.io/v1"));
-    assertTrue(ConversionUtil.apiVersionAsNumber("stackgres.io/v1beta1") < ConversionUtil
+    assertTrue(ConversionUtil.apiVersionAsNumber("stackgres.io/v1alpha1") < ConversionUtil
         .apiVersionAsNumber("stackgres.io/v1beta1"));
   }
 
@@ -83,7 +83,7 @@ public class ConversionUtilTest {
   @Test
   void tooLongAlphaVersion_shouldFail() {
     assertThrows(IllegalArgumentException.class,
-        () -> ConversionUtil.apiVersionAsNumber("stackgres.io/v1beta1024"));
+        () -> ConversionUtil.apiVersionAsNumber("stackgres.io/v1alpha1024"));
   }
 
   @Test
