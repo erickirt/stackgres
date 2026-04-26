@@ -8,6 +8,7 @@ package io.stackgres.common;
 import java.util.Optional;
 
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.operatorframework.resource.ResourceUtil;
@@ -26,7 +27,10 @@ public interface StackGresShardedClusterUtil {
   }
 
   static String getCoordinatorClusterName(StackGresShardedCluster cluster) {
-    return getCoordinatorClusterName(cluster.getMetadata().getName());
+    return Optional.of(cluster.getSpec())
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getClusterName)
+        .orElseGet(() -> getCoordinatorClusterName(cluster.getMetadata().getName()));
   }
 
   static String getCoordinatorClusterName(String name) {
@@ -45,10 +49,7 @@ public interface StackGresShardedClusterUtil {
   }
 
   static String coordinatorConfigName(StackGresShardedCluster cluster) {
-    return Optional.of(cluster.getSpec())
-        .map(StackGresShardedClusterSpec::getWorkers)
-        .map(StackGresShardedClusterWorkers::getClusterNameTemplate)
-        .orElseGet(() -> cluster.getMetadata().getName() + "-coord");
+    return getCoordinatorClusterName(cluster);
   }
 
   static String coordinatorScriptName(StackGresShardedCluster cluster) {
