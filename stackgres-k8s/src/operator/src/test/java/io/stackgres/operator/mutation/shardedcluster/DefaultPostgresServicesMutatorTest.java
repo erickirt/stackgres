@@ -142,6 +142,55 @@ class DefaultPostgresServicesMutatorTest {
   }
 
   @Test
+  void clusterWithOnlyDeprecatedShards_shouldDefaultFromFallback() {
+    StackGresPostgresService primaries = new StackGresPostgresService();
+    primaries.setEnabled(Boolean.FALSE);
+    primaries.setType("LoadBalancing");
+
+    StackGresShardedClusterPostgresServices postgresServices =
+        new StackGresShardedClusterPostgresServices();
+    postgresServices.setCoordinator(new StackGresShardedClusterPostgresCoordinatorServices());
+    postgresServices.setShards(new StackGresShardedClusterPostgresWorkersServices());
+    postgresServices.getShards().setPrimaries(primaries);
+    review.getRequest().getObject().getSpec().setPostgresServices(postgresServices);
+
+    StackGresShardedCluster actualCluster = mutate(review);
+    StackGresShardedClusterPostgresServices pgServices =
+        actualCluster.getSpec().getPostgresServices();
+
+    assertEquals(Boolean.FALSE, pgServices.getShards().getPrimaries().getEnabled());
+    assertEquals("LoadBalancing", pgServices.getShards().getPrimaries().getType());
+  }
+
+  @Test
+  void clusterWithBothShardsAndWorkers_shouldPreferWorkers() {
+    StackGresPostgresService workersPrimaries = new StackGresPostgresService();
+    workersPrimaries.setEnabled(Boolean.TRUE);
+    workersPrimaries.setType("ClusterIP");
+    StackGresPostgresService shardsPrimaries = new StackGresPostgresService();
+    shardsPrimaries.setEnabled(Boolean.FALSE);
+    shardsPrimaries.setType("LoadBalancing");
+
+    StackGresShardedClusterPostgresServices postgresServices =
+        new StackGresShardedClusterPostgresServices();
+    postgresServices.setCoordinator(new StackGresShardedClusterPostgresCoordinatorServices());
+    postgresServices.setWorkers(new StackGresShardedClusterPostgresWorkersServices());
+    postgresServices.getWorkers().setPrimaries(workersPrimaries);
+    postgresServices.setShards(new StackGresShardedClusterPostgresWorkersServices());
+    postgresServices.getShards().setPrimaries(shardsPrimaries);
+    review.getRequest().getObject().getSpec().setPostgresServices(postgresServices);
+
+    StackGresShardedCluster actualCluster = mutate(review);
+    StackGresShardedClusterPostgresServices pgServices =
+        actualCluster.getSpec().getPostgresServices();
+
+    assertEquals(Boolean.TRUE, pgServices.getWorkers().getPrimaries().getEnabled());
+    assertEquals("ClusterIP", pgServices.getWorkers().getPrimaries().getType());
+    // The deprecated shards field is left untouched so the @Null validator can reject it.
+    assertEquals(Boolean.FALSE, pgServices.getShards().getPrimaries().getEnabled());
+  }
+
+  @Test
   void clusterWithPostgresServiceNoEnabled_shouldSetValue() {
     StackGresPostgresService primary = new StackGresPostgresService();
     primary.setType("LoadBalancing");

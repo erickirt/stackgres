@@ -29,6 +29,8 @@ import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinatorConfigurations;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresServicesBuilder;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterReplicateFrom;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterReplicateFromInstance;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.testutil.JsonUtil;
@@ -211,6 +213,63 @@ class StackGresShardedClusterForCitusUtilTest {
         .withEnabled(false)
         .build(),
         cluster.getSpec().getPostgresServices().getReplicas());
+  }
+
+  @Test
+  void givedMinimalShardedClusterWithCoordinatorClusterName_shouldUseCustomCoordinatorName() {
+    var shardedCluster = getMinimalShardedCluster();
+    shardedCluster.getMetadata().setName("stackgres");
+    shardedCluster.getSpec().getCoordinator().setClusterName("custom-coord");
+    var cluster = getCoordinatorCluster(JsonUtil.copy(shardedCluster), Optional.empty());
+
+    Assertions.assertEquals("custom-coord", cluster.getMetadata().getName());
+  }
+
+  @Test
+  void givedMinimalShardedClusterWithWorkersClusterNameTemplate_shouldUseCustomWorkerName() {
+    var shardedCluster = getMinimalShardedCluster();
+    shardedCluster.getMetadata().setName("stackgres");
+    shardedCluster.getSpec().getWorkers().setClusterNameTemplate("legacy-shard");
+    var clusterIndex0 = getWorkersCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
+    var clusterIndex2 = getWorkersCluster(JsonUtil.copy(shardedCluster), 2, Optional.empty());
+
+    Assertions.assertEquals("legacy-shard0", clusterIndex0.getMetadata().getName());
+    Assertions.assertEquals("legacy-shard2", clusterIndex2.getMetadata().getName());
+  }
+
+  @Test
+  void givedShardedClusterReplicatingFromUnknownSgShardedCluster_shouldThrow() {
+    var shardedCluster = getMinimalShardedCluster();
+    shardedCluster.getMetadata().setName("stackgres");
+    shardedCluster.getSpec().setReplicateFrom(new StackGresShardedClusterReplicateFrom());
+    shardedCluster.getSpec().getReplicateFrom().setInstance(
+        new StackGresShardedClusterReplicateFromInstance());
+    shardedCluster.getSpec().getReplicateFrom().getInstance().setSgShardedCluster("missing");
+
+    var copy = JsonUtil.copy(shardedCluster);
+    var ex = Assertions.assertThrows(RuntimeException.class,
+        () -> getCoordinatorCluster(copy, Optional.empty()));
+    Assertions.assertEquals("SGShardedCluster missing was not found", ex.getMessage());
+  }
+
+  @Test
+  void givedShardedClusterReplicatingFromKnownSgShardedCluster_shouldResolveWorkerNameFromReferenced() {
+    var shardedCluster = getMinimalShardedCluster();
+    shardedCluster.getMetadata().setName("stackgres");
+    shardedCluster.getSpec().setReplicateFrom(new StackGresShardedClusterReplicateFrom());
+    shardedCluster.getSpec().getReplicateFrom().setInstance(
+        new StackGresShardedClusterReplicateFromInstance());
+    shardedCluster.getSpec().getReplicateFrom().getInstance().setSgShardedCluster("source");
+
+    var replicateCluster = getMinimalShardedCluster();
+    replicateCluster.getMetadata().setName("source");
+    replicateCluster.getSpec().getWorkers().setClusterNameTemplate("source-shard");
+
+    var cluster = getWorkersCluster(
+        JsonUtil.copy(shardedCluster), 0, Optional.of(replicateCluster));
+
+    Assertions.assertEquals("source-shard0",
+        cluster.getSpec().getReplicateFrom().getInstance().getSgCluster());
   }
 
   @Test

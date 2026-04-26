@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.StackGresUtil;
 import io.sundr.builder.annotations.Buildable;
+import jakarta.validation.Valid;
 
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -21,8 +22,10 @@ import io.sundr.builder.annotations.Buildable;
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresShardedClusterSpecMetadata {
 
+  @Valid
   private StackGresShardedClusterSpecAnnotations annotations;
 
+  @Valid
   private StackGresShardedClusterSpecLabels labels;
 
   public StackGresShardedClusterSpecAnnotations getAnnotations() {

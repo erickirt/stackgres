@@ -8,6 +8,7 @@ package io.stackgres.operator.validation.shardedcluster;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import com.google.common.collect.Lists;
@@ -27,9 +28,14 @@ import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterBackupConfiguration;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterConfigurations;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresServices;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresWorkersServices;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterReplication;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterShardPods;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpecAnnotations;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpecLabels;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpecMetadata;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorker;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.common.validation.ValidEnum;
@@ -42,6 +48,7 @@ import io.stackgres.operatorframework.admissionwebhook.validating.ValidationFail
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
 import jakarta.validation.constraints.Pattern;
 import org.junit.jupiter.api.Test;
 
@@ -1245,6 +1252,60 @@ class ShardedClusterConstraintValidatorTest
     checkErrorCause(StackGresClusterReplication.class,
         "spec.replication.syncInstances",
         review, Min.class, "must be greater than or equal to 1");
+  }
+
+  @Test
+  void deprecatedSpecShards_shouldFail() {
+    StackGresShardedClusterReview review = getValidReview();
+    review.getRequest().getObject().getSpec().setShards(
+        review.getRequest().getObject().getSpec().getWorkers());
+
+    checkErrorCause(StackGresShardedClusterSpec.class,
+        "spec.shards",
+        review, Null.class, "shards is deprecated use workers instead");
+  }
+
+  @Test
+  void deprecatedPostgresServicesShards_shouldFail() {
+    StackGresShardedClusterReview review = getValidReview();
+    review.getRequest().getObject().getSpec().getPostgresServices().setShards(
+        new StackGresShardedClusterPostgresWorkersServices());
+
+    checkErrorCause(StackGresShardedClusterPostgresServices.class,
+        "spec.postgresServices.shards",
+        review, Null.class, "shards is deprecated use workers instead");
+  }
+
+  @Test
+  void deprecatedLabelsShardsPrimariesService_shouldFail() {
+    StackGresShardedClusterReview review = getValidReview();
+    review.getRequest().getObject().getSpec().setMetadata(
+        new StackGresShardedClusterSpecMetadata());
+    review.getRequest().getObject().getSpec().getMetadata().setLabels(
+        new StackGresShardedClusterSpecLabels());
+    review.getRequest().getObject().getSpec().getMetadata().getLabels()
+        .setShardsPrimariesService(Map.of("key", "value"));
+
+    checkErrorCause(StackGresShardedClusterSpecLabels.class,
+        "spec.metadata.labels.shardsPrimariesService",
+        review, Null.class,
+        "shardsPrimariesService is deprecated use workersPrimariesService instead");
+  }
+
+  @Test
+  void deprecatedAnnotationsShardsPrimariesService_shouldFail() {
+    StackGresShardedClusterReview review = getValidReview();
+    review.getRequest().getObject().getSpec().setMetadata(
+        new StackGresShardedClusterSpecMetadata());
+    review.getRequest().getObject().getSpec().getMetadata().setAnnotations(
+        new StackGresShardedClusterSpecAnnotations());
+    review.getRequest().getObject().getSpec().getMetadata().getAnnotations()
+        .setShardsPrimariesService(Map.of("key", "value"));
+
+    checkErrorCause(StackGresShardedClusterSpecAnnotations.class,
+        "spec.metadata.annotations.shardsPrimariesService",
+        review, Null.class,
+        "shardsPrimariesService is deprecated use workersPrimariesService instead");
   }
 
 }
