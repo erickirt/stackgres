@@ -58,6 +58,14 @@ public class ShardedClusterLabelFactory
   }
 
   @Override
+  public Map<String, String> queryRoutersLabels(@NotNull StackGresShardedCluster resource) {
+    return ImmutableMap.<String, String>builder().putAll(genericLabels(resource))
+        .put(labelMapper().resourceUidKey(resource), labelValue(resourceUid(resource)))
+        .put(labelMapper().queryRoutersKey(resource), StackGresContext.RIGHT_VALUE)
+        .build();
+  }
+
+  @Override
   public Map<String, String> scheduledBackupPodLabels(StackGresShardedCluster resource) {
     return ImmutableMap.<String, String>builder().putAll(genericLabels(resource))
         .put(labelMapper().resourceUidKey(resource), labelValue(resourceUid(resource)))

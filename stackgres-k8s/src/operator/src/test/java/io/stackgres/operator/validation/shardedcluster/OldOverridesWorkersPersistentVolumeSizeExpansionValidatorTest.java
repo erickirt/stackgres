@@ -61,7 +61,7 @@ class OldOverridesWorkersPersistentVolumeSizeExpansionValidatorTest extends
 
   @Override
   protected StackGresCluster getCluster(StackGresShardedCluster resource) {
-    return StackGresShardedClusterForCitusUtil.getWorkersCluster(resource, 0, Optional.empty());
+    return StackGresShardedClusterForCitusUtil.getWorkerCluster(resource, 0, Optional.empty());
   }
 
   @Override

@@ -58,9 +58,13 @@ public interface StackGresShardedClusterContext
 
   List<StackGresCluster> getWorkers();
 
+  List<StackGresCluster> getQueryRouters();
+
   Optional<Endpoints> getCoordinatorPrimaryEndpoints();
 
   List<Endpoints> getWorkersPrimaryEndpoints();
+
+  List<Endpoints> getQueryRoutersPrimaryEndpoints();
 
   Optional<Secret> getDatabaseSecret();
 

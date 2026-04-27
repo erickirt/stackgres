@@ -5,7 +5,7 @@ e2e_test_install() {
 
   install_prometheus_operator
 
-  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "$(( 1 + ${E2E_PGBENCH_CITUS_SHARDS:-2} + ${E2E_PGBENCH_CITUS_QUERY_ROUTERS:-0} ))" 1 \
+  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "$(( 1 + ${E2E_PGBENCH_CITUS_SHARDS:-2} + ${E2E_PGBENCH_CITUS_QUERY_ROUTERS:-0} ))" 1 0 \
     --set-string instanceProfiles[0].name=size-s \
     --set-string instanceProfiles[0].cpu=500m \
     --set-string instanceProfiles[0].memory=2Gi \

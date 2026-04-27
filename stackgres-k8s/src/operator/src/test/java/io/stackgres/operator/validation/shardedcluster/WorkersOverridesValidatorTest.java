@@ -56,7 +56,8 @@ class WorkersOverridesValidatorTest {
 
     ValidationUtils.assertValidationFailed(() -> validator.validate(review),
         ErrorType.CONSTRAINT_VIOLATION,
-        "Workers overrides must contain unique indexes");
+        "Workers overrides must contain unique indexes."
+        + " Entry index or index range can not overlap other entries index or index range");
   }
 
   private StackGresShardedClusterReview getCreationReview() {

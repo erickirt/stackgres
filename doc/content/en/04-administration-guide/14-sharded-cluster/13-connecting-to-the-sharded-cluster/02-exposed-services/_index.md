@@ -34,6 +34,8 @@ spec:
         type: NodePort
       any:
         type: NodePort
+      queryRouters:
+        type: NodePort
     workers:
       primaries:
         type: NodePort
@@ -94,6 +96,8 @@ spec:
       primary:
         type: LoadBalancer
       any:
+        type: LoadBalancer
+      queryRouters:
         type: LoadBalancer
     workers:
       primaries:

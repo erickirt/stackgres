@@ -50,7 +50,7 @@ class WorkersOverridesScriptsConfigMutatorTest {
         .loadCreateWithManagedSql().get();
     final JsonNode expectedCluster = JsonUtil.toJson(review.getRequest().getObject());
 
-    review.getRequest().getObject().getSpec().getWorkers().getOverrides().get(0)
+    review.getRequest().getObject().getSpec().getPlainOverrides().get(0)
         .getManagedSql().getScripts().stream()
         .forEach(scriptEntry -> scriptEntry.setId(null));
 
@@ -82,11 +82,11 @@ class WorkersOverridesScriptsConfigMutatorTest {
     StackGresShardedClusterReview review = AdmissionReviewFixtures.shardedCluster()
         .loadUpdateWithManagedSql().get();
 
-    review.getRequest().getObject().getSpec().getWorkers().getOverrides().get(0)
+    review.getRequest().getObject().getSpec().getPlainOverrides().get(0)
         .getManagedSql().getScripts().add(1, new StackGresClusterManagedScriptEntry());
 
     StackGresShardedCluster expected = JsonUtil.copy(review.getRequest().getObject());
-    expected.getSpec().getWorkers().getOverrides().get(0)
+    expected.getSpec().getPlainOverrides().get(0)
         .getManagedSql().getScripts().get(1).setId(13);
     JsonNode expectedCluster = JsonUtil.toJson(expected);
 

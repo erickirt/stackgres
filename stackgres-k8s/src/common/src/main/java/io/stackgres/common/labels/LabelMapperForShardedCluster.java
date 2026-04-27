@@ -23,6 +23,10 @@ public interface LabelMapperForShardedCluster
     return getKeyPrefix(resource) + StackGresContext.WORKERS_KEY;
   }
 
+  default String queryRoutersKey(StackGresShardedCluster resource) {
+    return getKeyPrefix(resource) + StackGresContext.QUERY_ROUTERS_KEY;
+  }
+
   default String scheduledShardedBackupKey(StackGresShardedCluster resource) {
     return getKeyPrefix(resource) + StackGresContext.SCHEDULED_SHARDED_BACKUP_KEY;
   }

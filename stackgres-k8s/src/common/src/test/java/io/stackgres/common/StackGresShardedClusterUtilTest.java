@@ -104,6 +104,52 @@ class StackGresShardedClusterUtilTest {
   }
 
   @Test
+  void getQueryRouterClusterName_default_returnsNameDashRouterIndex() {
+    assertEquals(
+        "stackgres-router0",
+        StackGresShardedClusterUtil.getQueryRouterClusterName(newCluster(), 1024));
+    assertEquals(
+        "stackgres-router3",
+        StackGresShardedClusterUtil.getQueryRouterClusterName(newCluster(), 1027));
+  }
+
+  @Test
+  void getQueryRouterClusterName_whenTemplateSet_appendsZeroBasedIndex() {
+    var cluster = newCluster();
+    cluster.getSpec().getCoordinator().setQueryRouterClusterNameTemplate("custom-router");
+
+    assertEquals(
+        "custom-router0",
+        StackGresShardedClusterUtil.getQueryRouterClusterName(cluster, 1024));
+    assertEquals(
+        "custom-router2",
+        StackGresShardedClusterUtil.getQueryRouterClusterName(cluster, 1026));
+  }
+
+  @Test
+  void getQueryRouterClusterName_whenIndexOffsetSet_appliesIt() {
+    var cluster = newCluster();
+    cluster.getSpec().getCoordinator().setQueryRouterIndexOffset(2048);
+
+    assertEquals(
+        "stackgres-router0",
+        StackGresShardedClusterUtil.getQueryRouterClusterName(cluster, 2048));
+    assertEquals(
+        "stackgres-router5",
+        StackGresShardedClusterUtil.getQueryRouterClusterName(cluster, 2053));
+  }
+
+  @Test
+  void getQueryRouterClusterName_stringIndex_supportsArbitrarySuffix() {
+    var cluster = newCluster();
+    cluster.getSpec().getCoordinator().setQueryRouterClusterNameTemplate("r-");
+
+    assertEquals(
+        "r-abc",
+        StackGresShardedClusterUtil.getQueryRouterClusterName(cluster, "abc"));
+  }
+
+  @Test
   void coordinatorConfigName_default_returnsCoordinatorClusterName() {
     assertEquals(
         "stackgres-coord",

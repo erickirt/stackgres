@@ -34,14 +34,14 @@ class StackGresShardedClusterTestUtil {
     shardedCluster.getSpec().getReplicateFrom().getInstance().getExternal().setPorts(ports);
     shardedCluster.getSpec().getReplicateFrom().getStorage().setPaths(paths);
     shardedCluster.getStatus().setSgBackups(sgBackups);
-    Seq.seq(shardedCluster.getSpec().getWorkers().getOverrides())
+    Seq.seq(shardedCluster.getSpec().getPlainOverrides())
         .zipWithIndex()
         .forEach(override -> override.v1.setIndex(
             shardedCluster.getSpec().getWorkers().getClusters() - override.v2.intValue() - 1));
     shardedCluster.getSpec().getWorkers().setOverrides(
-        shardedCluster.getSpec().getWorkers().getOverrides()
+        shardedCluster.getSpec().getPlainOverrides()
         .subList(0, Math.min(
-            shardedCluster.getSpec().getWorkers().getOverrides().size(),
+            shardedCluster.getSpec().getPlainOverrides().size(),
             shardedCluster.getSpec().getWorkers().getClusters())));
     return shardedCluster;
   }

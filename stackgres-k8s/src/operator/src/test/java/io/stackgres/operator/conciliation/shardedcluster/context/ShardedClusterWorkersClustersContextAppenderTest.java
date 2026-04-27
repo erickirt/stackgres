@@ -37,11 +37,16 @@ class ShardedClusterWorkersClustersContextAppenderTest {
   private ShardedClusterWorkersPrimaryEndpointsContextAppender
       shardedClusterWorkersPrimaryEndpointsContextAppender;
 
+  @Mock
+  private ShardedClusterQueryRoutersPrimaryEndpointsContextAppender
+      shardedClusterQueryRoutersPrimaryEndpointsContextAppender;
+
   @BeforeEach
   void setUp() {
     cluster = Fixtures.shardedCluster().loadDefault().get();
     contextAppender = new ShardedClusterWorkersClustersContextAppender(
         shardedClusterWorkersPrimaryEndpointsContextAppender,
+        shardedClusterQueryRoutersPrimaryEndpointsContextAppender,
         JsonUtil.jsonMapper());
   }
 
@@ -49,8 +54,12 @@ class ShardedClusterWorkersClustersContextAppenderTest {
   void givenCluster_shouldPass() {
     contextAppender.appendContext(cluster, contextBuilder, Optional.empty());
     ArgumentCaptor<List<StackGresCluster>> workers = ArgumentCaptor.captor();
+    ArgumentCaptor<List<StackGresCluster>> queryRouters = ArgumentCaptor.captor();
     verify(contextBuilder).workers(workers.capture());
+    verify(contextBuilder).queryRouters(queryRouters.capture());
     verify(shardedClusterWorkersPrimaryEndpointsContextAppender).appendContext(workers.getValue(), contextBuilder);
+    verify(shardedClusterQueryRoutersPrimaryEndpointsContextAppender)
+        .appendContext(queryRouters.getValue(), contextBuilder);
   }
 
 }

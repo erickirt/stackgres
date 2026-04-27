@@ -14,7 +14,7 @@ e2e_test_install() {
 
   install_minio
 
-  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "2"
+  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "2" "0"
 
   wait_pods_running "$CLUSTER_NAMESPACE" 7
   wait_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE"
@@ -215,7 +215,7 @@ check_restore_sharded_backup_is_working() {
   #   | jq ".metadata.name = \"$CLUSTER_NAME\"" \
   #   | kubectl replace --force -f -
 
-  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "2" \
+  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "2" "0" \
     --set-string cluster.initialData.restore.fromBackup.name="$SHARDED_BACKUP_NAME_FOR_RESTORE"
 
   local RESULT EXIT_CODE
@@ -247,7 +247,7 @@ check_restore_sharded_backup_with_pitr_is_working() {
     | jq ".metadata.name = \"$CLUSTER_NAME\"" \
     | kubectl replace --force -f -
 
-  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "2" \
+  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "2" "0" \
     --set-string cluster.initialData.restore.fromBackup.name="$SHARDED_BACKUP_NAME" \
     --set-string cluster.initialData.restore.fromBackup.pointInTimeRecovery.restoreToTimestamp="$BACKUP_PITR_DATE"
 

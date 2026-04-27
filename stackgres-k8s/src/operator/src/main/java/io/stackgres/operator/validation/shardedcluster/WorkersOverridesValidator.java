@@ -13,7 +13,6 @@ import io.stackgres.common.ErrorType;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorker;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.operator.common.StackGresShardedClusterReview;
 import io.stackgres.operator.validation.ValidationType;
 import io.stackgres.operatorframework.admissionwebhook.Operation;
@@ -33,8 +32,7 @@ public class WorkersOverridesValidator implements ShardedClusterValidator {
     if (review.getRequest().getOperation() == Operation.UPDATE
         || review.getRequest().getOperation() == Operation.CREATE) {
       var overridesWorkers = Optional.of(cluster.getSpec())
-          .map(StackGresShardedClusterSpec::getWorkers)
-          .map(StackGresShardedClusterWorkers::getOverrides)
+          .map(StackGresShardedClusterSpec::getPlainOverrides)
           .orElse(List.of());
       checkIndexesUniqueness(overridesWorkers);
     }
@@ -47,7 +45,8 @@ public class WorkersOverridesValidator implements ShardedClusterValidator {
         .values()
         .stream()
         .anyMatch(list -> list.size() > 1)) {
-      fail(constraintViolationUri, "Workers overrides must contain unique indexes");
+      fail(constraintViolationUri, "Workers overrides must contain unique indexes. Entry index or index range can"
+          + " not overlap other entries index or index range");
     }
   }
 

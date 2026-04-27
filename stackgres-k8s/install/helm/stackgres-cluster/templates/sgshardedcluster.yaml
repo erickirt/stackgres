@@ -110,6 +110,7 @@ spec:
   {{- end }}
   coordinator:
     instances: {{ .Values.cluster.instances }}
+    queryRouterClusters: {{ .Values.cluster.queryRouterClusters }}
     {{- with .Values.cluster.autoscaling }}
     autoscaling:
       {{- toYaml . | nindent 4 }}
@@ -174,7 +175,7 @@ spec:
     replication:
       {{- toYaml . | nindent 6 }}
     {{- end }}
-  shards:
+  workers:
     clusters: {{ .Values.shardedCluster.shards.clusters }}
     instancesPerCluster: {{ .Values.shardedCluster.shards.instancesPerCluster }}
     {{- with .Values.shardedCluster.shards.autoscaling }}

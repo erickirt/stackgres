@@ -99,8 +99,44 @@ class DefaultPostgresServicesMutatorTest {
     assertEquals("ClusterIP", pgServices.getCoordinator().getAny().getType());
     assertEquals(Boolean.TRUE, pgServices.getCoordinator().getPrimary().getEnabled());
     assertEquals("ClusterIP", pgServices.getCoordinator().getPrimary().getType());
+    assertEquals(Boolean.TRUE, pgServices.getCoordinator().getQueryRouters().getEnabled());
+    assertEquals("ClusterIP", pgServices.getCoordinator().getQueryRouters().getType());
     assertEquals(Boolean.TRUE, pgServices.getWorkers().getPrimaries().getEnabled());
     assertEquals("ClusterIP", pgServices.getWorkers().getPrimaries().getType());
+  }
+
+  @Test
+  void clusterWithoutQueryRouters_shouldSetDefaultQueryRouters() {
+    StackGresPostgresService primary = new StackGresPostgresService();
+    primary.setEnabled(Boolean.TRUE);
+    primary.setType("LoadBalancer");
+
+    setPostgresServices(null, primary, null);
+    review.getRequest().getObject().getSpec().getPostgresServices()
+        .getCoordinator().setQueryRouters(null);
+    StackGresShardedCluster actualCluster = mutate(review);
+    StackGresShardedClusterPostgresServices pgServices =
+        actualCluster.getSpec().getPostgresServices();
+
+    assertEquals(Boolean.TRUE, pgServices.getCoordinator().getQueryRouters().getEnabled());
+    assertEquals("ClusterIP", pgServices.getCoordinator().getQueryRouters().getType());
+  }
+
+  @Test
+  void clusterWithQueryRouters_shouldKeepQueryRouters() {
+    StackGresPostgresService queryRouters = new StackGresPostgresService();
+    queryRouters.setEnabled(Boolean.FALSE);
+    queryRouters.setType("LoadBalancer");
+
+    setPostgresServices(null, null, null);
+    review.getRequest().getObject().getSpec().getPostgresServices()
+        .getCoordinator().setQueryRouters(queryRouters);
+    StackGresShardedCluster actualCluster = mutate(review);
+    StackGresShardedClusterPostgresServices pgServices =
+        actualCluster.getSpec().getPostgresServices();
+
+    assertEquals(Boolean.FALSE, pgServices.getCoordinator().getQueryRouters().getEnabled());
+    assertEquals("LoadBalancer", pgServices.getCoordinator().getQueryRouters().getType());
   }
 
   @Test

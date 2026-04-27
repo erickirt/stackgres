@@ -46,8 +46,7 @@ class OverridesWorkersScriptsConfigValidatorTest {
         .withManagedSql(review.getRequest().getObject().getSpec().getWorkers()
             .getManagedSql())
         .build()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0)
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides().get(0)
         .getManagedSql().getScripts().get(0).setId(11);
 
     ValidationUtils.assertValidationFailed(() -> validator.validate(review),
@@ -65,8 +64,7 @@ class OverridesWorkersScriptsConfigValidatorTest {
         .withManagedSql(review.getRequest().getObject().getSpec().getWorkers()
             .getManagedSql())
         .build()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0)
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides().get(0)
         .getManagedSql().getScripts().get(0).setId(
             StackGresShardedClusterUtil.LAST_RESERVER_SCRIPT_ID);
 

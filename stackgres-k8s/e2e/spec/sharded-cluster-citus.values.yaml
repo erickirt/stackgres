@@ -17,6 +17,10 @@ cluster:
         configMapKeyRef: # read long script from a ConfigMap to avoid have to much data in the helm releasea and the sgcluster CR
           name: sql-scripts-sakila-schema
           key: create-sakila-schema.sql
+    - database: citus
+      script: |
+        CREATE TABLE query_router_test(i int);
+        SELECT create_distributed_table('query_router_test','i');
   pods:
     persistentVolume:
       size: 128Mi

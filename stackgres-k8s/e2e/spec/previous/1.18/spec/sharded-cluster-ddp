@@ -31,7 +31,7 @@ EOF
   kubectl create -n "$CLUSTER_NAMESPACE" configmap sql-scripts-sakila-schema \
     --from-file=create-sakila-schema.sql="$SPEC_PATH/sql-scripts.sakila.sql"
 
-  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "2"
+  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "2" "0"
 
   deploy_curl_pod "$CLUSTER_NAMESPACE"
 

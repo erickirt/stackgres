@@ -17,6 +17,7 @@ SGShardedCluster supports multiple scaling dimensions:
 | **Horizontal - Workers** | Number of worker clusters | `spec.workers.clusters` |
 | **Horizontal - Replicas** | Replicas per worker | `spec.workers.instancesPerCluster` |
 | **Horizontal - Coordinators** | Coordinator instances | `spec.coordinator.instances` |
+| **Horizontal - Query routers** (Citus only) | Number of query router clusters | `spec.coordinator.queryRouterClusters` |
 | **Vertical** | CPU/Memory | `spec.coordinator/workers.sgInstanceProfile` |
 
 ## Adding Workers
@@ -113,6 +114,30 @@ spec:
 - Minimum recommended: 2 instances for HA
 - Coordinators handle metadata and query routing
 - All coordinators can handle read/write queries
+
+## Scaling Query Routers (Citus only)
+
+For Citus sharded clusters, you can horizontally scale the number of read/write entrypoints by adding query router SGClusters. Query routers do not store sharded data — they route queries to the workers — so they can be added or removed without resharding.
+
+Add or remove query routers by changing `spec.coordinator.queryRouterClusters`:
+
+```yaml
+spec:
+  coordinator:
+    instances: 2
+    queryRouterClusters: 3  # Increased from 1 to 3
+```
+
+Or patch directly:
+
+```bash
+kubectl patch sgshardedcluster my-sharded-cluster --type merge \
+  -p '{"spec":{"coordinator":{"queryRouterClusters":3}}}'
+```
+
+Each new query router is created as a single-instance SGCluster named `<cluster-name>-router<index>` (or following the configured `queryRouterClusterNameTemplate`). The operator registers it in the Citus topology with `shouldhaveshards` set to `false` so the rebalancer never assigns shards to it.
+
+For configuration details and connection guidance see [Query Routers]({{% relref "04-administration-guide/14-sharded-cluster/01-citus-sharding-technology#query-routers" %}}).
 
 ## Vertical Scaling
 

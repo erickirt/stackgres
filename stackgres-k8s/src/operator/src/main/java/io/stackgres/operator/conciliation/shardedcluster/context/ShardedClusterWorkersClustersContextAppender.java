@@ -24,50 +24,87 @@ public class ShardedClusterWorkersClustersContextAppender {
 
   private final ShardedClusterWorkersPrimaryEndpointsContextAppender
       shardedClusterWorkersPrimaryEndpointsContextAppender;
+  private final ShardedClusterQueryRoutersPrimaryEndpointsContextAppender
+      shardedClusterQueryRoutersPrimaryEndpointsContextAppender;
   private final ObjectMapper objectMapper;
 
   public ShardedClusterWorkersClustersContextAppender(
       ShardedClusterWorkersPrimaryEndpointsContextAppender
           shardedClusterWorkersPrimaryEndpointsContextAppender,
+      ShardedClusterQueryRoutersPrimaryEndpointsContextAppender
+          shardedClusterQueryRoutersPrimaryEndpointsContextAppender,
       ObjectMapper objectMapper) {
     this.shardedClusterWorkersPrimaryEndpointsContextAppender =
         shardedClusterWorkersPrimaryEndpointsContextAppender;
+    this.shardedClusterQueryRoutersPrimaryEndpointsContextAppender =
+        shardedClusterQueryRoutersPrimaryEndpointsContextAppender;
     this.objectMapper = objectMapper;
   }
 
-  public List<StackGresCluster> appendContext(
+  public void appendContext(
       StackGresShardedCluster cluster,
       Builder contextBuilder,
       Optional<StackGresShardedCluster> replicateCluster) {
     List<StackGresCluster> workers = getWorkersClusters(cluster, replicateCluster);
     contextBuilder.workers(workers);
     shardedClusterWorkersPrimaryEndpointsContextAppender.appendContext(workers, contextBuilder);
-    return workers;
+    List<StackGresCluster> queryRouters = getQueryRoutersClusters(cluster, replicateCluster);
+    contextBuilder.queryRouters(queryRouters);
+    shardedClusterQueryRoutersPrimaryEndpointsContextAppender.appendContext(queryRouters, contextBuilder);
   }
 
   private List<StackGresCluster> getWorkersClusters(
       StackGresShardedCluster cluster,
       Optional<StackGresShardedCluster> replicateCluster) {
     return IntStream.range(0, cluster.getSpec().getWorkers().getClusters())
-        .mapToObj(index -> getWorkersCluster(cluster, index, replicateCluster))
+        .mapToObj(index -> getWorkerCluster(cluster, index, replicateCluster))
         .toList();
   }
 
-  private StackGresCluster getWorkersCluster(
+  private StackGresCluster getWorkerCluster(
       StackGresShardedCluster original,
       int index,
       Optional<StackGresShardedCluster> replicateCluster) {
     StackGresShardedCluster cluster = objectMapper.convertValue(original, StackGresShardedCluster.class);
     switch (StackGresShardingType.fromString(cluster.getSpec().getType())) {
       case CITUS:
-        return StackGresShardedClusterForCitusUtil.getWorkersCluster(cluster, index, replicateCluster);
+        return StackGresShardedClusterForCitusUtil.getWorkerCluster(cluster, index, replicateCluster);
       case DDP:
-        return StackGresShardedClusterForDdpUtil.getWorkersCluster(cluster, index, replicateCluster);
+        return StackGresShardedClusterForDdpUtil.getWorkerCluster(cluster, index, replicateCluster);
       case SHARDING_SPHERE:
-        return StackGresShardedClusterForShardingSphereUtil.getWorkersCluster(cluster, index, replicateCluster);
+        return StackGresShardedClusterForShardingSphereUtil.getWorkerCluster(cluster, index, replicateCluster);
       default:
         throw new UnsupportedOperationException(
             "Sharding technology " + cluster.getSpec().getType() + " not implemented");
+    }
+  }
+
+  private List<StackGresCluster> getQueryRoutersClusters(
+      StackGresShardedCluster cluster,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    final int queryRouterIndexOffset =
+        Optional.ofNullable(cluster.getSpec().getCoordinator().getQueryRouterIndexOffset())
+        .orElse(1024);
+    final int queryRouterClusters = Optional.ofNullable(cluster.getSpec().getCoordinator().getQueryRouterClusters())
+        .orElse(0);
+    return IntStream.range(
+            queryRouterIndexOffset,
+            queryRouterIndexOffset + queryRouterClusters)
+        .mapToObj(index -> getQueryRouterCluster(cluster, index, replicateCluster))
+        .toList();
+  }
+
+  private StackGresCluster getQueryRouterCluster(
+      StackGresShardedCluster original,
+      int index,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    StackGresShardedCluster cluster = objectMapper.convertValue(original, StackGresShardedCluster.class);
+    switch (StackGresShardingType.fromString(cluster.getSpec().getType())) {
+      case CITUS:
+        return StackGresShardedClusterForCitusUtil.getQueryRouterCluster(cluster, index, replicateCluster);
+      default:
+        throw new UnsupportedOperationException(
+            "Sharding technology " + cluster.getSpec().getType() + " not implemented for query routers");
     }
   }
 

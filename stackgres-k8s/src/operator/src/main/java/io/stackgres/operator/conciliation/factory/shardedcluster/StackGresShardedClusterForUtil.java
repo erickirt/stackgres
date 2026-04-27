@@ -55,7 +55,6 @@ import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresW
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterStatus;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorker;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.common.patroni.StackGresPasswordKeys;
 import org.jooq.lambda.Seq;
 
@@ -134,7 +133,7 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
       StackGresShardedCluster cluster,
       StackGresClusterSpec spec);
 
-  StackGresCluster getWorkersCluster(
+  StackGresCluster getWorkerCluster(
       StackGresShardedCluster cluster,
       int index,
       Optional<StackGresShardedCluster> replicateCluster) {
@@ -148,17 +147,15 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
       spec.setReplication(cluster.getSpec().getReplication());
     }
     spec.setInstances(cluster.getSpec().getWorkers().getInstancesPerCluster());
-    Optional.of(cluster.getSpec().getWorkers())
-        .map(StackGresShardedClusterWorkers::getOverrides)
+    cluster.getSpec().getWorkersOverrides()
         .stream()
-        .flatMap(List::stream)
         .filter(specOverride -> Objects.equals(
             specOverride.getIndex(),
             index))
         .findFirst()
         .ifPresent(specOverride -> setClusterSpecFromShardOverrides(
             cluster, specOverride, spec, index + 1));
-    updateWorkersClusterSpec(cluster, spec, index);
+    updateWorkerClusterSpec(cluster, spec, index);
     StackGresCluster workersCluster = new StackGresCluster();
     workersCluster.setMetadata(new ObjectMeta());
     workersCluster.getMetadata().setNamespace(cluster.getMetadata().getNamespace());
@@ -193,7 +190,60 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
     return workersCluster;
   }
 
-  abstract void updateWorkersClusterSpec(
+  StackGresCluster getQueryRouterCluster(
+      StackGresShardedCluster cluster,
+      int index,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    final StackGresClusterSpec spec =
+        new StackGresClusterSpecBuilder(cluster.getSpec().getCoordinator())
+        .build();
+    setClusterSpecFromShardedCluster(cluster, spec, index + 1, replicateCluster);
+    spec.setReplication(null);
+    spec.setInstances(1);
+    cluster.getSpec().getQueryRoutersOverrides()
+        .stream()
+        .filter(specOverride -> Objects.equals(
+            specOverride.getIndex(),
+            index))
+        .findFirst()
+        .ifPresent(specOverride -> setClusterSpecFromShardOverrides(
+            cluster, specOverride, spec, index + 1));
+    updateWorkerClusterSpec(cluster, spec, index);
+    StackGresCluster queryRouterCluster = new StackGresCluster();
+    queryRouterCluster.setMetadata(new ObjectMeta());
+    queryRouterCluster.getMetadata().setNamespace(cluster.getMetadata().getNamespace());
+    queryRouterCluster.getMetadata().setName(
+        StackGresShardedClusterUtil.getQueryRouterClusterName(cluster, index));
+    var postgresServices = cluster.getSpec().getPostgresServices();
+    spec.setPostgresServices(new StackGresPostgresServicesBuilder()
+        .withNewPrimary()
+        .withEnabled(
+            Optional.ofNullable(postgresServices)
+            .map(StackGresShardedClusterPostgresServices::getCoordinator)
+            .map(StackGresShardedClusterPostgresCoordinatorServices::getQueryRouters)
+            .map(StackGresPostgresService::getEnabled)
+            .orElse(true))
+        .withCustomPorts(
+            Optional.ofNullable(postgresServices)
+            .map(StackGresShardedClusterPostgresServices::getCoordinator)
+            .map(StackGresShardedClusterPostgresCoordinatorServices::getCustomPorts)
+            .map(customPorts -> customPorts
+                .stream()
+                .map(customPort -> new CustomServicePortBuilder(customPort)
+                    .withNodePort(null)
+                    .build())
+                .toList())
+            .orElse(null))
+        .endPrimary()
+        .withNewReplicas()
+        .withEnabled(false)
+        .endReplicas()
+        .build());
+    queryRouterCluster.setSpec(spec);
+    return queryRouterCluster;
+  }
+
+  abstract void updateWorkerClusterSpec(
       StackGresShardedCluster cluster,
       StackGresClusterSpec spec,
       int index);

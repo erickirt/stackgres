@@ -32,6 +32,9 @@ public class StackGresShardedClusterPostgresCoordinatorServices {
   @NotNull(message = "primary is required")
   private StackGresPostgresService primary;
 
+  @NotNull(message = "queryRouters is required")
+  private StackGresPostgresService queryRouters;
+
   private List<@Valid CustomServicePort> customPorts;
 
   public StackGresPostgresService getAny() {
@@ -50,6 +53,14 @@ public class StackGresShardedClusterPostgresCoordinatorServices {
     this.primary = primary;
   }
 
+  public StackGresPostgresService getQueryRouters() {
+    return queryRouters;
+  }
+
+  public void setQueryRouters(StackGresPostgresService queryRouters) {
+    this.queryRouters = queryRouters;
+  }
+
   public List<CustomServicePort> getCustomPorts() {
     return customPorts;
   }
@@ -60,7 +71,7 @@ public class StackGresShardedClusterPostgresCoordinatorServices {
 
   @Override
   public int hashCode() {
-    return Objects.hash(any, customPorts, primary);
+    return Objects.hash(any, customPorts, primary, queryRouters);
   }
 
   @Override
@@ -71,10 +82,10 @@ public class StackGresShardedClusterPostgresCoordinatorServices {
     if (!(obj instanceof StackGresShardedClusterPostgresCoordinatorServices)) {
       return false;
     }
-    StackGresShardedClusterPostgresCoordinatorServices other =
-        (StackGresShardedClusterPostgresCoordinatorServices) obj;
+    StackGresShardedClusterPostgresCoordinatorServices other = (StackGresShardedClusterPostgresCoordinatorServices) obj;
     return Objects.equals(any, other.any) && Objects.equals(customPorts, other.customPorts)
-        && Objects.equals(primary, other.primary);
+        && Objects.equals(primary, other.primary)
+        && Objects.equals(queryRouters, other.queryRouters);
   }
 
   @Override

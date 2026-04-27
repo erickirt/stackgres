@@ -6,7 +6,7 @@
 package io.stackgres.operator.conciliation.factory.shardedcluster;
 
 import static io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForDdpUtil.getCoordinatorCluster;
-import static io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForDdpUtil.getWorkersCluster;
+import static io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForDdpUtil.getWorkerCluster;
 import static io.stackgres.testutil.ModelTestUtil.createWithRandomData;
 
 import java.util.List;
@@ -29,6 +29,7 @@ import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinat
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinatorConfigurations;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresServicesBuilder;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
+import io.stackgres.common.crd.sgshardedcluster.StackGresWorkerType;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.testutil.JsonUtil;
 import org.junit.jupiter.api.Assertions;
@@ -160,7 +161,7 @@ class StackGresShardedClusterForDdpUtilTest {
   @Test
   void givedMinimalShardedCluster_shouldGenerateShardCluster() {
     var shardedCluster = getMinimalShardedCluster();
-    var cluster = getWorkersCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
+    var cluster = getWorkerCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     checkClusterWithGlobalSettings(
         shardedCluster,
         shardedCluster.getSpec().getWorkers(),
@@ -190,7 +191,7 @@ class StackGresShardedClusterForDdpUtilTest {
         .endPrimaries()
         .endWorkers()
         .build());
-    var cluster = getWorkersCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
+    var cluster = getWorkerCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     checkClusterWithGlobalSettings(
         shardedCluster,
         shardedCluster.getSpec().getWorkers(),
@@ -220,7 +221,7 @@ class StackGresShardedClusterForDdpUtilTest {
         .endPrimaries()
         .endWorkers()
         .build());
-    var cluster = getWorkersCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
+    var cluster = getWorkerCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     checkClusterWithGlobalSettings(
         shardedCluster,
         shardedCluster.getSpec().getWorkers(),
@@ -320,7 +321,7 @@ class StackGresShardedClusterForDdpUtilTest {
             createWithRandomData(StackGresClusterReplicateFromCustomRestoreMethod.class),
             createWithRandomData(StackGresClusterReplicateFromCustomRestoreMethod.class)));
     setMinimalCoordinatorAndWorkers(shardedCluster);
-    var cluster = getWorkersCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
+    var cluster = getWorkerCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     checkClusterWithGlobalSettings(
         shardedCluster,
         shardedCluster.getSpec().getWorkers(),
@@ -393,7 +394,7 @@ class StackGresShardedClusterForDdpUtilTest {
     shardedCluster.getSpec().getWorkers().getReplicationForWorkers().setRole(null);
     shardedCluster.getSpec().getWorkers().getReplicationForWorkers().setGroups(null);
     shardedCluster.getSpec().getWorkers().setOverrides(null);
-    var cluster = getWorkersCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
+    var cluster = getWorkerCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     checkClusterWithSettings(
         shardedCluster,
         shardedCluster.getSpec().getWorkers(),
@@ -422,12 +423,14 @@ class StackGresShardedClusterForDdpUtilTest {
     shardedCluster.getSpec().getWorkers().getOverrides().get(0)
         .setIndex(0);
     shardedCluster.getSpec().getWorkers().getOverrides().get(0)
+        .setType(StackGresWorkerType.WORKER.toString());
+    shardedCluster.getSpec().getWorkers().getOverrides().get(0)
         .setReplication(null);
     shardedCluster.getSpec().getWorkers().getOverrides().get(0)
         .getReplicationForWorkers().setRole(null);
     shardedCluster.getSpec().getWorkers().getOverrides().get(0)
         .getReplicationForWorkers().setGroups(null);
-    var cluster = getWorkersCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
+    var cluster = getWorkerCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     checkClusterWithSettings(
         shardedCluster,
         shardedCluster.getSpec().getWorkers().getOverrides().get(0),

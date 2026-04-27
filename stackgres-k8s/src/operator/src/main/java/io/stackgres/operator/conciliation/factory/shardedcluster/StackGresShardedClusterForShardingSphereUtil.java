@@ -70,7 +70,7 @@ public interface StackGresShardedClusterForShardingSphereUtil extends StackGresS
     }
 
     @Override
-    protected void updateWorkersClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
+    protected void updateWorkerClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
       if (spec.getManagedSql() == null) {
         spec.setManagedSql(new StackGresClusterManagedSql());
       }
@@ -110,11 +110,11 @@ public interface StackGresShardedClusterForShardingSphereUtil extends StackGresS
     return UTIL.getCoordinatorCluster(cluster, replicateCluster);
   }
 
-  static StackGresCluster getWorkersCluster(
+  static StackGresCluster getWorkerCluster(
       StackGresShardedCluster cluster,
       int index,
       Optional<StackGresShardedCluster> replicateCluster) {
-    return UTIL.getWorkersCluster(cluster, index, replicateCluster);
+    return UTIL.getWorkerCluster(cluster, index, replicateCluster);
   }
 
   static ComputeNode getCoordinatorComputeNode(

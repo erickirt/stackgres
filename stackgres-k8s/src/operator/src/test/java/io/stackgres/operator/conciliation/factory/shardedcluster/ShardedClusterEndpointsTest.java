@@ -53,6 +53,7 @@ class ShardedClusterEndpointsTest {
     when(context.getSource()).thenReturn(cluster);
     when(context.getCoordinatorPrimaryEndpoints()).thenReturn(Optional.empty());
     when(context.getWorkersPrimaryEndpoints()).thenReturn(List.of());
+    lenient().when(context.getQueryRoutersPrimaryEndpoints()).thenReturn(List.of());
   }
 
   @Test
@@ -61,7 +62,7 @@ class ShardedClusterEndpointsTest {
         shardedClusterEndpoints.generateResource(context).toList();
 
     assertFalse(resources.isEmpty());
-    assertEquals(2, resources.size());
+    assertEquals(3, resources.size());
   }
 
   @Test
@@ -123,6 +124,75 @@ class ShardedClusterEndpointsTest {
         "Expected coordinator endpoints to have subsets");
     assertEquals("10.0.0.1",
         result.getSubsets().get(0).getAddresses().get(0).getIp());
+  }
+
+  @Test
+  void generateResource_shouldHaveCorrectQueryRoutersEndpointsName() {
+    List<HasMetadata> resources =
+        shardedClusterEndpoints.generateResource(context).toList();
+
+    String expectedName =
+        StackGresShardedClusterUtil.primariesQueryRoutersServiceName(cluster);
+    HasMetadata queryRoutersEndpoints = resources.stream()
+        .filter(r -> r.getMetadata().getName().equals(expectedName))
+        .findFirst()
+        .orElseThrow();
+    assertEquals(expectedName, queryRoutersEndpoints.getMetadata().getName());
+    assertEquals(cluster.getMetadata().getNamespace(),
+        queryRoutersEndpoints.getMetadata().getNamespace());
+  }
+
+  @Test
+  void generateResource_whenQueryRoutersEndpointsPresent_shouldIncludeSubsets() {
+    Endpoints queryRouter0Endpoints = new EndpointsBuilder()
+        .withSubsets(new EndpointSubsetBuilder()
+            .withAddresses(new EndpointAddressBuilder()
+                .withIp("10.1.0.1")
+                .build())
+            .build())
+        .build();
+    Endpoints queryRouter1Endpoints = new EndpointsBuilder()
+        .withSubsets(new EndpointSubsetBuilder()
+            .withAddresses(new EndpointAddressBuilder()
+                .withIp("10.1.0.2")
+                .build())
+            .build())
+        .build();
+    lenient().when(context.getQueryRoutersPrimaryEndpoints())
+        .thenReturn(List.of(queryRouter0Endpoints, queryRouter1Endpoints));
+
+    List<HasMetadata> resources =
+        shardedClusterEndpoints.generateResource(context).toList();
+
+    String expectedName =
+        StackGresShardedClusterUtil.primariesQueryRoutersServiceName(cluster);
+    Endpoints result = resources.stream()
+        .filter(r -> r.getMetadata().getName().equals(expectedName))
+        .map(Endpoints.class::cast)
+        .findFirst()
+        .orElseThrow();
+    assertNotNull(result.getSubsets());
+    assertEquals(2, result.getSubsets().size());
+    assertTrue(result.getSubsets().stream()
+            .flatMap(s -> s.getAddresses().stream())
+            .anyMatch(a -> "10.1.0.1".equals(a.getIp())));
+    assertTrue(result.getSubsets().stream()
+            .flatMap(s -> s.getAddresses().stream())
+            .anyMatch(a -> "10.1.0.2".equals(a.getIp())));
+  }
+
+  @Test
+  void generateResource_whenQueryRoutersDisabled_shouldNotGenerateEndpoints() {
+    cluster.getSpec().getPostgresServices().getCoordinator().getQueryRouters()
+        .setEnabled(false);
+
+    List<HasMetadata> resources =
+        shardedClusterEndpoints.generateResource(context).toList();
+
+    String expectedName =
+        StackGresShardedClusterUtil.primariesQueryRoutersServiceName(cluster);
+    assertFalse(resources.stream()
+        .anyMatch(r -> r.getMetadata().getName().equals(expectedName)));
   }
 
   @Test

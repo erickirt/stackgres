@@ -213,6 +213,82 @@ class ShardedClusterServicesTest {
   }
 
   @Test
+  void generateResource_shouldGenerateQueryRoutersService() {
+    final Stream<HasMetadata> services =
+        shardedClusterServices.generateResource(shardedClusterContext);
+
+    final Service queryRoutersService = services
+        .filter(Service.class::isInstance)
+        .map(Service.class::cast)
+        .filter(s -> s.getMetadata().getName()
+            .equals(StackGresShardedClusterUtil
+                .primariesQueryRoutersServiceName(defaultShardedCluster)))
+        .findFirst()
+        .orElseGet(() -> Assertions.fail(
+            "No coordinator query routers primaries service found"));
+
+    Assertions.assertEquals(defaultShardedCluster.getMetadata().getNamespace(),
+        queryRoutersService.getMetadata().getNamespace());
+  }
+
+  @Test
+  void givenQueryRoutersServiceHasNodePorts_shouldBeIncluded() {
+    final StackGresPostgresService queryRouters = defaultShardedCluster
+        .getSpec()
+        .getPostgresServices()
+        .getCoordinator()
+        .getQueryRouters();
+
+    final StackGresPostgresServiceNodePort nodePorts = new StackGresPostgresServiceNodePort();
+    nodePorts.setPgport(30432);
+    nodePorts.setReplicationport(30433);
+    queryRouters.setNodePorts(nodePorts);
+
+    final Stream<HasMetadata> services = shardedClusterServices.generateResource(shardedClusterContext);
+
+    final Service queryRoutersService = services
+        .filter(Service.class::isInstance)
+        .map(Service.class::cast)
+        .filter(s -> s.getMetadata().getName()
+            .equals(StackGresShardedClusterUtil
+                .primariesQueryRoutersServiceName(defaultShardedCluster)))
+        .findFirst()
+        .orElseGet(() -> Assertions.fail(
+            "No coordinator query routers primaries service found"));
+
+    final List<Integer> availableNodePorts = queryRoutersService.getSpec()
+        .getPorts()
+        .stream()
+        .map(ServicePort::getNodePort)
+        .toList();
+
+    Assertions.assertEquals(List.of(30432, 30433), availableNodePorts);
+  }
+
+  @Test
+  void generateResource_whenQueryRoutersServiceDisabled_shouldNotGenerateQueryRouters() {
+    defaultShardedCluster
+        .getSpec()
+        .getPostgresServices()
+        .getCoordinator()
+        .getQueryRouters()
+        .setEnabled(false);
+
+    final Stream<HasMetadata> services =
+        shardedClusterServices.generateResource(shardedClusterContext);
+
+    boolean hasQueryRoutersService = services
+        .filter(Service.class::isInstance)
+        .map(Service.class::cast)
+        .anyMatch(s -> s.getMetadata().getName()
+            .equals(StackGresShardedClusterUtil
+                .primariesQueryRoutersServiceName(defaultShardedCluster)));
+
+    Assertions.assertFalse(hasQueryRoutersService,
+        "Expected no coordinator query routers service when disabled");
+  }
+
+  @Test
   void generateResource_whenCustomExternalIPs_shouldSetExternalIPs() {
     final StackGresPostgresService coordinatorPrimary = defaultShardedCluster
         .getSpec()

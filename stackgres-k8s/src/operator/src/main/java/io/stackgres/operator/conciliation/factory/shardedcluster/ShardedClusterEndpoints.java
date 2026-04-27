@@ -51,6 +51,12 @@ public class ShardedClusterEndpoints implements ResourceGenerator<StackGresShard
       endpoints = endpoints.append(getWorkersEndpoints(context));
     }
 
+    if (Optional.of(context.getSource().getSpec().getPostgresServices().getCoordinator().getQueryRouters())
+        .map(StackGresPostgresService::getEnabled)
+        .orElse(true)) {
+      endpoints = endpoints.append(getQueryRoutersEndpoints(context));
+    }
+
     return endpoints;
   }
 
@@ -77,6 +83,23 @@ public class ShardedClusterEndpoints implements ResourceGenerator<StackGresShard
         .addToLabels(labelFactory.genericLabels(context.getSource()))
         .endMetadata()
         .addAllToSubsets(context.getWorkersPrimaryEndpoints()
+            .stream()
+            .map(Endpoints::getSubsets)
+            .filter(Objects::nonNull)
+            .flatMap(List::stream)
+            .toList())
+        .build());
+  }
+
+  private Stream<HasMetadata> getQueryRoutersEndpoints(StackGresShardedClusterContext context) {
+    return Stream.of(new EndpointsBuilder()
+        .withNewMetadata()
+        .withNamespace(context.getSource().getMetadata().getNamespace())
+        .withName(StackGresShardedClusterUtil.primariesQueryRoutersServiceName(
+            context.getSource()))
+        .addToLabels(labelFactory.genericLabels(context.getSource()))
+        .endMetadata()
+        .addAllToSubsets(context.getQueryRoutersPrimaryEndpoints()
             .stream()
             .map(Endpoints::getSubsets)
             .filter(Objects::nonNull)

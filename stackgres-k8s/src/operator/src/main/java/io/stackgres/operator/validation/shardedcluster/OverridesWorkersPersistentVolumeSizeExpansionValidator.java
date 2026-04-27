@@ -19,7 +19,6 @@ import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterShardPods;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorker;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.common.labels.LabelFactoryForCluster;
 import io.stackgres.common.labels.LabelFactoryForShardedCluster;
 import io.stackgres.common.resource.CustomResourceScanner;
@@ -72,37 +71,34 @@ public class OverridesWorkersPersistentVolumeSizeExpansionValidator
     }
 
     for (var overrideShardIndex : Seq.seq(
-        Optional.of(review.getRequest().getObject().getSpec().getWorkers())
-        .map(StackGresShardedClusterWorkers::getOverrides))
-        .append(Seq.seq(
-            Optional.of(review.getRequest().getOldObject().getSpec().getWorkers())
-            .map(StackGresShardedClusterWorkers::getOverrides)))
-        .flatMap(List::stream)
+        review.getRequest().getObject().getSpec().getWorkersOverrides())
+        .append(review.getRequest().getOldObject().getSpec().getWorkersOverrides())
         .filter(overrideShard -> overrideShard.getPodsForWorkers() != null
             && overrideShard.getPodsForWorkers().getPersistentVolume() != null
             && overrideShard.getPodsForWorkers().getPersistentVolume().getSize() != null)
         .grouped(StackGresShardedClusterWorker::getIndex)
         .map(Tuple2::v1)
         .toList()) {
-      new OverrideShardPersistentVolumeSizeExpansionValidator(overrideShardIndex)
+      new OverrideWorkerPersistentVolumeSizeExpansionValidator(overrideShardIndex)
           .validate(review);
     }
   }
 
   @ValidationType(ErrorType.FORBIDDEN_CLUSTER_UPDATE)
-  class OverrideShardPersistentVolumeSizeExpansionValidator
+  class OverrideWorkerPersistentVolumeSizeExpansionValidator
       extends PersistentVolumeSizeExpansionValidator<StackGresShardedClusterReview, StackGresShardedCluster>
       implements ShardedClusterValidator {
     final Integer index;
 
-    public OverrideShardPersistentVolumeSizeExpansionValidator(Integer index) {
+    public OverrideWorkerPersistentVolumeSizeExpansionValidator(Integer index) {
       this.index = index;
     }
 
     @Override
     protected @NotNull String getVolumeSize(StackGresShardedCluster cluster) {
-      return Optional.of(cluster.getSpec().getWorkers())
-          .map(StackGresShardedClusterWorkers::getOverrides)
+      return Optional.of(cluster)
+          .map(StackGresShardedCluster::getSpec)
+          .map(StackGresShardedClusterSpec::getWorkersOverrides)
           .stream()
           .flatMap(List::stream)
           .filter(overrideShard -> Objects.equals(
@@ -119,8 +115,7 @@ public class OverridesWorkersPersistentVolumeSizeExpansionValidator
     protected Optional<String> getStorageClass(StackGresShardedCluster cluster) {
       return Optional.of(cluster)
           .map(StackGresShardedCluster::getSpec)
-          .map(StackGresShardedClusterSpec::getWorkers)
-          .map(StackGresShardedClusterWorkers::getOverrides)
+          .map(StackGresShardedClusterSpec::getWorkersOverrides)
           .stream()
           .flatMap(List::stream)
           .filter(overrideShard -> Objects.equals(

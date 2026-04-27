@@ -203,6 +203,11 @@ class CrdSchemaCompatibilityTest {
     removeServiceIgnoredProperties((ObjectNode) expected
         .get("spec")
         .get("postgresServices")
+        .get("coordinator")
+        .get("queryRouters"));
+    removeServiceIgnoredProperties((ObjectNode) expected
+        .get("spec")
+        .get("postgresServices")
         .get("workers")
         .get("primaries"));
     removeServiceIgnoredProperties((ObjectNode) expected

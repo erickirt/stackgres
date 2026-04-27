@@ -10,6 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import io.stackgres.common.StackGresContext;
+import io.stackgres.common.StackGresVersion;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.operator.common.StackGresShardedClusterReview;
@@ -31,6 +36,14 @@ class ShardsToWorkersMutatorTest {
   private StackGresShardedClusterReview updateReviewWithDeprecatedShards() {
     var review = AdmissionReviewFixtures.shardedCluster().loadCreate().get();
     review.getRequest().setOperation(Operation.UPDATE);
+
+    var metadata = review.getRequest().getObject().getMetadata();
+    Map<String, String> annotations = metadata.getAnnotations();
+    if (annotations == null) {
+      annotations = new HashMap<>();
+      metadata.setAnnotations(annotations);
+    }
+    annotations.put(StackGresContext.VERSION_KEY, StackGresVersion.V_1_18.getVersion());
 
     var spec = review.getRequest().getObject().getSpec();
     StackGresShardedClusterWorkers deprecatedShards = spec.getWorkers();

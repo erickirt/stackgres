@@ -9,12 +9,14 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.stackgres.common.ErrorType;
+import io.stackgres.common.StackGresVersion;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.operator.common.StackGresShardedClusterReview;
 import io.stackgres.operator.validation.ValidationType;
+import io.stackgres.operatorframework.admissionwebhook.Operation;
 import io.stackgres.operatorframework.admissionwebhook.validating.ValidationFailed;
 import jakarta.inject.Singleton;
 
@@ -24,8 +26,7 @@ public class ClusterNameImmutabilityValidator implements ShardedClusterValidator
 
   @Override
   public void validate(StackGresShardedClusterReview review) throws ValidationFailed {
-    if (review.getRequest().getOperation() != io.stackgres.operatorframework
-        .admissionwebhook.Operation.UPDATE) {
+    if (review.getRequest().getOperation() != Operation.UPDATE) {
       return;
     }
     StackGresShardedCluster cluster = review.getRequest().getObject();
@@ -39,17 +40,14 @@ public class ClusterNameImmutabilityValidator implements ShardedClusterValidator
 
     String workersClusterNameTemplate = workersClusterNameTemplate(cluster);
     String oldWorkersClusterNameTemplate = workersClusterNameTemplate(oldCluster);
-    if (!isMigratingFromDeprecatedShards(oldCluster)
-        && !Objects.equals(workersClusterNameTemplate, oldWorkersClusterNameTemplate)) {
+    if (!Objects.equals(workersClusterNameTemplate, oldWorkersClusterNameTemplate)
+        && !(StackGresVersion.getStackGresVersion(oldCluster).getVersionAsNumber()
+            <= StackGresVersion.V_1_18.getVersionAsNumber()
+          && oldCluster.getSpec().getShards() != null
+          && oldCluster.getSpec().getWorkers() == null
+          && workersClusterNameTemplate.equals(cluster.getMetadata().getName() + "-shard"))) {
       fail("spec.workers.clusterNameTemplate can only be set on creation");
     }
-  }
-
-  private static boolean isMigratingFromDeprecatedShards(StackGresShardedCluster oldCluster) {
-    return Optional.ofNullable(oldCluster)
-        .map(StackGresShardedCluster::getSpec)
-        .map(spec -> spec.getWorkers() == null && spec.getShards() != null)
-        .orElse(false);
   }
 
   private static String coordinatorClusterName(StackGresShardedCluster cluster) {

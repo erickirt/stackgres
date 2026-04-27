@@ -41,7 +41,7 @@ Please read carefully the following sections that includes the changes provided 
 **1.19**
 
 * stackgres.io/v1beta1/SGShardedCluster:
-    * `.spec.shards` has been replaced by `.spec.workers`
+    * `.spec.shards` has been replaced by `.spec.workers` (after upgrade `.spec.workers.clusterNameTemplate` have to be set to `<cluster name>-shard`)
     * `.spec.metadata.labels.shardsPrimariesService` has been replaced by `.spec.metadata.labels.workersPrimariesService`
     * `.spec.metadata.annotations.shardsPrimariesService` has been replaced by `.spec.metadata.annotations.workersPrimariesService`
     * `.spec.postgresServices.shards` has been replaced by `.spec.postgresServices.workers`

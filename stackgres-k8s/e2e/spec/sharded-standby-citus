@@ -16,9 +16,9 @@ e2e_test_install() {
 
   CLUSTER_NAME="$(get_sgshardedcluster_name "$SPEC_NAME")"
   PRIMARY_CLUSTER_NAME="$(get_sgshardedcluster_name "primary-$SPEC_NAME")"
-  create_or_replace_sharded_cluster "$PRIMARY_CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "1"
+  create_or_replace_sharded_cluster "$PRIMARY_CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "1" "1"
   wait_sharded_cluster "$PRIMARY_CLUSTER_NAME" "$CLUSTER_NAMESPACE"
-  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "1" \
+  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "1" "1" \
     --set configurations.create=false \
     --set instanceProfiles=null \
     --set-string shardedCluster.replicateFrom.instance.sgShardedCluster="$PRIMARY_CLUSTER_NAME"
@@ -116,7 +116,7 @@ check_sharded_metrics() {
 }
 
 check_sharded_standby_can_be_converted_to_sharded_primary() {
-  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "1" \
+  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "1" "1" \
     --reset-values \
     --set configurations.create=false \
     --set instanceProfiles=null \
@@ -171,7 +171,7 @@ EOF
 }
 
 check_sharded_primary_can_be_converted_to_sharded_standby() {
-  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "1" \
+  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "1" "1" \
     --reset-values \
     --set configurations.create=false \
     --set instanceProfiles=null \
@@ -250,7 +250,7 @@ check_backup_config_is_propagated_to_sharded_standby() {
     --set-string configurations.objectstorage.s3Compatible.endpoint=http://sharded-standby-citus-minio:9000 \
     --set-string cluster.configurations.backups.sgObjectStorage=backupconf
 
-  create_or_replace_sharded_cluster "$PRIMARY_CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "1" \
+  create_or_replace_sharded_cluster "$PRIMARY_CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "1" "1" \
     --set configurations.objectstorage.create=false \
     --set cluster.configurations.backups.retention=2 \
     --set-string cluster.configurations.backups.cronSchedule='0 5 31 2 *' \

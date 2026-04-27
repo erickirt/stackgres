@@ -20,6 +20,8 @@ public interface LabelFactoryForShardedCluster
 
   Map<String, String> workersLabels(StackGresShardedCluster resource);
 
+  Map<String, String> queryRoutersLabels(StackGresShardedCluster resource);
+
   Map<String, String> scheduledBackupPodLabels(StackGresShardedCluster resource);
 
   @Override

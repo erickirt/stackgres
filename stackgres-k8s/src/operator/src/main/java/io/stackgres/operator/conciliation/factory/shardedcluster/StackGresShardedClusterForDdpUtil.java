@@ -61,7 +61,7 @@ public interface StackGresShardedClusterForDdpUtil extends StackGresShardedClust
     }
 
     @Override
-    void updateWorkersClusterSpec(
+    void updateWorkerClusterSpec(
         StackGresShardedCluster cluster,
         StackGresClusterSpec spec,
         int index) {
@@ -91,11 +91,11 @@ public interface StackGresShardedClusterForDdpUtil extends StackGresShardedClust
     return UTIL.getCoordinatorCluster(cluster, replicateCluster);
   }
 
-  static StackGresCluster getWorkersCluster(
+  static StackGresCluster getWorkerCluster(
       StackGresShardedCluster cluster,
       int index,
       Optional<StackGresShardedCluster> replicateCluster) {
-    return UTIL.getWorkersCluster(cluster, index, replicateCluster);
+    return UTIL.getWorkerCluster(cluster, index, replicateCluster);
   }
   
   static StackGresScript getCoordinatorScript(

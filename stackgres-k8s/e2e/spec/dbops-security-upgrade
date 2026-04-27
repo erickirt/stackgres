@@ -162,7 +162,7 @@ e2e_test_install() {
       --set-string cluster.distributedLogs.sgDistributedLogs="$CLUSTER_NAMESPACE.$DISTRIBUTEDLOGS_NAME"
   
     create_or_replace_sharded_cluster_for_version "$STACKGRES_PREVIOUS_VERSION" \
-      "$CLUSTER_3_NAME" "$CLUSTER_NAMESPACE" 3 1 \
+      "$CLUSTER_3_NAME" "$CLUSTER_NAMESPACE" 3 1 null \
       --set configurations.create=true --set instanceProfiles=false \
       --set configurations.postgresconfig.create=true \
       --set configurations.poolingconfig.create=false \

@@ -5,9 +5,12 @@
 
 package io.stackgres.apiweb.dto.shardedcluster;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.apiweb.dto.cluster.ClusterSpec;
 
@@ -19,6 +22,10 @@ import io.stackgres.apiweb.dto.cluster.ClusterSpec;
 public class ShardedClusterWorker extends ClusterSpec {
 
   private Integer index;
+
+  private List<IntOrString> indexes;
+
+  private String type;
 
   private Integer instancesPerCluster;
 
@@ -34,6 +41,22 @@ public class ShardedClusterWorker extends ClusterSpec {
 
   public void setIndex(Integer index) {
     this.index = index;
+  }
+
+  public List<IntOrString> getIndexes() {
+    return indexes;
+  }
+
+  public void setIndexes(List<IntOrString> indexes) {
+    this.indexes = indexes;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
   }
 
   public Integer getInstancesPerCluster() {

@@ -88,6 +88,110 @@ spec:
     citus: {}
 ```
 
+## Query Routers
+
+Query routers are special workers that route read/write queries to the workers that store the sharded data, but do not store sharded table data themselves. Like the coordinator, a query router is an SGCluster that participates in the Citus topology, but its `shouldhaveshards` flag is set to `false` so the rebalancer never assigns shards to it.
+
+Query routers allow you to scale the number of read/write entrypoints horizontally without overloading the workers that store the sharded table data. This is useful when the workload is bottlenecked on the coordinator's connection handling, the parser/planner, or the cross-shard query coordination, rather than on the workers' I/O.
+
+> Query routers are only supported when `spec.type` is `citus`.
+
+### Architecture
+
+Each query router is a single-instance SGCluster created and managed by the operator alongside the coordinator and the workers. Query routers inherit their spec from the coordinator (apart from `instances`, which is fixed to one) so they share the same Postgres version, configuration, pooling and pods configuration. They participate in the Citus topology as additional Citus nodes, with a dedicated `groupid` derived from the query router index offset (see [Index Offset](#index-offset)).
+
+Query routers do not have replicas: each query router cluster is composed of a single Pod. To scale the number of query router entrypoints, increase `coordinator.queryRouterClusters`.
+
+### Enabling Query Routers
+
+Set `spec.coordinator.queryRouterClusters` to the desired number of query router workers:
+
+```yaml
+apiVersion: stackgres.io/v1
+kind: SGShardedCluster
+metadata:
+  name: cluster
+spec:
+  type: citus
+  database: mydatabase
+  coordinator:
+    instances: 2
+    queryRouterClusters: 2
+    pods:
+      persistentVolume:
+        size: '10Gi'
+  workers:
+    clusters: 4
+    instancesPerCluster: 2
+    pods:
+      persistentVolume:
+        size: '10Gi'
+```
+
+The example above creates two query router SGClusters (one Pod each) in addition to the coordinator and the four workers.
+
+### Naming
+
+By default the query router SGClusters are named after the SGShardedCluster name with the `-router` suffix and the zero-based index appended. For example, with an SGShardedCluster called `cluster` and `queryRouterClusters: 2`, the operator creates the SGClusters `cluster-router0` and `cluster-router1`.
+
+You can override the template via `spec.coordinator.queryRouterClusterNameTemplate`:
+
+```yaml
+spec:
+  coordinator:
+    queryRouterClusters: 2
+    queryRouterClusterNameTemplate: my-router
+```
+
+This produces `my-router0` and `my-router1` instead. As with the workers' `clusterNameTemplate`, this field can only be set on creation.
+
+### Index Offset
+
+Query routers register as Citus nodes with a `groupid` starting at `1024`. This offset keeps the regular workers' group identifiers (which start at `1`) separated from the query routers' group identifiers, so adding or removing query routers never collides with the worker group numbering.
+
+If you plan to have more than 1023 regular worker SGClusters, raise the offset accordingly with `spec.coordinator.queryRouterIndexOffset` (minimum `1024`):
+
+```yaml
+spec:
+  coordinator:
+    queryRouterIndexOffset: 4096
+    queryRouterClusters: 2
+```
+
+### Connecting Through Query Routers
+
+Each query router SGCluster exposes a Kubernetes Service named after the SGCluster (for example `cluster-router0`). Applications can connect through any of these services to issue read/write queries; the query router will forward the query to the appropriate worker.
+
+You can enable, disable or customize the type of the query router primary services centrally through `spec.postgresServices.coordinator.queryRouters`:
+
+```yaml
+spec:
+  postgresServices:
+    coordinator:
+      queryRouters:
+        type: LoadBalancer
+        enabled: true
+```
+
+This setting is propagated to the primary Service of every query router SGCluster. Replicas Services on query router SGClusters are always disabled because query routers are single-instance clusters.
+
+### Overriding Specific Query Routers
+
+Like worker overrides, you can override individual query router clusters via `spec.workers.overrides` by setting `type: QueryRouter` on the override entry. The `index` (or `indexes`) refers to the zero-based query router identifier (i.e. `0` selects the first query router), not the offset Citus group identifier.
+
+See [Cluster Names and Overrides]({{% relref "04-administration-guide/14-sharded-cluster/04-cluster-names-and-overrides" %}}) for the full reference of the `index`, `indexes` and `type` fields.
+
+### Scaling Query Routers
+
+Add or remove query routers by changing `spec.coordinator.queryRouterClusters`:
+
+```bash
+kubectl patch sgshardedcluster my-sharded-cluster --type merge \
+  -p '{"spec":{"coordinator":{"queryRouterClusters":3}}}'
+```
+
+Query routers do not store sharded data, so adding or removing them does not require resharding. The operator updates the Citus node table automatically and a scheduled job (registered via `pg_cron`) keeps the `shouldhaveshards` flag of the query router nodes set to `false`.
+
 ## Distributed Partitioned Tables
 
 Citus allows creating partitioned tables that are also distributed for time-series workloads. With partitioned tables, removing old historical data is fast and doesn't generate bloat:

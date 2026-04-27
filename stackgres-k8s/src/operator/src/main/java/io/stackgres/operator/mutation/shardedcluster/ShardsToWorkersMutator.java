@@ -20,7 +20,8 @@ public class ShardsToWorkersMutator implements ShardedClusterMutator {
     if (review.getRequest().getOperation() != Operation.UPDATE) {
       return resource;
     }
-    if (StackGresVersion.V_1_18 != null
+    if (StackGresVersion.getStackGresVersion(resource).getVersionAsNumber()
+        <= StackGresVersion.V_1_18.getVersionAsNumber()
         && resource.getSpec().getShards() != null
         && resource.getSpec().getWorkers() == null) {
       resource.getSpec().setWorkers(resource.getSpec().getShards());

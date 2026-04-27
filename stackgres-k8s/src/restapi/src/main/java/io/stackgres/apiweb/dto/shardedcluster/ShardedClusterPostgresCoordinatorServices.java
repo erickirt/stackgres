@@ -21,6 +21,8 @@ public class ShardedClusterPostgresCoordinatorServices {
 
   private PostgresService primary;
 
+  private PostgresService queryRouters;
+
   private List<CustomServicePort> customPorts;
 
   public PostgresService getAny() {
@@ -37,6 +39,14 @@ public class ShardedClusterPostgresCoordinatorServices {
 
   public void setPrimary(PostgresService primary) {
     this.primary = primary;
+  }
+
+  public PostgresService getQueryRouters() {
+    return queryRouters;
+  }
+
+  public void setQueryRouters(PostgresService queryRouters) {
+    this.queryRouters = queryRouters;
   }
 
   public List<CustomServicePort> getCustomPorts() {

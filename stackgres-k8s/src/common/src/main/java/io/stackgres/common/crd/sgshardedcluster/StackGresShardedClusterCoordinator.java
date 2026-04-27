@@ -32,6 +32,12 @@ public class StackGresShardedClusterCoordinator extends StackGresClusterSpec {
 
   private String clusterName;
 
+  private Integer queryRouterClusters;
+
+  private Integer queryRouterIndexOffset;
+
+  private String queryRouterClusterNameTemplate;
+
   @JsonProperty("configurations")
   @Valid
   private StackGresShardedClusterCoordinatorConfigurations configurationsForCoordinator;
@@ -106,6 +112,30 @@ public class StackGresShardedClusterCoordinator extends StackGresClusterSpec {
     this.clusterName = clusterName;
   }
 
+  public Integer getQueryRouterClusters() {
+    return queryRouterClusters;
+  }
+
+  public void setQueryRouterClusters(Integer queryRouterClusters) {
+    this.queryRouterClusters = queryRouterClusters;
+  }
+
+  public Integer getQueryRouterIndexOffset() {
+    return queryRouterIndexOffset;
+  }
+
+  public void setQueryRouterIndexOffset(Integer queryRouterIndexOffset) {
+    this.queryRouterIndexOffset = queryRouterIndexOffset;
+  }
+
+  public String getQueryRouterClusterNameTemplate() {
+    return queryRouterClusterNameTemplate;
+  }
+
+  public void setQueryRouterClusterNameTemplate(String queryRouterClusterNameTemplate) {
+    this.queryRouterClusterNameTemplate = queryRouterClusterNameTemplate;
+  }
+
   public StackGresShardedClusterCoordinatorConfigurations getConfigurationsForCoordinator() {
     return configurationsForCoordinator;
   }
@@ -129,7 +159,8 @@ public class StackGresShardedClusterCoordinator extends StackGresClusterSpec {
     final int prime = 31;
     int result = super.hashCode();
     result = prime * result
-        + Objects.hash(clusterName, configurationsForCoordinator, replicationForCoordinator);
+        + Objects.hash(clusterName, configurationsForCoordinator, queryRouterClusterNameTemplate,
+            queryRouterClusters, queryRouterIndexOffset, replicationForCoordinator);
     return result;
   }
 
@@ -147,6 +178,9 @@ public class StackGresShardedClusterCoordinator extends StackGresClusterSpec {
     StackGresShardedClusterCoordinator other = (StackGresShardedClusterCoordinator) obj;
     return Objects.equals(clusterName, other.clusterName)
         && Objects.equals(configurationsForCoordinator, other.configurationsForCoordinator)
+        && Objects.equals(queryRouterClusterNameTemplate, other.queryRouterClusterNameTemplate)
+        && Objects.equals(queryRouterClusters, other.queryRouterClusters)
+        && Objects.equals(queryRouterIndexOffset, other.queryRouterIndexOffset)
         && Objects.equals(replicationForCoordinator, other.replicationForCoordinator);
   }
 

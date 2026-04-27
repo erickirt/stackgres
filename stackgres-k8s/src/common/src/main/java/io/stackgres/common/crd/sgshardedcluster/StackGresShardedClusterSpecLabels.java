@@ -28,6 +28,8 @@ public class StackGresShardedClusterSpecLabels extends StackGresClusterSpecLabel
 
   private Map<String, String> coordinatorAnyService;
 
+  private Map<String, String> queryRoutersPrimariesService;
+
   private Map<String, String> workersPrimariesService;
 
   @Null(message = "shardsPrimariesService is deprecated use workersPrimariesService instead")
@@ -47,6 +49,14 @@ public class StackGresShardedClusterSpecLabels extends StackGresClusterSpecLabel
 
   public void setCoordinatorAnyService(Map<String, String> coordinatorAnyService) {
     this.coordinatorAnyService = coordinatorAnyService;
+  }
+
+  public Map<String, String> getQueryRoutersPrimariesService() {
+    return queryRoutersPrimariesService;
+  }
+
+  public void setQueryRoutersPrimariesService(Map<String, String> queryRoutersPrimariesService) {
+    this.queryRoutersPrimariesService = queryRoutersPrimariesService;
   }
 
   public Map<String, String> getWorkersPrimariesService() {
@@ -72,7 +82,7 @@ public class StackGresShardedClusterSpecLabels extends StackGresClusterSpecLabel
     final int prime = 31;
     int result = super.hashCode();
     result = prime * result + Objects.hash(coordinatorAnyService, coordinatorPrimaryService,
-        shardsPrimariesService, workersPrimariesService);
+        queryRoutersPrimariesService, shardsPrimariesService, workersPrimariesService);
     return result;
   }
 
@@ -90,6 +100,7 @@ public class StackGresShardedClusterSpecLabels extends StackGresClusterSpecLabel
     StackGresShardedClusterSpecLabels other = (StackGresShardedClusterSpecLabels) obj;
     return Objects.equals(coordinatorAnyService, other.coordinatorAnyService)
         && Objects.equals(coordinatorPrimaryService, other.coordinatorPrimaryService)
+        && Objects.equals(queryRoutersPrimariesService, other.queryRoutersPrimariesService)
         && Objects.equals(shardsPrimariesService, other.shardsPrimariesService)
         && Objects.equals(workersPrimariesService, other.workersPrimariesService);
   }

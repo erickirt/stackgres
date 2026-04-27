@@ -41,6 +41,10 @@ public class DefaultPostgresServicesMutator implements ShardedClusterMutator {
       resource.getSpec().getPostgresServices().getCoordinator().setPrimary(
           new StackGresPostgresService());
     }
+    if (resource.getSpec().getPostgresServices().getCoordinator().getQueryRouters() == null) {
+      resource.getSpec().getPostgresServices().getCoordinator().setQueryRouters(
+          new StackGresPostgresService());
+    }
     if (resource.getSpec().getPostgresServices().getWorkersOrShards() == null) {
       resource.getSpec().getPostgresServices().setWorkers(
           new StackGresShardedClusterPostgresWorkersServices());
@@ -51,6 +55,7 @@ public class DefaultPostgresServicesMutator implements ShardedClusterMutator {
     }
     setPostgresService(resource.getSpec().getPostgresServices().getCoordinator().getAny());
     setPostgresService(resource.getSpec().getPostgresServices().getCoordinator().getPrimary());
+    setPostgresService(resource.getSpec().getPostgresServices().getCoordinator().getQueryRouters());
     setPostgresService(resource.getSpec().getPostgresServices().getWorkersOrShards().getPrimaries());
 
     return resource;

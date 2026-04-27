@@ -27,6 +27,10 @@
         "primary": {
           "enabled": true,
           "type": "ClusterIP"
+        },
+        "queryRouters": {
+          "enabled": true,
+          "type": "ClusterIP"
         }
       },
       "workers": {

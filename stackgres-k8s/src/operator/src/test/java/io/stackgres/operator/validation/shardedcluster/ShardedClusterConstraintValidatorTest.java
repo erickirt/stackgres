@@ -821,8 +821,8 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setSgInstanceProfile(null);
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setSgInstanceProfile(null);
 
     validator.validate(review);
   }
@@ -832,10 +832,10 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0)
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0)
         .getPodsForWorkers().setPersistentVolume(null);
 
     validator.validate(review);
@@ -846,13 +846,13 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .setPersistentVolume(new StackGresClusterPodsPersistentVolume());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0)
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0)
         .getPodsForWorkers().getPersistentVolume().setSize(null);
 
     checkNotNullErrorCause(StackGresClusterPodsPersistentVolume.class,
@@ -865,13 +865,13 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .setPersistentVolume(new StackGresClusterPodsPersistentVolume());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0)
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0)
         .getPodsForWorkers().getPersistentVolume().setSize("512");
 
     checkErrorCause(StackGresClusterPodsPersistentVolume.class,
@@ -884,16 +884,16 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .setScheduling(new StackGresClusterPodsScheduling());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().setNodeSelector(new HashMap<>());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getNodeSelector()
         .put("test", "true");
 
@@ -905,20 +905,20 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .setScheduling(new StackGresClusterPodsScheduling());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().setTolerations(new ArrayList<>());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations()
         .add(new Toleration());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling()
         .getTolerations().get(0)
         .setKey("test");
@@ -931,24 +931,24 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .setScheduling(new StackGresClusterPodsScheduling());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().setTolerations(new ArrayList<>());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations()
         .add(new Toleration());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations().get(0)
         .setKey("");
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations().get(0)
         .setOperator("Exists");
 
@@ -960,20 +960,20 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .setScheduling(new StackGresClusterPodsScheduling());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().setTolerations(new ArrayList<>());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations()
         .add(new Toleration());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations().get(0)
         .setKey("");
 
@@ -990,24 +990,24 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .setScheduling(new StackGresClusterPodsScheduling());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().setTolerations(new ArrayList<>());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations()
         .add(new Toleration());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations().get(0)
         .setKey("test");
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations().get(0)
         .setOperator("NotExists");
 
@@ -1021,24 +1021,24 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .setScheduling(new StackGresClusterPodsScheduling());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().setTolerations(new ArrayList<>());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations()
         .add(new Toleration());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations().get(0)
         .setKey("test");
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations().get(0)
         .setEffect("NeverSchedule");
 
@@ -1052,28 +1052,28 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .setScheduling(new StackGresClusterPodsScheduling());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().setTolerations(new ArrayList<>());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations()
         .add(new Toleration());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations().get(0)
         .setKey("test");
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations().get(0)
         .setTolerationSeconds(100L);
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations().get(0)
         .setEffect("NoExecute");
 
@@ -1085,28 +1085,28 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setPodsForWorkers(new StackGresShardedClusterShardPods());
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .setScheduling(new StackGresClusterPodsScheduling());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().setTolerations(new ArrayList<>());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations()
         .add(new Toleration());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations().get(0)
         .setKey("test");
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations().get(0)
         .setTolerationSeconds(100L);
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getPodsForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getPodsForWorkers()
         .getScheduling().getTolerations().get(0)
         .setEffect(new Random().nextBoolean() ? "NoSchedule" : "PreferNoSchedule");
 
@@ -1122,8 +1122,8 @@ class ShardedClusterConstraintValidatorTest
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
     review.getRequest().getObject().getSpec().getWorkers()
         .setInstancesPerCluster(3);
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setInstancesPerCluster(1);
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setInstancesPerCluster(1);
     review.getRequest().getObject().getSpec().getReplication().setMode(
         StackGresReplicationMode.SYNC.toString());
     review.getRequest().getObject().getSpec().getReplication().setSyncInstances(1);
@@ -1141,8 +1141,8 @@ class ShardedClusterConstraintValidatorTest
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
     review.getRequest().getObject().getSpec().getWorkers()
         .setInstancesPerCluster(3);
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setInstancesPerCluster(1);
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setInstancesPerCluster(1);
     review.getRequest().getObject().getSpec().getReplication().setMode(
         StackGresReplicationMode.SYNC.toString());
     review.getRequest().getObject().getSpec().getReplication().setSyncInstances(2);
@@ -1158,8 +1158,8 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setInstancesPerCluster(1);
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setInstancesPerCluster(1);
     review.getRequest().getObject().getSpec().getWorkers()
         .setReplicationForWorkers(new StackGresShardedClusterReplication());
     review.getRequest().getObject().getSpec().getWorkers()
@@ -1180,16 +1180,16 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setInstancesPerCluster(1);
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0)
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setInstancesPerCluster(1);
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0)
         .setReplicationForWorkers(new StackGresShardedClusterReplication());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getReplicationForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getReplicationForWorkers()
         .setMode(StackGresReplicationMode.SYNC.toString());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getReplicationForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getReplicationForWorkers()
         .setSyncInstances(1);
 
     checkErrorCause(StackGresShardedClusterWorker.class,
@@ -1203,16 +1203,16 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setInstancesPerCluster(1);
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0)
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setInstancesPerCluster(1);
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0)
         .setReplicationForWorkers(new StackGresShardedClusterReplication());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getReplicationForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getReplicationForWorkers()
         .setMode(StackGresReplicationMode.SYNC.toString());
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).getReplicationForWorkers()
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).getReplicationForWorkers()
         .setSyncInstances(2);
 
     checkErrorCause(StackGresShardedClusterWorker.class,
@@ -1226,8 +1226,8 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setInstancesPerCluster(2);
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setInstancesPerCluster(2);
     review.getRequest().getObject().getSpec().getReplication().setMode(
         StackGresReplicationMode.SYNC.toString());
     review.getRequest().getObject().getSpec().getReplication().setSyncInstances(null);
@@ -1243,8 +1243,8 @@ class ShardedClusterConstraintValidatorTest
     StackGresShardedClusterReview review = getValidReview();
     review.getRequest().getObject().getSpec().getWorkers()
         .setOverrides(List.of(new StackGresShardedClusterWorker()));
-    review.getRequest().getObject().getSpec().getWorkers()
-        .getOverrides().get(0).setInstancesPerCluster(2);
+    review.getRequest().getObject().getSpec().getWorkers().getOverrides()
+        .get(0).setInstancesPerCluster(2);
     review.getRequest().getObject().getSpec().getReplication().setMode(
         StackGresReplicationMode.SYNC.toString());
     review.getRequest().getObject().getSpec().getReplication().setSyncInstances(0);

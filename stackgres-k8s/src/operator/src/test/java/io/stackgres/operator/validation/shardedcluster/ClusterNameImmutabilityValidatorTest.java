@@ -6,7 +6,6 @@
 package io.stackgres.operator.validation.shardedcluster;
 
 import io.stackgres.common.ErrorType;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.operator.common.StackGresShardedClusterReview;
 import io.stackgres.operator.common.fixture.AdmissionReviewFixtures;
 import io.stackgres.operator.utils.ValidationUtils;
@@ -114,19 +113,6 @@ class ClusterNameImmutabilityValidatorTest {
     ValidationUtils.assertValidationFailed(() -> validator.validate(review),
         ErrorType.FORBIDDEN_CR_UPDATE,
         "spec.workers.clusterNameTemplate can only be set on creation");
-  }
-
-  @Test
-  void update_migratingFromDeprecatedShards_shouldAllowClusterNameTemplate() throws ValidationFailed {
-    var review = updateReview();
-    StackGresShardedClusterWorkers workers = review.getRequest().getOldObject().getSpec().getWorkers();
-    review.getRequest().getOldObject().getSpec().setWorkers(null);
-    review.getRequest().getOldObject().getSpec().setShards(workers);
-    // Simulates what ShardsToWorkersMutator did on the new object
-    review.getRequest().getObject().getSpec().getWorkers().setClusterNameTemplate(
-        review.getRequest().getObject().getMetadata().getName() + "-shard");
-
-    validator.validate(review);
   }
 
   @Test

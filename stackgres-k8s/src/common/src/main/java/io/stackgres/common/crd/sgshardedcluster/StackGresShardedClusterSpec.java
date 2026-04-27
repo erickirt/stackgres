@@ -12,6 +12,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.crd.sgcluster.StackGresClusterDistributedLogs;
@@ -97,6 +98,12 @@ public class StackGresShardedClusterSpec {
   @ReferencedField("replication.syncInstances")
   interface SyncInstances extends FieldReference { }
 
+  @ReferencedField("coordinator.queryRouterClusters")
+  interface QueryRouterClusters extends FieldReference { }
+
+  @ReferencedField("workers.clusters")
+  interface WorkerClusters extends FieldReference { }
+
   @JsonIgnore
   @AssertTrue(message = "postgres is required", payload = { Postgres.class })
   public boolean isPosgresSectionPresent() {
@@ -116,7 +123,7 @@ public class StackGresShardedClusterSpec {
   public boolean isSupportingRequiredSynchronousReplicas() {
     return isCoordinatorSupportingRequiredSynchronousReplicas()
         && isShardsSupportingRequiredSynchronousReplicas()
-        && isOverridesShardsSupportingRequiredSynchronousReplicas();
+        && isOverridesWorkersSupportingRequiredSynchronousReplicas();
   }
 
   @JsonIgnore
@@ -140,12 +147,10 @@ public class StackGresShardedClusterSpec {
   }
 
   @JsonIgnore
-  private boolean isOverridesShardsSupportingRequiredSynchronousReplicas() {
+  private boolean isOverridesWorkersSupportingRequiredSynchronousReplicas() {
     return workers == null
-        || Optional.of(workers)
-        .map(StackGresShardedClusterWorkers::getOverrides)
+        || getPlainOverrides()
         .stream()
-        .flatMap(List::stream)
         .allMatch(ovverideShard -> ovverideShard.getReplication() != null
         || workers.getReplication() != null
         || replication == null
@@ -153,6 +158,26 @@ public class StackGresShardedClusterSpec {
         || replication.getSyncInstances() == null
         || ovverideShard.getInstancesPerCluster() == null
         || ovverideShard.getInstancesPerCluster() > replication.getSyncInstances());
+  }
+
+  @JsonIgnore
+  @AssertTrue(message = "queryRouterClusters can be set only for citus sharding technology",
+      payload = { QueryRouterClusters.class })
+  public boolean isCoordinatorQueryRouterClustersSetOnlyForCitusShardingTechnology() {
+    return coordinator == null
+        || coordinator.getQueryRouterClusters() == null
+        || Objects.equals(coordinator.getQueryRouterClusters(), 0)
+        || Objects.equals(type, StackGresShardingType.CITUS.toString());
+  }
+
+  @JsonIgnore
+  @AssertTrue(message = "Only up to queryRoutersIndexOffset workers can be created",
+      payload = { QueryRouterClusters.class, WorkerClusters.class })
+  public boolean isWorkersClustersLessThanQueryRouterClusters() {
+    return coordinator == null
+        || workers == null
+        || workers.getClusters() == null
+        || workers.getClusters() <= Optional.ofNullable(coordinator.getQueryRouterIndexOffset()).orElse(1024);
   }
 
   public String getProfile() {
@@ -280,6 +305,65 @@ public class StackGresShardedClusterSpec {
 
   public void setNonProductionOptions(StackGresClusterNonProduction nonProductionOptions) {
     this.nonProductionOptions = nonProductionOptions;
+  }
+
+  @JsonIgnore
+  public List<StackGresShardedClusterWorker> getPlainOverrides() {
+    return Optional.of(this)
+        .map(StackGresShardedClusterSpec::getWorkers)
+        .map(StackGresShardedClusterWorkers::getOverrides)
+        .stream()
+        .flatMap(List::stream)
+        .flatMap(override -> override.getPlainIndexes(this).stream()
+            .map(index -> new StackGresShardedClusterWorkerBuilder(override)
+                .withIndex(index)
+                .withIndexes((List<IntOrString>) null)
+                .build()))
+        .toList();
+  }
+
+  @JsonIgnore
+  public List<StackGresShardedClusterWorker> getWorkersOverrides() {
+    return Optional.of(this)
+        .map(StackGresShardedClusterSpec::getWorkers)
+        .map(StackGresShardedClusterWorkers::getOverrides)
+        .stream()
+        .flatMap(List::stream)
+        .filter(override -> Objects.equals(
+            StackGresWorkerType.WORKER.toString(),
+            Optional.of(override)
+            .map(StackGresShardedClusterWorker::getType)
+            .orElse(StackGresWorkerType.WORKER.toString())))
+        .flatMap(override -> override.getPlainIndexes(this).stream()
+            .map(index -> new StackGresShardedClusterWorkerBuilder(override)
+                .withIndex(index)
+                .withIndexes((List<IntOrString>) null)
+                .build()))
+        .toList();
+  }
+
+  @JsonIgnore
+  public List<StackGresShardedClusterWorker> getQueryRoutersOverrides() {
+    final int queryRouterIndexOffset = Optional.of(this)
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getQueryRouterIndexOffset)
+        .orElse(1024);
+    return Optional.of(this)
+        .map(StackGresShardedClusterSpec::getWorkers)
+        .map(StackGresShardedClusterWorkers::getOverrides)
+        .stream()
+        .flatMap(List::stream)
+        .filter(override -> Objects.equals(
+            StackGresWorkerType.QUERY_ROUTER.toString(),
+            Optional.of(override)
+            .map(StackGresShardedClusterWorker::getType)
+            .orElse(StackGresWorkerType.WORKER.toString())))
+        .flatMap(override -> override.getPlainIndexes(this).stream()
+            .map(index -> new StackGresShardedClusterWorkerBuilder(override)
+                .withIndex(index + queryRouterIndexOffset)
+                .withIndexes((List<IntOrString>) null)
+                .build()))
+        .toList();
   }
 
   @Override

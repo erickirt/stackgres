@@ -19,9 +19,17 @@ public interface StackGresShardedClusterUtil {
   String PRIVATE_KEY_KEY = "tls.key";
   int LAST_RESERVER_SCRIPT_ID = 9;
 
-  static String getClusterName(StackGresShardedCluster cluster, int index) {
+  static String getClusterName(
+      StackGresShardedCluster cluster,
+      int index) {
     if (index == 0) {
       return getCoordinatorClusterName(cluster);
+    }
+    if (index >= Optional.of(cluster.getSpec())
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getQueryRouterIndexOffset)
+        .orElse(1024) + 1) {
+      return getQueryRouterClusterName(cluster, index - 1);
     }
     return getWorkerClusterName(cluster, index - 1);
   }
@@ -46,6 +54,22 @@ public interface StackGresShardedClusterUtil {
         .map(StackGresShardedClusterSpec::getWorkers)
         .map(StackGresShardedClusterWorkers::getClusterNameTemplate)
         .orElseGet(() -> cluster.getMetadata().getName() + "-worker") + workerIndex;
+  }
+
+  static String getQueryRouterClusterName(StackGresShardedCluster cluster, int workerIndex) {
+    return getQueryRouterClusterName(cluster, String.valueOf(
+        workerIndex
+        - Optional.of(cluster.getSpec())
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getQueryRouterIndexOffset)
+        .orElse(1024)));
+  }
+
+  static String getQueryRouterClusterName(StackGresShardedCluster cluster, String workerIndex) {
+    return Optional.of(cluster.getSpec())
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getQueryRouterClusterNameTemplate)
+        .orElseGet(() -> cluster.getMetadata().getName() + "-router") + workerIndex;
   }
 
   static String coordinatorConfigName(StackGresShardedCluster cluster) {
@@ -74,6 +98,10 @@ public interface StackGresShardedClusterUtil {
 
   static String anyCoordinatorServiceName(StackGresShardedCluster cluster) {
     return ResourceUtil.nameIsValidService(cluster.getMetadata().getName() + "-reads");
+  }
+
+  static String primariesQueryRoutersServiceName(StackGresShardedCluster cluster) {
+    return ResourceUtil.nameIsValidService(cluster.getMetadata().getName() + "-routers");
   }
 
   static String primariesWorkersServiceName(StackGresShardedCluster cluster) {

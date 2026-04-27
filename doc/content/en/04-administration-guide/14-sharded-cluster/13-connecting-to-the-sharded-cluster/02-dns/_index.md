@@ -16,6 +16,7 @@ The service name follow a convention that is based on the sharded cluster name a
  - `<cluster-name>` for the coordinator primary service
  - `<cluster-name>-reads` for the coordinator any service
  - `<cluster-name>-workers` for the workers primaries service
+ - `<cluster-name>-router<index>` for the primary service of the query router SGCluster at index `<index>` (Citus only, when [query routers]({{% relref "04-administration-guide/14-sharded-cluster/01-citus-sharding-technology#query-routers" %}}) are configured)
 
 All this services will accept connections to ports `5432` and `5433` where:
 
@@ -25,6 +26,8 @@ All this services will accept connections to ports `5432` and `5433` where:
 Therefore, given a sharded cluster with name `cluster` in the namespace `default`, the primary node of the coordinator cluster will accessible through the URL: `cluster.default:5432`.
 Meanwhile, any node of the coordinator cluster will be accessible through the URL: `cluster-reads.default:5432`.
 Finally, primary node of any shard cluster will be accessible through the URL: `cluster-primaries.default:5432`.
+
+For Citus sharded clusters with query routers, each query router exposes its own primary service. For instance, the first query router of a sharded cluster called `cluster` is reachable at `cluster-router0.default:5432`. The query router clusterName template can be customized via `spec.coordinator.queryRouterClusterNameTemplate`.
 
 ## Psql Example
 

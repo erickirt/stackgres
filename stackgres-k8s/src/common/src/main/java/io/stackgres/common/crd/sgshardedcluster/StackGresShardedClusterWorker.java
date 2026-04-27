@@ -5,16 +5,22 @@
 
 package io.stackgres.common.crd.sgshardedcluster;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
 import io.stackgres.common.validation.FieldReference;
 import io.stackgres.common.validation.FieldReference.ReferencedField;
+import io.stackgres.common.validation.ValidEnum;
 import io.sundr.builder.annotations.Buildable;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
@@ -34,6 +40,12 @@ public class StackGresShardedClusterWorker extends StackGresClusterSpec {
   @PositiveOrZero(message = "You need a shard index starting from zero")
   private Integer index;
 
+  private List<IntOrString> indexes;
+
+  @ValidEnum(enumClass = StackGresWorkerType.class, allowNulls = true,
+      message = "type can be Worker or QueryRouter")
+  private String type;
+
   @PositiveOrZero(message = "instances can not be negative")
   private Integer instancesPerCluster;
 
@@ -49,8 +61,39 @@ public class StackGresShardedClusterWorker extends StackGresClusterSpec {
   @Valid
   private StackGresShardedClusterShardPods podsForWorkers;
 
+  @ReferencedField("index")
+  interface Index extends FieldReference { }
+
+  @ReferencedField("indexes")
+  interface Indexes extends FieldReference { }
+
   @ReferencedField("replication.syncInstances")
   interface SyncInstances extends FieldReference { }
+
+  @JsonIgnore
+  @AssertTrue(message = "Fields index and indexes are mutually exclusive",
+      payload = { Index.class, Indexes.class })
+  public boolean areIndexAndIndexesMutuallyExclusive() {
+    return index == null || indexes == null;
+  }
+
+  @JsonIgnore
+  @AssertTrue(message = "Fields index or indexes are required",
+      payload = { Index.class, Indexes.class })
+  public boolean areIndexAndIndexesRequired() {
+    return index != null || indexes != null;
+  }
+
+  @JsonIgnore
+  @AssertTrue(message = "Elements of indexes must be integer, a string with"
+      + " format `[0-9]+-[0-9]+` or the string `all`",
+      payload = { Indexes.class })
+  public boolean areIndexesElementValid() {
+    return indexes == null
+        || indexes.stream().allMatch(element -> element.getStrVal() == null
+            || element.getStrVal().matches("[0-9]+-[0-9]+")
+            || element.getStrVal().equals("all"));
+  }
 
   @Override
   public boolean isPosgresSectionPresent() {
@@ -121,6 +164,63 @@ public class StackGresShardedClusterWorker extends StackGresClusterSpec {
     this.index = index;
   }
 
+  public List<IntOrString> getIndexes() {
+    return indexes;
+  }
+
+  @JsonIgnore
+  public List<Integer> getPlainIndexes(StackGresShardedClusterSpec spec) {
+    if (index != null) {
+      return List.of(index);
+    }
+    if (indexes != null) {
+      return indexes.stream()
+          .flatMap(entry -> {
+            Integer index = entry.getIntVal();
+            if (index != null) {
+              return Stream.of(index);
+            }
+            String indexRange = entry.getStrVal();
+            if (indexRange != null
+                && indexRange.matches("[0-9]+-[0-9]+")) {
+              int dashIndex = indexRange.indexOf("-");
+              return IntStream
+                  .rangeClosed(
+                      Integer.parseInt(indexRange.substring(0, dashIndex)),
+                      Integer.parseInt(indexRange.substring(dashIndex + 1)))
+                  .mapToObj(i -> i);
+            }
+            if (indexRange != null
+                && indexRange.equals("all")
+                && Optional.of(spec)
+                .map(StackGresShardedClusterSpec::getCoordinator)
+                .map(StackGresShardedClusterCoordinator::getQueryRouterClusters)
+                .orElse(0) > 0) {
+              return IntStream
+                  .rangeClosed(
+                      Integer.valueOf(0),
+                      Integer.valueOf(spec.getCoordinator().getQueryRouterClusters() - 1))
+                  .mapToObj(i -> i);
+            }
+            return Stream.of();
+          })
+          .toList();
+    }
+    return List.of();
+  }
+
+  public void setIndexes(List<IntOrString> indexes) {
+    this.indexes = indexes;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
+  }
+
   public Integer getInstancesPerCluster() {
     return instancesPerCluster;
   }
@@ -158,9 +258,8 @@ public class StackGresShardedClusterWorker extends StackGresClusterSpec {
   public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
-    result = prime * result
-        + Objects.hash(configurationsForWorkers, index, instancesPerCluster, podsForWorkers,
-            replicationForWorkers);
+    result = prime * result + Objects.hash(configurationsForWorkers, index, indexes,
+        instancesPerCluster, podsForWorkers, replicationForWorkers, type);
     return result;
   }
 
@@ -177,10 +276,11 @@ public class StackGresShardedClusterWorker extends StackGresClusterSpec {
     }
     StackGresShardedClusterWorker other = (StackGresShardedClusterWorker) obj;
     return Objects.equals(configurationsForWorkers, other.configurationsForWorkers)
-        && Objects.equals(index, other.index)
+        && Objects.equals(index, other.index) && Objects.equals(indexes, other.indexes)
         && Objects.equals(instancesPerCluster, other.instancesPerCluster)
         && Objects.equals(podsForWorkers, other.podsForWorkers)
-        && Objects.equals(replicationForWorkers, other.replicationForWorkers);
+        && Objects.equals(replicationForWorkers, other.replicationForWorkers)
+        && Objects.equals(type, other.type);
   }
 
 }

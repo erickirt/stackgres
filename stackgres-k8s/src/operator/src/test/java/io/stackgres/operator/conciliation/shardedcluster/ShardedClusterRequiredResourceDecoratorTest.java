@@ -66,7 +66,7 @@ class ShardedClusterRequiredResourceDecoratorTest
 
   private List<StackGresCluster> getWorkers() {
     return Seq.range(0, resource.getSpec().getWorkers().getClusters())
-        .map(index -> StackGresShardedClusterForCitusUtil.getWorkersCluster(resource, index, Optional.empty()))
+        .map(index -> StackGresShardedClusterForCitusUtil.getWorkerCluster(resource, index, Optional.empty()))
         .toList();
   }
 

@@ -11,7 +11,7 @@ DO $setup$BEGIN
           WHERE shouldhaveshards AND groupid IN (SELECT generate_series(%1$s, %2$s));
         END$$
       $sql$,
-      'citus')
+      %3$s)
     FROM cron.job WHERE jobname = 'update-query-routers-flags';
   ELSE
     PERFORM cron.schedule_in_database(
@@ -24,6 +24,6 @@ DO $setup$BEGIN
           WHERE shouldhaveshards AND groupid IN (SELECT generate_series(%1$s, %2$s));
         END$$
       $sql$,
-      'citus');
+      %3$s);
   END IF;
 END$setup$;

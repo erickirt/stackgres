@@ -20,6 +20,8 @@ public class ShardedClusterSpecLabels extends ClusterSpecLabels {
 
   private Map<String, String> coordinatorAnyService;
 
+  private Map<String, String> queryRoutersPrimariesService;
+
   private Map<String, String> workersPrimariesService;
 
   private Map<String, String> shardsPrimariesService;
@@ -38,6 +40,14 @@ public class ShardedClusterSpecLabels extends ClusterSpecLabels {
 
   public void setCoordinatorAnyService(Map<String, String> coordinatorAnyService) {
     this.coordinatorAnyService = coordinatorAnyService;
+  }
+
+  public Map<String, String> getQueryRoutersPrimariesService() {
+    return queryRoutersPrimariesService;
+  }
+
+  public void setQueryRoutersPrimariesService(Map<String, String> queryRoutersPrimariesService) {
+    this.queryRoutersPrimariesService = queryRoutersPrimariesService;
   }
 
   public Map<String, String> getWorkersPrimariesService() {

@@ -16,7 +16,6 @@ import io.stackgres.common.crd.sgcluster.StackGresClusterManagedSql;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorker;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.operator.common.StackGresShardedClusterReview;
 import io.stackgres.operator.validation.ValidationType;
 import io.stackgres.operatorframework.admissionwebhook.Operation;
@@ -36,8 +35,7 @@ public class OverridesWorkersScriptsConfigValidator implements ShardedClusterVal
         || review.getRequest().getOperation() == Operation.CREATE) {
       StackGresShardedCluster cluster = review.getRequest().getObject();
       for (var overrideShard : Optional.of(cluster.getSpec())
-          .map(StackGresShardedClusterSpec::getWorkers)
-          .map(StackGresShardedClusterWorkers::getOverrides)
+          .map(StackGresShardedClusterSpec::getWorkersOverrides)
           .stream()
           .flatMap(List::stream)
           .toList()) {

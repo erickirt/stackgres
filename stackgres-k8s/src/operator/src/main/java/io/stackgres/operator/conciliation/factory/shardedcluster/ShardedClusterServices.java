@@ -76,6 +76,12 @@ public class ShardedClusterServices implements
       services = services.append(createCoordinatorPrimaryService(context));
     }
 
+    if (Optional.of(coordinatorServices.getQueryRouters())
+        .map(StackGresPostgresService::getEnabled)
+        .orElse(true)) {
+      services = services.append(createCoordinatorQueryRoutersService(context));
+    }
+
     var workersServices = context.getSource().getSpec().getPostgresServices().getWorkers();
     if (Optional.of(workersServices.getPrimaries())
         .map(StackGresPostgresService::getEnabled)
@@ -278,6 +284,73 @@ public class ShardedClusterServices implements
             Optional.of(context.getSource().getSpec().getPostgresServices())
             .map(StackGresShardedClusterPostgresServices::getWorkers)
             .map(StackGresShardedClusterPostgresWorkersServices::getCustomPorts)
+            .stream()
+            .flatMap(List::stream)
+            .map(ServicePortBuilder::new)
+            .map(this::setCustomPort)
+            .map(ServicePortBuilder::build)
+            .toList())
+        .endSpec()
+        .build();
+  }
+
+  private Service createCoordinatorQueryRoutersService(StackGresShardedClusterContext context) {
+    StackGresShardedCluster cluster = context.getSource();
+    return new ServiceBuilder()
+        .withNewMetadata()
+        .withNamespace(cluster.getMetadata().getNamespace())
+        .withName(StackGresShardedClusterUtil.primariesQueryRoutersServiceName(
+            context.getSource()))
+        .addToAnnotations(
+            Optional.ofNullable(cluster.getSpec().getMetadata())
+            .map(StackGresShardedClusterSpecMetadata::getAnnotations)
+            .map(StackGresShardedClusterSpecAnnotations::getQueryRoutersPrimariesService)
+            .orElse(Map.of()))
+        .addToLabels(labelFactory.genericLabels(cluster))
+        .addToLabels(
+            Optional.ofNullable(cluster.getSpec().getMetadata())
+            .map(StackGresShardedClusterSpecMetadata::getLabels)
+            .map(StackGresShardedClusterSpecLabels::getServices)
+            .orElse(Map.of()))
+        .addToLabels(
+            Optional.ofNullable(cluster.getSpec().getMetadata())
+            .map(StackGresShardedClusterSpecMetadata::getLabels)
+            .map(StackGresShardedClusterSpecLabels::getQueryRoutersPrimariesService)
+            .orElse(Map.of()))
+        .endMetadata()
+        .withSpec(cluster.getSpec().getPostgresServices().getCoordinator().getQueryRouters())
+        .editSpec()
+        .addAllToPorts(List.of(
+            new ServicePortBuilder()
+                .withNodePort(Optional
+                        .ofNullable(cluster.getSpec().getPostgresServices().getCoordinator().getQueryRouters())
+                        .map(StackGresPostgresService::getNodePorts)
+                        .map(StackGresPostgresServiceNodePort::getPgport)
+                        .orElse(null))
+                .withProtocol("TCP")
+                .withName(EnvoyUtil.POSTGRES_PORT_NAME)
+                .withPort(PatroniUtil.POSTGRES_SERVICE_PORT)
+                .withTargetPort(new IntOrString(EnvoyUtil.POSTGRES_PORT_NAME))
+                .build()))
+        .addAllToPorts(Seq.of(
+            new ServicePortBuilder()
+                .withNodePort(Optional
+                        .ofNullable(cluster.getSpec().getPostgresServices().getCoordinator().getQueryRouters())
+                        .map(StackGresPostgresService::getNodePorts)
+                        .map(StackGresPostgresServiceNodePort::getReplicationport)
+                        .orElse(null))
+                .withProtocol("TCP")
+                .withName(EnvoyUtil.POSTGRES_REPLICATION_PORT_NAME)
+                .withPort(PatroniUtil.REPLICATION_SERVICE_PORT)
+                .withTargetPort(new IntOrString(EnvoyUtil.POSTGRES_REPLICATION_PORT_NAME))
+                .build())
+            .filter(ignore -> !StackGresShardingType.SHARDING_SPHERE.equals(
+                StackGresShardingType.fromString(context.getShardedCluster().getSpec().getType())))
+            .toList())
+        .addAllToPorts(
+            Optional.of(context.getSource().getSpec().getPostgresServices())
+            .map(StackGresShardedClusterPostgresServices::getCoordinator)
+            .map(StackGresShardedClusterPostgresCoordinatorServices::getCustomPorts)
             .stream()
             .flatMap(List::stream)
             .map(ServicePortBuilder::new)
