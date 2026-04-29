@@ -9,7 +9,7 @@ showToc: true
 With every StackGres sharded cluster that you deploy a few services will be deployed along with it.
 To connect to the database, you only need to be aware of three services: the coordinator primary and any service and the workers primaries service.
 
-The coordinator primary service is used to connect to the primary node of the coordinator cluster, the coordinator any service is used to access any node of the coordinator cluster and the workers primaries service is used to connect to the primary node of any shard cluster.
+The coordinator primary service is used to connect to the primary node of the coordinator cluster, the coordinator any service is used to access any node of the coordinator cluster and the workers primaries service is used to connect to the primary node of any worker cluster.
 
 The service name follow a convention that is based on the sharded cluster name and the function of the service:
 
@@ -25,7 +25,7 @@ All this services will accept connections to ports `5432` and `5433` where:
 
 Therefore, given a sharded cluster with name `cluster` in the namespace `default`, the primary node of the coordinator cluster will accessible through the URL: `cluster.default:5432`.
 Meanwhile, any node of the coordinator cluster will be accessible through the URL: `cluster-reads.default:5432`.
-Finally, primary node of any shard cluster will be accessible through the URL: `cluster-primaries.default:5432`.
+Finally, primary node of any worker cluster will be accessible through the URL: `cluster-primaries.default:5432`.
 
 For Citus sharded clusters with query routers, each query router exposes its own primary service. For instance, the first query router of a sharded cluster called `cluster` is reachable at `cluster-router0.default:5432`. The query router clusterName template can be customized via `spec.coordinator.queryRouterClusterNameTemplate`.
 

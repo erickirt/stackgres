@@ -318,9 +318,9 @@ public class ShardedClusterResource
         dryRun);
     createOrUpdateScripts(
         resource,
-        "shards",
-        "shards",
-        "spec.shards",
+        "workers",
+        "workers",
+        "spec.workers",
         Optional.ofNullable(resource.getSpec())
         .map(ShardedClusterSpec::getWorkers)
         .map(ShardedClusterWorkers::getManagedSql)
@@ -332,9 +332,9 @@ public class ShardedClusterResource
     getScriptEntriesForWorkersOverride(resource)
         .forEach(override -> createOrUpdateScripts(
             resource,
-            "shards override " + (override.v1.intValue() + 1),
+            "workers override " + (override.v1.intValue() + 1),
             "shard" + override.v1.intValue(),
-            "spec.shards.overrides[" + override.v1.intValue() + "]",
+            "spec.workers.overrides[" + override.v1.intValue() + "]",
             override.v2,
             dryRun));
   }

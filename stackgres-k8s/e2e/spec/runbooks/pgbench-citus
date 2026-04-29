@@ -146,7 +146,7 @@ benchmark_cluster() {
   wait_until kubectl exec -n "$CLUSTER_NAMESPACE" psql -q\
     -- bash -c "PGPASSWORD=$PGPASSWORD psql -q -h $CLUSTER_NAME -c 'SELECT 1'"
   wait_until kubectl exec -n "$CLUSTER_NAMESPACE" psql -q\
-    -- bash -c "PGPASSWORD=$PGPASSWORD psql -q -h $CLUSTER_NAME-shards -c 'SELECT 1'"
+    -- bash -c "PGPASSWORD=$PGPASSWORD psql -q -h $CLUSTER_NAME-workers -c 'SELECT 1'"
   kubectl exec -n "$CLUSTER_NAMESPACE" psql -q\
     -- bash -c "printf %s '
            \set bid random(1, 1 * :scale)

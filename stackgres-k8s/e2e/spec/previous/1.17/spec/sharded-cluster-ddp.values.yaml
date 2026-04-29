@@ -24,7 +24,7 @@ cluster:
 shardedCluster:
   type: ddp
   database: ddp
-  shards:
+  workers:
     pods:
       persistentVolume:
         size: 128Mi

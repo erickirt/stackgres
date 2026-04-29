@@ -87,14 +87,14 @@ sharded_check() {
     fail "Sharding primary coordinator service is not working"
   fi
 
-  try_function wait_until eval 'run_query -c "$CLUSTER_NAME-coord" -h "$CLUSTER_NAME-shards" -i 1 -p 5432 \
+  try_function wait_until eval 'run_query -c "$CLUSTER_NAME-coord" -h "$CLUSTER_NAME-workers" -i 1 -p 5432 \
     -d citus -q "SELECT pg_is_in_recovery()" | grep -xF f'
 
   if [ "$EXIT_CODE" = 0 ]
   then
-    success "Sharding shards service is working"
+    success "Sharding workers service is working"
   else
-    fail "Sharding shards service is not working"
+    fail "Sharding workers service is not working"
   fi
 
   try_function wait_until eval 'run_query -c "$CLUSTER_NAME-coord" -h "$CLUSTER_NAME-reads" -i 1 -p 5432 \

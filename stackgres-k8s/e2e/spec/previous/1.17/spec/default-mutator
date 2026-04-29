@@ -860,7 +860,7 @@ spec:
       scheduling:
         nodeSelector:
           $NODE_LABEL_KEY: $NODE_LABEL_VALUE"
-  shards:
+  workers:
     clusters: 1
     instancesPerCluster: 1
     pods:
@@ -955,10 +955,10 @@ EOF
   assert_string_contains "pgbouncer" "$INSTALLED_CONTAINERS"
   assert_string_contains "postgres-util" "$INSTALLED_CONTAINERS"
 
-  INSTALLED_CONTAINERS="$(wait_until kubectl get sts -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME"-shard0 -o=jsonpath='{.spec.template.spec.containers[*].name}')"
+  INSTALLED_CONTAINERS="$(wait_until kubectl get sts -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME"-worker0 -o=jsonpath='{.spec.template.spec.containers[*].name}')"
 
   assert_string_contains "prometheus-postgres-exporter" "$INSTALLED_CONTAINERS"
-  if ! kubectl get sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --template '{{ .spec.shards.pods.disableEnvoy }}' | grep -qxF true
+  if ! kubectl get sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --template '{{ .spec.workers.pods.disableEnvoy }}' | grep -qxF true
   then
     assert_string_contains "envoy" "$INSTALLED_CONTAINERS"
   fi
@@ -988,7 +988,7 @@ spec:
       scheduling:
         nodeSelector:
           $NODE_LABEL_KEY: $NODE_LABEL_VALUE"
-  shards:
+  workers:
     clusters: 1
     instancesPerCluster: 1
     pods:
@@ -1030,10 +1030,10 @@ EOF
   assert_string_contains "pgbouncer" "$INSTALLED_CONTAINERS"
   assert_string_contains "postgres-util" "$INSTALLED_CONTAINERS"
 
-  INSTALLED_CONTAINERS="$(wait_until kubectl get sts -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME"-shard0 -o=jsonpath='{.spec.template.spec.containers[*].name}')"
+  INSTALLED_CONTAINERS="$(wait_until kubectl get sts -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME"-worker0 -o=jsonpath='{.spec.template.spec.containers[*].name}')"
 
   assert_string_contains "prometheus-postgres-exporter" "$INSTALLED_CONTAINERS"
-  if ! kubectl get sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --template '{{ .spec.shards.pods.disableEnvoy }}' | grep -qxF true
+  if ! kubectl get sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --template '{{ .spec.workers.pods.disableEnvoy }}' | grep -qxF true
   then
     assert_string_contains "envoy" "$INSTALLED_CONTAINERS"
   fi
@@ -1068,7 +1068,7 @@ spec:
       scheduling:
         nodeSelector:
           $NODE_LABEL_KEY: $NODE_LABEL_VALUE"
-  shards:
+  workers:
     clusters: 1
     instancesPerCluster: 1
     pods:

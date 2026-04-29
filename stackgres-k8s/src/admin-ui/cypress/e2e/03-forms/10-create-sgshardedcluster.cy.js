@@ -55,7 +55,7 @@ describe('Create SGShardedCluster', () => {
         // Create SGScript
         cy.createCRD('sgscripts', {
             metadata: {
-                name: 'script-shards-' + resourceName, 
+                name: 'script-workers-' + resourceName, 
                 namespace: namespace
             },
             spec: {
@@ -88,7 +88,7 @@ describe('Create SGShardedCluster', () => {
                         }
                     }
                 },
-                shards: {
+                workers: {
                     clusters: 2,
                     instancesPerCluster: 1, 
                     pods: {
@@ -998,37 +998,37 @@ describe('Create SGShardedCluster', () => {
             .type('10')
         
         // Shards section
-        cy.get('form#createShardedCluster li.shards')
+        cy.get('form#createShardedCluster li.workers')
             .click()
 
         // Test Shards clusters
-        cy.get('input[data-field="spec.shards.clusters"]')
+        cy.get('input[data-field="spec.workers.clusters"]')
             .clear()
             .type('2')
 
         // Test Shards instancesPerCluster
-        cy.get('input[data-field="spec.shards.instancesPerCluster"]')
+        cy.get('input[data-field="spec.workers.instancesPerCluster"]')
             .clear()
             .type('4')
         
         // Test Shards Volume Size
-        cy.get('input[data-field="spec.shards.pods.persistentVolume.size"]')
+        cy.get('input[data-field="spec.workers.pods.persistentVolume.size"]')
             .clear()
             .type('2')
 
         // Test Shards scripts
-        cy.get('form#createShardedCluster li[data-step="shards.scripts"]')
+        cy.get('form#createShardedCluster li[data-step="workers.scripts"]')
             .click()
         
         // Test Shards create new script
         cy.get('.scriptFieldset > div.fieldsetFooter > a.addRow')
             .click()
         
-        cy.get('label[for="spec.shards.managedSql.scripts.scriptSource"] + select')
+        cy.get('label[for="spec.workers.managedSql.scripts.scriptSource"] + select')
             .select('createNewScript')
 
         // Test Shards Entry script textarea
-        cy.get('[data-field="spec.shards.managedSql.scripts[0].scriptSpec.scripts[0].script"]')
+        cy.get('[data-field="spec.workers.managedSql.scripts[0].scriptSpec.scripts[0].script"]')
             .type(resourceName)        
         
         // Test Shards Add Script button
@@ -1036,119 +1036,118 @@ describe('Create SGShardedCluster', () => {
             .click()
 
         // Test Shards select script
-        cy.get('[data-field="spec.shards.managedSql.scripts.scriptSource.shards[1]"]')
-            .select('script-shards-' + resourceName)
+        cy.get('[data-field="spec.workers.managedSql.scripts.scriptSource.workers[1]"]')
+            .select('script-workers-' + resourceName)
 
         // Test User-Supplied Pods Sidecars
-        cy.get('form#createShardedCluster li[data-step="shards.sidecars"]')
+        cy.get('form#createShardedCluster li[data-step="workers.sidecars"]')
             .click({force: true})
 
         // Test Custom volumes
         cy.get('div.repeater.customVolumes .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[0].name"]')
             .type('vol1')
 
-        cy.get('select[data-field="spec.shards.pods.customVolumes[0].type"]')
+        cy.get('select[data-field="spec.workers.pods.customVolumes[0].type"]')
             .select('emptyDir')
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[0].emptyDir.medium"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[0].emptyDir.medium"]')
             .type('medium')
         
-        cy.get('input[data-field="spec.shards.pods.customVolumes[0].emptyDir.sizeLimit"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[0].emptyDir.sizeLimit"]')
             .type('1Gi')
         
-        cy.get('fieldset[data-fieldset="spec.shards.pods.customVolumes"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-fieldset="spec.workers.pods.customVolumes"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].name"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].name"]')
             .type('vol2')
 
-        cy.get('select[data-field="spec.shards.pods.customVolumes[1].type"]')
+        cy.get('select[data-field="spec.workers.pods.customVolumes[1].type"]')
             .select('configMap')
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.name"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.name"]')
             .type('name')
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.optional"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.optional"]')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.defaultMode"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.defaultMode"]')
             .type('0')
         
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.items[0].key"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.items[0].key"]')
             .type('key1')
         
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.items[0].mode"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.items[0].mode"]')
             .type('0')
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.items[0].path"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.items[0].path"]')
             .type('path')
         
         // Note: Disabled until repeater gets optimized. Causes test to wait and fail
-        /* cy.get('fieldset[data-field="spec.shards.pods.customVolumes[1].configMap.items"] + .fieldsetFooter a.addRow')
+        /* cy.get('fieldset[data-field="spec.workers.pods.customVolumes[1].configMap.items"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.items[1].key"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.items[1].key"]')
             .type('key2')
         
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.items[1].mode"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.items[1].mode"]')
             .type('0')
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.items[1].path"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.items[1].path"]')
             .type('path2')
         
-        cy.get('fieldset[data-field="spec.shards.pods.customVolumes[1].configMap.items"] + .fieldsetFooter a.addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customVolumes[1].configMap.items"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.pods.customVolumes[1].configMap.items[2]"] a.delete')
+        cy.get('div[data-field="spec.workers.pods.customVolumes[1].configMap.items[2]"] a.delete')
             .click() */
 
-        cy.get('fieldset[data-fieldset="spec.shards.pods.customVolumes"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-fieldset="spec.workers.pods.customVolumes"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].name"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].name"]')
             .type('vol3')
 
-        cy.get('select[data-field="spec.shards.pods.customVolumes[2].type"]')
+        cy.get('select[data-field="spec.workers.pods.customVolumes[2].type"]')
             .select('secret')
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.secretName"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.secretName"]')
             .type('name')
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.optional"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.optional"]')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.defaultMode"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.defaultMode"]')
             .type('0')
         
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.items[0].key"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.items[0].key"]')
             .type('key1')
         
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.items[0].mode"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.items[0].mode"]')
             .type('0')
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.items[0].path"]')
-            .type('path')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.items[0].path"]')
         
         // Note: Disabled until repeater gets optimized. Causes test to wait and fail
-        /* cy.get('fieldset[data-field="spec.shards.pods.customVolumes[2].secret.items"] + .fieldsetFooter a.addRow')
+        /* cy.get('fieldset[data-field="spec.workers.pods.customVolumes[2].secret.items"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.items[1].key"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.items[1].key"]')
             .type('key2')
         
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.items[1].mode"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.items[1].mode"]')
             .type('0')
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.items[1].path"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.items[1].path"]')
             .type('path2')
         
-        cy.get('fieldset[data-field="spec.shards.pods.customVolumes[2].secret.items"] + .fieldsetFooter a.addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customVolumes[2].secret.items"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.pods.customVolumes[2].secret.items[2]"] a.delete')
+        cy.get('div[data-field="spec.workers.pods.customVolumes[2].secret.items[2]"] a.delete')
             .click()
         */
 
@@ -1156,445 +1155,444 @@ describe('Create SGShardedCluster', () => {
         cy.get('div.repeater.customInitContainers .fieldsetFooter .addRow')
             .click()
         
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].name"]')
             .type('container1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].image"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].image"]')
             .type('image1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].imagePullPolicy"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].imagePullPolicy"]')
             .type('imagePullPolicy1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].workingDir"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].workingDir"]')
             .type('workingDir1')
         
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].args[0]"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].args[0]"]')
             .type('arg1')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customInitContainers[0].args"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customInitContainers[0].args"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].args[1]"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].args[1]"]')
             .type('arg2')
         
-        cy.get('fieldset[data-field="spec.shards.pods.customInitContainers[0].args"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customInitContainers[0].args"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].args[2]"] + a.delete')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].args[2]"] + a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].command[0]"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].command[0]"]')
             .type('command1')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customInitContainers[0].command"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customInitContainers[0].command"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].command[1]"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].command[1]"]')
             .type('command2')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customInitContainers[0].command"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customInitContainers[0].command"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].command[2]"] + a.delete')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].command[2]"] + a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].env[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].env[0].name"]')
             .type('var1')
         
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].env[0].value"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].env[0].value"]')
             .type('val1')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customInitContainers[0].env"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customInitContainers[0].env"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].env[1].name"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].env[1].name"]')
             .type('var2')
         
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].env[1].value"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].env[1].value"]')
             .type('val2')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customInitContainers[0].env"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customInitContainers[0].env"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.pods.customInitContainers[0].env[2]"] a.delete')
+        cy.get('div[data-field="spec.workers.pods.customInitContainers[0].env[2]"] a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[0].name"]')
             .type('port1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[0].hostIP"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[0].hostIP"]')
             .type('ip1')
         
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[0].hostPort"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[0].hostPort"]')
             .type('1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[0].containerPort"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[0].containerPort"]')
             .type('1')
         
-        cy.get('select[data-field="spec.shards.pods.customInitContainers[0].ports[0].protocol"]')
+        cy.get('select[data-field="spec.workers.pods.customInitContainers[0].ports[0].protocol"]')
             .select('TCP')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customInitContainers.ports"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customInitContainers.ports"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[1].name"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[1].name"]')
             .type('port2')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[1].hostIP"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[1].hostIP"]')
             .type('ip2')
         
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[1].hostPort"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[1].hostPort"]')
             .type('2')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[1].containerPort"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[1].containerPort"]')
             .type('2')
         
-        cy.get('select[data-field="spec.shards.pods.customInitContainers[0].ports[1].protocol"]')
+        cy.get('select[data-field="spec.workers.pods.customInitContainers[0].ports[1].protocol"]')
             .select('UDP')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customInitContainers.ports"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customInitContainers.ports"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.pods.customInitContainers[0].ports[2]"] a.delete')
+        cy.get('div[data-field="spec.workers.pods.customInitContainers[0].ports[2]"] a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].volumeMounts[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].volumeMounts[0].name"]')
             .type('vol1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].volumeMounts[0].readOnly"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].volumeMounts[0].readOnly"]')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].volumeMounts[0].mountPath"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].volumeMounts[0].mountPath"]')
             .type('mountPath')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].volumeMounts[0].mountPropagation"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].volumeMounts[0].mountPropagation"]')
             .type('mountPropagation')
         
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].volumeMounts[0].subPath"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].volumeMounts[0].subPath"]')
             .type('subPath')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customInitContainers[0].volumeMounts"] + .fieldsetFooter a.addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customInitContainers[0].volumeMounts"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.pods.customInitContainers[0].volumeMounts[1]"] a.delete')
+        cy.get('div[data-field="spec.workers.pods.customInitContainers[0].volumeMounts[1]"] a.delete')
             .click()
 
-        cy.get('fieldset[data-fieldset="spec.shards.pods.customInitContainers"] + .fieldsetFooter a.addRow')
+        cy.get('fieldset[data-fieldset="spec.workers.pods.customInitContainers"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.pods.customInitContainers[1]"] > .header a.delete')
+        cy.get('div[data-field="spec.workers.pods.customInitContainers[1]"] > .header a.delete')
             .click()
 
         // Test Custom Containers
         cy.get('div.repeater.customContainers .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].name"]')
             .type('container1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].image"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].image"]')
             .type('image1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].imagePullPolicy"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].imagePullPolicy"]')
             .type('imagePullPolicy1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].workingDir"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].workingDir"]')
             .type('workingDir1')
         
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].args[0]"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].args[0]"]')
             .type('arg1')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customContainers[0].args"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customContainers[0].args"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].args[1]"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].args[1]"]')
             .type('arg2')
         
-        cy.get('fieldset[data-field="spec.shards.pods.customContainers[0].args"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customContainers[0].args"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].args[2]"] + a.delete')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].args[2]"] + a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].command[0]"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].command[0]"]')
             .type('command1')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customContainers[0].command"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customContainers[0].command"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].command[1]"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].command[1]"]')
             .type('command2')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customContainers[0].command"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customContainers[0].command"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].command[2]"] + a.delete')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].command[2]"] + a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].env[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].env[0].name"]')
             .type('var1')
         
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].env[0].value"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].env[0].value"]')
             .type('val1')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customContainers[0].env"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customContainers[0].env"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].env[1].name"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].env[1].name"]')
             .type('var2')
         
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].env[1].value"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].env[1].value"]')
             .type('val2')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customContainers[0].env"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customContainers[0].env"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.pods.customContainers[0].env[2]"] a.delete')
+        cy.get('div[data-field="spec.workers.pods.customContainers[0].env[2]"] a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[0].name"]')
             .type('port1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[0].hostIP"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[0].hostIP"]')
             .type('ip1')
         
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[0].hostPort"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[0].hostPort"]')
             .type('1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[0].containerPort"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[0].containerPort"]')
             .type('1')
         
-        cy.get('select[data-field="spec.shards.pods.customContainers[0].ports[0].protocol"]')
+        cy.get('select[data-field="spec.workers.pods.customContainers[0].ports[0].protocol"]')
             .select('TCP')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customContainers.ports"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customContainers.ports"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[1].name"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[1].name"]')
             .type('port2')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[1].hostIP"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[1].hostIP"]')
             .type('ip2')
         
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[1].hostPort"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[1].hostPort"]')
             .type('2')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[1].containerPort"]')
             .type('2')
         
-        cy.get('select[data-field="spec.shards.pods.customContainers[0].ports[1].protocol"]')
+        cy.get('select[data-field="spec.workers.pods.customContainers[0].ports[1].protocol"]')
             .select('UDP')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customContainers.ports"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customContainers.ports"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.pods.customContainers[0].ports[2]"] a.delete')
+        cy.get('div[data-field="spec.workers.pods.customContainers[0].ports[2]"] a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].volumeMounts[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].volumeMounts[0].name"]')
             .type('vol1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].volumeMounts[0].readOnly"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].volumeMounts[0].readOnly"]')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].volumeMounts[0].mountPath"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].volumeMounts[0].mountPath"]')
             .type('mountPath')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].volumeMounts[0].mountPropagation"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].volumeMounts[0].mountPropagation"]')
             .type('mountPropagation')
         
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].volumeMounts[0].subPath"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].volumeMounts[0].subPath"]')
             .type('subPath')
 
-        cy.get('fieldset[data-field="spec.shards.pods.customContainers[0].volumeMounts"] + .fieldsetFooter a.addRow')
+        cy.get('fieldset[data-field="spec.workers.pods.customContainers[0].volumeMounts"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.pods.customContainers[0].volumeMounts[1]"] a.delete')
+        cy.get('div[data-field="spec.workers.pods.customContainers[0].volumeMounts[1]"] a.delete')
             .click()
 
-        cy.get('fieldset[data-fieldset="spec.shards.pods.customContainers"] + .fieldsetFooter a.addRow')
+        cy.get('fieldset[data-fieldset="spec.workers.pods.customContainers"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.pods.customContainers[1]"] > .header a.delete')
+        cy.get('div[data-field="spec.workers.pods.customContainers[1]"] > .header a.delete')
             .click()
 
         // Test Shards Replication
-        cy.get('form#createShardedCluster li[data-step="shards.pods-replication"]')
+        cy.get('form#createShardedCluster li[data-step="workers.pods-replication"]')
             .click()
         
-        cy.get('select[data-field="spec.shards.replication.mode"]')
+        cy.get('select[data-field="spec.workers.replication.mode"]')
             .select('sync')
 
-        cy.get('input[data-field="spec.shards.replication.syncInstances"]')
+        cy.get('input[data-field="spec.workers.replication.syncInstances"]')
             .clear()
             .type('2')
 
         // Test Shards Postgres Services
-        cy.get('form#createShardedCluster li[data-step="shards.services"]')
+        cy.get('form#createShardedCluster li[data-step="workers.services"]')
             .click()
 
-        cy.get('select[data-field="spec.postgresServices.shards.primaries.type"]')
+        cy.get('select[data-field="spec.postgresServices.workers.primaries.type"]')
             .select('LoadBalancer')
         
-        cy.get('input[data-field="spec.postgresServices.shards.primaries.loadBalancerIP"]')
+        cy.get('input[data-field="spec.postgresServices.workers.primaries.loadBalancerIP"]')
             .clear()
             .type('1.2.3.4')
 
         cy.get('div.repeater.sidecars div.fieldsetFooter > a.addRow')
             .click()
 
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[0].appProtocol"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[0].appProtocol"]')
             .clear()
             .type('protocol')
         
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[0].name"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[0].name"]')
             .clear()
             .type('name')
         
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[0].nodePort"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[0].nodePort"]')
             .clear()
             .type('1234')
 
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[0].port"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[0].port"]')
             .clear()
             .type('1234')
 
-        cy.get('select[data-field="spec.postgresServices.shards.customPorts[0].protocol"]')
+        cy.get('select[data-field="spec.postgresServices.workers.customPorts[0].protocol"]')
             .select('UDP')
 
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[0].targetPort"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[0].targetPort"]')
             .clear()
             .type('1234')
 
-        cy.get('fieldset[data-field="spec.postgresServices.shards.customPorts"] + div.fieldsetFooter > a.addRow')
+        cy.get('fieldset[data-field="spec.postgresServices.workers.customPorts"] + div.fieldsetFooter > a.addRow')
             .click()
 
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[1].appProtocol"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[1].appProtocol"]')
             .clear()
             .type('protocol2')
         
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[1].name"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[1].name"]')
             .clear()
             .type('name2')
         
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[1].nodePort"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[1].nodePort"]')
             .clear()
             .type('4321')
 
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[1].port"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[1].port"]')
             .clear()
             .type('4321')
 
-        cy.get('select[data-field="spec.postgresServices.shards.customPorts[1].protocol"]')
+        cy.get('select[data-field="spec.postgresServices.workers.customPorts[1].protocol"]')
             .select('SCTP')
         
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[1].targetPort"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[1].targetPort"]')
             .clear()
             .type('4321')
 
         // Test Shards Metadata
-        cy.get('form#createShardedCluster li[data-step="shards.metadata"]')
+        cy.get('form#createShardedCluster li[data-step="workers.metadata"]')
             .click()
 
-        cy.get('fieldset[data-field="spec.shards.metadata.labels.clusterPods"] + div.fieldsetFooter > a.addRow')
+        cy.get('fieldset[data-field="spec.workers.metadata.labels.clusterPods"] + div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.metadata.labels.clusterPods[0].label"]')
+        cy.get('input[data-field="spec.workers.metadata.labels.clusterPods[0].label"]')
             .type('label')
-        cy.get('input[data-field="spec.shards.metadata.labels.clusterPods[0].value"]')
+        cy.get('input[data-field="spec.workers.metadata.labels.clusterPods[0].value"]')
             .type('value')
         
-        cy.get('fieldset[data-field="spec.shards.metadata.annotations.allResources"] + div.fieldsetFooter > a.addRow')
+        cy.get('fieldset[data-field="spec.workers.metadata.annotations.allResources"] + div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.metadata.annotations.allResources[0].annotation"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.allResources[0].annotation"]')
             .type('annotation')
-        cy.get('input[data-field="spec.shards.metadata.annotations.allResources[0].value"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.allResources[0].value"]')
             .type('value')
 
-        cy.get('fieldset[data-field="spec.shards.metadata.annotations.clusterPods"] + div.fieldsetFooter > a.addRow')
+        cy.get('fieldset[data-field="spec.workers.metadata.annotations.clusterPods"] + div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.metadata.annotations.clusterPods[0].annotation"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.clusterPods[0].annotation"]')
             .type('annotation')
-        cy.get('input[data-field="spec.shards.metadata.annotations.clusterPods[0].value"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.clusterPods[0].value"]')
             .type('value')
 
-        cy.get('fieldset[data-field="spec.shards.metadata.annotations.services"] + div.fieldsetFooter > a.addRow')
+        cy.get('fieldset[data-field="spec.workers.metadata.annotations.services"] + div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.metadata.annotations.services[0].annotation"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.services[0].annotation"]')
             .type('annotation')        
-        cy.get('input[data-field="spec.shards.metadata.annotations.services[0].value"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.services[0].value"]')
             .type('value')
         
-        cy.get('fieldset[data-field="spec.shards.metadata.annotations.primaryService"] + div.fieldsetFooter > a.addRow')
+        cy.get('fieldset[data-field="spec.workers.metadata.annotations.primaryService"] + div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.metadata.annotations.primaryService[0].annotation"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.primaryService[0].annotation"]')
             .type('annotation')        
-        cy.get('input[data-field="spec.shards.metadata.annotations.primaryService[0].value"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.primaryService[0].value"]')
             .type('value')
         
-        cy.get('fieldset[data-field="spec.shards.metadata.annotations.replicasService"] + div.fieldsetFooter > a.addRow')
+        cy.get('fieldset[data-field="spec.workers.metadata.annotations.replicasService"] + div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.metadata.annotations.replicasService[0].annotation"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.replicasService[0].annotation"]')
             .type('annotation')        
-        cy.get('input[data-field="spec.shards.metadata.annotations.replicasService[0].value"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.replicasService[0].value"]')
             .type('value')
 
         // Tests Shards Scheduling
-        cy.get('form#createShardedCluster li[data-step="shards.scheduling"]')
+        cy.get('form#createShardedCluster li[data-step="workers.scheduling"]')
             .click()
 
         // Tests Shards Node Selectors
         cy.get('div.repeater.nodeSelector div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeSelector[0].label"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeSelector[0].label"]')
             .type('key')
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeSelector[0].value"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeSelector[0].value"]')
             .type('value')
 
         // Tests Shards Node Tolerations
         cy.get('div.scheduling.repeater.tolerations div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.pods.scheduling.tolerations[0].key"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.tolerations[0].key"]')
             .type('key')
-        cy.get('input[data-field="spec.shards.pods.scheduling.tolerations[0].value"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.tolerations[0].value"]')
             .type('value')
-        cy.get('select[data-field="spec.shards.pods.scheduling.tolerations[0].effect"]')
+        cy.get('select[data-field="spec.workers.pods.scheduling.tolerations[0].effect"]')
             .select('NoSchedule')
         
         // Tests Shards Node Affinity (Required)
         cy.get('div.scheduling.repeater.requiredAffinity div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.key"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.key"]')
             .type('key')
-        cy.get('select[data-field="spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.operator"]')
+        cy.get('select[data-field="spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.operator"]')
             .select('In')
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.values"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.values"]')
             .type('value')
 
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.key"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.key"]')
             .type('key')
-        cy.get('select[data-field="spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.operator"]')
+        cy.get('select[data-field="spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.operator"]')
             .select('In')
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.values"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.values"]')
             .type('value')
         
         // Tests Shards Node Affinity (Preferred)
         cy.get('div.scheduling.repeater.preferredAffinity div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.key"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.key"]')
             .type('key')
-        cy.get('select[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.operator"]')
+        cy.get('select[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.operator"]')
             .select('In')
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.values"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.values"]')
             .type('value')
         
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.key"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.key"]')
             .type('key')
-        cy.get('select[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.operator"]')
+        cy.get('select[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.operator"]')
             .select('In')
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.values"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.values"]')
             .type('value')
 
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.weight"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.weight"]')
             .clear()
             .type('10')
 
@@ -1605,20 +1603,20 @@ describe('Create SGShardedCluster', () => {
         cy.get('button#addOverride')
             .click()
 
-        cy.get('select[data-field="spec.shards.overrides[0].index"]')
+        cy.get('select[data-field="spec.workers.overrides[0].index"]')
             .select('Cluster #1')
 
         // Test Overrides instancesPerCluster
-        cy.get('input[data-field="spec.shards.overrides[0].instancesPerCluster"]')
+        cy.get('input[data-field="spec.workers.overrides[0].instancesPerCluster"]')
             .clear()
             .type('3')
 
         // Test Overrides Volume Size
-        cy.get('input[data-field="spec.shards.overrides[0].pods.persistentVolume.size"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.persistentVolume.size"]')
             .clear()
             .type('2')
 
-        cy.get('select[data-field="spec.shards.overrides[0].pods.persistentVolume.size"]')
+        cy.get('select[data-field="spec.workers.overrides[0].pods.persistentVolume.size"]')
             .select('GiB')
 
         
@@ -1630,11 +1628,11 @@ describe('Create SGShardedCluster', () => {
                 .click()
             
             // Test Overrides create new script
-            cy.get('label[for="spec.shards.overrides[0].managedSql.scripts.scriptSource"] + select')
+            cy.get('label[for="spec.workers.overrides[0].managedSql.scripts.scriptSource"] + select')
                 .select('createNewScript')
 
             // Test Overrides Entry script textarea
-            cy.get('[data-field="spec.shards.overrides[0].managedSql.scripts[0].scriptSpec.scripts[0].script"]')
+            cy.get('[data-field="spec.workers.overrides[0].managedSql.scripts[0].scriptSpec.scripts[0].script"]')
                 .type(resourceName)        
             
             // Test Overrides Add Script button
@@ -1642,7 +1640,7 @@ describe('Create SGShardedCluster', () => {
                 .click()
 
             // Test Overrides select script
-            cy.get('[data-field="spec.shards.overrides[0].managedSql.scripts.scriptSource.shards[1]"]')
+            cy.get('[data-field="spec.workers.overrides[0].managedSql.scripts.scriptSource.workers[1]"]')
                 .select('script-' + resourceName)
         */
 
@@ -1654,108 +1652,108 @@ describe('Create SGShardedCluster', () => {
         cy.get('div.repeater.customVolumes .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[0].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[0].name"]')
             .type('vol1')
 
-        cy.get('select[data-field="spec.shards.overrides[0].pods.customVolumes[0].type"]')
+        cy.get('select[data-field="spec.workers.overrides[0].pods.customVolumes[0].type"]')
             .select('emptyDir')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[0].emptyDir.medium"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[0].emptyDir.medium"]')
             .type('medium')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[0].emptyDir.sizeLimit"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[0].emptyDir.sizeLimit"]')
             .type('1Gi')
         
-        cy.get('fieldset[data-fieldset="spec.shards.overrides[0].pods.customVolumes"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-fieldset="spec.workers.overrides[0].pods.customVolumes"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[1].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[1].name"]')
             .type('vol2')
 
-        cy.get('select[data-field="spec.shards.overrides[0].pods.customVolumes[1].type"]')
+        cy.get('select[data-field="spec.workers.overrides[0].pods.customVolumes[1].type"]')
             .select('configMap')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[1].configMap.name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[1].configMap.name"]')
             .type('name')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[1].configMap.optional"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[1].configMap.optional"]')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[1].configMap.defaultMode"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[1].configMap.defaultMode"]')
             .type('0')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[1].configMap.items[0].key"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[1].configMap.items[0].key"]')
             .type('key1')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[1].configMap.items[0].mode"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[1].configMap.items[0].mode"]')
             .type('0')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[1].configMap.items[0].path"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[1].configMap.items[0].path"]')
             .type('path')
         
         // Note: Disabled until repeater gets optimized. Causes test to wait and fail
-        /* cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customVolumes[1].configMap.items"] + .fieldsetFooter a.addRow')
+        /* cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customVolumes[1].configMap.items"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[1].configMap.items[1].key"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[1].configMap.items[1].key"]')
             .type('key2')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[1].configMap.items[1].mode"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[1].configMap.items[1].mode"]')
             .type('0')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[1].configMap.items[1].path"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[1].configMap.items[1].path"]')
             .type('path2')
         
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customVolumes[1].configMap.items"] + .fieldsetFooter a.addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customVolumes[1].configMap.items"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.overrides[0].pods.customVolumes[1].configMap.items[2]"] a.delete')
+        cy.get('div[data-field="spec.workers.overrides[0].pods.customVolumes[1].configMap.items[2]"] a.delete')
             .click() */
 
-        cy.get('fieldset[data-fieldset="spec.shards.overrides[0].pods.customVolumes"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-fieldset="spec.workers.overrides[0].pods.customVolumes"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[2].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[2].name"]')
             .type('vol3')
 
-        cy.get('select[data-field="spec.shards.overrides[0].pods.customVolumes[2].type"]')
+        cy.get('select[data-field="spec.workers.overrides[0].pods.customVolumes[2].type"]')
             .select('secret')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[2].secret.secretName"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[2].secret.secretName"]')
             .type('name')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[2].secret.optional"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[2].secret.optional"]')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[2].secret.defaultMode"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[2].secret.defaultMode"]')
             .type('0')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[2].secret.items[0].key"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[2].secret.items[0].key"]')
             .type('key1')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[2].secret.items[0].mode"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[2].secret.items[0].mode"]')
             .type('0')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[2].secret.items[0].path"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[2].secret.items[0].path"]')
             .type('path')
         
         // Note: Disabled until repeater gets optimized. Causes test to wait and fail
-        /* cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customVolumes[2].secret.items"] + .fieldsetFooter a.addRow')
+        /* cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customVolumes[2].secret.items"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[2].secret.items[1].key"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[2].secret.items[1].key"]')
             .type('key2')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[2].secret.items[1].mode"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[2].secret.items[1].mode"]')
             .type('0')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customVolumes[2].secret.items[1].path"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customVolumes[2].secret.items[1].path"]')
             .type('path2')
         
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customVolumes[2].secret.items"] + .fieldsetFooter a.addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customVolumes[2].secret.items"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.overrides[0].pods.customVolumes[2].secret.items[2]"] a.delete')
+        cy.get('div[data-field="spec.workers.overrides[0].pods.customVolumes[2].secret.items[2]"] a.delete')
             .click()
         */
 
@@ -1763,276 +1761,276 @@ describe('Create SGShardedCluster', () => {
         cy.get('div.repeater.customInitContainers .fieldsetFooter .addRow')
             .click()
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].name"]')
             .type('container1')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].image"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].image"]')
             .type('image1')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].imagePullPolicy"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].imagePullPolicy"]')
             .type('imagePullPolicy1')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].workingDir"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].workingDir"]')
             .type('workingDir1')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].args[0]"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].args[0]"]')
             .type('arg1')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customInitContainers[0].args"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customInitContainers[0].args"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].args[1]"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].args[1]"]')
             .type('arg2')
         
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customInitContainers[0].args"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customInitContainers[0].args"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].args[2]"] + a.delete')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].args[2]"] + a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].command[0]"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].command[0]"]')
             .type('command1')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customInitContainers[0].command"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customInitContainers[0].command"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].command[1]"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].command[1]"]')
             .type('command2')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customInitContainers[0].command"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customInitContainers[0].command"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].command[2]"] + a.delete')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].command[2]"] + a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].env[0].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].env[0].name"]')
             .type('var1')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].env[0].value"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].env[0].value"]')
             .type('val1')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customInitContainers[0].env"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customInitContainers[0].env"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].env[1].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].env[1].name"]')
             .type('var2')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].env[1].value"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].env[1].value"]')
             .type('val2')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customInitContainers[0].env"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customInitContainers[0].env"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.overrides[0].pods.customInitContainers[0].env[2]"] a.delete')
+        cy.get('div[data-field="spec.workers.overrides[0].pods.customInitContainers[0].env[2]"] a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].ports[0].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].ports[0].name"]')
             .type('port1')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].ports[0].hostIP"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].ports[0].hostIP"]')
             .type('ip1')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].ports[0].hostPort"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].ports[0].hostPort"]')
             .type('1')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].ports[0].containerPort"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].ports[0].containerPort"]')
             .type('1')
         
-        cy.get('select[data-field="spec.shards.overrides[0].pods.customInitContainers[0].ports[0].protocol"]')
+        cy.get('select[data-field="spec.workers.overrides[0].pods.customInitContainers[0].ports[0].protocol"]')
             .select('TCP')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customInitContainers.ports"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customInitContainers.ports"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].ports[1].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].ports[1].name"]')
             .type('port2')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].ports[1].hostIP"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].ports[1].hostIP"]')
             .type('ip2')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].ports[1].hostPort"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].ports[1].hostPort"]')
             .type('2')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].ports[1].containerPort"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].ports[1].containerPort"]')
             .type('2')
         
-        cy.get('select[data-field="spec.shards.overrides[0].pods.customInitContainers[0].ports[1].protocol"]')
+        cy.get('select[data-field="spec.workers.overrides[0].pods.customInitContainers[0].ports[1].protocol"]')
             .select('UDP')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customInitContainers.ports"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customInitContainers.ports"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.overrides[0].pods.customInitContainers[0].ports[2]"] a.delete')
+        cy.get('div[data-field="spec.workers.overrides[0].pods.customInitContainers[0].ports[2]"] a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].volumeMounts[0].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].volumeMounts[0].name"]')
             .type('vol1')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].volumeMounts[0].readOnly"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].volumeMounts[0].readOnly"]')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].volumeMounts[0].mountPath"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].volumeMounts[0].mountPath"]')
             .type('mountPath')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].volumeMounts[0].mountPropagation"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].volumeMounts[0].mountPropagation"]')
             .type('mountPropagation')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customInitContainers[0].volumeMounts[0].subPath"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customInitContainers[0].volumeMounts[0].subPath"]')
             .type('subPath')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customInitContainers[0].volumeMounts"] + .fieldsetFooter a.addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customInitContainers[0].volumeMounts"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.overrides[0].pods.customInitContainers[0].volumeMounts[1]"] a.delete')
+        cy.get('div[data-field="spec.workers.overrides[0].pods.customInitContainers[0].volumeMounts[1]"] a.delete')
             .click()
 
-        cy.get('fieldset[data-fieldset="spec.shards.overrides[0].pods.customInitContainers"] + .fieldsetFooter a.addRow')
+        cy.get('fieldset[data-fieldset="spec.workers.overrides[0].pods.customInitContainers"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.overrides[0].pods.customInitContainers[1]"] > .header a.delete')
+        cy.get('div[data-field="spec.workers.overrides[0].pods.customInitContainers[1]"] > .header a.delete')
             .click()
 
         // Test Custom Containers
         cy.get('div.repeater.customContainers .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].name"]')
             .type('container1')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].image"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].image"]')
             .type('image1')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].imagePullPolicy"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].imagePullPolicy"]')
             .type('imagePullPolicy1')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].workingDir"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].workingDir"]')
             .type('workingDir1')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].args[0]"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].args[0]"]')
             .type('arg1')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customContainers[0].args"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customContainers[0].args"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].args[1]"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].args[1]"]')
             .type('arg2')
         
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customContainers[0].args"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customContainers[0].args"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].args[2]"] + a.delete')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].args[2]"] + a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].command[0]"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].command[0]"]')
             .type('command1')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customContainers[0].command"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customContainers[0].command"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].command[1]"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].command[1]"]')
             .type('command2')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customContainers[0].command"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customContainers[0].command"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].command[2]"] + a.delete')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].command[2]"] + a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].env[0].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].env[0].name"]')
             .type('var1')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].env[0].value"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].env[0].value"]')
             .type('val1')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customContainers[0].env"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customContainers[0].env"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].env[1].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].env[1].name"]')
             .type('var2')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].env[1].value"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].env[1].value"]')
             .type('val2')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customContainers[0].env"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customContainers[0].env"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.overrides[0].pods.customContainers[0].env[2]"] a.delete')
+        cy.get('div[data-field="spec.workers.overrides[0].pods.customContainers[0].env[2]"] a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].ports[0].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].ports[0].name"]')
             .type('port1')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].ports[0].hostIP"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].ports[0].hostIP"]')
             .type('ip1')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].ports[0].hostPort"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].ports[0].hostPort"]')
             .type('1')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].ports[0].containerPort"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].ports[0].containerPort"]')
             .type('1')
         
-        cy.get('select[data-field="spec.shards.overrides[0].pods.customContainers[0].ports[0].protocol"]')
+        cy.get('select[data-field="spec.workers.overrides[0].pods.customContainers[0].ports[0].protocol"]')
             .select('TCP')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customContainers.ports"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customContainers.ports"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].ports[1].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].ports[1].name"]')
             .type('port2')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].ports[1].hostIP"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].ports[1].hostIP"]')
             .type('ip2')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].ports[1].hostPort"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].ports[1].hostPort"]')
             .type('2')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].ports[1].containerPort"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].ports[1].containerPort"]')
             .type('2')
         
-        cy.get('select[data-field="spec.shards.overrides[0].pods.customContainers[0].ports[1].protocol"]')
+        cy.get('select[data-field="spec.workers.overrides[0].pods.customContainers[0].ports[1].protocol"]')
             .select('UDP')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customContainers.ports"] + .fieldsetFooter .addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customContainers.ports"] + .fieldsetFooter .addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.overrides[0].pods.customContainers[0].ports[2]"] a.delete')
+        cy.get('div[data-field="spec.workers.overrides[0].pods.customContainers[0].ports[2]"] a.delete')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].volumeMounts[0].name"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].volumeMounts[0].name"]')
             .type('vol1')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].volumeMounts[0].readOnly"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].volumeMounts[0].readOnly"]')
             .click()
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].volumeMounts[0].mountPath"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].volumeMounts[0].mountPath"]')
             .type('mountPath')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].volumeMounts[0].mountPropagation"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].volumeMounts[0].mountPropagation"]')
             .type('mountPropagation')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.customContainers[0].volumeMounts[0].subPath"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.customContainers[0].volumeMounts[0].subPath"]')
             .type('subPath')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].pods.customContainers[0].volumeMounts"] + .fieldsetFooter a.addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].pods.customContainers[0].volumeMounts"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.overrides[0].pods.customContainers[0].volumeMounts[1]"] a.delete')
+        cy.get('div[data-field="spec.workers.overrides[0].pods.customContainers[0].volumeMounts[1]"] a.delete')
             .click()
 
-        cy.get('fieldset[data-fieldset="spec.shards.overrides[0].pods.customContainers"] + .fieldsetFooter a.addRow')
+        cy.get('fieldset[data-fieldset="spec.workers.overrides[0].pods.customContainers"] + .fieldsetFooter a.addRow')
             .click()
 
-        cy.get('div[data-field="spec.shards.overrides[0].pods.customContainers[1]"] > .header a.delete')
+        cy.get('div[data-field="spec.workers.overrides[0].pods.customContainers[1]"] > .header a.delete')
             .click()
 
         // Test Overrides Replication
         cy.get('form#createShardedCluster li[data-step="overrides.pods-replication"]')
             .click()
         
-        cy.get('select[data-field="spec.shards.overrides[0].replication.mode"]')
+        cy.get('select[data-field="spec.workers.overrides[0].replication.mode"]')
             .select('sync')
 
-        cy.get('input[data-field="spec.shards.overrides[0].replication.syncInstances"]')
+        cy.get('input[data-field="spec.workers.overrides[0].replication.syncInstances"]')
             .clear()
             .type('2')
 
@@ -2040,46 +2038,46 @@ describe('Create SGShardedCluster', () => {
         cy.get('form#createShardedCluster li[data-step="overrides.metadata"]')
             .click()
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].metadata.labels.clusterPods"] + div.fieldsetFooter > a.addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].metadata.labels.clusterPods"] + div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.overrides[0].metadata.labels.clusterPods[0].label"]')
+        cy.get('input[data-field="spec.workers.overrides[0].metadata.labels.clusterPods[0].label"]')
             .type('label')
-        cy.get('input[data-field="spec.shards.overrides[0].metadata.labels.clusterPods[0].value"]')
+        cy.get('input[data-field="spec.workers.overrides[0].metadata.labels.clusterPods[0].value"]')
             .type('value')
         
-        cy.get('fieldset[data-field="spec.shards.overrides[0].metadata.annotations.allResources"] + div.fieldsetFooter > a.addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].metadata.annotations.allResources"] + div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.overrides[0].metadata.annotations.allResources[0].annotation"]')
+        cy.get('input[data-field="spec.workers.overrides[0].metadata.annotations.allResources[0].annotation"]')
             .type('annotation')
-        cy.get('input[data-field="spec.shards.overrides[0].metadata.annotations.allResources[0].value"]')
+        cy.get('input[data-field="spec.workers.overrides[0].metadata.annotations.allResources[0].value"]')
             .type('value')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].metadata.annotations.clusterPods"] + div.fieldsetFooter > a.addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].metadata.annotations.clusterPods"] + div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.overrides[0].metadata.annotations.clusterPods[0].annotation"]')
+        cy.get('input[data-field="spec.workers.overrides[0].metadata.annotations.clusterPods[0].annotation"]')
             .type('annotation')
-        cy.get('input[data-field="spec.shards.overrides[0].metadata.annotations.clusterPods[0].value"]')
+        cy.get('input[data-field="spec.workers.overrides[0].metadata.annotations.clusterPods[0].value"]')
             .type('value')
 
-        cy.get('fieldset[data-field="spec.shards.overrides[0].metadata.annotations.services"] + div.fieldsetFooter > a.addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].metadata.annotations.services"] + div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.overrides[0].metadata.annotations.services[0].annotation"]')
+        cy.get('input[data-field="spec.workers.overrides[0].metadata.annotations.services[0].annotation"]')
             .type('annotation')        
-        cy.get('input[data-field="spec.shards.overrides[0].metadata.annotations.services[0].value"]')
+        cy.get('input[data-field="spec.workers.overrides[0].metadata.annotations.services[0].value"]')
             .type('value')
         
-        cy.get('fieldset[data-field="spec.shards.overrides[0].metadata.annotations.primaryService"] + div.fieldsetFooter > a.addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].metadata.annotations.primaryService"] + div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.overrides[0].metadata.annotations.primaryService[0].annotation"]')
+        cy.get('input[data-field="spec.workers.overrides[0].metadata.annotations.primaryService[0].annotation"]')
             .type('annotation')        
-        cy.get('input[data-field="spec.shards.overrides[0].metadata.annotations.primaryService[0].value"]')
+        cy.get('input[data-field="spec.workers.overrides[0].metadata.annotations.primaryService[0].value"]')
             .type('value')
         
-        cy.get('fieldset[data-field="spec.shards.overrides[0].metadata.annotations.replicasService"] + div.fieldsetFooter > a.addRow')
+        cy.get('fieldset[data-field="spec.workers.overrides[0].metadata.annotations.replicasService"] + div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.overrides[0].metadata.annotations.replicasService[0].annotation"]')
+        cy.get('input[data-field="spec.workers.overrides[0].metadata.annotations.replicasService[0].annotation"]')
             .type('annotation')        
-        cy.get('input[data-field="spec.shards.overrides[0].metadata.annotations.replicasService[0].value"]')
+        cy.get('input[data-field="spec.workers.overrides[0].metadata.annotations.replicasService[0].value"]')
             .type('value')
 
         // Tests Overrides' Scheduling
@@ -2089,56 +2087,56 @@ describe('Create SGShardedCluster', () => {
         // Tests Overrides' Node Selectors
         cy.get('div.repeater.nodeSelector div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.overrides[0].pods.scheduling.nodeSelector[0].label"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.scheduling.nodeSelector[0].label"]')
             .type('label')
-        cy.get('input[data-field="spec.shards.overrides[0].pods.scheduling.nodeSelector[0].value"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.scheduling.nodeSelector[0].value"]')
             .type('value')
 
         // Tests Overrides' Node Tolerations
         cy.get('div.scheduling.repeater.tolerations div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.overrides[0].pods.scheduling.tolerations[0].key"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.scheduling.tolerations[0].key"]')
             .type('key')
-        cy.get('input[data-field="spec.shards.overrides[0].pods.scheduling.tolerations[0].value"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.scheduling.tolerations[0].value"]')
             .type('value')
-        cy.get('select[data-field="spec.shards.overrides[0].pods.scheduling.tolerations[0].effect"]')
+        cy.get('select[data-field="spec.workers.overrides[0].pods.scheduling.tolerations[0].effect"]')
             .select('NoSchedule')
         
         // Tests Overrides' Node Affinity (Required)
         cy.get('div.scheduling.repeater.requiredAffinity div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.overrides[0].pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.key"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.key"]')
             .type('key')
-        cy.get('select[data-field="spec.shards.overrides[0].pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.operator"]')
+        cy.get('select[data-field="spec.workers.overrides[0].pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.operator"]')
             .select('In')
-        cy.get('input[data-field="spec.shards.overrides[0].pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.values"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.values"]')
             .type('value')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.key"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.key"]')
             .type('key')
-        cy.get('select[data-field="spec.shards.overrides[0].pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.operator"]')
+        cy.get('select[data-field="spec.workers.overrides[0].pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.operator"]')
             .select('In')
-        cy.get('input[data-field="spec.shards.overrides[0].pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.values"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.values"]')
             .type('value')
         
         // Tests Overrides' Node Affinity (Preferred)
         cy.get('div.scheduling.repeater.preferredAffinity div.fieldsetFooter > a.addRow')
             .click()
-        cy.get('input[data-field="spec.shards.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.key"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.key"]')
             .type('key')
-        cy.get('select[data-field="spec.shards.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.operator"]')
+        cy.get('select[data-field="spec.workers.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.operator"]')
             .select('In')
-        cy.get('input[data-field="spec.shards.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.values"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.values"]')
             .type('value')
         
-        cy.get('input[data-field="spec.shards.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.key"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.key"]')
             .type('key')
-        cy.get('select[data-field="spec.shards.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.operator"]')
+        cy.get('select[data-field="spec.workers.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.operator"]')
             .select('In')
-        cy.get('input[data-field="spec.shards.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.values"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.values"]')
             .type('value')
 
-        cy.get('input[data-field="spec.shards.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.weight"]')
+        cy.get('input[data-field="spec.workers.overrides[0].pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.weight"]')
             .clear()
             .type('10')
 
@@ -2378,20 +2376,20 @@ describe('Create SGShardedCluster', () => {
             .and('nested.include', {"nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchFields[0].values[0]": 'value'})
             .and('nested.include', {"nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight": '10'})
         cy.get('@postCluster')
-            .its('request.body.spec.shards.clusters')
+            .its('request.body.spec.workers.clusters')
             .should('eq', "2")
         cy.get('@postCluster')
-            .its('request.body.spec.shards.instancesPerCluster')
+            .its('request.body.spec.workers.instancesPerCluster')
             .should('eq', "4")
         cy.get('@postCluster')
-            .its('request.body.spec.shards.pods.persistentVolume.size')
+            .its('request.body.spec.workers.pods.persistentVolume.size')
             .should('eq', "2Gi")
         cy.get('@postCluster')
-            .its('request.body.spec.shards.managedSql')
+            .its('request.body.spec.workers.managedSql')
             .should('nested.include', {"scripts[0].scriptSpec.scripts[0].script": '' + resourceName})
-            .and('nested.include', {"scripts[1].sgScript": 'script-shards-' + resourceName})
+            .and('nested.include', {"scripts[1].sgScript": 'script-workers-' + resourceName})
         cy.get('@postCluster')
-            .its('request.body.spec.shards.pods')
+            .its('request.body.spec.workers.pods')
             .should('nested.include', {"customVolumes[0].name": 'vol1'})
             .and('nested.include', {"customVolumes[0].emptyDir.medium": 'medium'})
             .and('nested.include', {"customVolumes[0].emptyDir.sizeLimit": '1Gi'})
@@ -2472,27 +2470,27 @@ describe('Create SGShardedCluster', () => {
             .and('nested.include', {"customContainers[0].volumeMounts[0].mountPropagation": 'mountPropagation'})
             .and('nested.include', {"customContainers[0].volumeMounts[0].subPath": 'subPath'})
         cy.get('@postCluster')
-            .its('request.body.spec.shards.replication')
+            .its('request.body.spec.workers.replication')
             .and('nested.include', {"mode": 'sync'})
             .and('nested.include', {"syncInstances": '2'})
         cy.get('@postCluster')
             .its('request.body.spec.postgresServices')
-            .should('nested.include', {"shards.primaries.type": 'LoadBalancer'})
-            .and('nested.include', {"shards.primaries.loadBalancerIP": '1.2.3.4'})
-            .and('nested.include', {"shards.customPorts[0].appProtocol": 'protocol'})
-            .and('nested.include', {"shards.customPorts[0].name": 'name'})
-            .and('nested.include', {"shards.customPorts[0].nodePort": '1234'})
-            .and('nested.include', {"shards.customPorts[0].port": '1234'})
-            .and('nested.include', {"shards.customPorts[0].protocol": 'UDP'})
-            .and('nested.include', {"shards.customPorts[0].targetPort": '1234'})
-            .and('nested.include', {"shards.customPorts[1].appProtocol": 'protocol2'})
-            .and('nested.include', {"shards.customPorts[1].name": 'name2'})
-            .and('nested.include', {"shards.customPorts[1].nodePort": '4321'})
-            .and('nested.include', {"shards.customPorts[1].port": '4321'})
-            .and('nested.include', {"shards.customPorts[1].protocol": 'SCTP'})
-            .and('nested.include', {"shards.customPorts[1].targetPort": '4321'})
+            .should('nested.include', {"workers.primaries.type": 'LoadBalancer'})
+            .and('nested.include', {"workers.primaries.loadBalancerIP": '1.2.3.4'})
+            .and('nested.include', {"workers.customPorts[0].appProtocol": 'protocol'})
+            .and('nested.include', {"workers.customPorts[0].name": 'name'})
+            .and('nested.include', {"workers.customPorts[0].nodePort": '1234'})
+            .and('nested.include', {"workers.customPorts[0].port": '1234'})
+            .and('nested.include', {"workers.customPorts[0].protocol": 'UDP'})
+            .and('nested.include', {"workers.customPorts[0].targetPort": '1234'})
+            .and('nested.include', {"workers.customPorts[1].appProtocol": 'protocol2'})
+            .and('nested.include', {"workers.customPorts[1].name": 'name2'})
+            .and('nested.include', {"workers.customPorts[1].nodePort": '4321'})
+            .and('nested.include', {"workers.customPorts[1].port": '4321'})
+            .and('nested.include', {"workers.customPorts[1].protocol": 'SCTP'})
+            .and('nested.include', {"workers.customPorts[1].targetPort": '4321'})
         cy.get('@postCluster')
-            .its('request.body.spec.shards.metadata')
+            .its('request.body.spec.workers.metadata')
             .should('nested.include', {"labels.clusterPods.label": 'value'})
             .and('nested.include', {"annotations.allResources.annotation": 'value'})
             .and('nested.include', {"annotations.clusterPods.annotation": 'value'})
@@ -2500,7 +2498,7 @@ describe('Create SGShardedCluster', () => {
             .and('nested.include', {"annotations.primaryService.annotation": 'value'})
             .and('nested.include', {"annotations.replicasService.annotation": 'value'})
         cy.get('@postCluster')
-            .its('request.body.spec.shards.pods.scheduling')
+            .its('request.body.spec.workers.pods.scheduling')
             .should('nested.include', {"nodeSelector.key": 'value'})
             .and('nested.include', {"tolerations[0].key": 'key'})
             .and('nested.include', {"tolerations[0].value": 'value'})
@@ -2520,7 +2518,7 @@ describe('Create SGShardedCluster', () => {
             .and('nested.include', {"nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchFields[0].values[0]": 'value'})
             .and('nested.include', {"nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight": '10'})
         cy.get('@postCluster')
-            .its('request.body.spec.shards')
+            .its('request.body.spec.workers')
             .should('nested.include', {"overrides[0].instancesPerCluster": '3'})
             .and('nested.include', {"overrides[0].pods.persistentVolume.size": '2Gi'})
         // Note: Disabled until overrides' managedSql bug is fixed 
@@ -3431,368 +3429,368 @@ describe('Create SGShardedCluster', () => {
             .type('20')
         
         // Shards section
-        cy.get('form#createShardedCluster li.shards')
+        cy.get('form#createShardedCluster li.workers')
             .click()
 
         // Test Shards clusters
-        cy.get('input[data-field="spec.shards.clusters"]')
+        cy.get('input[data-field="spec.workers.clusters"]')
             .should('have.value', '2')
             .clear()
             .type('3')
 
         // Test Shards instancesPerCluster
-        cy.get('input[data-field="spec.shards.instancesPerCluster"]')
+        cy.get('input[data-field="spec.workers.instancesPerCluster"]')
             .should('have.value', '4')
             .clear()
             .type('5') 
        
         // Test Shards Volume Size
-        cy.get('input[data-field="spec.shards.pods.persistentVolume.size"]')
+        cy.get('input[data-field="spec.workers.pods.persistentVolume.size"]')
             .should('have.value', '2')
 
         // Test Shards User-Supplied Pods Sidecars
-        cy.get('form#createShardedCluster li[data-step="shards.sidecars"]')
+        cy.get('form#createShardedCluster li[data-step="workers.sidecars"]')
             .click()
 
         // Test Shards Custom volumes
-        cy.get('input[data-field="spec.shards.pods.customVolumes[0].emptyDir.medium"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[0].emptyDir.medium"]')
             .should('have.value', 'medium')
             .clear()
             .type('edit-medium')
         
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.optional"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.optional"]')
             .should('not.be.checked')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.defaultMode"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.defaultMode"]')
             .should('have.value', '0')
             .clear()
             .type('1')
         
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.items[0].key"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.items[0].key"]')
             .should('have.value', 'key1')
             .clear()
             .type('edit-1')
         
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.items[0].mode"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.items[0].mode"]')
             .should('have.value', '0')
             .clear()
             .type('1')
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[1].configMap.items[0].path"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[1].configMap.items[0].path"]')
             .should('have.value', 'path')
             .clear()
             .type('edit-path')
         
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.secretName"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.secretName"]')
             .should('have.value', 'name')
             .clear()
             .type('edit-name')
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.optional"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.optional"]')
             .should('not.be.checked')
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.defaultMode"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.defaultMode"]')
             .should('have.value', '0')
             .clear()
             .type('1')
         
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.items[0].key"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.items[0].key"]')
             .should('have.value', 'key1')
             .clear()
             .type('edit-1')
         
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.items[0].mode"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.items[0].mode"]')
             .should('have.value', '0')
             .clear()
             .type('1')
 
-        cy.get('input[data-field="spec.shards.pods.customVolumes[2].secret.items[0].path"]')
+        cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.items[0].path"]')
             .should('have.value', 'path')
             .clear()
             .type('edit-path')
         
         // Test Shards Custom Init Containers
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].name"]')
             .should('have.value', 'container1')
             .clear()
             .type('edit-container1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].image"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].image"]')
             .should('have.value', 'image1')
             .clear()
             .type('edit-image1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].imagePullPolicy"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].imagePullPolicy"]')
             .should('have.value', 'imagePullPolicy1')
             .clear()
             .type('edit-imagePullPolicy1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].workingDir"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].workingDir"]')
             .should('have.value', 'workingDir1')
             .clear()
             .type('edit-workingDir1')
         
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].args[0]"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].args[0]"]')
             .should('have.value', 'arg1')
             .clear()
             .type('edit-arg1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].args[1]"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].args[1]"]')
             .should('have.value', 'arg2')
             .clear()
             .type('edit-arg2')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].command[0]"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].command[0]"]')
             .should('have.value', 'command1')
             .clear()
             .type('edit-command1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].command[1]"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].command[1]"]')
             .should('have.value', 'command2')
             .clear()
             .type('edit-command2')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].env[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].env[0].name"]')
             .should('have.value', 'var1')
             .clear()
             .type('edit-var1')
         
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].env[0].value"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].env[0].value"]')
             .should('have.value', 'val1')
             .clear()
             .type('edit-val1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].env[1].name"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].env[1].name"]')
             .should('have.value', 'var2')
             .clear()
             .type('edit-var2')
         
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].env[1].value"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].env[1].value"]')
             .should('have.value', 'val2')
             .clear()
             .type('edit-val2')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[0].name"]')
             .should('have.value', 'port1')
             .clear()
             .type('edit-port1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[0].hostIP"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[0].hostIP"]')
             .should('have.value', 'ip1')
             .clear()
             .type('edit-ip1')
         
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[0].hostPort"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[0].hostPort"]')
             .should('have.value', '1')
             .clear()
             .type('11')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[0].containerPort"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[0].containerPort"]')
             .should('have.value', '1')
             .clear()
             .type('11')
         
-        cy.get('select[data-field="spec.shards.pods.customInitContainers[0].ports[0].protocol"]')
+        cy.get('select[data-field="spec.workers.pods.customInitContainers[0].ports[0].protocol"]')
             .should('have.value', 'TCP')
             .select('SCTP')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[1].name"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[1].name"]')
             .should('have.value', 'port2')
             .clear()
             .type('edit-port2')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[1].hostIP"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[1].hostIP"]')
             .should('have.value', 'ip2')
             .clear()
             .type('edit-ip2')
         
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[1].hostPort"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[1].hostPort"]')
             .should('have.value', '2')
             .clear()
             .type('22')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].ports[1].containerPort"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].ports[1].containerPort"]')
             .should('have.value', '2')
             .clear()
             .type('22')
         
-        cy.get('select[data-field="spec.shards.pods.customInitContainers[0].ports[1].protocol"]')
+        cy.get('select[data-field="spec.workers.pods.customInitContainers[0].ports[1].protocol"]')
             .should('have.value', 'UDP')      
             .select('SCTP')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].volumeMounts[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].volumeMounts[0].name"]')
             .should('have.value', 'vol1')
             .clear()
             .type('edit-vol1')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].volumeMounts[0].readOnly"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].volumeMounts[0].readOnly"]')
             .should('be.enabled')    
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].volumeMounts[0].mountPath"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].volumeMounts[0].mountPath"]')
             .should('have.value', 'mountPath')
             .clear()
             .type('edit-mountPath')
 
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].volumeMounts[0].mountPropagation"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].volumeMounts[0].mountPropagation"]')
             .should('have.value', 'mountPropagation')
             .clear()
             .type('edit-mountPropagation')
         
-        cy.get('input[data-field="spec.shards.pods.customInitContainers[0].volumeMounts[0].subPath"]')
+        cy.get('input[data-field="spec.workers.pods.customInitContainers[0].volumeMounts[0].subPath"]')
             .should('have.value', 'subPath')
             .clear()
             .type('edit-subPath')
 
         // Test Shards Custom Containers
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].name"]')
             .should('have.value', 'container1')
             .clear()
             .type('edit-container1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].image"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].image"]')
             .should('have.value', 'image1')
             .clear()
             .type('edit-image1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].imagePullPolicy"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].imagePullPolicy"]')
             .should('have.value', 'imagePullPolicy1')
             .clear()
             .type('edit-imagePullPolicy1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].workingDir"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].workingDir"]')
             .should('have.value', 'workingDir1')
             .clear()
             .type('edit-workingDir1')
         
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].args[0]"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].args[0]"]')
             .should('have.value', 'arg1')
             .clear()
             .type('edit-arg1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].args[1]"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].args[1]"]')
             .should('have.value', 'arg2')
             .clear()
             .type('edit-arg2')
         
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].command[0]"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].command[0]"]')
             .should('have.value', 'command1')
             .clear()
             .type('edit-command1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].command[1]"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].command[1]"]')
             .should('have.value', 'command2')
             .clear()
             .type('edit-command2')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].env[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].env[0].name"]')
             .should('have.value', 'var1')
             .clear()
             .type('edit-var1')
         
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].env[0].value"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].env[0].value"]')
             .should('have.value', 'val1')
             .clear()
             .type('edit-val1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].env[1].name"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].env[1].name"]')
             .should('have.value', 'var2')
             .clear()
             .type('edit-var2')
         
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].env[1].value"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].env[1].value"]')
             .should('have.value', 'val2')
             .clear()
             .type('edit-val2')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[0].name"]')
             .should('have.value', 'port1')
             .clear()
             .type('edit-port1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[0].hostIP"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[0].hostIP"]')
             .should('have.value', 'ip1')
             .clear()
             .type('edit-ip1')
         
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[0].hostPort"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[0].hostPort"]')
             .should('have.value', '1')
             .clear()
             .type('11')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[0].containerPort"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[0].containerPort"]')
             .should('have.value', '1')
             .clear()
             .type('11')
         
-        cy.get('select[data-field="spec.shards.pods.customContainers[0].ports[0].protocol"]')
+        cy.get('select[data-field="spec.workers.pods.customContainers[0].ports[0].protocol"]')
             .should('have.value', 'TCP')
             .select('SCTP')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[1].name"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[1].name"]')
             .should('have.value', 'port2')
             .clear()
             .type('edit-port2')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[1].hostIP"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[1].hostIP"]')
             .should('have.value', 'ip2')
             .clear()
             .type('edit-ip2')
         
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[1].hostPort"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[1].hostPort"]')
             .should('have.value', '2')
             .clear()
             .type('22')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].ports[1].containerPort"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[1].containerPort"]')
             .should('have.value', '2')
             .clear()
             .type('22')
         
-        cy.get('select[data-field="spec.shards.pods.customContainers[0].ports[1].protocol"]')
+        cy.get('select[data-field="spec.workers.pods.customContainers[0].ports[1].protocol"]')
             .should('have.value', 'UDP')
             .select('SCTP')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].volumeMounts[0].name"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].volumeMounts[0].name"]')
             .should('have.value', 'vol1')
             .clear()
             .type('edit-vol1')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].volumeMounts[0].readOnly"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].volumeMounts[0].readOnly"]')
             .should('be.enabled')    
             .click()
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].volumeMounts[0].mountPath"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].volumeMounts[0].mountPath"]')
             .should('have.value', 'mountPath')
             .clear()
             .type('edit-mountPath')
 
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].volumeMounts[0].mountPropagation"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].volumeMounts[0].mountPropagation"]')
             .should('have.value', 'mountPropagation')
             .clear()
             .type('edit-mountPropagation')
         
-        cy.get('input[data-field="spec.shards.pods.customContainers[0].volumeMounts[0].subPath"]')
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].volumeMounts[0].subPath"]')
             .should('have.value', 'subPath')
             .clear()
             .type('edit-subPath')
 
         // Test Shards scripts
-        cy.get('form#createShardedCluster li[data-step="shards.scripts"]')
+        cy.get('form#createShardedCluster li[data-step="workers.scripts"]')
             .click()
         
         // Test Shards Entry script textarea
-        cy.get('textarea[data-field="spec.shards.managedSql.scripts[0].scriptSpec.scripts[0].script"]')
+        cy.get('textarea[data-field="spec.workers.managedSql.scripts[0].scriptSpec.scripts[0].script"]')
             .should('have.value', '' + resourceName)
             .clear()
             .type('test-' + resourceName)
         
         // Test Shards select script
-        cy.get('select[data-field="spec.shards.managedSql.scripts.scriptSource.shards[1]"]')
-            .should('have.value', 'script-shards-' + resourceName)        
-        cy.get('textarea[data-field="spec.shards.managedSql.scripts[1].scriptSpec.scripts[0].script"]')
+        cy.get('select[data-field="spec.workers.managedSql.scripts.scriptSource.workers[1]"]')
+            .should('have.value', 'script-workers-' + resourceName)        
+        cy.get('textarea[data-field="spec.workers.managedSql.scripts[1].scriptSpec.scripts[0].script"]')
             .should('have.value', '' + resourceName)        
             .clear()
             .type('test2-' + resourceName)        
@@ -3802,201 +3800,201 @@ describe('Create SGShardedCluster', () => {
             .click({force: true})
 
         // Test Shards create new script
-        cy.get('select[data-field="spec.shards.managedSql.scripts.scriptSource.shards[2]"]')
+        cy.get('select[data-field="spec.workers.managedSql.scripts.scriptSource.workers[2]"]')
             .select('createNewScript')
 
         // Test Shards Entry script textarea
-        cy.get('textarea[data-field="spec.shards.managedSql.scripts[2].scriptSpec.scripts[0].script"]')
+        cy.get('textarea[data-field="spec.workers.managedSql.scripts[2].scriptSpec.scripts[0].script"]')
             .type('test3-' + resourceName)        
 
         // Test Shards Replication
-        cy.get('form#createShardedCluster li[data-step="shards.pods-replication"]')
+        cy.get('form#createShardedCluster li[data-step="workers.pods-replication"]')
             .click()
         
-        cy.get('select[data-field="spec.shards.replication.mode"]')
+        cy.get('select[data-field="spec.workers.replication.mode"]')
             .should('have.value', 'sync')
             .select('strict-sync')
 
-        cy.get('input[data-field="spec.shards.replication.syncInstances"]')
+        cy.get('input[data-field="spec.workers.replication.syncInstances"]')
             .should('have.value', '2')
             .clear()
             .type('1')
 
         // Test Shards Postgres Services
-        cy.get('form#createShardedCluster li[data-step="shards.services"]')
+        cy.get('form#createShardedCluster li[data-step="workers.services"]')
             .click()
 
-        cy.get('select[data-field="spec.postgresServices.shards.primaries.type"]')
+        cy.get('select[data-field="spec.postgresServices.workers.primaries.type"]')
             .should('have.value', 'LoadBalancer')
             .select('NodePort')
         
-        cy.get('input[data-field="spec.postgresServices.shards.primaries.loadBalancerIP"]')
+        cy.get('input[data-field="spec.postgresServices.workers.primaries.loadBalancerIP"]')
             .clear()
             .type('4.3.2.1')
         
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[1].appProtocol"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[1].appProtocol"]')
             .clear()
             .type('edit-protocol')
         
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[1].name"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[1].name"]')
             .clear()
             .type('edit-name')
         
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[1].nodePort"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[1].nodePort"]')
             .clear()
             .type('4321')
 
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[1].port"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[1].port"]')
             .clear()
             .type('4321')
 
-        cy.get('select[data-field="spec.postgresServices.shards.customPorts[1].protocol"]')
+        cy.get('select[data-field="spec.postgresServices.workers.customPorts[1].protocol"]')
             .should('have.value', 'SCTP')
             .select('TCP')
 
-        cy.get('input[data-field="spec.postgresServices.shards.customPorts[1].targetPort"]')
+        cy.get('input[data-field="spec.postgresServices.workers.customPorts[1].targetPort"]')
             .clear()
             .type('4321')
 
-        cy.get('fieldset[data-field="spec.postgresServices.shards.customPorts"] .section:first-child a.addRow.delete')
+        cy.get('fieldset[data-field="spec.postgresServices.workers.customPorts"] .section:first-child a.addRow.delete')
             .click()
 
         // Test Shards Metadata
-        cy.get('form#createShardedCluster li[data-step="shards.metadata"]')
+        cy.get('form#createShardedCluster li[data-step="workers.metadata"]')
             .click()
 
-        cy.get('input[data-field="spec.shards.metadata.labels.clusterPods[0].label"]')
+        cy.get('input[data-field="spec.workers.metadata.labels.clusterPods[0].label"]')
             .should('have.value', 'label')
             .clear()
             .type('label1')
-        cy.get('input[data-field="spec.shards.metadata.labels.clusterPods[0].value"]')
+        cy.get('input[data-field="spec.workers.metadata.labels.clusterPods[0].value"]')
             .should('have.value', 'value')
             .clear()
             .type('value1')
         
-        cy.get('input[data-field="spec.shards.metadata.annotations.allResources[0].annotation"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.allResources[0].annotation"]')
             .should('have.value', 'annotation')
             .clear()
             .type('annotation1')
-        cy.get('input[data-field="spec.shards.metadata.annotations.allResources[0].value"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.allResources[0].value"]')
             .should('have.value', 'value')
             .clear()
             .type('value1')
 
-        cy.get('input[data-field="spec.shards.metadata.annotations.clusterPods[0].annotation"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.clusterPods[0].annotation"]')
             .should('have.value', 'annotation')
             .clear()
             .type('annotation1')
-        cy.get('input[data-field="spec.shards.metadata.annotations.clusterPods[0].value"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.clusterPods[0].value"]')
             .should('have.value', 'value')
             .clear()
             .type('value1')
 
-        cy.get('input[data-field="spec.shards.metadata.annotations.services[0].annotation"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.services[0].annotation"]')
             .should('have.value', 'annotation')
             .clear()
             .type('annotation1')
-        cy.get('input[data-field="spec.shards.metadata.annotations.services[0].value"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.services[0].value"]')
             .should('have.value', 'value')
             .clear()
             .type('value1')
         
-        cy.get('input[data-field="spec.shards.metadata.annotations.primaryService[0].annotation"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.primaryService[0].annotation"]')
             .should('have.value', 'annotation')
             .clear()
             .type('annotation1')
-        cy.get('input[data-field="spec.shards.metadata.annotations.primaryService[0].value"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.primaryService[0].value"]')
             .should('have.value', 'value')
             .clear()
             .type('value1')
         
-        cy.get('input[data-field="spec.shards.metadata.annotations.replicasService[0].annotation"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.replicasService[0].annotation"]')
             .should('have.value', 'annotation')
             .clear()
             .type('annotation1')  
-        cy.get('input[data-field="spec.shards.metadata.annotations.replicasService[0].value"]')
+        cy.get('input[data-field="spec.workers.metadata.annotations.replicasService[0].value"]')
             .should('have.value', 'value')
             .clear()
             .type('value1')
 
         // Tests Shards Scheduling
-        cy.get('form#createShardedCluster li[data-step="shards.scheduling"]')
+        cy.get('form#createShardedCluster li[data-step="workers.scheduling"]')
             .click()
 
         // Tests Shards Node Selectors
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeSelector[0].label"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeSelector[0].label"]')
             .should('have.value', 'key')
             .clear()
             .type('key1')
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeSelector[0].value"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeSelector[0].value"]')
             .should('have.value', 'value')
             .clear()
             .type('value1')
 
         // Tests Shards Node Tolerations
-        cy.get('input[data-field="spec.shards.pods.scheduling.tolerations[0].key"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.tolerations[0].key"]')
             .should('have.value', 'key')
             .clear()
             .type('key1')
-        cy.get('input[data-field="spec.shards.pods.scheduling.tolerations[0].value"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.tolerations[0].value"]')
             .should('have.value', 'value')
             .clear()
             .type('value1')
-        cy.get('select[data-field="spec.shards.pods.scheduling.tolerations[0].effect"]')
+        cy.get('select[data-field="spec.workers.pods.scheduling.tolerations[0].effect"]')
             .should('have.value', 'NoSchedule')
             .select('NoExecute')
         
         // Tests Shards Node Affinity (Required)
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.key"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.key"]')
             .should('have.value', 'key')
             .clear()
             .type('key1')
-        cy.get('select[data-field="spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.operator"]')
+        cy.get('select[data-field="spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.operator"]')
             .should('have.value', 'In')
             .select('NotIn')
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.values"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.values"]')
             .should('have.value', 'value')
             .clear()
             .type('value1')
 
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.key"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.key"]')
             .should('have.value', 'key')
             .clear()
             .type('key1')
-        cy.get('select[data-field="spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.operator"]')
+        cy.get('select[data-field="spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.operator"]')
             .should('have.value', 'In')
             .select('NotIn')
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.values"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.values"]')
             .should('have.value', 'value')
             .clear()
             .type('value1')
         
         // Tests Shards Node Affinity (Preferred)
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.key"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.key"]')
             .should('have.value', 'key')
             .clear()
             .type('key1')
-        cy.get('select[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.operator"]')
+        cy.get('select[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.operator"]')
             .should('have.value', 'In')
             .select('NotIn')
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.values"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.values"]')
             .should('have.value', 'value')
             .clear()
             .type('value1')
         
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.key"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.key"]')
             .should('have.value', 'key')
             .clear()
             .type('key1')
-        cy.get('select[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.operator"]')
+        cy.get('select[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.operator"]')
             .should('have.value', 'In')
             .select('NotIn')
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.values"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.values"]')
             .should('have.value', 'value')
             .clear()
             .type('value1')
 
-        cy.get('input[data-field="spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.weight"]')
+        cy.get('input[data-field="spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.weight"]')
             .should('have.value', '10')
             .clear()
             .type('20')
@@ -4024,15 +4022,15 @@ describe('Create SGShardedCluster', () => {
                     res.body.spec.coordinator.metadata.test = true
                     res.body.spec.coordinator.metadata.labels.test = true
                     res.body.spec.coordinator.metadata.annotations.test = true
-                    res.body.spec.shards.test = true
-                    res.body.spec.shards.configurations.test = true
-                    res.body.spec.shards.pods.test = true
-                    res.body.spec.shards.pods.scheduling.test = true
-                    res.body.spec.postgresServices.shards.test = true
-                    res.body.spec.postgresServices.shards.primaries.test = true
-                    res.body.spec.shards.metadata.test = true
-                    res.body.spec.shards.metadata.labels.test = true
-                    res.body.spec.shards.metadata.annotations.test = true
+                    res.body.spec.workers.test = true
+                    res.body.spec.workers.configurations.test = true
+                    res.body.spec.workers.pods.test = true
+                    res.body.spec.workers.pods.scheduling.test = true
+                    res.body.spec.postgresServices.workers.test = true
+                    res.body.spec.postgresServices.workers.primaries.test = true
+                    res.body.spec.workers.metadata.test = true
+                    res.body.spec.workers.metadata.labels.test = true
+                    res.body.spec.workers.metadata.annotations.test = true
                 })
             })
             .as('getCluster')
@@ -4057,15 +4055,15 @@ describe('Create SGShardedCluster', () => {
               expect(req.body.spec.coordinator.metadata.test).to.eq(true)
               expect(req.body.spec.coordinator.metadata.labels.test).to.eq(true)
               expect(req.body.spec.coordinator.metadata.annotations.test).to.eq(true)
-              expect(req.body.spec.shards.test).to.eq(true)
-              expect(req.body.spec.shards.configurations.test).to.eq(true)
-              expect(req.body.spec.shards.pods.test).to.eq(true)
-              expect(req.body.spec.shards.pods.scheduling.test).to.eq(true)
-              expect(req.body.spec.postgresServices.shards.test).to.eq(true)
-              expect(req.body.spec.postgresServices.shards.primaries.test).to.eq(true)
-              expect(req.body.spec.shards.metadata.test).to.eq(true)
-              expect(req.body.spec.shards.metadata.labels.test).to.eq(true)
-              expect(req.body.spec.shards.metadata.annotations.test).to.eq(true)
+              expect(req.body.spec.workers.test).to.eq(true)
+              expect(req.body.spec.workers.configurations.test).to.eq(true)
+              expect(req.body.spec.workers.pods.test).to.eq(true)
+              expect(req.body.spec.workers.pods.scheduling.test).to.eq(true)
+              expect(req.body.spec.postgresServices.workers.test).to.eq(true)
+              expect(req.body.spec.postgresServices.workers.primaries.test).to.eq(true)
+              expect(req.body.spec.workers.metadata.test).to.eq(true)
+              expect(req.body.spec.workers.metadata.labels.test).to.eq(true)
+              expect(req.body.spec.workers.metadata.annotations.test).to.eq(true)
               // Removing unknown fields since they are unknown to API too
               delete req.body.spec.test
               delete req.body.spec.postgres.test
@@ -4085,15 +4083,15 @@ describe('Create SGShardedCluster', () => {
               delete req.body.spec.coordinator.metadata.test
               delete req.body.spec.coordinator.metadata.labels.test
               delete req.body.spec.coordinator.metadata.annotations.test
-              delete req.body.spec.shards.test
-              delete req.body.spec.shards.configurations.test
-              delete req.body.spec.shards.pods.test
-              delete req.body.spec.shards.pods.scheduling.test
-              delete req.body.spec.postgresServices.shards.test
-              delete req.body.spec.postgresServices.shards.primaries.test
-              delete req.body.spec.shards.metadata.test
-              delete req.body.spec.shards.metadata.labels.test
-              delete req.body.spec.shards.metadata.annotations.test
+              delete req.body.spec.workers.test
+              delete req.body.spec.workers.configurations.test
+              delete req.body.spec.workers.pods.test
+              delete req.body.spec.workers.pods.scheduling.test
+              delete req.body.spec.postgresServices.workers.test
+              delete req.body.spec.postgresServices.workers.primaries.test
+              delete req.body.spec.workers.metadata.test
+              delete req.body.spec.workers.metadata.labels.test
+              delete req.body.spec.workers.metadata.annotations.test
               req.continue();
             })
             .as('putCluster')
@@ -4295,16 +4293,16 @@ describe('Create SGShardedCluster', () => {
             .and('nested.include', {"nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].preference.matchFields[0].values[0]": 'value1'})
             .and('nested.include', {"nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution[0].weight": '20'})
         cy.get('@putCluster')
-            .its('request.body.spec.shards.clusters')
+            .its('request.body.spec.workers.clusters')
             .should('eq', "3")
         cy.get('@putCluster')
-            .its('request.body.spec.shards.instancesPerCluster')
+            .its('request.body.spec.workers.instancesPerCluster')
             .should('eq', "5")
         cy.get('@putCluster')
-            .its('request.body.spec.shards.pods.persistentVolume.size')
+            .its('request.body.spec.workers.pods.persistentVolume.size')
             .should('eq', "2Gi")
         cy.get('@putCluster')
-            .its('request.body.spec.shards.pods')
+            .its('request.body.spec.workers.pods')
             .should('nested.include', {'customVolumes[0].emptyDir.medium': 'edit-medium'})
             .and('nested.include', {'customVolumes[1].configMap.optional': true})
             .and('nested.include', {'customVolumes[1].configMap.defaultMode': '1'})
@@ -4372,27 +4370,27 @@ describe('Create SGShardedCluster', () => {
             .and('nested.include', {"customContainers[0].volumeMounts[0].mountPropagation": 'edit-mountPropagation'})
             .and('nested.include', {"customContainers[0].volumeMounts[0].subPath": 'edit-subPath'})
         cy.get('@putCluster')
-            .its('request.body.spec.shards.managedSql')
+            .its('request.body.spec.workers.managedSql')
             .should('nested.include', {"scripts[0].scriptSpec.scripts[0].script": 'test-' + resourceName})
-            .and('nested.include', {"scripts[1].sgScript": 'script-shards-' + resourceName})
+            .and('nested.include', {"scripts[1].sgScript": 'script-workers-' + resourceName})
             .and('nested.include', {"scripts[1].scriptSpec.scripts[0].script": 'test2-' + resourceName})
             .and('nested.include', {"scripts[2].scriptSpec.scripts[0].script": 'test3-' + resourceName})
         cy.get('@putCluster')
-            .its('request.body.spec.shards.replication')
+            .its('request.body.spec.workers.replication')
             .and('nested.include', {"mode": 'strict-sync'})
             .and('nested.include', {"syncInstances": '1'})
         cy.get('@putCluster')
             .its('request.body.spec.postgresServices')
-            .should('nested.include', {"shards.primaries.type": 'NodePort'})
-            .and('nested.include', {"shards.primaries.loadBalancerIP": '4.3.2.1'})
-            .and('nested.include', {"shards.customPorts[0].appProtocol": 'edit-protocol'})
-            .and('nested.include', {"shards.customPorts[0].name": 'edit-name'})
-            .and('nested.include', {"shards.customPorts[0].nodePort": '4321'})
-            .and('nested.include', {"shards.customPorts[0].port": '4321'})
-            .and('nested.include', {"shards.customPorts[0].protocol": 'TCP'})
-            .and('nested.include', {"shards.customPorts[0].targetPort": '4321'})
+            .should('nested.include', {"workers.primaries.type": 'NodePort'})
+            .and('nested.include', {"workers.primaries.loadBalancerIP": '4.3.2.1'})
+            .and('nested.include', {"workers.customPorts[0].appProtocol": 'edit-protocol'})
+            .and('nested.include', {"workers.customPorts[0].name": 'edit-name'})
+            .and('nested.include', {"workers.customPorts[0].nodePort": '4321'})
+            .and('nested.include', {"workers.customPorts[0].port": '4321'})
+            .and('nested.include', {"workers.customPorts[0].protocol": 'TCP'})
+            .and('nested.include', {"workers.customPorts[0].targetPort": '4321'})
         cy.get('@putCluster')
-            .its('request.body.spec.shards.metadata')
+            .its('request.body.spec.workers.metadata')
             .should('nested.include', {"labels.clusterPods.label1": 'value1'})
             .and('nested.include', {"annotations.allResources.annotation1": 'value1'})
             .and('nested.include', {"annotations.clusterPods.annotation1": 'value1'})
@@ -4400,7 +4398,7 @@ describe('Create SGShardedCluster', () => {
             .and('nested.include', {"annotations.primaryService.annotation1": 'value1'})
             .and('nested.include', {"annotations.replicasService.annotation1": 'value1'})
         cy.get('@putCluster')
-            .its('request.body.spec.shards.pods.scheduling')
+            .its('request.body.spec.workers.pods.scheduling')
             .should('nested.include', {"nodeSelector.key1": 'value1'})
             .and('nested.include', {"tolerations[0].key": 'key1'})
             .and('nested.include', {"tolerations[0].value": 'value1'})
@@ -4491,10 +4489,10 @@ describe('Create SGShardedCluster', () => {
             .click()
         
         // Shards section
-        cy.get('form#createShardedCluster li.shards')
+        cy.get('form#createShardedCluster li.workers')
             .click()
 
-        cy.get('form#createShardedCluster li[data-step="shards.sidecars"]')
+        cy.get('form#createShardedCluster li[data-step="workers.sidecars"]')
             .click()
 
         cy.get('input#metricsExporterShards')
@@ -4536,10 +4534,10 @@ describe('Create SGShardedCluster', () => {
             .should('not.be.checked')
         
         // Shards section
-        cy.get('form#createShardedCluster li.shards')
+        cy.get('form#createShardedCluster li.workers')
             .click()
 
-        cy.get('form#createShardedCluster li[data-step="shards.sidecars"]')
+        cy.get('form#createShardedCluster li[data-step="workers.sidecars"]')
             .click()
 
         cy.get('input#metricsExporterShards')
@@ -4581,32 +4579,32 @@ describe('Create SGShardedCluster', () => {
             .should('have.value', 'createNewScript')
         
         // Shards section
-        cy.get('form#createShardedCluster li.shards')
+        cy.get('form#createShardedCluster li.workers')
             .click()
         
         // Tests Shards script source on script repeaters
-        cy.get('form#createShardedCluster li[data-step="shards.scripts"]')
+        cy.get('form#createShardedCluster li[data-step="workers.scripts"]')
             .click()
         
         cy.get('.scriptFieldset > div.fieldsetFooter > a.addRow')
             .click({force: true})
         
-        cy.get('select[data-field="spec.shards.managedSql.scripts.scriptSource.shards[0]"]')
-            .select('script-shards-' + resourceName)
+        cy.get('select[data-field="spec.workers.managedSql.scripts.scriptSource.workers[0]"]')
+            .select('script-workers-' + resourceName)
 
         // Shards Add new Script
         cy.get('.scriptFieldset > div.fieldsetFooter > a.addRow')
             .click({force: true})
 
-        cy.get('select[data-field="spec.shards.managedSql.scripts.scriptSource.shards[1]"]')
+        cy.get('select[data-field="spec.workers.managedSql.scripts.scriptSource.workers[1]"]')
             .select('createNewScript')
 
         // Shards Remove first script
-        cy.get('.scriptFieldset > fieldset[data-field="spec.shards.managedSql.scripts[0]"] a.delete')
+        cy.get('.scriptFieldset > fieldset[data-field="spec.workers.managedSql.scripts[0]"] a.delete')
             .click()
 
         // Validate script source has the right value
-        cy.get('select[data-field="spec.shards.managedSql.scripts.scriptSource.shards[0]"]')
+        cy.get('select[data-field="spec.workers.managedSql.scripts.scriptSource.workers[0]"]')
             .should('have.value', 'createNewScript')
     });
    

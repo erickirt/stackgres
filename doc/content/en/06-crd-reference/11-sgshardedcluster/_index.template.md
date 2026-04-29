@@ -38,7 +38,7 @@ spec:
     pods:
       persistentVolume:
         size: '5Gi'
-  shards:
+  workers:
     clusters: 2
     instancesPerCluster: 1
     pods:

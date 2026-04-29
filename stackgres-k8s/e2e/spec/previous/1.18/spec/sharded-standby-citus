@@ -98,7 +98,7 @@ check_sharded_standby_is_working() {
 check_sharded_connectivity() {
   local CLUSTER_NAME="$CLUSTER_NAME"
   SHARDED_CLUSTER_NAME="$CLUSTER_NAME"
-  for SUFFIX in coord shard0 shard1
+  for SUFFIX in coord worker0 worker1
   do
     CLUSTER_NAME="$SHARDED_CLUSTER_NAME-$SUFFIX" check_connectivity -i 0
   done
@@ -108,7 +108,7 @@ check_sharded_connectivity() {
 check_sharded_metrics() {
   local CLUSTER_NAME="$CLUSTER_NAME"
   SHARDED_CLUSTER_NAME="$CLUSTER_NAME"
-  for SUFFIX in coord shard0 shard1
+  for SUFFIX in coord worker0 worker1
   do
     CLUSTER_NAME="$SHARDED_CLUSTER_NAME-$SUFFIX" check_metrics
   done
@@ -287,7 +287,7 @@ EOF
 
   local DBOPS_NAME
   local SUFFIX
-  for SUFFIX in coord shard0 shard1
+  for SUFFIX in coord worker0 worker1
   do
     DBOPS_NAME="$SHARDED_DBOPS_NAME-$SUFFIX"
     wait_dbops_is_completed "$DBOPS_NAME"

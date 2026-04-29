@@ -62,7 +62,7 @@ SELECT create_reference_table('geo_ips');
 
 ## Scaling Workers
 
-Adding a new shard is simple - increase the `clusters` field value in the `workers` section:
+Adding a new worker is simple - increase the `clusters` field value in the `workers` section:
 
 ```yaml
 apiVersion: stackgres.io/v1beta1
@@ -271,14 +271,14 @@ kubectl exec -n my-cluster cluster-coord-0 -c patroni -- patronictl list
 +-------+------------------+------------------+--------------+---------+----+-----------+
 |     0 | cluster-coord-0  | 10.244.0.16:7433 | Leader       | running |  1 |           |
 |     0 | cluster-coord-1  | 10.244.0.34:7433 | Sync Standby | running |  1 |         0 |
-|     1 | cluster-shard0-0 | 10.244.0.19:7433 | Leader       | running |  1 |           |
-|     1 | cluster-shard0-1 | 10.244.0.48:7433 | Replica      | running |  1 |         0 |
-|     2 | cluster-shard1-0 | 10.244.0.20:7433 | Leader       | running |  1 |           |
-|     2 | cluster-shard1-1 | 10.244.0.42:7433 | Replica      | running |  1 |         0 |
-|     3 | cluster-shard2-0 | 10.244.0.22:7433 | Leader       | running |  1 |           |
-|     3 | cluster-shard2-1 | 10.244.0.43:7433 | Replica      | running |  1 |         0 |
-|     4 | cluster-shard3-0 | 10.244.0.27:7433 | Leader       | running |  1 |           |
-|     4 | cluster-shard3-1 | 10.244.0.45:7433 | Replica      | running |  1 |         0 |
+|     1 | cluster-worker0-0 | 10.244.0.19:7433 | Leader       | running |  1 |           |
+|     1 | cluster-worker0-1 | 10.244.0.48:7433 | Replica      | running |  1 |         0 |
+|     2 | cluster-worker1-0 | 10.244.0.20:7433 | Leader       | running |  1 |           |
+|     2 | cluster-worker1-1 | 10.244.0.42:7433 | Replica      | running |  1 |         0 |
+|     3 | cluster-worker2-0 | 10.244.0.22:7433 | Leader       | running |  1 |           |
+|     3 | cluster-worker2-1 | 10.244.0.43:7433 | Replica      | running |  1 |         0 |
+|     4 | cluster-worker3-0 | 10.244.0.27:7433 | Leader       | running |  1 |           |
+|     4 | cluster-worker3-1 | 10.244.0.45:7433 | Replica      | running |  1 |         0 |
 +-------+------------------+------------------+--------------+---------+----+-----------+
 ```
 

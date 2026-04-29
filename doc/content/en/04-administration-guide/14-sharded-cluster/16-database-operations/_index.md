@@ -256,10 +256,10 @@ status:
   opRetries: 0
   restart:
     pendingToRestartSgClusters:
-      - my-sharded-cluster-shard1
+      - my-sharded-cluster-worker1
     restartedSgClusters:
       - my-sharded-cluster-coord
-      - my-sharded-cluster-shard0
+      - my-sharded-cluster-worker0
 ```
 
 ### Status Conditions

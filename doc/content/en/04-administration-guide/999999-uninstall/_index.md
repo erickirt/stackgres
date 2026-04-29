@@ -92,8 +92,8 @@ kubectl get pods -n default
 ```
 NAME                    READY   STATUS    RESTARTS   AGE
 my-db-cluster-coord-0   5/5     Running   1          2m29s
-my-db-cluster-shard0-0  5/5     Running   1          99s
-my-db-cluster-shard1-1  5/5     Running   0          74s
+my-db-cluster-worker0-0  5/5     Running   1          99s
+my-db-cluster-worker1-1  5/5     Running   0          74s
 ```
 
 > **IMPORTANT**: before deleting the cluster make sure all the PersistentVolume are going to be removed

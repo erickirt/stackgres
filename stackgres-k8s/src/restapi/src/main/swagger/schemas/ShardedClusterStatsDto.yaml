@@ -31,7 +31,7 @@ schema:
           diskRequested:
             description: |
               The average disk requested for all pods.
-      shards:
+      workers:
         description: |
           Shards stats
         properties:

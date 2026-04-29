@@ -235,8 +235,8 @@ class StackGresShardedClusterForCitusUtilTest {
     var clusterIndex0 = getWorkerCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     var clusterIndex2 = getWorkerCluster(JsonUtil.copy(shardedCluster), 2, Optional.empty());
 
-    Assertions.assertEquals("legacy-shard0", clusterIndex0.getMetadata().getName());
-    Assertions.assertEquals("legacy-shard2", clusterIndex2.getMetadata().getName());
+    Assertions.assertEquals("legacy-worker0", clusterIndex0.getMetadata().getName());
+    Assertions.assertEquals("legacy-worker2", clusterIndex2.getMetadata().getName());
   }
 
   @Test
@@ -270,7 +270,7 @@ class StackGresShardedClusterForCitusUtilTest {
     var cluster = getWorkerCluster(
         JsonUtil.copy(shardedCluster), 0, Optional.of(replicateCluster));
 
-    Assertions.assertEquals("source-shard0",
+    Assertions.assertEquals("source-worker0",
         cluster.getSpec().getReplicateFrom().getInstance().getSgCluster());
   }
 

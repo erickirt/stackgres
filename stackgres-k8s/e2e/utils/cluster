@@ -319,8 +319,8 @@ create_or_replace_sharded_cluster_only() {
       --set nonProductionOptions.disablePatroniResourceRequirements="$E2E_DISABLE_RESOURCE_REQUIREMENTS" \
       --set nonProductionOptions.disableClusterResourceRequirements="$E2E_DISABLE_RESOURCE_REQUIREMENTS" \
       $([ -z "$STACKGRES_TARGET_VERSION" ] || printf '%s' "--set-string cluster.version=$STACKGRES_TARGET_VERSION ") \
-      --set-string kind=SGShardedCluster --set shardedCluster.shards.clusters="$((CLUSTERS - 1))" \
-      --set shardedCluster.shards.instancesPerCluster="$INSTANCES" \
+      --set-string kind=SGShardedCluster --set shardedCluster.workers.clusters="$((CLUSTERS - 1))" \
+      --set shardedCluster.workers.instancesPerCluster="$INSTANCES" \
       --set cluster.instances="$INSTANCES" \
       --set cluster.queryRouterClusters="$ROUTERS" \
       "$@"
@@ -332,8 +332,8 @@ create_or_replace_sharded_cluster_only() {
       --set nonProductionOptions.disablePatroniResourceRequirements="$E2E_DISABLE_RESOURCE_REQUIREMENTS" \
       --set nonProductionOptions.disableClusterResourceRequirements="$E2E_DISABLE_RESOURCE_REQUIREMENTS" \
       $([ -z "$STACKGRES_TARGET_VERSION" ] || printf '%s' "--set-string cluster.version=$STACKGRES_TARGET_VERSION ") \
-      --set-string kind=SGShardedCluster --set shardedCluster.shards.clusters="$((CLUSTERS - 1))" \
-      --set shardedCluster.shards.instancesPerCluster="$INSTANCES" \
+      --set-string kind=SGShardedCluster --set shardedCluster.workers.clusters="$((CLUSTERS - 1))" \
+      --set shardedCluster.workers.instancesPerCluster="$INSTANCES" \
       --set cluster.instances="$INSTANCES" \
       --set cluster.queryRouterClusters="$ROUTERS" \
       "$@"
@@ -534,6 +534,7 @@ create_or_replace_sharded_cluster_for_version_only() {
   VERSION_1_0_0_ALPHA1_AS_NUMBER="$(get_version_as_number 1.0.0-alpha1)"
   VERSION_1_2_0_RC1_AS_NUMBER="$(get_version_as_number 1.2.0-RC1)"
   VERSION_1_3_0_AS_NUMBER="$(get_version_as_number 1.3.0)"
+  VERSION_1_19_0_AS_NUMBER="$(get_version_as_number 1.19.0)"
   if [ "$VERSION_AS_NUMBER" -lt "$VERSION_1_0_0_ALPHA1_AS_NUMBER" ]
   then
     TRANSFORMER="transform_to_0_9"
@@ -543,6 +544,9 @@ create_or_replace_sharded_cluster_for_version_only() {
   elif [ "$VERSION_AS_NUMBER" -lt "$VERSION_1_3_0_AS_NUMBER" ]
   then
     TRANSFORMER="transform_to_1_2"
+  elif [ "$VERSION_AS_NUMBER" -lt "$VERSION_1_19_0_AS_NUMBER" ]
+  then
+    TRANSFORMER="transform_to_1_19"
   fi
 
   if helm get values "$RELEASE" --namespace "$NAMESPACE" > /dev/null 2>&1
@@ -550,8 +554,8 @@ create_or_replace_sharded_cluster_for_version_only() {
     eval "$(transform_params "$TRANSFORMER" helm upgrade "$RELEASE" --namespace "$NAMESPACE" "$CLUSTER_HELM_PATH" \
         --reuse-values \
         $E2E_CLUSTER_PARAMETERS \
-        --set-string kind=SGShardedCluster --set shardedCluster.shards.clusters="$((CLUSTERS - 1))" \
-        --set shardedCluster.shards.instancesPerCluster="$INSTANCES" --set cluster.instances="$INSTANCES" "$@")"
+        --set-string kind=SGShardedCluster --set shardedCluster.workers.clusters="$((CLUSTERS - 1))" \
+        --set shardedCluster.workers.instancesPerCluster="$INSTANCES" --set cluster.instances="$INSTANCES" "$@")"
   else
     create_namespace_if_not_exists "$NAMESPACE"
     eval "$(transform_params "$TRANSFORMER" helm install "$RELEASE" "$CLUSTER_HELM_PATH" \
@@ -560,11 +564,35 @@ create_or_replace_sharded_cluster_for_version_only() {
         --set nonProductionOptions.disablePatroniResourceRequirements="$E2E_DISABLE_RESOURCE_REQUIREMENTS" \
         --set nonProductionOptions.disableClusterResourceRequirements="$E2E_DISABLE_RESOURCE_REQUIREMENTS" \
         --set-string kind=SGShardedCluster \
-        --set shardedCluster.shards.clusters="$((CLUSTERS - 1))" \
-        --set shardedCluster.shards.instancesPerCluster="$INSTANCES" \
+        --set shardedCluster.workers.clusters="$((CLUSTERS - 1))" \
+        --set shardedCluster.workers.instancesPerCluster="$INSTANCES" \
         --set cluster.instances="$INSTANCES" \
         --set cluster.queryRouterClusters="$ROUTERS" \
         "$@")"
+  fi
+}
+
+transform_to_1_18() {
+  if printf '%s' "$1" | grep -q '^cluster\.managedSql\.scripts'
+  then
+    printf '%s' "$1" | sed 's/^cluster\.managedSql\.scripts/cluster.initialData.scripts/'
+  elif [ "${1%=*}" = 'cluster.configurations.backups.sgObjectStorage' ]
+  then
+    printf "%s=%s" "cluster.configurations.sgBackupConfig" "${1#*=}"
+  elif [ "${1%=*}" = 'configurations.objectstorage.create' ]
+  then
+    printf "%s=%s" "configurations.backupconfig.create" "${1#*=}"
+  elif printf '%s' "$1" | grep -q '^configurations\.objectstorage\.'
+  then
+    printf '%s' "$1" | sed 's/^configurations\.objectstorage\./configurations.backupconfig.storage./'
+  elif printf '%s' "$1" | grep -q '^cluster\.configurations\.backups\.'
+  then
+    printf '%s' "$1" | sed 's/^cluster\.configurations\.backups\./configurations.backupconfig.baseBackups./'
+  elif printf '%s' "$1" | grep -q '^shardedCluster\.workers\.'
+  then
+    printf '%s' "$1" | sed 's/^shardedCluster\.workers\./shardedCluster.shards./'
+  else
+    dont_transform "$1"
   fi
 }
 

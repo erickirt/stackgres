@@ -15,8 +15,8 @@
 					</th>
 
 					<th class="asc instances hasTooltip textRight">
-						<span @click="sort('data.spec.shards.clusters')" title="Instances">Clusters / Instances per Shard</span>
-						<span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.clusters') + ' / ' + getTooltip('sgshardedcluster.spec.shards.instancesPerCluster')"></span>
+						<span @click="sort('data.spec.workers.clusters')" title="Instances">Clusters / Instances per Shard</span>
+						<span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.clusters') + ' / ' + getTooltip('sgshardedcluster.spec.workers.instancesPerCluster')"></span>
 					</th>
 
 					<th class="asc cpu hasTooltip textRight">
@@ -77,22 +77,22 @@
 									</td>
 									<td class="instances textRight">
 										<router-link :to="'/' + $route.params.namespace + '/sgshardedcluster/' + cluster.name" title="Cluster Status" class="noColor">
-											{{ cluster.data.spec.shards.clusters }} / {{ cluster.data.spec.shards.instancesPerCluster }}
+											{{ cluster.data.spec.workers.clusters }} / {{ cluster.data.spec.workers.instancesPerCluster }}
 										</router-link>
 									</td>
 									<td class="cpu textRight">
 										<router-link :to="'/' + $route.params.namespace + '/sgshardedcluster/' + cluster.name" title="Cluster Status" class="noColor">
-											<span>{{ hasProp(cluster,'stats.coordinator.cpuRequested') ? cluster.stats.coordinator.cpuRequested : '-'}} / {{ hasProp(cluster,'stats.shards.cpuRequested') ? cluster.stats.shards.cpuRequested : '-'}}</span>
+											<span>{{ hasProp(cluster,'stats.coordinator.cpuRequested') ? cluster.stats.coordinator.cpuRequested : '-'}} / {{ hasProp(cluster,'stats.workers.cpuRequested') ? cluster.stats.workers.cpuRequested : '-'}}</span>
 										</router-link>
 									</td>
 									<td class="ram textRight">
 										<router-link :to="'/' + $route.params.namespace + '/sgshardedcluster/' + cluster.name" title="Cluster Status" class="noColor">
-											<span>{{ hasProp(cluster,'stats.coordinator.memoryRequested') ? cluster.stats.coordinator.memoryRequested.replace('.00','') : '-' }} / {{ hasProp(cluster,'stats.shards.memoryRequested') ? cluster.stats.shards.memoryRequested.replace('.00','') : '-' }}</span>
+											<span>{{ hasProp(cluster,'stats.coordinator.memoryRequested') ? cluster.stats.coordinator.memoryRequested.replace('.00','') : '-' }} / {{ hasProp(cluster,'stats.workers.memoryRequested') ? cluster.stats.workers.memoryRequested.replace('.00','') : '-' }}</span>
 										</router-link>
 									</td>
 									<td class="volumeSize textRight hasTooltip">
 										<router-link :to="'/' + $route.params.namespace + '/sgshardedcluster/' + cluster.name" title="Cluster Status" class="noColor">
-											<span>{{ cluster.data.spec.coordinator.pods.persistentVolume.size }} / {{ cluster.data.spec.shards.pods.persistentVolume.size }}</span>
+											<span>{{ cluster.data.spec.coordinator.pods.persistentVolume.size }} / {{ cluster.data.spec.workers.pods.persistentVolume.size }}</span>
 										</router-link>
 									</td>
 									<td class="actions">

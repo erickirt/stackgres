@@ -11,15 +11,15 @@ DDP (Distributed Data Partitioning) allows you to distribute data across differe
 
 DDP is an SQL-only sharding implementation that leverages PostgreSQL core functionalities:
 
-- **Partitioning**: Uses `PARTITION BY RANGE` to create virtual shards that map to physical shard nodes
-- **`postgres_fdw`**: Creates foreign data wrapper connections to remote shard nodes, allowing the coordinator to query data transparently
-- **`dblink`**: Used for management operations like checking shard connection status and creating distributed restore points
+- **Partitioning**: Uses `PARTITION BY RANGE` to create virtual shards that map to physical worker nodes
+- **`postgres_fdw`**: Creates foreign data wrapper connections to remote worker nodes, allowing the coordinator to query data transparently
+- **`dblink`**: Used for management operations like checking worker connection status and creating distributed restore points
 
 No external middleware or third-party extension is required beyond what PostgreSQL already provides.
 
 ## How DDP Works
 
-DDP uses the coordinator as the entry point for all queries. The coordinator maintains foreign table definitions that map to tables on the shard nodes via `postgres_fdw`. When a query is executed, PostgreSQL's query planner routes the query to the appropriate shard based on the partition definitions.
+DDP uses the coordinator as the entry point for all queries. The coordinator maintains foreign table definitions that map to tables on the worker nodes via `postgres_fdw`. When a query is executed, PostgreSQL's query planner routes the query to the appropriate worker based on the partition definitions.
 
 ### Virtual Shards
 
@@ -30,13 +30,13 @@ DDP introduces the concept of virtual shards. Virtual shards are range partition
 
 ### Shard Connections
 
-Each shard is connected to the coordinator via `postgres_fdw` foreign servers. DDP provides SQL functions to manage these connections:
+Each worker is connected to the coordinator via `postgres_fdw` foreign servers. DDP provides SQL functions to manage these connections:
 
-- `ddp_create_shard_connection()`: Creates a new FDW server connection to a shard
-- `ddp_change_shard_connection()`: Modifies an existing shard connection
-- `ddp_drop_shard_connection()`: Removes a shard connection
-- `ddp_get_shard_status_connection()`: Checks shard connection status
-- `ddp_has_shard_connection()`: Checks if a shard connection exists
+- `ddp_create_shard_connection()`: Creates a new FDW server connection to a worker
+- `ddp_change_shard_connection()`: Modifies an existing worker connection
+- `ddp_drop_shard_connection()`: Removes a worker connection
+- `ddp_get_shard_status_connection()`: Checks worker connection status
+- `ddp_has_shard_connection()`: Checks if a worker connection exists
 
 ### Data Distribution
 
@@ -74,7 +74,7 @@ spec:
         size: '10Gi'
 ```
 
-This configuration will create a coordinator with 2 Pods and 4 workers with 2 Pods each. The coordinator uses `postgres_fdw` to connect to the shard nodes and route queries.
+This configuration will create a coordinator with 2 Pods and 4 workers with 2 Pods each. The coordinator uses `postgres_fdw` to connect to the worker nodes and route queries.
 
 ## Distributed Restore Points
 

@@ -86,7 +86,7 @@
 						</th>
 						<th class="textRight">
 							Instances
-							<span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.stats.coordinator.podsReady') + ' / ' + getTooltip('sgshardedcluster.spec.coordinator.instances') + ' – ' + getTooltip('sgshardedcluster.stats.shards.podsReady') + ' / ' + getTooltip('sgshardedcluster.spec.shards.instancesPerCluster')"></span>
+							<span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.stats.coordinator.podsReady') + ' / ' + getTooltip('sgshardedcluster.spec.coordinator.instances') + ' – ' + getTooltip('sgshardedcluster.stats.workers.podsReady') + ' / ' + getTooltip('sgshardedcluster.spec.workers.instancesPerCluster')"></span>
 						</th>
 					</thead>
 					<tbody>
@@ -120,30 +120,30 @@
 						</tr>
 						<tr>
 							<td>
-								{{ sgshardedcluster.stats.shards.cpuRequested }} 
+								{{ sgshardedcluster.stats.workers.cpuRequested }} 
 								<template v-if="sgshardedcluster.stats.hasOwnProperty('cpuPsiAvg60') || sgshardedcluster.stats.hasOwnProperty('averageLoad1m')">
 									(avg. load {{ sgshardedcluster.stats.hasOwnProperty('cpuPsiAvg60') ? sgshardedcluster.stats.cpuPsiAvg60 : sgshardedcluster.stats.averageLoad1m }})
 								</template>
 							</td>
 							<td class="textRight">
-								{{ sgshardedcluster.stats.shards.hasOwnProperty('memoryPsiAvg60') ? sgshardedcluster.stats.shards.memoryPsiAvg60 : sgshardedcluster.stats.shards.memoryRequested }}
+								{{ sgshardedcluster.stats.workers.hasOwnProperty('memoryPsiAvg60') ? sgshardedcluster.stats.workers.memoryPsiAvg60 : sgshardedcluster.stats.workers.memoryRequested }}
 							</td>
 							<td class="flex-center">
 								<div class="donut">
 									<svg class="loader" xmlns="http://www.w3.org/2000/svg" version="1.1">
-										<circle cx="12.5" cy="12.5" r="10" stroke-width="5" fill="none" :stroke-dasharray="diskUsed(sgshardedcluster.stats.shards)+',63'" />
+										<circle cx="12.5" cy="12.5" r="10" stroke-width="5" fill="none" :stroke-dasharray="diskUsed(sgshardedcluster.stats.workers)+',63'" />
 									</svg>
 									<svg class="background" xmlns="http://www.w3.org/2000/svg" version="1.1">
 										<circle cx="12.5" cy="12.5" r="10" stroke-width="5" fill="none" />
 									</svg>
 								</div>
-								{{ sgshardedcluster.stats.shards.hasOwnProperty('diskUsed') ? sgshardedcluster.stats.shards.diskUsed : '-' }} / {{ sgshardedcluster.stats.shards.diskRequested }}
+								{{ sgshardedcluster.stats.workers.hasOwnProperty('diskUsed') ? sgshardedcluster.stats.workers.diskUsed : '-' }} / {{ sgshardedcluster.stats.workers.diskRequested }}
 							</td>
 							<td class="textRight">
-								{{ sgshardedcluster.stats.shards.diskRequested }}
+								{{ sgshardedcluster.stats.workers.diskRequested }}
 							</td>
 							<td class="textRight">
-								{{ sgshardedcluster.stats.shards.podsReady }} / {{ sgshardedcluster.data.spec.shards.instancesPerCluster }}
+								{{ sgshardedcluster.stats.workers.podsReady }} / {{ sgshardedcluster.data.spec.workers.instancesPerCluster }}
 							</td>
 						</tr>
 					</tbody>
@@ -279,11 +279,11 @@
 			},
 
 			hasPods() {
-				return ((this.sgshardedcluster !== null) && (this.hasProp(this.sgshardedcluster, 'stats.coordinator.pods') && this.sgshardedcluster.stats.coordinator.pods.length) || ((this.hasProp(this.sgshardedcluster, 'stats.shards.pods') && this.sgshardedcluster.stats.shards.pods.length) ) )
+				return ((this.sgshardedcluster !== null) && (this.hasProp(this.sgshardedcluster, 'stats.coordinator.pods') && this.sgshardedcluster.stats.coordinator.pods.length) || ((this.hasProp(this.sgshardedcluster, 'stats.workers.pods') && this.sgshardedcluster.stats.workers.pods.length) ) )
 			},
 
 			podsReady() {
-				return ((this.sgshardedcluster !== null) && this.hasPods && this.hasProp(this.sgshardedcluster, 'stats.coordinator.podsReady') && this.sgshardedcluster.stats.coordinator.podsReady && this.hasProp(this.sgshardedcluster, 'stats.shards.podsReady') && this.sgshardedcluster.stats.shards.podsReady)
+				return ((this.sgshardedcluster !== null) && this.hasPods && this.hasProp(this.sgshardedcluster, 'stats.coordinator.podsReady') && this.sgshardedcluster.stats.coordinator.podsReady && this.hasProp(this.sgshardedcluster, 'stats.workers.podsReady') && this.sgshardedcluster.stats.workers.podsReady)
 			}
 
 		},

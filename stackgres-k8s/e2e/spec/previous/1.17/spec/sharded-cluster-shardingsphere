@@ -85,7 +85,7 @@ service_check() {
 
 sharded_check() {
   local RESULT EXIT_CODE
-  try_function wait_until eval "run_query -c '$CLUSTER_NAME-shard0' -h '$CLUSTER_NAME' -i 1 -p 5432 \
+  try_function wait_until eval "run_query -c '$CLUSTER_NAME-worker0' -h '$CLUSTER_NAME' -i 1 -p 5432 \
     -d postgres -q \"SHOW STORAGE UNITS\" | wc -l | grep -xF 2"
 
   if [ "$EXIT_CODE" = 0 ]
@@ -95,21 +95,21 @@ sharded_check() {
     fail "Sharding coordinator service is not working"
   fi
 
-  try_function wait_until eval 'run_query -c "$CLUSTER_NAME-shard0" -h "$CLUSTER_NAME-shards" -i 1 -p 5432 \
+  try_function wait_until eval 'run_query -c "$CLUSTER_NAME-worker0" -h "$CLUSTER_NAME-workers" -i 1 -p 5432 \
     -d shardingsphere -q "SELECT pg_is_in_recovery()" | grep -xF f'
 
   if [ "$EXIT_CODE" = 0 ]
   then
-    success "Sharding shards service is working"
+    success "Sharding workers service is working"
   else
-    fail "Sharding shards service is not working"
+    fail "Sharding workers service is not working"
   fi
 }
 
 check_managed_sql_is_working() {
   local NODE=0
   local DATABASE=postgres
-  check_user_on_sharded_primary "$CLUSTER_NAME" "$CLUSTER_NAME-shard0"
-  check_database_on_sharded_primary "$CLUSTER_NAME" "$CLUSTER_NAME-shard0"
-  check_schema_on_sharded_primary "$CLUSTER_NAME" "$CLUSTER_NAME-shard0"
+  check_user_on_sharded_primary "$CLUSTER_NAME" "$CLUSTER_NAME-worker0"
+  check_database_on_sharded_primary "$CLUSTER_NAME" "$CLUSTER_NAME-worker0"
+  check_schema_on_sharded_primary "$CLUSTER_NAME" "$CLUSTER_NAME-worker0"
 }

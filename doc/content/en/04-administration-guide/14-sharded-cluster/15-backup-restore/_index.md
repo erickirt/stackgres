@@ -13,10 +13,10 @@ This guide covers backup and restore operations for SGShardedCluster using the S
 SGShardedBackup coordinates backups across all components of a sharded cluster:
 
 1. **Coordinator Backup**: Captures metadata, distributed tables configuration, and coordinator data
-2. **Shard Backups**: Creates individual backups for each shard cluster
+2. **Shard Backups**: Creates individual backups for each worker cluster
 3. **Coordination**: Ensures consistent point-in-time recovery across all components
 
-Each SGShardedBackup creates multiple underlying SGBackup resources (one per shard and coordinator).
+Each SGShardedBackup creates multiple underlying SGBackup resources (one per worker and coordinator).
 
 ## Prerequisites
 
@@ -124,8 +124,8 @@ status:
       stored: "2024-01-15T05:46:00Z"
   sgBackups:           # Individual backup references
     - my-sharded-cluster-coord-backup-xxxxx
-    - my-sharded-cluster-shard0-backup-xxxxx
-    - my-sharded-cluster-shard1-backup-xxxxx
+    - my-sharded-cluster-worker0-backup-xxxxx
+    - my-sharded-cluster-worker1-backup-xxxxx
   backupInformation:
     postgresVersion: "15.3"
     size:

@@ -197,14 +197,14 @@ class ShardedClusterEndpointsTest {
 
   @Test
   void generateResource_whenShardEndpointsPresent_shouldIncludeShardSubsets() {
-    Endpoints shard0Endpoints = new EndpointsBuilder()
+    Endpoints worker0Endpoints = new EndpointsBuilder()
         .withSubsets(new EndpointSubsetBuilder()
             .withAddresses(new EndpointAddressBuilder()
                 .withIp("10.0.1.1")
                 .build())
             .build())
         .build();
-    Endpoints shard1Endpoints = new EndpointsBuilder()
+    Endpoints worker1Endpoints = new EndpointsBuilder()
         .withSubsets(new EndpointSubsetBuilder()
             .withAddresses(new EndpointAddressBuilder()
                 .withIp("10.0.2.1")
@@ -212,7 +212,7 @@ class ShardedClusterEndpointsTest {
             .build())
         .build();
     lenient().when(context.getWorkersPrimaryEndpoints())
-        .thenReturn(List.of(shard0Endpoints, shard1Endpoints));
+        .thenReturn(List.of(worker0Endpoints, worker1Endpoints));
 
     List<HasMetadata> resources =
         shardedClusterEndpoints.generateResource(context).toList();

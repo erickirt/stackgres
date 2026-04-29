@@ -30,9 +30,9 @@ class ShardedClusterWorkersPrimaryEndpointsContextAppenderTest {
 
   private ShardedClusterWorkersPrimaryEndpointsContextAppender contextAppender;
 
-  private StackGresCluster shard0;
+  private StackGresCluster worker0;
 
-  private StackGresCluster shard1;
+  private StackGresCluster worker1;
 
   @Spy
   private StackGresShardedClusterContext.Builder contextBuilder;
@@ -42,10 +42,10 @@ class ShardedClusterWorkersPrimaryEndpointsContextAppenderTest {
 
   @BeforeEach
   void setUp() {
-    shard0 = Fixtures.cluster().loadDefault().get();
-    shard0.getMetadata().setName(shard0.getMetadata().getName() + "0");
-    shard1 = Fixtures.cluster().loadDefault().get();
-    shard1.getMetadata().setName(shard0.getMetadata().getName() + "1");
+    worker0 = Fixtures.cluster().loadDefault().get();
+    worker0.getMetadata().setName(worker0.getMetadata().getName() + "0");
+    worker1 = Fixtures.cluster().loadDefault().get();
+    worker1.getMetadata().setName(worker0.getMetadata().getName() + "1");
     contextAppender = new ShardedClusterWorkersPrimaryEndpointsContextAppender(endpointsFinder);
   }
 
@@ -54,38 +54,38 @@ class ShardedClusterWorkersPrimaryEndpointsContextAppenderTest {
     Endpoints endpoints0 =
         new EndpointsBuilder()
         .withNewMetadata()
-        .withName(PatroniUtil.readWriteName(shard0))
+        .withName(PatroniUtil.readWriteName(worker0))
         .endMetadata()
         .build();
     Endpoints endpoints1 =
         new EndpointsBuilder()
         .withNewMetadata()
-        .withName(PatroniUtil.readWriteName(shard1))
+        .withName(PatroniUtil.readWriteName(worker1))
         .endMetadata()
         .build();
     when(endpointsFinder.findByNameAndNamespace(
-        PatroniUtil.readWriteName(shard0),
-        shard0.getMetadata().getNamespace()))
+        PatroniUtil.readWriteName(worker0),
+        worker0.getMetadata().getNamespace()))
         .thenReturn(Optional.of(endpoints0));
     when(endpointsFinder.findByNameAndNamespace(
-        PatroniUtil.readWriteName(shard1),
-        shard0.getMetadata().getNamespace()))
+        PatroniUtil.readWriteName(worker1),
+        worker0.getMetadata().getNamespace()))
         .thenReturn(Optional.of(endpoints1));
-    contextAppender.appendContext(List.of(shard0, shard1), contextBuilder);
+    contextAppender.appendContext(List.of(worker0, worker1), contextBuilder);
     verify(contextBuilder).workersPrimaryEndpoints(List.of(endpoints0, endpoints1));
   }
 
   @Test
   void givenClusterWithoutEndpoints_shouldPass() {
     when(endpointsFinder.findByNameAndNamespace(
-        PatroniUtil.readWriteName(shard0),
-        shard0.getMetadata().getNamespace()))
+        PatroniUtil.readWriteName(worker0),
+        worker0.getMetadata().getNamespace()))
         .thenReturn(Optional.empty());
     when(endpointsFinder.findByNameAndNamespace(
-        PatroniUtil.readWriteName(shard1),
-        shard1.getMetadata().getNamespace()))
+        PatroniUtil.readWriteName(worker1),
+        worker1.getMetadata().getNamespace()))
         .thenReturn(Optional.empty());
-    contextAppender.appendContext(List.of(shard0, shard1), contextBuilder);
+    contextAppender.appendContext(List.of(worker0, worker1), contextBuilder);
     verify(contextBuilder).workersPrimaryEndpoints(List.of());
   }
 
@@ -94,18 +94,18 @@ class ShardedClusterWorkersPrimaryEndpointsContextAppenderTest {
     Endpoints endpoints0 =
         new EndpointsBuilder()
         .withNewMetadata()
-        .withName(PatroniUtil.readWriteName(shard0))
+        .withName(PatroniUtil.readWriteName(worker0))
         .endMetadata()
         .build();
     when(endpointsFinder.findByNameAndNamespace(
-        PatroniUtil.readWriteName(shard0),
-        shard0.getMetadata().getNamespace()))
+        PatroniUtil.readWriteName(worker0),
+        worker0.getMetadata().getNamespace()))
         .thenReturn(Optional.of(endpoints0));
     when(endpointsFinder.findByNameAndNamespace(
-        PatroniUtil.readWriteName(shard1),
-        shard1.getMetadata().getNamespace()))
+        PatroniUtil.readWriteName(worker1),
+        worker1.getMetadata().getNamespace()))
         .thenReturn(Optional.empty());
-    contextAppender.appendContext(List.of(shard0, shard1), contextBuilder);
+    contextAppender.appendContext(List.of(worker0, worker1), contextBuilder);
     verify(contextBuilder).workersPrimaryEndpoints(List.of(endpoints0));
   }
 

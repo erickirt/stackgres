@@ -24,8 +24,8 @@ output:
 ```
 NAME                READY   STATUS    RESTARTS   AGE
 stackgres-coord-0   5/5     Running   0          12m
-stackgres-shard0-0  5/5     Running   0          12m
-stackgres-shard1-0  5/5     Running   0          11m
+stackgres-worker0-0  5/5     Running   0          12m
+stackgres-worker1-0  5/5     Running   0          11m
 ```
 
 As you can see in the list we have `5/5` containers (sidecars) ready. To check the list of these containers we can run the next command:

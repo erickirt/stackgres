@@ -41,7 +41,7 @@ You can customize the prefix using `spec.workers.clusterNameTemplate`. The opera
 ```yaml
 spec:
   workers:
-    clusterNameTemplate: shard
+    clusterNameTemplate: worker
     clusters: 3
     instancesPerCluster: 2
     pods:
@@ -49,7 +49,7 @@ spec:
         size: '10Gi'
 ```
 
-This produces SGClusters named `shard0`, `shard1` and `shard2` (and Pods `shard0-0`, `shard0-1`, `shard1-0`, ...).
+This produces SGClusters named `worker0`, `worker1` and `worker2` (and Pods `worker0-0`, `worker0-1`, `worker1-0`, ...).
 
 > `workers.clusterNameTemplate` can only be set on creation. The same applies to `coordinator.queryRouterClusterNameTemplate` (see [Query Routers]({{% relref "04-administration-guide/14-sharded-cluster/01-citus-sharding-technology#query-routers" %}})).
 

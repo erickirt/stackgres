@@ -32,8 +32,8 @@ public class ShardedClustersTest {
   private StackGresConfig config;
   private StackGresShardedCluster shardedCluster;
   private StackGresCluster coordinator;
-  private StackGresCluster shard0;
-  private StackGresCluster shard1;
+  private StackGresCluster worker0;
+  private StackGresCluster worker1;
   private ShardedClusters shardedClusters;
 
   @BeforeEach
@@ -44,14 +44,14 @@ public class ShardedClustersTest {
 
     labelFactory = new ShardedClusterLabelFactory(new ShardedClusterLabelMapper());
     coordinator = Fixtures.cluster().loadDefault().get();
-    shard0 = Fixtures.cluster().loadDefault().get();
-    shard1 = Fixtures.cluster().loadDefault().get();
+    worker0 = Fixtures.cluster().loadDefault().get();
+    worker1 = Fixtures.cluster().loadDefault().get();
     shardedClusters = new ShardedClusters(labelFactory);
     when(context.getConfig()).thenReturn(config);
     when(context.getSource()).thenReturn(shardedCluster);
     when(context.getShardedCluster()).thenReturn(shardedCluster);
     when(context.getCoordinator()).thenReturn(coordinator);
-    when(context.getWorkers()).thenReturn(List.of(shard0, shard1));
+    when(context.getWorkers()).thenReturn(List.of(worker0, worker1));
   }
 
   @Test

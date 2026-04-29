@@ -51,12 +51,12 @@ For more details about ShardingSphere sharding technology see the [official Apac
 
 ## DDP Sharding Technology
 
-DDP (Distributed Data Partitioning) allows you to distribute data across different physical nodes to improve the query performance of high data volumes, taking advantage of distinct nodes' resources. It uses a coordinator as an entry point in charge of sending and distributing queries to the shard nodes.
+DDP (Distributed Data Partitioning) allows you to distribute data across different physical nodes to improve the query performance of high data volumes, taking advantage of distinct nodes' resources. It uses a coordinator as an entry point in charge of sending and distributing queries to the worker nodes.
 
 DDP is an SQL-only extension that leverages Postgres core functionalities like partitioning, `postgres_fdw` and `dblink` contrib extensions. This means no external middleware or third-party extension is required beyond what PostgreSQL already provides.
 
 **Architecture:**
-- **Coordinator:** A standard SGCluster that uses `postgres_fdw` to route queries to shard nodes
+- **Coordinator:** A standard SGCluster that uses `postgres_fdw` to route queries to worker nodes
 - **Workers:** PostgreSQL clusters implemented as a group of SGClusters where distributed data lives, accessed via foreign data wrappers
 
 For more details about DDP sharding technology have a look at the [DDP sharding technology]({{% relref "04-administration-guide/14-sharded-cluster/03-ddp-sharding-technology" %}}) section.

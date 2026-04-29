@@ -22,7 +22,7 @@ SGShardedCluster supports multiple scaling dimensions:
 
 ## Adding Workers
 
-To add more shard clusters, increase the `clusters` value:
+To add more worker clusters, increase the `clusters` value:
 
 ```yaml
 apiVersion: stackgres.io/v1beta1
@@ -53,8 +53,8 @@ kubectl patch sgshardedcluster my-sharded-cluster --type merge \
 
 ### What Happens When Adding Workers
 
-1. New shard clusters are created with the specified configuration
-2. Each new shard gets the configured number of replicas
+1. New worker clusters are created with the specified configuration
+2. Each new worker gets the configured number of replicas
 3. For Citus: New workers are registered with the coordinator
 4. Data is **not** automatically rebalanced to new workers
 
@@ -77,7 +77,7 @@ spec:
 
 ## Adding Replicas
 
-To increase replicas per shard for better read scalability:
+To increase replicas per worker for better read scalability:
 
 ```yaml
 spec:
@@ -135,7 +135,7 @@ kubectl patch sgshardedcluster my-sharded-cluster --type merge \
   -p '{"spec":{"coordinator":{"queryRouterClusters":3}}}'
 ```
 
-Each new query router is created as a single-instance SGCluster named `<cluster-name>-router<index>` (or following the configured `queryRouterClusterNameTemplate`). The operator registers it in the Citus topology with `shouldhaveshards` set to `false` so the rebalancer never assigns shards to it.
+Each new query router is created as a single-instance SGCluster named `<cluster-name>-router<index>` (or following the configured `queryRouterClusterNameTemplate`). The operator registers it in the Citus topology with `shouldhaveshards` set to `false` so the rebalancer never assigns workers to it.
 
 For configuration details and connection guidance see [Query Routers]({{% relref "04-administration-guide/14-sharded-cluster/01-citus-sharding-technology#query-routers" %}}).
 
@@ -172,7 +172,7 @@ spec:
   coordinator:
     sgInstanceProfile: coordinator-profile  # Smaller, query routing
   workers:
-    sgInstanceProfile: shard-profile        # Larger, data storage
+    sgInstanceProfile: worker-profile        # Larger, data storage
 ```
 
 ### Applying Vertical Scaling
@@ -278,7 +278,7 @@ kubectl patch sgshardedcluster my-sharded-cluster --type merge \
 # View overall status
 kubectl get sgshardedcluster my-sharded-cluster
 
-# Check individual shard clusters
+# Check individual worker clusters
 kubectl get sgcluster -l stackgres.io/shardedcluster-name=my-sharded-cluster
 
 # View pods

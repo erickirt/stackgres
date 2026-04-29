@@ -57,7 +57,7 @@ check_backup_is_working() {
   local CLUSTER_NAME
   local NODE=0
   local SUFFIX
-  for SUFFIX in "coord" "shard0" "shard1"
+  for SUFFIX in "coord" "worker0" "worker1"
   do
     CLUSTER_NAME="$SHARDED_CLUSTER_NAME-$SUFFIX"
     check_wal_archive 0
@@ -74,7 +74,7 @@ check_sharded_backup_is_working() {
   local CLUSTER_NAME
   local NODE=0
   local SUFFIX
-  for SUFFIX in coord shard0 shard1
+  for SUFFIX in coord worker0 worker1
   do
     CLUSTER_NAME="$SHARDED_CLUSTER_NAME-$SUFFIX"
     BACKUP_NAME="$SHARDED_BACKUP_NAME_0-$SUFFIX"

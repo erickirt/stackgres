@@ -49,7 +49,7 @@ check_backup_is_working() {
   local CLUSTER_NAME
   local NODE=0
   local SUFFIX
-  for SUFFIX in "coord" "shard0" "shard1"
+  for SUFFIX in "coord" "worker0" "worker1"
   do
     CLUSTER_NAME="$SHARDED_CLUSTER_NAME-$SUFFIX"
     check_wal_archive 0
@@ -66,7 +66,7 @@ check_sharded_backup_is_working() {
   local CLUSTER_NAME
   local NODE=0
   local SUFFIX
-  for SUFFIX in coord shard0 shard1
+  for SUFFIX in coord worker0 worker1
   do
     CLUSTER_NAME="$SHARDED_CLUSTER_NAME-$SUFFIX"
     BACKUP_NAME="$SHARDED_BACKUP_NAME_0-$SUFFIX"
@@ -77,7 +77,7 @@ check_sharded_backup_is_working() {
 
   if kubectl get sgshardedbackup -n "$CLUSTER_NAMESPACE" "$SHARDED_BACKUP_NAME_0" \
     --template='{{ range .status.sgBackups }}{{ . }} {{ end }}' \
-    | grep -qFx "$SHARDED_BACKUP_NAME_0-coord $SHARDED_BACKUP_NAME_0-shard0 $SHARDED_BACKUP_NAME_0-shard1 "
+    | grep -qFx "$SHARDED_BACKUP_NAME_0-coord $SHARDED_BACKUP_NAME_0-worker0 $SHARDED_BACKUP_NAME_0-worker1 "
   then
     success "Backups are referenced correctly in the sharded backup"
   else
@@ -229,8 +229,8 @@ check_restore_sharded_backup_is_working() {
 
 create_mock_data() {
   wait_until run_query -x "$CLUSTER_NAME-coord-0" -p 5432 -i 0 -n "$CLUSTER_NAMESPACE" -c "$CLUSTER_NAME" -d "ddp" -q "SELECT 1"
-  wait_until run_query -x "$CLUSTER_NAME-shard0-0" -p 5432 -i 0 -n "$CLUSTER_NAMESPACE" -c "$CLUSTER_NAME" -d "ddp" -q "SELECT 1"
-  wait_until run_query -x "$CLUSTER_NAME-shard1-0" -p 5432 -i 0 -n "$CLUSTER_NAMESPACE" -c "$CLUSTER_NAME" -d "ddp" -q "SELECT 1"
+  wait_until run_query -x "$CLUSTER_NAME-worker0-0" -p 5432 -i 0 -n "$CLUSTER_NAMESPACE" -c "$CLUSTER_NAME" -d "ddp" -q "SELECT 1"
+  wait_until run_query -x "$CLUSTER_NAME-worker1-0" -p 5432 -i 0 -n "$CLUSTER_NAMESPACE" -c "$CLUSTER_NAME" -d "ddp" -q "SELECT 1"
   run_query -x "$CLUSTER_NAME-coord-0" -p 5432 -i 0 -n "$CLUSTER_NAMESPACE" -c "$CLUSTER_NAME" -d "ddp" -q "CREATE TABLE fibonacci(num integer, PRIMARY KEY (num));"
   run_query -x "$CLUSTER_NAME-coord-0" -p 5432 -i 0 -n "$CLUSTER_NAMESPACE" -c "$CLUSTER_NAME" -d "ddp" -q "SELECT ddp_create_vs('public','fibonacci','num',array ['ddp_shard_0','ddp_shard_1']);"
   run_query -x "$CLUSTER_NAME-coord-0" -p 5432 -i 0 -n "$CLUSTER_NAMESPACE" -c "$CLUSTER_NAME" -d "ddp" -q "INSERT INTO fibonacci(num) VALUES (1);"
@@ -252,13 +252,13 @@ create_more_mock_data() {
 
 rotate_wal_file_sharded_cluster() {
   local POD
-  for POD in "$CLUSTER_NAME-coord-0" "$CLUSTER_NAME-shard0-0" "$CLUSTER_NAME-shard1-0"
+  for POD in "$CLUSTER_NAME-coord-0" "$CLUSTER_NAME-worker0-0" "$CLUSTER_NAME-worker1-0"
   do
     run_query -x "$POD" -p 5432 -i 0 -n "$CLUSTER_NAMESPACE" -c "$CLUSTER_NAME" -d "ddp" \
       -q "SELECT r.file_name from pg_walfile_name_offset(pg_current_wal_lsn()) as r" > "$LOG_PATH/$POD-current-wal-file"
     run_query -x "$POD" -p 5432 -i 0 -n "$CLUSTER_NAMESPACE" -c "$CLUSTER_NAME" -d "ddp" -q "CHECKPOINT;"
   done
-  for POD in "$CLUSTER_NAME-coord-0" "$CLUSTER_NAME-shard0-0" "$CLUSTER_NAME-shard1-0"
+  for POD in "$CLUSTER_NAME-coord-0" "$CLUSTER_NAME-worker0-0" "$CLUSTER_NAME-worker1-0"
   do
     CURRENT_WAL_FILE="$(cat "$LOG_PATH/$POD-current-wal-file")"
     wait_until -t "$((E2E_TIMEOUT / 5))" eval '[ "$(run_query -x "$POD" -p 5432 -i 0 -n "$CLUSTER_NAMESPACE" -c "$CLUSTER_NAME" -d "ddp" \

@@ -161,9 +161,9 @@
 		methods: {
 			isSharded(cluster) {
 				if(store.state.sgshardedclusters !== null) {
-					let shards = store.state.sgshardedclusters.filter(cluster => (cluster.data.metadata.namespace == this.$route.params.namespace))		
+					let workers = store.state.sgshardedclusters.filter(cluster => (cluster.data.metadata.namespace == this.$route.params.namespace))		
 					
-					return typeof(shards.find((c) => (c.data.status.clusters.includes(cluster)))) !== 'undefined'
+					return typeof(workers.find((c) => (c.data.status.clusters.includes(cluster)))) !== 'undefined'
 				} else {
 					return false
 				}

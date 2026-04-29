@@ -176,17 +176,17 @@ spec:
       {{- toYaml . | nindent 6 }}
     {{- end }}
   workers:
-    clusters: {{ .Values.shardedCluster.shards.clusters }}
-    instancesPerCluster: {{ .Values.shardedCluster.shards.instancesPerCluster }}
-    {{- with .Values.shardedCluster.shards.autoscaling }}
+    clusters: {{ .Values.shardedCluster.workers.clusters }}
+    instancesPerCluster: {{ .Values.shardedCluster.workers.instancesPerCluster }}
+    {{- with .Values.shardedCluster.workers.autoscaling }}
     autoscaling:
       {{- toYaml . | nindent 4 }}
     {{- end }}
     configurations: 
-      sgPostgresConfig: {{ quote .Values.shardedCluster.shards.configurations.sgPostgresConfig }}
-      sgPoolingConfig: {{ quote .Values.shardedCluster.shards.configurations.sgPoolingConfig }}
-    sgInstanceProfile: {{ quote .Values.shardedCluster.shards.sgInstanceProfile }}
-    {{- with .Values.shardedCluster.shards.managedSql }}
+      sgPostgresConfig: {{ quote .Values.shardedCluster.workers.configurations.sgPostgresConfig }}
+      sgPoolingConfig: {{ quote .Values.shardedCluster.workers.configurations.sgPoolingConfig }}
+    sgInstanceProfile: {{ quote .Values.shardedCluster.workers.sgInstanceProfile }}
+    {{- with .Values.shardedCluster.workers.managedSql }}
     managedSql:
     {{- with .continueOnSGScriptError }}
       continueOnSGScriptError: {{ . }}
@@ -198,47 +198,47 @@ spec:
     {{- end }}
     pods:
       persistentVolume:
-        size: {{ quote .Values.shardedCluster.shards.pods.persistentVolume.size }}
-        {{- if .Values.shardedCluster.shards.pods.persistentVolume.storageClass }}
-        {{- if eq "-" .Values.shardedCluster.shards.pods.persistentVolume.storageClass }}
+        size: {{ quote .Values.shardedCluster.workers.pods.persistentVolume.size }}
+        {{- if .Values.shardedCluster.workers.pods.persistentVolume.storageClass }}
+        {{- if eq "-" .Values.shardedCluster.workers.pods.persistentVolume.storageClass }}
         storageClass: ""
         {{- else }}
-        storageClass: {{ quote .Values.shardedCluster.shards.pods.persistentVolume.storageClass }}
+        storageClass: {{ quote .Values.shardedCluster.workers.pods.persistentVolume.storageClass }}
         {{- end }}
         {{- end }}
-      {{- with .Values.shardedCluster.shards.pods.disableConnectionPooling }}
+      {{- with .Values.shardedCluster.workers.pods.disableConnectionPooling }}
       disableConnectionPooling: {{ . }}
       {{- end }}
-      {{- with .Values.shardedCluster.shards.pods.disablePostgresUtil }}
+      {{- with .Values.shardedCluster.workers.pods.disablePostgresUtil }}
       disablePostgresUtil: {{ . }}
       {{- end }}
-      {{- with .Values.shardedCluster.shards.pods.disableEnvoy }}
+      {{- with .Values.shardedCluster.workers.pods.disableEnvoy }}
       disableEnvoy: {{ . }}
       {{- end }}
-      {{- with .Values.shardedCluster.shards.pods.scheduling }}
+      {{- with .Values.shardedCluster.workers.pods.scheduling }}
       scheduling:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.shardedCluster.shards.pods.managementPolicy }}
+      {{- with .Values.shardedCluster.workers.pods.managementPolicy }}
       managementPolicy: {{ . }}
       {{- end }}
-      {{- with .Values.shardedCluster.shards.pods.customVolumes }}
+      {{- with .Values.shardedCluster.workers.pods.customVolumes }}
       customVolumes:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.shardedCluster.shards.pods.customContainers }}
+      {{- with .Values.shardedCluster.workers.pods.customContainers }}
       customContainers:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.shardedCluster.shards.pods.customInitContainers }}
+      {{- with .Values.shardedCluster.workers.pods.customInitContainers }}
       customInitContainers:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-    {{- with .Values.shardedCluster.shards.replication }}
+    {{- with .Values.shardedCluster.workers.replication }}
     replication:
       {{- toYaml . | nindent 6 }}
     {{- end }}
-    {{- with .Values.shardedCluster.shards.overrides }}
+    {{- with .Values.shardedCluster.workers.overrides }}
     overrides:
       {{- toYaml . | nindent 6 }}
     {{- end }}

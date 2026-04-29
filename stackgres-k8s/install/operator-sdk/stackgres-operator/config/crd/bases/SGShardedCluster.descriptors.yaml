@@ -83,28 +83,28 @@ specDescriptors:
   coordinator.pods.scheduling.backup.tolerations: {}
   coordinator.configurations.backups.sgObjectStorage:
     displayName: Configurations Backups SGObjectStorage
-  shards.pods.scheduling.nodeAffinity:
+  workers.pods.scheduling.nodeAffinity:
     x-descriptors:
     - 'urn:alm:descriptor:com.tectonic.ui:nodeAffinity'
-  shards.pods.scheduling.podAffinity:
+  workers.pods.scheduling.podAffinity:
     x-descriptors:
     - 'urn:alm:descriptor:com.tectonic.ui:podAffinity'
-  shards.pods.scheduling.podAntiAffinity:
+  workers.pods.scheduling.podAntiAffinity:
     x-descriptors:
     - 'urn:alm:descriptor:com.tectonic.ui:podAntiAffinity'
-  shards.pods.scheduling.tolerations: {}
-  shards.pods.scheduling.topologySpreadConstraints: {}
-  shards.pods.scheduling.backup.nodeAffinity:
+  workers.pods.scheduling.tolerations: {}
+  workers.pods.scheduling.topologySpreadConstraints: {}
+  workers.pods.scheduling.backup.nodeAffinity:
     x-descriptors:
     - 'urn:alm:descriptor:com.tectonic.ui:nodeAffinity'
-  shards.pods.scheduling.backup.podAffinity:
+  workers.pods.scheduling.backup.podAffinity:
     x-descriptors:
     - 'urn:alm:descriptor:com.tectonic.ui:podAffinity'
-  shards.pods.scheduling.backup.podAntiAffinity:
+  workers.pods.scheduling.backup.podAntiAffinity:
     x-descriptors:
     - 'urn:alm:descriptor:com.tectonic.ui:podAntiAffinity'
-  shards.pods.scheduling.backup.tolerations: {}
-  shards.configurations.backups.sgObjectStorage:
+  workers.pods.scheduling.backup.tolerations: {}
+  workers.configurations.backups.sgObjectStorage:
     displayName: Configurations Backups SGObjectStorage
 
 specIgnore:
@@ -122,18 +122,19 @@ specIgnore:
 - coordinator.pods.scheduling.backup.podAffinity
 - coordinator.pods.scheduling.backup.podAntiAffinity
 - coordinator.pods.scheduling.backup.tolerations
-- shards.pods.customVolumes
-- shards.pods.customContainers
-- shards.pods.customInitContainers
-- shards.pods.scheduling.nodeAffinity
-- shards.pods.scheduling.podAffinity
-- shards.pods.scheduling.podAntiAffinity
-- shards.pods.scheduling.topologySpreadConstraints
-- shards.pods.scheduling.tolerations
-- shards.pods.scheduling.backup.nodeAffinity
-- shards.pods.scheduling.backup.podAffinity
-- shards.pods.scheduling.backup.podAntiAffinity
-- shards.pods.scheduling.backup.tolerations
+- workers.pods.customVolumes
+- workers.pods.customContainers
+- workers.pods.customInitContainers
+- workers.pods.scheduling.nodeAffinity
+- workers.pods.scheduling.podAffinity
+- workers.pods.scheduling.podAntiAffinity
+- workers.pods.scheduling.topologySpreadConstraints
+- workers.pods.scheduling.tolerations
+- workers.pods.scheduling.backup.nodeAffinity
+- workers.pods.scheduling.backup.podAffinity
+- workers.pods.scheduling.backup.podAntiAffinity
+- workers.pods.scheduling.backup.tolerations
+- shards
 
 statusDescriptors:
   conditions:

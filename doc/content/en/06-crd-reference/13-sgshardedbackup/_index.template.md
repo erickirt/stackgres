@@ -35,8 +35,8 @@ spec:
 status:
   sgBackups:
   - backup-coord
-  - backup-shard0
-  - backup-shard1
+  - backup-worker0
+  - backup-worker1
   process:
     status: Completed
     jobPod: backup-backup-q79zq
@@ -55,7 +55,7 @@ See also [Backups section]({{%  relref "04-administration-guide/05-backups#backu
 
 The SGShardedBackup represents a manual or automatically generated sharded backup of an SGShardedCluster configured with an SGObjectStorage.
 
-When a SGShardedBackup is created a Job will perform a full backup for the coordinator and each shard that will be stored in a
+When a SGShardedBackup is created a Job will perform a full backup for the coordinator and each worker that will be stored in a
  SGBackup and will update the status of the SGShardedBackup with the all the information required to restore it and some stats
  (or a failure message in case something unexpected happened).
 After an SGShardedBackup is created the same Job performs a reconciliation of the sharded backups by applying the retention window
