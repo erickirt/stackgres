@@ -34,6 +34,33 @@ public interface StackGresShardedClusterUtil {
     return getWorkerClusterName(cluster, index - 1);
   }
 
+  static int getPlainIndex(
+      StackGresShardedCluster cluster,
+      int index) {
+    final int queryRouterIndexOffset = Optional.of(cluster.getSpec())
+            .map(StackGresShardedClusterSpec::getCoordinator)
+            .map(StackGresShardedClusterCoordinator::getQueryRouterIndexOffset)
+            .orElse(1024);
+    if (index >= queryRouterIndexOffset + 1) {
+      final int queryRouterOffset = Optional.of(cluster.getSpec())
+          .map(StackGresShardedClusterSpec::getWorkers)
+          .map(StackGresShardedClusterWorkers::getClusters)
+          .orElse(0);
+      return index - queryRouterIndexOffset + queryRouterOffset;
+    }
+    return index;
+  }
+
+  static boolean isQueryRouterIndex(
+      StackGresShardedCluster cluster,
+      int index) {
+    final int queryRouterIndexOffset = Optional.of(cluster.getSpec())
+            .map(StackGresShardedClusterSpec::getCoordinator)
+            .map(StackGresShardedClusterCoordinator::getQueryRouterIndexOffset)
+            .orElse(1024);
+    return index >= queryRouterIndexOffset + 1;
+  }
+
   static String getCoordinatorClusterName(StackGresShardedCluster cluster) {
     return Optional.of(cluster.getSpec())
         .map(StackGresShardedClusterSpec::getCoordinator)

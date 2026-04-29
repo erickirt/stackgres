@@ -699,12 +699,24 @@ spec:
                             type: string
                             nullable: true
                           description: |
-                            The paths where the backups are stored. If not set this field is filled up by the operator.
+                            The paths where the backups of coordinator and workers are stored. If not set this field is filled up by the operator.
 
                             When provided will indicate where the backups and WAL files will be stored.
                             
                             The first path indicate the coordinator path and the other paths indicate the workers paths
 
+                            > **WARNING**: Most users should leave this field empty since having it manually set could be dangerous. If the value is repeated due to re-creating an SGShardedCluster or
+                             re-using the same value in another SGShardedCluster and you may get a mixed WAL history with unrecoverable backups.
+                        queryRouterPaths:
+                          type: array
+                          items:
+                            type: string
+                            nullable: true
+                          description: |
+                            The paths where the backups of the query routers are stored. If not set this field is filled up by the operator.
+  
+                            When provided will indicate where the backups and WAL files will be stored.
+  
                             > **WARNING**: Most users should leave this field empty since having it manually set could be dangerous. If the value is repeated due to re-creating an SGShardedCluster or
                              re-using the same value in another SGShardedCluster and you may get a mixed WAL history with unrecoverable backups.
                         useVolumeSnapshot:

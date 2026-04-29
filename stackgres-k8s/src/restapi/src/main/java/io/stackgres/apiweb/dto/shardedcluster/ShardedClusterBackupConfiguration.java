@@ -28,6 +28,8 @@ public class ShardedClusterBackupConfiguration {
 
   private List<String> paths;
 
+  private List<String> queryRouterPaths;
+
   private Boolean useVolumeSnapshot;
 
   private String volumeSnapshotClass;
@@ -88,6 +90,14 @@ public class ShardedClusterBackupConfiguration {
 
   public void setPaths(List<String> paths) {
     this.paths = paths;
+  }
+
+  public List<String> getQueryRouterPaths() {
+    return queryRouterPaths;
+  }
+
+  public void setQueryRouterPaths(List<String> queryRouterPaths) {
+    this.queryRouterPaths = queryRouterPaths;
   }
 
   public Boolean getUseVolumeSnapshot() {

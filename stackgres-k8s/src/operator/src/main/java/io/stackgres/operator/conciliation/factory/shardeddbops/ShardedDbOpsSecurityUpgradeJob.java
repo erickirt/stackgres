@@ -6,6 +6,7 @@
 package io.stackgres.operator.conciliation.factory.shardeddbops;
 
 import static io.stackgres.common.StackGresShardedClusterUtil.getCoordinatorClusterName;
+import static io.stackgres.common.StackGresShardedClusterUtil.getQueryRouterClusterName;
 import static io.stackgres.common.StackGresShardedClusterUtil.getWorkerClusterName;
 
 import java.util.List;
@@ -31,6 +32,8 @@ import io.stackgres.common.crd.sgdbops.DbOpsMethodType;
 import io.stackgres.common.crd.sgdbops.DbOpsStatusCondition;
 import io.stackgres.common.crd.sgdbops.StackGresDbOps;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOps;
 import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOpsSecurityUpgrade;
 import io.stackgres.common.labels.LabelFactoryForShardedDbOps;
@@ -64,6 +67,7 @@ public class ShardedDbOpsSecurityUpgradeJob extends AbstractShardedDbOpsJob {
     StackGresShardedDbOps dbOps = context.getSource();
     StackGresShardedDbOpsSecurityUpgrade securityUpgrade =
         dbOps.getSpec().getSecurityUpgrade();
+    final StackGresShardedCluster cluster = context.getShardedCluster();
     return ImmutableList.<EnvVar>builder()
         .add(
             new EnvVarBuilder()
@@ -74,10 +78,17 @@ public class ShardedDbOpsSecurityUpgradeJob extends AbstractShardedDbOpsJob {
                 .build(),
             new EnvVarBuilder()
             .withName("CLUSTER_NAMES")
-            .withValue(Seq.of(getCoordinatorClusterName(context.getShardedCluster()))
-                .append(Seq.range(0, context.getShardedCluster()
+            .withValue(Seq.of(getCoordinatorClusterName(cluster))
+                .append(Seq.range(0, cluster
                     .getSpec().getWorkers().getClusters())
-                    .map(index -> getWorkerClusterName(context.getShardedCluster(), index)))
+                    .map(index -> getWorkerClusterName(cluster, index)))
+                .append(Seq.range(
+                    0,
+                    Optional.of(cluster.getSpec())
+                    .map(StackGresShardedClusterSpec::getCoordinator)
+                    .map(StackGresShardedClusterCoordinator::getQueryRouterClusters)
+                    .orElse(0))
+                    .map(index -> getQueryRouterClusterName(cluster, String.valueOf(index))))
                 .toString(" "))
             .build(),
             new EnvVarBuilder()

@@ -48,7 +48,9 @@ import io.stackgres.common.crd.sgcluster.StackGresClusterSsl;
 import io.stackgres.common.crd.sgcluster.StackGresClusterUserSecretKeyRef;
 import io.stackgres.common.crd.sgcluster.StackGresClusterUsersCredentials;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterBackupConfiguration;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterConfigurations;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresCoordinatorServices;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresServices;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresWorkersServices;
@@ -265,18 +267,20 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
     setInitialData(cluster, spec, index);
     setManagedSql(cluster, spec, index);
     if (cluster.getSpec().getReplicateFrom() != null) {
+      int plainIndex = StackGresShardedClusterUtil.getPlainIndex(cluster, index);
       spec.setReplicateFrom(new StackGresClusterReplicateFrom());
       if (cluster.getSpec().getReplicateFrom().getInstance() != null) {
         spec.getReplicateFrom().setInstance(new StackGresClusterReplicateFromInstance());
         if (cluster.getSpec().getReplicateFrom().getInstance().getExternal() != null) {
           spec.getReplicateFrom().getInstance().setExternal(new StackGresClusterReplicateFromExternal());
           spec.getReplicateFrom().getInstance().getExternal().setHost(
-              cluster.getSpec().getReplicateFrom().getInstance().getExternal().getHosts().get(index));
+              cluster.getSpec().getReplicateFrom().getInstance().getExternal().getHosts().get(plainIndex));
           spec.getReplicateFrom().getInstance().getExternal().setPort(
-              cluster.getSpec().getReplicateFrom().getInstance().getExternal().getPorts().get(index));
+              cluster.getSpec().getReplicateFrom().getInstance().getExternal().getPorts().get(plainIndex));
           if (cluster.getSpec().getReplicateFrom().getInstance().getExternal().getCustomRestoreMethods() != null) {
             spec.getReplicateFrom().getInstance().getExternal().setCustomRestoreMethod(
-                cluster.getSpec().getReplicateFrom().getInstance().getExternal().getCustomRestoreMethods().get(index));
+                cluster.getSpec().getReplicateFrom().getInstance().getExternal().getCustomRestoreMethods()
+                .get(plainIndex));
           }
         }
         if (cluster.getSpec().getReplicateFrom().getInstance().getSgShardedCluster() != null) {
@@ -296,7 +300,7 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
         spec.getReplicateFrom().getStorage().setSgObjectStorage(
             cluster.getSpec().getReplicateFrom().getStorage().getSgObjectStorage());
         spec.getReplicateFrom().getStorage().setPath(
-            cluster.getSpec().getReplicateFrom().getStorage().getPaths().get(index));
+            cluster.getSpec().getReplicateFrom().getStorage().getPaths().get(plainIndex));
       }
       spec.getReplicateFrom().setUsers(cluster.getSpec().getReplicateFrom().getUsers());
     }
@@ -392,6 +396,10 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
 
   void setConfigurationsBackups(
       StackGresShardedCluster cluster, final StackGresClusterSpec spec, int index) {
+    final int queryRouterIndexOffset = Optional.of(cluster.getSpec())
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getQueryRouterIndexOffset)
+        .orElse(1024);
     Optional.ofNullable(cluster.getSpec())
         .map(StackGresShardedClusterSpec::getConfigurations)
         .map(StackGresShardedClusterConfigurations::getBackups)
@@ -404,8 +412,7 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
           spec.getConfigurations().setBackups(List.of(
               new StackGresClusterBackupConfigurationBuilder()
               .withSgObjectStorage(backup.getSgObjectStorage())
-              .withPath(backup.getPaths() != null && backup.getPaths().size() > index
-                  ? backup.getPaths().get(index) : null)
+              .withPath(getBackupPath(index, queryRouterIndexOffset, backup))
               .withRetention(backup.getRetention())
               .withCompression(backup.getCompression())
               .withPerformance(backup.getPerformance())
@@ -418,6 +425,28 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
               .withRetainWalsForUnmanagedLifecycle(backup.getRetainWalsForUnmanagedLifecycle())
               .build()));
         });
+  }
+
+  private String getBackupPath(
+      final int index,
+      final int queryRouterIndexOffset,
+      final StackGresShardedClusterBackupConfiguration backup) {
+    String path;
+    if (index >= queryRouterIndexOffset + 1) {
+      final int queryRouterPathIndex = index - queryRouterIndexOffset - 1;
+      if (backup.getQueryRouterPaths() != null && backup.getQueryRouterPaths().size() > queryRouterPathIndex) {
+        path = backup.getQueryRouterPaths().get(queryRouterPathIndex);
+      } else {
+        path = null;
+      }
+    } else {
+      if (backup.getPaths() != null && backup.getPaths().size() > index) {
+        path = backup.getPaths().get(index);
+      } else {
+        path = null;
+      }
+    }
+    return path;
   }
 
   void setConfigurationsCredentials(
@@ -513,12 +542,23 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
         && initialData.getRestore().getFromBackup().getName() != null
         && cluster.getStatus() != null
         && cluster.getStatus().getSgBackups() != null
-        && !cluster.getStatus().getSgBackups().isEmpty()
-        && index < cluster.getStatus().getSgBackups().size()) {
-      var fromBackup = initialData
-          .getRestore().getFromBackup();
+        && !cluster.getStatus().getSgBackups().isEmpty()) {
+      int plainIndex = StackGresShardedClusterUtil.getPlainIndex(cluster, index);
+      if (plainIndex < cluster.getStatus().getSgBackups().size()) {
+        if (plainIndex == 0) {
+          throw new RuntimeException("SGShardedBackup " + initialData.getRestore().getFromBackup().getName()
+              + " has no backup for coordinator at index " + plainIndex);
+        }
+        if (StackGresShardedClusterUtil.isQueryRouterIndex(cluster, index)) {
+          throw new RuntimeException("SGShardedBackup " + initialData.getRestore().getFromBackup().getName()
+              + " has no backup for query router at index " + plainIndex);
+        }
+        throw new RuntimeException("SGShardedBackup " + initialData.getRestore().getFromBackup().getName()
+            + " has no backup for worker at index " + plainIndex);
+      }
+      var fromBackup = initialData.getRestore().getFromBackup();
       var restoreFromBackupBuilder = new StackGresClusterRestoreFromBackupBuilder()
-          .withName(cluster.getStatus().getSgBackups().get(index));
+          .withName(cluster.getStatus().getSgBackups().get(plainIndex));
       if (initialData.getRestore().getFromBackup().getPointInTimeRecovery() != null) {
         restoreFromBackupBuilder
             .withNewPointInTimeRecovery()
