@@ -40,6 +40,7 @@ import io.sundr.builder.annotations.BuildableReference;
         @BuildableReference(io.fabric8.kubernetes.api.model.VolumeDevice.class),
         @BuildableReference(io.fabric8.kubernetes.api.model.VolumeMount.class),
         @BuildableReference(io.fabric8.kubernetes.api.model.ContainerResizePolicy.class),
+        @BuildableReference(io.fabric8.kubernetes.api.model.ContainerRestartRule.class),
     })
 public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
 
