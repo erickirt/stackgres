@@ -10,6 +10,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ContainerResizePolicy;
+import io.fabric8.kubernetes.api.model.ContainerRestartRule;
 import io.fabric8.kubernetes.api.model.EnvFromSource;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Lifecycle;
@@ -24,7 +25,7 @@ import io.sundr.builder.annotations.BuildableReference;
 
 @RegisterForReflection
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder",
     refs = {
@@ -51,15 +52,15 @@ public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
   public CustomContainer(List<String> args, List<String> command, List<EnvVar> env,
       List<EnvFromSource> envFrom, String image, String imagePullPolicy, Lifecycle lifecycle,
       Probe livenessProbe, String name, List<ContainerPort> ports, Probe readinessProbe,
-      List<ContainerResizePolicy> resizePolicy,
-      ResourceRequirements resources, String restartPolicy, SecurityContext securityContext, Probe startupProbe,
-      Boolean stdin, Boolean stdinOnce, String terminationMessagePath,
-      String terminationMessagePolicy, Boolean tty, List<VolumeDevice> volumeDevices,
-      List<VolumeMount> volumeMounts, String workingDir) {
-    super(args, command, env, envFrom, image, imagePullPolicy, lifecycle, livenessProbe, name,
-        ports, readinessProbe, resizePolicy, resources, restartPolicy, securityContext, startupProbe, stdin,
-        stdinOnce, terminationMessagePath, terminationMessagePolicy, tty, volumeDevices,
-        volumeMounts, workingDir);
+      List<ContainerResizePolicy> resizePolicy, ResourceRequirements resources,
+      String restartPolicy, List<ContainerRestartRule> restartPolicyRules,
+      SecurityContext securityContext, Probe startupProbe, Boolean stdin, Boolean stdinOnce,
+      String terminationMessagePath, String terminationMessagePolicy, Boolean tty,
+      List<VolumeDevice> volumeDevices, List<VolumeMount> volumeMounts, String workingDir) {
+    super(args, command, env, envFrom, image, imagePullPolicy, lifecycle, livenessProbe, name, ports,
+        readinessProbe, resizePolicy, resources, restartPolicy, restartPolicyRules, securityContext,
+        startupProbe, stdin, stdinOnce, terminationMessagePath, terminationMessagePolicy, tty,
+        volumeDevices, volumeMounts, workingDir);
   }
 
   @Override
@@ -68,18 +69,8 @@ public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
   }
 
   @Override
-  public void setArgs(List<String> args) {
-    super.setArgs(args);
-  }
-
-  @Override
   public List<String> getCommand() {
     return super.getCommand();
-  }
-
-  @Override
-  public void setCommand(List<String> command) {
-    super.setCommand(command);
   }
 
   @Override
@@ -88,18 +79,8 @@ public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
   }
 
   @Override
-  public void setEnv(List<EnvVar> env) {
-    super.setEnv(env);
-  }
-
-  @Override
   public List<EnvFromSource> getEnvFrom() {
     return super.getEnvFrom();
-  }
-
-  @Override
-  public void setEnvFrom(List<EnvFromSource> envFrom) {
-    super.setEnvFrom(envFrom);
   }
 
   @Override
@@ -108,18 +89,8 @@ public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
   }
 
   @Override
-  public void setImage(String image) {
-    super.setImage(image);
-  }
-
-  @Override
   public String getImagePullPolicy() {
     return super.getImagePullPolicy();
-  }
-
-  @Override
-  public void setImagePullPolicy(String imagePullPolicy) {
-    super.setImagePullPolicy(imagePullPolicy);
   }
 
   @Override
@@ -128,18 +99,8 @@ public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
   }
 
   @Override
-  public void setLifecycle(Lifecycle lifecycle) {
-    super.setLifecycle(lifecycle);
-  }
-
-  @Override
   public Probe getLivenessProbe() {
     return super.getLivenessProbe();
-  }
-
-  @Override
-  public void setLivenessProbe(Probe livenessProbe) {
-    super.setLivenessProbe(livenessProbe);
   }
 
   @Override
@@ -148,18 +109,8 @@ public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
   }
 
   @Override
-  public void setName(String name) {
-    super.setName(name);
-  }
-
-  @Override
   public List<ContainerPort> getPorts() {
     return super.getPorts();
-  }
-
-  @Override
-  public void setPorts(List<ContainerPort> ports) {
-    super.setPorts(ports);
   }
 
   @Override
@@ -168,18 +119,8 @@ public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
   }
 
   @Override
-  public void setReadinessProbe(Probe readinessProbe) {
-    super.setReadinessProbe(readinessProbe);
-  }
-
-  @Override
   public List<ContainerResizePolicy> getResizePolicy() {
     return super.getResizePolicy();
-  }
-
-  @Override
-  public void setResizePolicy(List<ContainerResizePolicy> resizePolicy) {
-    super.setResizePolicy(resizePolicy);
   }
 
   @Override
@@ -188,8 +129,13 @@ public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
   }
 
   @Override
-  public void setResources(ResourceRequirements resources) {
-    super.setResources(resources);
+  public String getRestartPolicy() {
+    return super.getRestartPolicy();
+  }
+
+  @Override
+  public List<ContainerRestartRule> getRestartPolicyRules() {
+    return super.getRestartPolicyRules();
   }
 
   @Override
@@ -198,18 +144,8 @@ public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
   }
 
   @Override
-  public void setSecurityContext(SecurityContext securityContext) {
-    super.setSecurityContext(securityContext);
-  }
-
-  @Override
   public Probe getStartupProbe() {
     return super.getStartupProbe();
-  }
-
-  @Override
-  public void setStartupProbe(Probe startupProbe) {
-    super.setStartupProbe(startupProbe);
   }
 
   @Override
@@ -218,18 +154,8 @@ public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
   }
 
   @Override
-  public void setStdin(Boolean stdin) {
-    super.setStdin(stdin);
-  }
-
-  @Override
   public Boolean getStdinOnce() {
     return super.getStdinOnce();
-  }
-
-  @Override
-  public void setStdinOnce(Boolean stdinOnce) {
-    super.setStdinOnce(stdinOnce);
   }
 
   @Override
@@ -238,18 +164,8 @@ public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
   }
 
   @Override
-  public void setTerminationMessagePath(String terminationMessagePath) {
-    super.setTerminationMessagePath(terminationMessagePath);
-  }
-
-  @Override
   public String getTerminationMessagePolicy() {
     return super.getTerminationMessagePolicy();
-  }
-
-  @Override
-  public void setTerminationMessagePolicy(String terminationMessagePolicy) {
-    super.setTerminationMessagePolicy(terminationMessagePolicy);
   }
 
   @Override
@@ -258,18 +174,8 @@ public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
   }
 
   @Override
-  public void setTty(Boolean tty) {
-    super.setTty(tty);
-  }
-
-  @Override
   public List<VolumeDevice> getVolumeDevices() {
     return super.getVolumeDevices();
-  }
-
-  @Override
-  public void setVolumeDevices(List<VolumeDevice> volumeDevices) {
-    super.setVolumeDevices(volumeDevices);
   }
 
   @Override
@@ -278,13 +184,128 @@ public class CustomContainer extends io.fabric8.kubernetes.api.model.Container {
   }
 
   @Override
-  public void setVolumeMounts(List<VolumeMount> volumeMounts) {
-    super.setVolumeMounts(volumeMounts);
+  public String getWorkingDir() {
+    return super.getWorkingDir();
   }
 
   @Override
-  public String getWorkingDir() {
-    return super.getWorkingDir();
+  public void setArgs(List<String> args) {
+    super.setArgs(args);
+  }
+
+  @Override
+  public void setCommand(List<String> command) {
+    super.setCommand(command);
+  }
+
+  @Override
+  public void setEnv(List<EnvVar> env) {
+    super.setEnv(env);
+  }
+
+  @Override
+  public void setEnvFrom(List<EnvFromSource> envFrom) {
+    super.setEnvFrom(envFrom);
+  }
+
+  @Override
+  public void setImage(String image) {
+    super.setImage(image);
+  }
+
+  @Override
+  public void setImagePullPolicy(String imagePullPolicy) {
+    super.setImagePullPolicy(imagePullPolicy);
+  }
+
+  @Override
+  public void setLifecycle(Lifecycle lifecycle) {
+    super.setLifecycle(lifecycle);
+  }
+
+  @Override
+  public void setLivenessProbe(Probe livenessProbe) {
+    super.setLivenessProbe(livenessProbe);
+  }
+
+  @Override
+  public void setName(String name) {
+    super.setName(name);
+  }
+
+  @Override
+  public void setPorts(List<ContainerPort> ports) {
+    super.setPorts(ports);
+  }
+
+  @Override
+  public void setReadinessProbe(Probe readinessProbe) {
+    super.setReadinessProbe(readinessProbe);
+  }
+
+  @Override
+  public void setResizePolicy(List<ContainerResizePolicy> resizePolicy) {
+    super.setResizePolicy(resizePolicy);
+  }
+
+  @Override
+  public void setResources(ResourceRequirements resources) {
+    super.setResources(resources);
+  }
+
+  @Override
+  public void setRestartPolicy(String restartPolicy) {
+    super.setRestartPolicy(restartPolicy);
+  }
+
+  @Override
+  public void setRestartPolicyRules(List<ContainerRestartRule> restartPolicyRules) {
+    super.setRestartPolicyRules(restartPolicyRules);
+  }
+
+  @Override
+  public void setSecurityContext(SecurityContext securityContext) {
+    super.setSecurityContext(securityContext);
+  }
+
+  @Override
+  public void setStartupProbe(Probe startupProbe) {
+    super.setStartupProbe(startupProbe);
+  }
+
+  @Override
+  public void setStdin(Boolean stdin) {
+    super.setStdin(stdin);
+  }
+
+  @Override
+  public void setStdinOnce(Boolean stdinOnce) {
+    super.setStdinOnce(stdinOnce);
+  }
+
+  @Override
+  public void setTerminationMessagePath(String terminationMessagePath) {
+    super.setTerminationMessagePath(terminationMessagePath);
+  }
+
+  @Override
+  public void setTerminationMessagePolicy(String terminationMessagePolicy) {
+    super.setTerminationMessagePolicy(terminationMessagePolicy);
+  }
+
+  @Override
+  public void setTty(Boolean tty) {
+    super.setTty(tty);
+  }
+
+  @Override
+  public void setVolumeDevices(List<VolumeDevice> volumeDevices) {
+    super.setVolumeDevices(volumeDevices);
+  }
+
+  @Override
+  public void setVolumeMounts(List<VolumeMount> volumeMounts) {
+    super.setVolumeMounts(volumeMounts);
   }
 
   @Override

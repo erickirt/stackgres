@@ -86,7 +86,7 @@
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
     <!-- Dependencies versions -->
-    <quarkus.version>3.31.2</quarkus.version>
+    <quarkus.version>3.34.6</quarkus.version>
     <hibernate.version>7.2.4.Final</hibernate.version>
     <jool.version>0.9.15</jool.version>
     <immutables.version>2.12.1</immutables.version>
@@ -97,7 +97,7 @@
     <fluent-process.version>1.0.1</fluent-process.version>
     <jooq.version>3.20.11</jooq.version>
     <mockito.version>3.0.0</mockito.version>
-    <sundrio.version>0.230.2</sundrio.version>
+    <sundrio.version>0.300.0</sundrio.version>
     <reflections.version>0.10.2</reflections.version>
     <truth.version>1.4.5</truth.version>
     <jsonassert.version>1.5.3</jsonassert.version>
@@ -108,7 +108,7 @@
     <javapoet.version>1.13.0</javapoet.version>
     <jamm.version>0.4.0</jamm.version>
     <compile-testing.version>0.23.0</compile-testing.version>
-    <bouncycastle.version>1.70</bouncycastle.version>
+    <bouncycastle.version>1.84</bouncycastle.version>
     <debezium.version>3.4.1.Final</debezium.version>
     <kafka-clients.version>4.1.1</kafka-clients.version>
     <jmx-prometheus-collector.version>1.5.0</jmx-prometheus-collector.version>
@@ -190,12 +190,12 @@
       </dependency>
       <dependency>
         <groupId>org.bouncycastle</groupId>
-        <artifactId>bcprov-jdk15on</artifactId>
+        <artifactId>bcprov-jdk18on</artifactId>
         <version>${bouncycastle.version}</version>
       </dependency>
       <dependency>
         <groupId>org.bouncycastle</groupId>
-        <artifactId>bcpkix-jdk15on</artifactId>
+        <artifactId>bcpkix-jdk18on</artifactId>
         <version>${bouncycastle.version}</version>
       </dependency>
       <dependency>

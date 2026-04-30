@@ -28,7 +28,7 @@ import jakarta.validation.constraints.PositiveOrZero;
     value = { "instances", "postgres", "postgresServices",
         "initialData", "replicateFrom", "distributedLogs", "toInstallPostgresExtensions",
         "prometheusAutobind", "nonProductionOptions" })
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresShardedClusterWorkers extends StackGresClusterSpec {
