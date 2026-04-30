@@ -448,6 +448,8 @@ class DebeziumUtilTest {
             streamProperties.getGuardrailCollectionsLimitAction())),
         assertEntryInProperties(props, Map.entry("extended.headers.enabled",
             streamProperties.getExtendedHeadersEnabled())),
+        assertEntryInProperties(props, Map.entry("custom.sanitize.pattern",
+            streamProperties.getCustomSanitizePattern())),
         // Leave this so we can order all the properties correctly without bothering for the latest `,`
         Map.entry("|", streamProperties)
         ));

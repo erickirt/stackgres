@@ -178,6 +178,8 @@ public class StreamSourcePostgresDebeziumProperties {
 
   private Map<String, String> customMetricTags;
 
+  private String customSanitizePattern;
+
   private Integer errorsMaxRetries;
 
   private Integer databaseQueryTimeoutMs;
@@ -841,6 +843,14 @@ public class StreamSourcePostgresDebeziumProperties {
 
   public void setCustomMetricTags(Map<String, String> customMetricTags) {
     this.customMetricTags = customMetricTags;
+  }
+
+  public String getCustomSanitizePattern() {
+    return customSanitizePattern;
+  }
+
+  public void setCustomSanitizePattern(String customSanitizePattern) {
+    this.customSanitizePattern = customSanitizePattern;
   }
 
   public Integer getErrorsMaxRetries() {

@@ -198,6 +198,8 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
   @DebeziumMapOptions(separatorLevel0 = "=", valueFromLevel = 0)
   private Map<String, String> customMetricTags;
 
+  private String customSanitizePattern;
+
   private Integer errorsMaxRetries;
 
   @DebeziumDefault("0")
@@ -864,6 +866,14 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
     this.customMetricTags = customMetricTags;
   }
 
+  public String getCustomSanitizePattern() {
+    return customSanitizePattern;
+  }
+
+  public void setCustomSanitizePattern(String customSanitizePattern) {
+    this.customSanitizePattern = customSanitizePattern;
+  }
+
   public Integer getErrorsMaxRetries() {
     return errorsMaxRetries;
   }
@@ -908,8 +918,8 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
   public int hashCode() {
     return Objects.hash(binaryHandlingMode, columnMaskHash, columnMaskHashV2,
         columnMaskWithLengthChars, columnPropagateSourceType, columnTruncateToLengthChars,
-        converters, customMetricTags, databaseInitialStatements, databaseQueryTimeoutMs,
-        datatypePropagateSourceType, decimalHandlingMode, errorsMaxRetries,
+        converters, customMetricTags, customSanitizePattern, databaseInitialStatements,
+        databaseQueryTimeoutMs, datatypePropagateSourceType, decimalHandlingMode, errorsMaxRetries,
         eventProcessingFailureHandlingMode, extendedHeadersEnabled, fieldNameAdjustmentMode,
         flushLsnSource, guardrailCollectionsLimitAction, guardrailCollectionsMax,
         heartbeatActionQuery, heartbeatIntervalMs, hstoreHandlingMode, includeUnknownDatatypes,
@@ -951,6 +961,7 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
         && Objects.equals(columnTruncateToLengthChars, other.columnTruncateToLengthChars)
         && Objects.equals(converters, other.converters)
         && Objects.equals(customMetricTags, other.customMetricTags)
+        && Objects.equals(customSanitizePattern, other.customSanitizePattern)
         && Objects.equals(databaseInitialStatements, other.databaseInitialStatements)
         && Objects.equals(databaseQueryTimeoutMs, other.databaseQueryTimeoutMs)
         && Objects.equals(datatypePropagateSourceType, other.datatypePropagateSourceType)
