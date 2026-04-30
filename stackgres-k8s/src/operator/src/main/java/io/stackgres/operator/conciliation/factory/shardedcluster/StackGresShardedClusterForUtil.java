@@ -544,7 +544,7 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
         && cluster.getStatus().getSgBackups() != null
         && !cluster.getStatus().getSgBackups().isEmpty()) {
       int plainIndex = StackGresShardedClusterUtil.getPlainIndex(cluster, index);
-      if (plainIndex < cluster.getStatus().getSgBackups().size()) {
+      if (plainIndex >= cluster.getStatus().getSgBackups().size()) {
         if (plainIndex == 0) {
           throw new RuntimeException("SGShardedBackup " + initialData.getRestore().getFromBackup().getName()
               + " has no backup for coordinator at index " + plainIndex);
