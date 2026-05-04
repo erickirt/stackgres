@@ -5,6 +5,7 @@
 
 package io.stackgres.operator.conciliation;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -15,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -24,6 +26,7 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.quarkus.runtime.Quarkus;
 import io.stackgres.common.CdiUtil;
 import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.RetryUtil;
@@ -56,7 +59,8 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
   private final OperatorLockHolder operatorLockReconciliator;
   private final String reconciliationName;
   private final ExecutorService executorService;
-  private final ScheduledExecutorService scheduledExecutorService;
+  private final ScheduledExecutorService backoffExecutorService;
+  private final ScheduledExecutorService blockedExecutorService;
   private final AtomicReference<List<Optional<Tuple2<T, Integer>>>> atomicReference =
       new AtomicReference<>(List.of());
   private final ArrayBlockingQueue<Boolean> arrayBlockingQueue = new ArrayBlockingQueue<>(1);
@@ -66,6 +70,7 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
   private final int reconciliationInitialBackoff;
   private final int reconciliationMaxBackoff;
   private final int reconciliationBackoffVariation;
+  private final int reconciliationRestartOnBlockedDelay;
 
   private final CompletableFuture<Void> stopped = new CompletableFuture<>();
   private boolean close = false;
@@ -91,8 +96,10 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
     this.operatorLockReconciliator = operatorLockReconciliator;
     this.executorService = Executors.newSingleThreadExecutor(
         r -> new Thread(r, reconciliationName + "-ReconciliationLoop"));
-    this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(
-        r -> new Thread(r, reconciliationName + "-ReconciliationScheduler"));
+    this.backoffExecutorService = Executors.newSingleThreadScheduledExecutor(
+        r -> new Thread(r, reconciliationName + "-BackoffReconciliationScheduler"));
+    this.blockedExecutorService = Executors.newSingleThreadScheduledExecutor(
+        r -> new Thread(r, reconciliationName + "-BlockedReconciliationScheduler"));
     this.reconciliatorWorkerThreadPool = reconciliatorWorkerThreadPool;
     this.metrics = metrics;
     this.reconciliationInitialBackoff = OperatorProperty.RECONCILIATION_INITIAL_BACKOFF
@@ -108,6 +115,10 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
         .get()
         .map(Integer::parseInt)
         .orElse(10);
+    this.reconciliationRestartOnBlockedDelay = OperatorProperty.RECONCILIATION_RESTART_ON_BLOCKED_DELAY
+        .get()
+        .map(Integer::parseInt)
+        .orElse(3_600);
   }
 
   public AbstractReconciliator() {
@@ -121,12 +132,14 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
     this.reconciliationName = null;
     this.operatorLockReconciliator = null;
     this.executorService = null;
-    this.scheduledExecutorService = null;
+    this.backoffExecutorService = null;
+    this.blockedExecutorService = null;
     this.reconciliatorWorkerThreadPool = null;
     this.metrics = null;
     this.reconciliationInitialBackoff = 0;
     this.reconciliationMaxBackoff = 0;
     this.reconciliationBackoffVariation = 0;
+    this.reconciliationRestartOnBlockedDelay = -1;
   }
 
   protected void start() {
@@ -201,7 +214,7 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
             .map(b -> !b)
             .orElse(true))
         .forEach(t -> reconciliatorWorkerThreadPool.scheduleReconciliation(
-            () -> reconciliationCycle(t.v1, t.v2, t.v3),
+            () -> unblockableReconciliationCycle(t.v1, t.v2, t.v3),
             t.v4,
             t.v5));
   }
@@ -233,6 +246,30 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
 
   private String configId(T config) {
     return config.getCRDName() + "/" + config.getMetadata().getNamespace() + "/" + config.getMetadata().getName();
+  }
+
+  private void unblockableReconciliationCycle(T configKey, int retry, boolean load) {
+    if (this.reconciliationRestartOnBlockedDelay == -1) {
+      reconciliationCycle(configKey, retry, load);
+      return;
+    }
+    final AtomicReference<Instant> lastReconciliationCycleStats
+        = new AtomicReference<>(null);
+    ScheduledFuture<Void> restartJob = this.blockedExecutorService.schedule(() -> {
+      var stats = lastReconciliationCycleStats.get();
+      if (stats == null) {
+        LOGGER.error("Reconciliation for " + configId(configKey) + " was running for more than "
+            + this.blockedExecutorService + " seconds. Restarting the operator");
+        Quarkus.asyncExit();
+      }
+      return null;
+    }, this.reconciliationRestartOnBlockedDelay, TimeUnit.SECONDS);
+    try {
+      reconciliationCycle(configKey, retry, load);
+    } finally {
+      restartJob.cancel(true);
+      lastReconciliationCycleStats.set(Instant.now());
+    }
   }
 
   protected void reconciliationCycle(T configKey, int retry, boolean load) {
@@ -331,7 +368,7 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
       exceptions.add(ex);
     }
     if (!exceptions.isEmpty()) {
-      scheduledExecutorService.schedule(() -> reconcile(configKey, retry + 1),
+      backoffExecutorService.schedule(() -> reconcile(configKey, retry + 1),
           RetryUtil.calculateExponentialBackoffDelay(
               reconciliationInitialBackoff,
               reconciliationMaxBackoff,

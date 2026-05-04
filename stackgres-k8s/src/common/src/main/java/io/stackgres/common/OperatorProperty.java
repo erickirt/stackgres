@@ -58,6 +58,7 @@ public enum OperatorProperty implements StackGresPropertyReader {
   RECONCILIATION_INITIAL_BACKOFF("stackgres.reconciliationInitialBackoff"),
   RECONCILIATION_MAX_BACKOFF("stackgres.reconciliationMaxBackoff"),
   RECONCILIATION_BACKOFF_VARIATION("stackgres.reconciliationBackoffVariation"),
+  RECONCILIATION_RESTART_ON_BLOCKED_DELAY("stackgres.reconciliationRestartOnBlockedDelay"),
   RECONCILIATION_DISABLE_FAIRNESS_QUEUE("stackgres.reconciliationDisableFairnessQueue"),
   RECONCILIATION_FAIRNESS_WINDOW("stackgres.reconciliationFairnessWindow"),
   JMX_COLLECTOR_YAML_CONFIG("stackgres.jmxCollectorYamlConfig"),
