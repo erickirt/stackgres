@@ -21,11 +21,36 @@ public class ShardsToWorkersMutator implements ShardedClusterMutator {
       return resource;
     }
     if (StackGresVersion.getStackGresVersion(resource).getVersionAsNumber()
-        <= StackGresVersion.V_1_18.getVersionAsNumber()
-        && resource.getSpec().getShards() != null
-        && resource.getSpec().getWorkers() == null) {
-      resource.getSpec().setWorkers(resource.getSpec().getShards());
-      resource.getSpec().getWorkers().setClusterNameTemplate(resource.getMetadata().getName() + "-shard");
+        <= StackGresVersion.V_1_18.getVersionAsNumber()) {
+      if (resource.getSpec().getShards() != null
+          && resource.getSpec().getWorkers() == null) {
+        resource.getSpec().setWorkers(resource.getSpec().getShards());
+        resource.getSpec().getWorkers().setClusterNameTemplate(resource.getMetadata().getName() + "-shard");
+        resource.getSpec().setShards(null);
+      }
+      if (resource.getSpec().getPostgresServices() != null
+          && resource.getSpec().getPostgresServices().getShards() != null
+          && resource.getSpec().getPostgresServices().getWorkers() == null) {
+        resource.getSpec().getPostgresServices().setWorkers(
+            resource.getSpec().getPostgresServices().getShards());
+        resource.getSpec().getPostgresServices().setShards(null);
+      }
+      if (resource.getSpec().getMetadata() != null
+          && resource.getSpec().getMetadata().getLabels() != null
+          && resource.getSpec().getMetadata().getLabels().getShardsPrimariesService() != null
+          && resource.getSpec().getMetadata().getLabels().getWorkersPrimariesService() == null) {
+        resource.getSpec().getMetadata().getLabels().setWorkersPrimariesService(
+            resource.getSpec().getMetadata().getLabels().getShardsPrimariesService());
+        resource.getSpec().getMetadata().getLabels().setShardsPrimariesService(null);
+      }
+      if (resource.getSpec().getMetadata() != null
+          && resource.getSpec().getMetadata().getAnnotations() != null
+          && resource.getSpec().getMetadata().getAnnotations().getShardsPrimariesService() != null
+          && resource.getSpec().getMetadata().getAnnotations().getWorkersPrimariesService() == null) {
+        resource.getSpec().getMetadata().getAnnotations().setWorkersPrimariesService(
+            resource.getSpec().getMetadata().getAnnotations().getShardsPrimariesService());
+        resource.getSpec().getMetadata().getAnnotations().setShardsPrimariesService(null);
+      }
     }
     return resource;
   }

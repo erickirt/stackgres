@@ -62,14 +62,14 @@ public class WorkersPersistentVolumeSizeExpansionValidator
 
   @Override
   public @NotNull String getVolumeSize(StackGresShardedCluster cluster) {
-    return cluster.getSpec().getWorkers().getPods().getPersistentVolume().getSize();
+    return cluster.getSpec().getWorkersOrShards().getPods().getPersistentVolume().getSize();
   }
 
   @Override
   public Optional<String> getStorageClass(StackGresShardedCluster cluster) {
     return Optional.of(cluster)
         .map(StackGresShardedCluster::getSpec)
-        .map(StackGresShardedClusterSpec::getWorkers)
+        .map(StackGresShardedClusterSpec::getWorkersOrShards)
         .map(StackGresClusterSpec::getPods)
         .map(StackGresClusterPods::getPersistentVolume)
         .map(StackGresClusterPodsPersistentVolume::getStorageClass);
