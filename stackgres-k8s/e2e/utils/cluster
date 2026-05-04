@@ -485,10 +485,11 @@ create_or_replace_sharded_cluster_for_version() {
   local NAMESPACE="$3"
   local CLUSTERS="$4"
   local INSTANCES="$5"
-  shift 5
+  local ROUTERS="$6"
+  shift 6
 
   create_or_replace_sharded_cluster_for_version_only \
-    "$VERSION" "$RELEASE" "$NAMESPACE" "$CLUSTERS" "$INSTANCES" -f "$SPEC_VALUES_FILE" \
+    "$VERSION" "$RELEASE" "$NAMESPACE" "$CLUSTERS" "$INSTANCES" "$ROUTERS" -f "$SPEC_VALUES_FILE" \
     "$@"
 }
 
@@ -498,7 +499,7 @@ create_or_replace_sharded_cluster_for_version_only() {
   local NAMESPACE="$3"
   local CLUSTERS="$4"
   local INSTANCES="$5"
-  local INSTANCES="$6"
+  local ROUTERS="$6"
   shift 6
 
   if ! [ -d "$LOG_PATH/stackgres-cluster-$VERSION" ]
@@ -546,7 +547,7 @@ create_or_replace_sharded_cluster_for_version_only() {
     TRANSFORMER="transform_to_1_2"
   elif [ "$VERSION_AS_NUMBER" -lt "$VERSION_1_19_0_AS_NUMBER" ]
   then
-    TRANSFORMER="transform_to_1_19"
+    TRANSFORMER="transform_to_1_18"
   fi
 
   if helm get values "$RELEASE" --namespace "$NAMESPACE" > /dev/null 2>&1
