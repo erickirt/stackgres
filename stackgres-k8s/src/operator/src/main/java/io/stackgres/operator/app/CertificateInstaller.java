@@ -131,7 +131,7 @@ public class CertificateInstaller {
         LOGGER.info("Secret with certificate was updated");
       }
       LOGGER.warn("Recreating the operator Pod with the created certificate");
-      throw new RuntimeException("Sutting down operator in order to release the lock");
+      throw new RuntimeException("Shutting down operator in order to release the lock");
     } else {
       LOGGER.info("Certificate already installed");
     }
