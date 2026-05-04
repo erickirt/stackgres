@@ -197,6 +197,7 @@ public class CrdInstaller {
       CustomResourceDefinition installedCrd) {
     disableStorageVersions(installedCrd);
     addNewSchemaVersions(currentCrd, installedCrd);
+    setDeprecatedVersions(currentCrd, installedCrd);
     crdResourceWriter.update(installedCrd, foundCrd -> {
       foundCrd.setSpec(installedCrd.getSpec());
       if (LOGGER.isTraceEnabled()) {
@@ -236,6 +237,29 @@ public class CrdInstaller {
     currentCrd.getSpec().getVersions().stream()
         .filter(version -> versionsToInstall.contains(version.getName()))
         .forEach(installedCrd.getSpec().getVersions()::add);
+  }
+
+  private void setDeprecatedVersions(
+      CustomResourceDefinition currentCrd,
+      CustomResourceDefinition installedCrd) {
+    List<String> installedVersions = installedCrd.getSpec().getVersions()
+        .stream()
+        .map(CustomResourceDefinitionVersion::getName)
+        .toList();
+
+    List<String> versionsToInstall = currentCrd.getSpec().getVersions()
+        .stream()
+        .map(CustomResourceDefinitionVersion::getName)
+        .filter(Predicate.not(installedVersions::contains))
+        .toList();
+
+    installedCrd.getSpec().getVersions().stream()
+        .filter(Predicate.not(version -> versionsToInstall.contains(version.getName())))
+        .forEach(version -> {
+          var openApiV3Schema = version.getSchema().getOpenAPIV3Schema();
+          openApiV3Schema.setProperties(null);
+          openApiV3Schema.setXKubernetesPreserveUnknownFields(true);
+        });
   }
 
   private boolean isCrdInstalled(
