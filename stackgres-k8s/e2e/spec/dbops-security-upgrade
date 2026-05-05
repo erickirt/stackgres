@@ -799,24 +799,24 @@ check_cluster_before_security_upgrade() {
     fi
     if [ "$PREVIOUS_VERSION_AS_NUMBER" -lt "$VERSION_AS_NUMBER_1_17_2" ]
     then
-        PREVIOUS_PATRONI_CONFIG="$(printf '%s' "$PREVIOUS_PATRONI_CONFIG" | jq -Sc '. 
-          | .postgresql.parameters.listen_addresses = "localhost,::1"
-          | .postgresql.pg_hba = (.postgresql.pg_hba|[.[0:5][], "host all all ::/0 md5", .[5:][], "host replication replicator ::/0 md5"])
-          ')"
+      PREVIOUS_PATRONI_CONFIG="$(printf '%s' "$PREVIOUS_PATRONI_CONFIG" | jq -Sc '. 
+        | .postgresql.parameters.listen_addresses = "localhost,::1"
+        | .postgresql.pg_hba = (.postgresql.pg_hba|[.[0:5][], "host all all ::/0 md5", .[5:][], "host replication replicator ::/0 md5"])
+        ')"
     fi
     if [ "$PREVIOUS_VERSION_AS_NUMBER" -le "$VERSION_AS_NUMBER_1_18_0RC1" ]
     then
-        PREVIOUS_PATRONI_CONFIG="$(printf '%s' "$PREVIOUS_PATRONI_CONFIG" | jq -Sc '. 
-          | del(.postgresql.parameters.invalid_param)
-          ')"
+      PREVIOUS_PATRONI_CONFIG="$(printf '%s' "$PREVIOUS_PATRONI_CONFIG" | jq -Sc '. 
+        | del(.postgresql.parameters.invalid_param)
+        ')"
     fi
     if [ "${CLUSTER_NAME#${CLUSTER_3_NAME}-}" != "$CLUSTER_NAME" ] \
       && [ "$PREVIOUS_VERSION_AS_NUMBER" -lt "$VERSION_AS_NUMBER_1_19_0" ]
     then
       PREVIOUS_PATRONI_CONFIG="$(printf '%s' "$PREVIOUS_PATRONI_CONFIG" | jq -Sc '. 
-        | .["cron.database_name"] = "postgres"
-        | .["cron.host"] = "/var/run/postgresql"
-        | .shared_preload_libraries = "pg_cron, " + .shared_preload_libraries
+        | .postgresql.parameters["cron.database_name"] = "postgres"
+        | .postgresql.parameters["cron.host"] = "/var/run/postgresql"
+        | .postgresql.parameters.shared_preload_libraries = "pg_cron, " + .postgresql.parameters.shared_preload_libraries
         ')"
     fi
 
