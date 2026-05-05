@@ -524,12 +524,13 @@ get_already_passed_tests() {
 
   "$SHELL" "$PROJECT_PATH/stackgres-k8s/e2e/e2e" calculate_spec_hashes \
     > "$TARGET_PATH/test-hashes"
+  BUILD_REPOSITORY="$(yq -r .build_repository "$PROJECT_PATH/stackgres-k8s/ci/build/config.yml")"
   while read -r SPEC_HASH
   do
     SPEC_NAME="${SPEC_HASH%:*}"
     SPEC_HASH="${SPEC_HASH#*:}"
-    printf '%s=%s/%s/e2e-test-result-%s:%s\n' \
-      "$SPEC_NAME" "$E2E_TEST_REGISTRY" "$E2E_TEST_REGISTRY_PATH" "$SPEC_NAME" "$SPEC_HASH"
+    printf '%s=%s:%s-%s\n' \
+      "$SPEC_NAME" "$BUILD_REPOSITORY" "$SPEC_NAME" "$SPEC_HASH"
   done < "$TARGET_PATH/test-hashes" \
     > "$TARGET_PATH/test-result-images"
 
