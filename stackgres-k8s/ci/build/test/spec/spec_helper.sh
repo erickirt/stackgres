@@ -184,7 +184,7 @@ mock_get_platform() {
 init_test_git() {
   (
     cd "$TEST_PROJECT_DIR" || return 1
-    git init -q .
+    git -c init.defaultBranch=main init -q .
     git add .
     git -c user.name=test -c user.email=test@test commit -q -m "init" --no-gpg-sign
   )
