@@ -332,7 +332,7 @@ init_hash() {
     then
       tar cf - -C "$PROJECT_PATH" .git | tar xf - -C stackgres-k8s/ci/build/target
     else
-      git --git-dir stackgres-k8s/ci/build/target/.git init > /dev/null
+      git --git-dir stackgres-k8s/ci/build/target/.git -c init.defaultBranch=main init > /dev/null
     fi
   fi
   if git --git-dir stackgres-k8s/ci/build/target/.git status --porcelain 2>&1 | grep -q .

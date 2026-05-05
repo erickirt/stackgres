@@ -171,3 +171,6 @@ chartverifier
 
 # Build
 pom.xml.build
+
+# shellspec reports
+stackgres-k8s/ci/build/test/report/
