@@ -196,8 +196,8 @@ public class CrdInstaller {
       CustomResourceDefinition currentCrd,
       CustomResourceDefinition installedCrd) {
     disableStorageVersions(installedCrd);
+    setDeprecatedVersions(currentCrd);
     addNewSchemaVersions(currentCrd, installedCrd);
-    setDeprecatedVersions(currentCrd, installedCrd);
     crdResourceWriter.update(installedCrd, foundCrd -> {
       foundCrd.setSpec(installedCrd.getSpec());
       if (LOGGER.isTraceEnabled()) {
@@ -220,6 +220,16 @@ public class CrdInstaller {
         .forEach(versionDefinition -> versionDefinition.setStorage(false));
   }
 
+  private void setDeprecatedVersions(
+      CustomResourceDefinition currentCrd) {
+    currentCrd.getSpec().getVersions().stream()
+        .forEach(version -> {
+          var openApiV3Schema = version.getSchema().getOpenAPIV3Schema();
+          openApiV3Schema.setProperties(null);
+          openApiV3Schema.setXKubernetesPreserveUnknownFields(true);
+        });
+  }
+
   private void addNewSchemaVersions(
       CustomResourceDefinition currentCrd,
       CustomResourceDefinition installedCrd) {
@@ -237,23 +247,6 @@ public class CrdInstaller {
     currentCrd.getSpec().getVersions().stream()
         .filter(version -> versionsToInstall.contains(version.getName()))
         .forEach(installedCrd.getSpec().getVersions()::add);
-  }
-
-  private void setDeprecatedVersions(
-      CustomResourceDefinition currentCrd,
-      CustomResourceDefinition installedCrd) {
-    List<String> installedVersions = installedCrd.getSpec().getVersions()
-        .stream()
-        .map(CustomResourceDefinitionVersion::getName)
-        .toList();
-
-    installedCrd.getSpec().getVersions().stream()
-        .filter(Predicate.not(version -> installedVersions.contains(version.getName())))
-        .forEach(version -> {
-          var openApiV3Schema = version.getSchema().getOpenAPIV3Schema();
-          openApiV3Schema.setProperties(null);
-          openApiV3Schema.setXKubernetesPreserveUnknownFields(true);
-        });
   }
 
   private boolean isCrdInstalled(
