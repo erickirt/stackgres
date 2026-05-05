@@ -196,7 +196,7 @@ public class CrdInstaller {
       CustomResourceDefinition currentCrd,
       CustomResourceDefinition installedCrd) {
     disableStorageVersions(installedCrd);
-    setDeprecatedVersions(currentCrd);
+    setDeprecatedVersions(installedCrd);
     addNewSchemaVersions(currentCrd, installedCrd);
     crdResourceWriter.update(installedCrd, foundCrd -> {
       foundCrd.setSpec(installedCrd.getSpec());
@@ -217,12 +217,12 @@ public class CrdInstaller {
 
   private void disableStorageVersions(CustomResourceDefinition installedCrd) {
     installedCrd.getSpec().getVersions()
-        .forEach(versionDefinition -> versionDefinition.setStorage(false));
+        .forEach(version -> version.setStorage(false));
   }
 
   private void setDeprecatedVersions(
-      CustomResourceDefinition currentCrd) {
-    currentCrd.getSpec().getVersions().stream()
+      CustomResourceDefinition installedCrd) {
+    installedCrd.getSpec().getVersions().stream()
         .forEach(version -> {
           var openApiV3Schema = version.getSchema().getOpenAPIV3Schema();
           openApiV3Schema.setProperties(null);
