@@ -235,8 +235,8 @@ class StackGresShardedClusterForCitusUtilTest {
     var clusterIndex0 = getWorkerCluster(JsonUtil.copy(shardedCluster), 0, Optional.empty());
     var clusterIndex2 = getWorkerCluster(JsonUtil.copy(shardedCluster), 2, Optional.empty());
 
-    Assertions.assertEquals("legacy-worker0", clusterIndex0.getMetadata().getName());
-    Assertions.assertEquals("legacy-worker2", clusterIndex2.getMetadata().getName());
+    Assertions.assertEquals("legacy-shard0", clusterIndex0.getMetadata().getName());
+    Assertions.assertEquals("legacy-shard2", clusterIndex2.getMetadata().getName());
   }
 
   @Test
@@ -270,7 +270,7 @@ class StackGresShardedClusterForCitusUtilTest {
     var cluster = getWorkerCluster(
         JsonUtil.copy(shardedCluster), 0, Optional.of(replicateCluster));
 
-    Assertions.assertEquals("source-worker0",
+    Assertions.assertEquals("source-shard0",
         cluster.getSpec().getReplicateFrom().getInstance().getSgCluster());
   }
 
@@ -595,10 +595,15 @@ class StackGresShardedClusterForCitusUtilTest {
         .setPaths(List.of(
             createWithRandomData(String.class),
             createWithRandomData(String.class)));
+    shardedCluster.getSpec().getConfigurations().getBackups().get(0)
+        .setQueryRouterPaths(List.of(
+            createWithRandomData(String.class)));
     shardedCluster.getSpec().getReplicateFrom().getInstance().getExternal()
         .setCustomRestoreMethods(List.of(
             createWithRandomData(StackGresClusterReplicateFromCustomRestoreMethod.class),
+            createWithRandomData(StackGresClusterReplicateFromCustomRestoreMethod.class),
             createWithRandomData(StackGresClusterReplicateFromCustomRestoreMethod.class)));
+    shardedCluster.getSpec().getWorkers().setClusters(0);
     shardedCluster.getSpec().getCoordinator().setQueryRouterIndexOffset(0);
     shardedCluster.getSpec().getWorkers().getOverrides().get(0)
         .setIndex(0);
@@ -621,7 +626,8 @@ class StackGresShardedClusterForCitusUtilTest {
         shardedCluster.getSpec().getWorkers().getOverrides().get(0)
             .getPodsForWorkers(),
         cluster,
-        1);
+        1,
+        true);
   }
 
   private void setMinimalCoordinatorAndWorkers(StackGresShardedCluster shardedCluster) {
@@ -659,7 +665,17 @@ class StackGresShardedClusterForCitusUtilTest {
       StackGresClusterConfigurations configuration,
       StackGresCluster cluster,
       int index) {
-    checkClusterGlobalSettingsOnly(shardedCluster, cluster, index);
+    checkClusterWithGlobalSettings(shardedCluster, clusterSpec, configuration, cluster, index, false);
+  }
+
+  private void checkClusterWithGlobalSettings(
+      StackGresShardedCluster shardedCluster,
+      StackGresClusterSpec clusterSpec,
+      StackGresClusterConfigurations configuration,
+      StackGresCluster cluster,
+      int index,
+      boolean queryRouter) {
+    checkClusterGlobalSettingsOnly(shardedCluster, cluster, index, queryRouter);
     if (shardedCluster.getSpec().getMetadata() != null
         && shardedCluster.getSpec().getMetadata().getLabels() != null) {
       Assertions.assertEquals(
@@ -717,7 +733,19 @@ class StackGresShardedClusterForCitusUtilTest {
       StackGresClusterPods pod,
       StackGresCluster cluster,
       int index) {
-    checkClusterGlobalSettingsOnly(shardedCluster, cluster, index);
+    checkClusterWithSettings(shardedCluster, clusterSpec, replication, configuration, pod, cluster, index, false);
+  }
+
+  private void checkClusterWithSettings(
+      StackGresShardedCluster shardedCluster,
+      StackGresClusterSpec clusterSpec,
+      StackGresClusterReplication replication,
+      StackGresClusterConfigurations configuration,
+      StackGresClusterPods pod,
+      StackGresCluster cluster,
+      int index,
+      boolean queryRouter) {
+    checkClusterGlobalSettingsOnly(shardedCluster, cluster, index, queryRouter);
     Assertions.assertEquals(
         Seq.seq(clusterSpec.getMetadata().getLabels().getClusterPods())
         .append(Tuple.tuple("citus-group", String.valueOf(index)))
@@ -740,7 +768,8 @@ class StackGresShardedClusterForCitusUtilTest {
   private void checkClusterGlobalSettingsOnly(
       StackGresShardedCluster shardedCluster,
       StackGresCluster cluster,
-      int index) {
+      int index,
+      boolean queryRouter) {
     if (shardedCluster.getSpec().getConfigurations() != null
         && shardedCluster.getSpec().getConfigurations().getBackups() != null) {
       Assertions.assertEquals(
@@ -766,11 +795,19 @@ class StackGresShardedClusterForCitusUtilTest {
           .getPerformance(),
           cluster.getSpec().getConfigurations().getBackups().get(0)
           .getPerformance());
-      Assertions.assertEquals(
-          shardedCluster.getSpec().getConfigurations().getBackups().get(0)
-          .getPaths().get(index),
-          cluster.getSpec().getConfigurations().getBackups().get(0)
-          .getPath());
+      if (queryRouter) {
+        Assertions.assertEquals(
+            shardedCluster.getSpec().getConfigurations().getBackups().get(0)
+            .getQueryRouterPaths().get(index - 1),
+            cluster.getSpec().getConfigurations().getBackups().get(0)
+            .getPath());
+      } else {
+        Assertions.assertEquals(
+            shardedCluster.getSpec().getConfigurations().getBackups().get(0)
+            .getPaths().get(index),
+            cluster.getSpec().getConfigurations().getBackups().get(0)
+            .getPath());
+      }
     }
     Assertions.assertEquals(
         shardedCluster.getSpec().getDistributedLogs(),

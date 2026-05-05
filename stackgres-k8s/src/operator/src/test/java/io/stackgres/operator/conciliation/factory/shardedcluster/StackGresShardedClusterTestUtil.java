@@ -9,6 +9,7 @@ import static io.stackgres.testutil.ModelTestUtil.createWithRandomData;
 
 import java.util.List;
 
+import io.stackgres.common.crd.sgcluster.StackGresClusterReplicateFromCustomRestoreMethod;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.testutil.ModelTestUtil;
 import org.jooq.lambda.Seq;
@@ -29,9 +30,16 @@ class StackGresShardedClusterTestUtil {
     List<String> paths = Seq.range(0, shardedCluster.getSpec().getWorkers().getClusters() + 1)
         .<String>map(index -> ModelTestUtil.generateRandom(String.class))
         .toList();
+    List<StackGresClusterReplicateFromCustomRestoreMethod> customRestoreMethods =
+        Seq.range(0, shardedCluster.getSpec().getWorkers().getClusters() + 1)
+        .<StackGresClusterReplicateFromCustomRestoreMethod>map(index -> ModelTestUtil.generateRandom(
+            StackGresClusterReplicateFromCustomRestoreMethod.class))
+        .toList();
     shardedCluster.getSpec().getReplicateFrom().getInstance().setSgShardedCluster(null);
     shardedCluster.getSpec().getReplicateFrom().getInstance().getExternal().setHosts(hosts);
     shardedCluster.getSpec().getReplicateFrom().getInstance().getExternal().setPorts(ports);
+    shardedCluster.getSpec().getReplicateFrom().getInstance().getExternal()
+        .setCustomRestoreMethods(customRestoreMethods);
     shardedCluster.getSpec().getReplicateFrom().getStorage().setPaths(paths);
     shardedCluster.getStatus().setSgBackups(sgBackups);
     Seq.seq(shardedCluster.getSpec().getPlainOverrides())

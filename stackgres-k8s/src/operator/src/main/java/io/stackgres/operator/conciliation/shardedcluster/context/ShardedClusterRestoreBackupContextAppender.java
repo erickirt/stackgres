@@ -85,7 +85,7 @@ public class ShardedClusterRestoreBackupContextAppender {
       }
 
       int clusters = 1 + cluster.getSpec().getWorkers().getClusters()
-          + Optional.of(cluster.getSpec().getCoordinator().getQueryRouterClusters()).orElse(0);
+          + Optional.ofNullable(cluster.getSpec().getCoordinator().getQueryRouterClusters()).orElse(0);
       var sgBackups = foundRestoreBackup
           .map(StackGresShardedBackup::getStatus)
           .map(StackGresShardedBackupStatus::getSgBackups)
