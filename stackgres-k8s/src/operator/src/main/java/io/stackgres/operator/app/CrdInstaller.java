@@ -247,14 +247,8 @@ public class CrdInstaller {
         .map(CustomResourceDefinitionVersion::getName)
         .toList();
 
-    List<String> versionsToInstall = currentCrd.getSpec().getVersions()
-        .stream()
-        .map(CustomResourceDefinitionVersion::getName)
-        .filter(Predicate.not(installedVersions::contains))
-        .toList();
-
     installedCrd.getSpec().getVersions().stream()
-        .filter(Predicate.not(version -> versionsToInstall.contains(version.getName())))
+        .filter(Predicate.not(version -> installedVersions.contains(version.getName())))
         .forEach(version -> {
           var openApiV3Schema = version.getSchema().getOpenAPIV3Schema();
           openApiV3Schema.setProperties(null);
