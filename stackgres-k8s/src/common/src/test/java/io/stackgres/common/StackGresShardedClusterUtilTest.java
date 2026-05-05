@@ -86,10 +86,10 @@ class StackGresShardedClusterUtilTest {
     cluster.getSpec().getWorkers().setClusterNameTemplate("legacy-shard");
 
     assertEquals(
-        "legacy-worker0",
+        "legacy-shard0",
         StackGresShardedClusterUtil.getWorkerClusterName(cluster, 0));
     assertEquals(
-        "legacy-worker2",
+        "legacy-shard2",
         StackGresShardedClusterUtil.getWorkerClusterName(cluster, 2));
   }
 
