@@ -15,9 +15,9 @@ FROM registry.access.redhat.com/ubi8-minimal:8.10-1018
       wget \
       tar
   # RUN [ -e /etc/nsswitch.conf ] && grep '^hosts: files dns' /etc/nsswitch.conf
-  ENV DOCKER_VERSION 29.2.1
+  ENV DOCKER_VERSION 27.5.1
   RUN set -eux; \
-    wget -O 'docker.tgz' "https://download.docker.com/linux/static/stable/$(uname -m)/docker-29.2.1.tgz"; \
+    wget -O 'docker.tgz' "https://download.docker.com/linux/static/stable/$(uname -m)/docker-${DOCKER_VERSION}.tgz"; \
     tar --extract \
       --file docker.tgz \
       --strip-components 1 \
@@ -30,7 +30,7 @@ FROM registry.access.redhat.com/ubi8-minimal:8.10-1018
 
   ENV DOCKER_BUILDX_VERSION 0.11.2
   RUN set -eux; \
-    wget -O 'docker-buildx' "https://github.com/docker/buildx/releases/download/v0.11.2/buildx-v0.11.2.linux-$(uname -m | grep -qxF aarch64 && echo arm64 || echo amd64)"; \
+    wget -O 'docker-buildx' "https://github.com/docker/buildx/releases/download/v${DOCKER_BUILDX_VERSION}/buildx-v${DOCKER_BUILDX_VERSION}.linux-$(uname -m | grep -qxF aarch64 && echo arm64 || echo amd64)"; \
     plugin='/usr/local/libexec/docker/cli-plugins/docker-buildx'; \
     mkdir -p "$(dirname "$plugin")"; \
     mv -vT 'docker-buildx' "$plugin"; \
@@ -39,7 +39,7 @@ FROM registry.access.redhat.com/ubi8-minimal:8.10-1018
 
   ENV DOCKER_COMPOSE_VERSION 2.21.0
   RUN set -eux; \
-  	wget -O 'docker-compose' "https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-linux-$(uname -m)"; \
+  	wget -O 'docker-compose' "https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-linux-$(uname -m)"; \
   	plugin='/usr/local/libexec/docker/cli-plugins/docker-compose'; \
   	mkdir -p "$(dirname "$plugin")"; \
   	mv -vT 'docker-compose' "$plugin"; \
