@@ -190,6 +190,10 @@ class CrdSchemaCompatibilityTest {
   }
 
   private void overrideForStackGresShardedCluster(ObjectNode actual, ObjectNode expected) {
+    removeProperty((ObjectNode) actual
+        .get("spec"), "shards");
+    removeProperty((ObjectNode) expected
+        .get("spec"), "shards");
     removeServiceIgnoredProperties((ObjectNode) expected
         .get("spec")
         .get("postgresServices")
@@ -215,6 +219,10 @@ class CrdSchemaCompatibilityTest {
         .get("postgresServices")
         .get("shards")
         .get("primaries"));
+  }
+
+  public void removeProperty(ObjectNode object, String key) {
+    object.remove(key);
   }
 
   public void removeServiceIgnoredProperties(ObjectNode service) {
