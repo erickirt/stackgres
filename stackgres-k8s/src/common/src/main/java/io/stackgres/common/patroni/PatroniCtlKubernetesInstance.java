@@ -28,6 +28,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.PatroniUtil;
 import io.stackgres.common.StackGresContext;
+import io.stackgres.common.StackGresVersion;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterConfigurations;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPatroni;
@@ -186,11 +187,11 @@ public class PatroniCtlKubernetesInstance implements PatroniCtlInstance {
   @Override
   public void restart(String username, String password, String member) {
     final Instant now = Instant.now();
-    KubernetesClientUtil.retryOnConflict(() -> client.pods()
+    var memberPod = KubernetesClientUtil.retryOnConflict(() -> client.pods()
         .inNamespace(namespace)
         .withName(member)
-        .edit(endpoints -> {
-          var annotations = Optional.of(endpoints)
+        .edit(pod -> {
+          var annotations = Optional.of(pod)
               .map(Pod::getMetadata)
               .map(ObjectMeta::getAnnotations)
               .map(HashMap::new)
@@ -209,13 +210,21 @@ public class PatroniCtlKubernetesInstance implements PatroniCtlInstance {
             patroniOperation.put("issued", now.toString());
             annotations.put(StackGresContext.PATRONI_OPERATION_KEY, patroniOperation.toString());
           }
-          return endpoints
+          return pod
             .edit()
             .editMetadata()
             .withAnnotations(annotations)
             .endMetadata()
             .build();
         }));
+    if (Optional.ofNullable(memberPod.getMetadata().getAnnotations())
+        .map(annotations -> annotations.get(StackGresContext.CLUSTER_CONTROLLER_VERSION_KEY))
+        .map(StackGresVersion::getVersionAsNumberOrNull)
+        .orElse(StackGresVersion.V_1_18.getVersionAsNumber())
+        <= StackGresVersion.V_1_18.getVersionAsNumber()) {
+      patroniCtlBinaryInstance.restart(username, password, member);
+      return;
+    }
     while (true) {
       if (Optional.ofNullable(client.pods()
           .inNamespace(namespace)

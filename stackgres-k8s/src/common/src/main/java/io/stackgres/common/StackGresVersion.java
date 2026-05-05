@@ -107,6 +107,14 @@ public enum StackGresVersion {
     }
   }
 
+  public static Long getVersionAsNumberOrNull(String version) {
+    try {
+      return getVersionAsNumber(version);
+    } catch (Exception ex) {
+      return null;
+    }
+  }
+
   private static StackGresVersion ofVersion(String version) {
     return Stream.of(values())
         .filter(minorVersion -> version.startsWith(minorVersion.version + ".")
