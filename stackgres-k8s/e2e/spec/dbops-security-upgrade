@@ -30,6 +30,7 @@ e2e_test_install() {
   VERSION_AS_NUMBER_1_17_0="$(get_version_as_number 1.17.0-SNAPSHOT)"
   VERSION_AS_NUMBER_1_17_2="$(get_version_as_number 1.17.2-SNAPSHOT)"
   VERSION_AS_NUMBER_1_18_0RC1="$(get_version_as_number 1.18.0-rc1)"
+  VERSION_AS_NUMBER_1_19_0="$(get_version_as_number 1.19.0-SNAPSHOT)"
 
   CLUSTER_CRD="sgclusters.stackgres.io"
 
@@ -808,6 +809,15 @@ check_cluster_before_security_upgrade() {
         PREVIOUS_PATRONI_CONFIG="$(printf '%s' "$PREVIOUS_PATRONI_CONFIG" | jq -Sc '. 
           | del(.postgresql.parameters.invalid_param)
           ')"
+    fi
+    if [ "${CLUSTER_NAME#${CLUSTER_3_NAME}-}" != "$CLUSTER_NAME" ] \
+      && [ "$PREVIOUS_VERSION_AS_NUMBER" -lt "$VERSION_AS_NUMBER_1_19_0" ]
+    then
+      PREVIOUS_PATRONI_CONFIG="$(printf '%s' "$PREVIOUS_PATRONI_CONFIG" | jq -Sc '. 
+        | .["cron.database_name"] = "postgres"
+        | .["cron.host"] = "/var/run/postgresql"
+        | .shared_preload_libraries = "pg_cron, " + .shared_preload_libraries
+        ')"
     fi
 
     if [ "$PATRONI_CONFIG" = "$PREVIOUS_PATRONI_CONFIG" ]
