@@ -698,17 +698,22 @@ find_image_digests() {
     list_image_tags "$BUILD_REPOSITORY" \
       > "stackgres-k8s/ci/build/target/registry-tags"
     sort "$1" | uniq \
-      | grep "^${BUILD_REPOSITORY%/}/" \
+      | grep "^${BUILD_REPOSITORY}:" \
       | grep -v "@sha256:" \
       | xargs -I @ -P 16 sh $(! echo $- | grep -q x || printf %s "-x") \
-        -c 'IMAGE_NAME="@"; if grep -q "^${IMAGE_NAME##*:}$" "stackgres-k8s/ci/build/target/registry-tags" 2>/dev/null; then find_image_digest "$IMAGE_NAME"; fi'
+        -c 'IMAGE_NAME="@"
+            if grep -q "^${IMAGE_NAME##*:}$" "stackgres-k8s/ci/build/target/registry-tags" 2>/dev/null
+            then
+              printf '%s=%s\n' "$IMAGE_NAME" "$IMAGE_NAME" \
+                > "stackgres-k8s/ci/build/target/image-digests.${IMAGE_NAME##*/}"
+            fi'
     sort "$1" | uniq \
-      | grep -v "^${BUILD_REPOSITORY%/}/" \
+      | grep -v "^${BUILD_REPOSITORY}:" \
       | grep -v "@sha256:" \
       | xargs -I @ -P 16 sh $(! echo $- | grep -q x || printf %s "-x") \
         stackgres-k8s/ci/build/build-functions.sh find_image_digest @
     sort "$1" | uniq \
-      | grep -v "^${BUILD_REPOSITORY%/}/" \
+      | grep -v "^${BUILD_REPOSITORY}:" \
       | grep "@sha256:" \
       | xargs -I @ -P 16 sh $(! echo $- | grep -q x || printf %s "-x") \
         -c 'IMAGE_NAME="@"; printf '%s=%s' "$IMAGE_NAME" "${IMAGE_NAME#*@}" > "stackgres-k8s/ci/build/target/image-digests.${IMAGE_NAME##*/}"'

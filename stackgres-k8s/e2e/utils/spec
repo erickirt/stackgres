@@ -11,8 +11,6 @@ export E2E_TEST_AFTER_ALL_FUNCTION="${E2E_TEST_AFTER_ALL_FUNCTION:-e2e_test_afte
 export E2E_BEFORE_RUN_TEST_COUNT=0
 export SPEC_PATH="${SPEC_PATH:-$E2E_PATH/spec}"
 export E2E_LOCK
-export E2E_TEST_REGISTRY
-export E2E_TEST_REGISTRY_PATH
 export E2E_HASH_VARIABLES='
     E2E_VERSION
     E2E_ENV
@@ -518,10 +516,6 @@ get_variables_for_hash() {
 }
 
 get_already_passed_tests() {
-  [ -n "$E2E_TEST_REGISTRY" ] \
-    && [ -n "$E2E_TEST_REGISTRY_PATH" ] \
-    && true || false
-
   "$SHELL" "$PROJECT_PATH/stackgres-k8s/e2e/e2e" calculate_spec_hashes \
     > "$TARGET_PATH/test-hashes"
   BUILD_REPOSITORY="$(yq -r .build_repository "$PROJECT_PATH/stackgres-k8s/ci/build/config.yml")"
@@ -561,10 +555,6 @@ get_already_passed_tests() {
 store_test_results() {
   E2E_SUFFIX="${E2E_SUFFIX:-$(printf '%s%x-%s' - "$(date +%s)" "$(random_string_lowercase 3)")}"
 
-  [ -n "$E2E_TEST_REGISTRY" ] \
-    && [ -n "$E2E_TEST_REGISTRY_PATH" ] \
-    && true || false
-
   sort "$TARGET_PATH/runned-tests" 2>/dev/null | uniq > "$TARGET_PATH/uniq-runned-tests"
   sort "$TARGET_PATH/passed-tests" 2>/dev/null | uniq > "$TARGET_PATH/uniq-passed-tests"
 
@@ -585,10 +575,6 @@ store_test_results() {
 store_test_result() {
   local SPEC_NAME="$1"
   local SPEC_VALUE="$2"
-
-  [ -n "$E2E_TEST_REGISTRY" ] \
-    && [ -n "$E2E_TEST_REGISTRY_PATH" ] \
-    && true || false
 
   local SPEC_PLATFORM
   SPEC_PLATFORM="$("$SHELL" "$PROJECT_PATH/stackgres-k8s/ci/build/build-functions.sh" get_platform_tag_suffix)"
