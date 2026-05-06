@@ -56,7 +56,7 @@ public class DefaultOperatorInstallationInfoHolder
     bytes[2] = (byte) random.nextInt();
     bytes[3] = (byte) random.nextInt();
 
-    String generatedId = Base64.getEncoder().encodeToString(bytes);
+    String generatedId = Base64.getEncoder().encodeToString(bytes).substring(0, 6);
 
     return generatedId;
   }
