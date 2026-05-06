@@ -1375,6 +1375,9 @@ spec:
               version:
                 type: string
                 description: Latest version of the operator used to check for updates
+              installationId:
+                type: string
+                description: A hash that identify the installation
               grafana:
                 type: object
                 properties:

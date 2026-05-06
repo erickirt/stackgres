@@ -14,7 +14,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -54,7 +53,7 @@ public class WebClientFactory {
   static final String PROXY_URL_PARAMETER = "proxyUrl";
   static final String SET_HTTP_SCHEME_PARAMETER = "setHttpScheme";
 
-  public WebClient create(@NotNull URI uri) throws Exception {
+  public WebClient create(@NotNull URI uri, Map<String, String> headers) throws Exception {
     ClientBuilder clientBuilder = ClientBuilder.newBuilder();
     final boolean skipHostnameVerification =
         getUriQueryParameter(uri, SKIP_HOSTNAME_VERIFICATION_PARAMETER)
@@ -66,11 +65,7 @@ public class WebClientFactory {
       clientBuilder.hostnameVerifier(InsecureHostnameVerifier.INSTANCE)
           .sslContext(WebUtil.createInsecureSslContext());
     }
-    final Map<String, String> extraHeaders = new HashMap<>();
-    extraHeaders.put(HttpHeaders.USER_AGENT,
-        String.format(Locale.ROOT, "StackGres/%s (Java %s; %s %s)",
-            StackGresProperty.OPERATOR_VERSION.getString(), Runtime.version().feature(),
-            System.getProperty("os.name"), System.getProperty("os.arch")));
+    final Map<String, String> extraHeaders = new HashMap<>(headers);
     final boolean setHttpScheme;
     if (optionalProxyUri.isPresent()) {
       final URI proxyUri = optionalProxyUri.get();

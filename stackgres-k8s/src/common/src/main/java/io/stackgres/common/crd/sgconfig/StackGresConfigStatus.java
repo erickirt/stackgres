@@ -30,6 +30,8 @@ public class StackGresConfigStatus {
 
   private String version;
 
+  private String installationId;
+
   private Boolean oldOperatorBundleResourcesRemoved;
 
   private StackGresConfigStatusGrafana grafana;
@@ -50,6 +52,14 @@ public class StackGresConfigStatus {
 
   public void setVersion(String version) {
     this.version = version;
+  }
+
+  public String getInstallationId() {
+    return installationId;
+  }
+
+  public void setInstallationId(String installationId) {
+    this.installationId = installationId;
   }
 
   public Boolean getOldOperatorBundleResourcesRemoved() {
@@ -78,7 +88,7 @@ public class StackGresConfigStatus {
 
   @Override
   public int hashCode() {
-    return Objects.hash(conditions, existingCrUpdatedToVersion, grafana,
+    return Objects.hash(conditions, existingCrUpdatedToVersion, grafana, installationId,
         oldOperatorBundleResourcesRemoved, version);
   }
 
@@ -93,7 +103,8 @@ public class StackGresConfigStatus {
     StackGresConfigStatus other = (StackGresConfigStatus) obj;
     return Objects.equals(conditions, other.conditions)
         && Objects.equals(existingCrUpdatedToVersion, other.existingCrUpdatedToVersion)
-        && Objects.equals(grafana, other.grafana) && Objects
+        && Objects.equals(grafana, other.grafana)
+        && Objects.equals(installationId, other.installationId) && Objects
             .equals(oldOperatorBundleResourcesRemoved, other.oldOperatorBundleResourcesRemoved)
         && Objects.equals(version, other.version);
   }

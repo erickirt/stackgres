@@ -6,10 +6,12 @@
 package io.stackgres.operator.common;
 
 import java.net.URI;
+import java.util.Map;
 
 import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.WebClientFactory;
 import io.stackgres.common.extension.ExtensionMetadataManager;
+import io.stackgres.operator.app.OperatorInstallationInfoHolder;
 import io.stackgres.operator.configuration.OperatorPropertyContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
@@ -24,13 +26,15 @@ public class OperatorExtensionMetadataManager extends ExtensionMetadataManager {
   public OperatorExtensionMetadataManager(
       OperatorPropertyContext propertyContext,
       WebClientFactory webClientFactory,
+      OperatorInstallationInfoHolder installationInfoHolder,
       Metrics metrics) {
     super(
         webClientFactory,
         Seq.of(propertyContext.getStringArray(
             OperatorProperty.EXTENSIONS_REPOSITORY_URLS))
-            .map(URI::create)
-            .toList());
+        .map(URI::create)
+        .toList(),
+        () -> Map.ofEntries(installationInfoHolder.getUserAgentHeaderEntry()));
     this.metrics = metrics;
   }
 

@@ -37,6 +37,7 @@ import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloper;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperContainerPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigSpec;
+import io.stackgres.operator.app.OperatorInstallationInfoHolder;
 import io.stackgres.operator.common.Sidecar;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.factory.CgroupMounts;
@@ -59,17 +60,20 @@ public class ClusterController implements ContainerFactory<ClusterContainerConte
   private final UserOverrideMounts userOverrideMounts;
   private final PostgresSocketMounts postgresSocketMounts;
   private final CgroupMounts cgroupMounts;
+  private final OperatorInstallationInfoHolder installationInfoHolder;
 
   @Inject
   public ClusterController(
       PostgresDataMounts postgresDataMounts,
       UserOverrideMounts userOverrideMounts,
       PostgresSocketMounts postgresSocketMounts,
-      CgroupMounts cgroupMounts) {
+      CgroupMounts cgroupMounts,
+      OperatorInstallationInfoHolder installationInfoHolder) {
     this.postgresDataMounts = postgresDataMounts;
     this.userOverrideMounts = userOverrideMounts;
     this.postgresSocketMounts = postgresSocketMounts;
     this.cgroupMounts = cgroupMounts;
+    this.installationInfoHolder = installationInfoHolder;
   }
 
   @Override
@@ -107,6 +111,11 @@ public class ClusterController implements ContainerFactory<ClusterContainerConte
             .withValueFrom(new EnvVarSourceBuilder()
                 .withFieldRef(new ObjectFieldSelector("v1", "metadata.name"))
                 .build())
+            .build(),
+            new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_INSTALLATION_ID
+                .getEnvironmentVariableName())
+            .withValue(installationInfoHolder.getInstallationId())
             .build(),
             new EnvVarBuilder()
             .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_POD_UID

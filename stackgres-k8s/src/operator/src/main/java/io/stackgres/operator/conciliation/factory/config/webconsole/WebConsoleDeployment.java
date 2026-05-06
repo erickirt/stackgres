@@ -48,6 +48,7 @@ import io.stackgres.common.crd.sgconfig.StackGresConfigSpec;
 import io.stackgres.common.crd.sgconfig.StackGresConfigStatus;
 import io.stackgres.common.crd.sgconfig.StackGresConfigStatusGrafana;
 import io.stackgres.common.labels.LabelFactoryForConfig;
+import io.stackgres.operator.app.OperatorInstallationInfoHolder;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.ResourceGenerator;
 import io.stackgres.operator.conciliation.config.StackGresConfigContext;
@@ -69,8 +70,8 @@ public class WebConsoleDeployment
   private static final String ADMINUI_NGINX_ETC = "adminui-nginx-etc";
 
   private final LabelFactoryForConfig labelFactory;
-
   private final WebConsolePodSecurityFactory webConsolePodSecurityContext;
+  private final OperatorInstallationInfoHolder installationInfoHolder;
 
   public static String name(StackGresConfig config) {
     return ResourceUtil.resourceName(
@@ -92,10 +93,12 @@ public class WebConsoleDeployment
   @Inject
   public WebConsoleDeployment(
       LabelFactoryForConfig labelFactory,
-      WebConsolePodSecurityFactory webConsolePodSecurityContext) {
+      WebConsolePodSecurityFactory webConsolePodSecurityContext,
+      OperatorInstallationInfoHolder installationInfoHolder) {
     super();
     this.labelFactory = labelFactory;
     this.webConsolePodSecurityContext = webConsolePodSecurityContext;
+    this.installationInfoHolder = installationInfoHolder;
   }
 
   /**
@@ -172,6 +175,10 @@ public class WebConsoleDeployment
                         .withFieldPath("metadata.namespace")
                         .build())
                     .build())
+                .build(),
+                new EnvVarBuilder()
+                .withName("RESTAPI_INSTALATION_ID")
+                .withValue(installationInfoHolder.getInstallationId())
                 .build(),
                 new EnvVarBuilder()
                 .withName("RESTAPI_IP")

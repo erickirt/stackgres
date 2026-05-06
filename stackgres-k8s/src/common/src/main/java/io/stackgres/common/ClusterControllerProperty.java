@@ -18,21 +18,22 @@ public enum ClusterControllerProperty implements StackGresPropertyReader {
   CLUSTER_CONTROLLER_EXTENSIONS_REPOSITORY_URLS(
       "stackgres.clusterControllerExtensionsRepositoryUrls"),
   CLUSTER_CONTROLLER_SKIP_OVERWRITE_SHARED_LIBRARIES(
-      "stackgres.clusterSkipOverwriteSharedLibraries"),
+      "stackgres.clusterControllerSkipOverwriteSharedLibraries"),
   CLUSTER_CONTROLLER_RECONCILE_PGBOUNCER(
-      "stackgres.clusterReconcilePgBouncer"),
+      "stackgres.clusterControllerReconcilePgBouncer"),
   CLUSTER_CONTROLLER_RECONCILE_PATRONI_LABELS(
-      "stackgres.clusterReconcilePatroniLabels"),
+      "stackgres.clusterControllerReconcilePatroniLabels"),
   CLUSTER_CONTROLLER_RECONCILE_PATRONI(
-      "stackgres.clusterReconcilePatroni"),
+      "stackgres.clusterControllerReconcilePatroni"),
   CLUSTER_CONTROLLER_RECONCILE_MANAGED_SQL(
-      "stackgres.clusterReconcileManagedSql"),
+      "stackgres.clusterControllerReconcileManagedSql"),
   CLUSTER_CONTROLLER_RECONCILE_PATRONI_AFTER_MAJOR_VERSION_UPGRADE(
-      "stackgres.clusterReconcilePatroniAfterMajorVersionUpgrade"),
+      "stackgres.clusterControllerReconcilePatroniAfterMajorVersionUpgrade"),
   CLUSTER_CONTROLLER_APPLY_IO_LIMITS(
-      "stackgres.clusterApplyIoLimits"),
+      "stackgres.clusterControllerApplyIoLimits"),
   CLUSTER_CONTROLLER_JMX_COLLECTOR_YAML_CONFIG(
-      "stackgres.cluster.controllerJmxCollectorYamlConfig");
+      "stackgres.clusterControllerJmxCollectorYamlConfig"),
+  CLUSTER_CONTROLLER_INSTALLATION_ID("stackgres.clusterControllerInstallationId");
 
   private static final Properties APPLICATION_PROPERTIES =
       StackGresPropertyReader.readApplicationProperties(ClusterControllerProperty.class);

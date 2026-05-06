@@ -14,8 +14,10 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.security.SignatureException;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.zip.GZIPInputStream;
 
 import io.stackgres.common.CdiUtil;
@@ -46,13 +48,16 @@ public abstract class ExtensionManager {
 
   private final ExtensionMetadataManager extensionMetadataManager;
   private final WebClientFactory webClientFactory;
+  private final Supplier<Map<String, String>> headersProvider;
   private final FileSystemHandler fileSystemHandler;
 
   protected ExtensionManager(ExtensionMetadataManager extensionMetadataManager,
       WebClientFactory webClientFactory,
+      Supplier<Map<String, String>> headersProvider,
       FileSystemHandler fileSystemHandler) {
     this.extensionMetadataManager = extensionMetadataManager;
     this.webClientFactory = webClientFactory;
+    this.headersProvider = headersProvider;
     this.fileSystemHandler = fileSystemHandler;
   }
 
@@ -60,6 +65,7 @@ public abstract class ExtensionManager {
     CdiUtil.checkPublicNoArgsConstructorIsCalledToCreateProxy(getClass());
     this.extensionMetadataManager = null;
     this.webClientFactory = null;
+    this.headersProvider = null;
     this.fileSystemHandler = null;
   }
 
@@ -218,7 +224,7 @@ public abstract class ExtensionManager {
       LOGGER.info("Downloading {} from {}",
           ExtensionUtil.getDescription(context.getCluster(), installedExtension, true),
           extensionUri);
-      try (WebClient client = webClientFactory.create(extensionsRepositoryUri)) {
+      try (WebClient client = webClientFactory.create(extensionsRepositoryUri, headersProvider.get())) {
         try (InputStream inputStream = client.getInputStream(extensionUri)) {
           extractTar(inputStream);
         }

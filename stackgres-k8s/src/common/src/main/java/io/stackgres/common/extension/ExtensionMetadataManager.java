@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.stackgres.common.CdiUtil;
 import io.stackgres.common.StackGresUtil;
@@ -46,17 +47,22 @@ public abstract class ExtensionMetadataManager {
 
   private final WebClientFactory webClientFactory;
   private final List<URI> extensionsRepositoryUris;
+  private final Supplier<Map<String, String>> headersProvider;
 
-  protected ExtensionMetadataManager(WebClientFactory webClientFactory,
-                                  List<URI> extensionsRepositoryUrls) {
+  protected ExtensionMetadataManager(
+      WebClientFactory webClientFactory,
+      List<URI> extensionsRepositoryUrls,
+      Supplier<Map<String, String>> headersProvider) {
     this.webClientFactory = webClientFactory;
     this.extensionsRepositoryUris = extensionsRepositoryUrls;
+    this.headersProvider = headersProvider;
   }
 
   public ExtensionMetadataManager() {
     CdiUtil.checkPublicNoArgsConstructorIsCalledToCreateProxy(getClass());
     this.webClientFactory = null;
     this.extensionsRepositoryUris = null;
+    this.headersProvider = null;
   }
 
   public URI getExtensionRepositoryUri(URI extensionsRepositoryUri) {
@@ -155,7 +161,7 @@ public abstract class ExtensionMetadataManager {
             .orElse(Instant.MIN)
             .plus(cacheTimeout)
             .isBefore(Instant.now())) {
-          try (WebClient client = webClientFactory.create(extensionsRepositoryUri)) {
+          try (WebClient client = webClientFactory.create(extensionsRepositoryUri, headersProvider.get())) {
             LOGGER.info("Downloading extensions metadata from {}",
                 WebClientFactory.obfuscateUri(extensionsRepositoryUri));
             final URI indexUri = ExtensionUtil.getIndexUri(extensionsRepositoryUri);

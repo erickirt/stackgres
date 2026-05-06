@@ -260,7 +260,7 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
       if (stats == null) {
         LOGGER.error("Reconciliation for " + configId(configKey) + " was running for more than "
             + this.blockedExecutorService + " seconds. Restarting the operator");
-        Quarkus.asyncExit();
+        Quarkus.asyncExit(1);
       }
       return null;
     }, this.reconciliationRestartOnBlockedDelay, TimeUnit.SECONDS);

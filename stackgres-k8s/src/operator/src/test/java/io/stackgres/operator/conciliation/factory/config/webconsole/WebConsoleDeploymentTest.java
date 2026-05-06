@@ -16,6 +16,7 @@ import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.labels.ConfigLabelFactory;
 import io.stackgres.common.labels.ConfigLabelMapper;
+import io.stackgres.operator.app.OperatorInstallationInfoHolder;
 import io.stackgres.operator.conciliation.config.StackGresConfigContext;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,13 +36,17 @@ class WebConsoleDeploymentTest {
   @Mock
   private WebConsolePodSecurityFactory webConsolePodSecurityContext;
 
+  @Mock
+  private OperatorInstallationInfoHolder installationInfoHolder;
+
   private StackGresConfig config;
 
   @BeforeEach
   void setUp() {
     webConsoleDeployment = new WebConsoleDeployment(
         new ConfigLabelFactory(new ConfigLabelMapper()),
-        webConsolePodSecurityContext);
+        webConsolePodSecurityContext,
+        installationInfoHolder);
     config = Fixtures.config().loadDefault().get();
     lenient().when(context.getSource()).thenReturn(config);
     lenient().when(context.getConfig()).thenReturn(config);

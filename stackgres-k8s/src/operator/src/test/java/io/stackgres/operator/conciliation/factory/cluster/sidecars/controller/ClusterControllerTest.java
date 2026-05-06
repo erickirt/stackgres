@@ -26,6 +26,7 @@ import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgprofile.StackGresProfile;
 import io.stackgres.common.fixture.Fixtures;
+import io.stackgres.operator.app.OperatorInstallationInfoHolder;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
 import io.stackgres.operator.conciliation.factory.CgroupMounts;
 import io.stackgres.operator.conciliation.factory.PostgresDataMounts;
@@ -55,12 +56,15 @@ class ClusterControllerTest {
   @Mock
   private CgroupMounts cgroupMounts;
 
+  @Mock
+  private OperatorInstallationInfoHolder installationInfoHolder;
+
   private ClusterController clusterController;
 
   @BeforeEach
   void setUp() {
     clusterController = new ClusterController(
-        postgresDataMounts, userOverrideMounts, postgresSocketMounts, cgroupMounts);
+        postgresDataMounts, userOverrideMounts, postgresSocketMounts, cgroupMounts, installationInfoHolder);
   }
 
   @Test

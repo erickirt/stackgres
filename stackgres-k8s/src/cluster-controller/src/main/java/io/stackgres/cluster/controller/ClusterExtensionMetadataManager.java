@@ -6,7 +6,9 @@
 package io.stackgres.cluster.controller;
 
 import java.net.URI;
+import java.util.Map;
 
+import io.stackgres.cluster.app.ClusterInstallationInfoHolder;
 import io.stackgres.cluster.configuration.ClusterControllerPropertyContext;
 import io.stackgres.common.ClusterControllerProperty;
 import io.stackgres.common.WebClientFactory;
@@ -19,14 +21,17 @@ import org.jooq.lambda.Seq;
 public class ClusterExtensionMetadataManager extends ExtensionMetadataManager {
 
   @Inject
-  public ClusterExtensionMetadataManager(ClusterControllerPropertyContext propertyContext,
-      WebClientFactory webClientFactory) {
+  public ClusterExtensionMetadataManager(
+      ClusterControllerPropertyContext propertyContext,
+      WebClientFactory webClientFactory,
+      ClusterInstallationInfoHolder installationInfoHolder) {
     super(
         webClientFactory,
         Seq.of(propertyContext.getStringArray(
             ClusterControllerProperty.CLUSTER_CONTROLLER_EXTENSIONS_REPOSITORY_URLS))
-            .map(URI::create)
-            .toList());
+        .map(URI::create)
+        .toList(),
+        () -> Map.ofEntries(installationInfoHolder.getUserAgentHeaderEntry()));
   }
 
 }
