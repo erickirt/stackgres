@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.batch.v1.CronJob;
+import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -107,6 +108,7 @@ public class ShardedClusterDeployedResourceScanner
           Map.entry(Role.class, client -> client.rbac().roles()),
           Map.entry(RoleBinding.class, client -> client.rbac().roleBindings()),
           Map.entry(CronJob.class, client -> client.batch().v1().cronjobs()),
+          Map.entry(Lease.class, KubernetesClient::leases),
           Map.entry(StackGresInstanceProfile.class, client -> client
               .resources(StackGresInstanceProfile.class, StackGresInstanceProfileList.class)),
           Map.entry(StackGresPostgresConfig.class, client -> client

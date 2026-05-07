@@ -94,7 +94,8 @@ public class StackGresClusterPodsPersistentVolume {
     }
     StackGresClusterPodsPersistentVolume other = (StackGresClusterPodsPersistentVolume) obj;
     return Objects.equals(fsGroupChangePolicy, other.fsGroupChangePolicy)
-        && Objects.equals(ioLimits, other.ioLimits) && Objects.equals(size, other.size)
+        && Objects.equals(ioLimits, other.ioLimits)
+        && Objects.equals(size, other.size)
         && Objects.equals(storageClass, other.storageClass)
         && Objects.equals(volumeAttributesClassName, other.volumeAttributesClassName);
   }

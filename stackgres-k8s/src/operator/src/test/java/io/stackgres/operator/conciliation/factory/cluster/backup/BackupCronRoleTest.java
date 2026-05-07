@@ -142,7 +142,7 @@ class BackupCronRoleTest {
     final List<HasMetadata> resources = backupCronRole.generateResource(context).toList();
     Role role = findResource(resources, Role.class);
     List<PolicyRule> rules = role.getRules();
-    assertEquals(6, rules.size());
+    assertEquals(7, rules.size());
   }
 
   @Test

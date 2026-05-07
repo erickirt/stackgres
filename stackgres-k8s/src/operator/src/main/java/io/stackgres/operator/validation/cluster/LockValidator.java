@@ -14,11 +14,13 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.stackgres.common.ErrorType;
+import io.stackgres.common.LeaseLockUtil;
 import io.stackgres.common.OperatorProperty;
-import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgdistributedlogs.StackGresDistributedLogs;
+import io.stackgres.common.resource.LeaseFinder;
 import io.stackgres.operator.common.StackGresClusterReview;
 import io.stackgres.operator.configuration.OperatorPropertyContext;
 import io.stackgres.operator.validation.ValidationType;
@@ -31,16 +33,19 @@ import jakarta.inject.Singleton;
 public class LockValidator implements ClusterValidator {
 
   final ObjectMapper objectMapper;
+  final LeaseFinder leaseFinder;
   final int duration;
   final String operatorServiceAccount;
 
   @Inject
   public LockValidator(OperatorPropertyContext operatorPropertyContext,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      LeaseFinder leaseFinder) {
     this.duration = operatorPropertyContext.getInt(OperatorProperty.LOCK_DURATION);
     this.operatorServiceAccount = operatorPropertyContext.getString(OperatorProperty.OPERATOR_NAMESPACE)
         + operatorPropertyContext.getString(OperatorProperty.OPERATOR_SERVICE_ACCOUNT);
     this.objectMapper = objectMapper;
+    this.leaseFinder = leaseFinder;
   }
 
   @Override
@@ -53,16 +58,19 @@ public class LockValidator implements ClusterValidator {
             objectMapper.valueToTree(oldCluster.getSpec()))) {
           return;
         }
-        String username = review.getRequest().getUserInfo().getUsername();
-        if (StackGresUtil.isLocked(cluster)
-            && (
+        Optional<Lease> lease = leaseFinder.findByNameAndNamespace(
+            LeaseLockUtil.leaseNameForCluster(cluster.getMetadata().getUid()),
+            cluster.getMetadata().getNamespace());
+        if (lease.isPresent() && LeaseLockUtil.isHeld(lease.get())) {
+          String username = review.getRequest().getUserInfo().getUsername();
+          if ((
                 username == null
                 || !isServiceAccountUsername(username)
                 || !Objects.equals(
-                    StackGresUtil.getLockServiceAccount(cluster),
+                    LeaseLockUtil.getServiceAccount(lease.get()).orElse(null),
                     getServiceAccountFromUsername(username))
                 )
-            && ! (
+              && ! (
                 Objects.equals(username, operatorServiceAccount)
                 && Optional.ofNullable(cluster.getMetadata().getOwnerReferences())
                 .stream()
@@ -75,10 +83,11 @@ public class LockValidator implements ClusterValidator {
                         HasMetadata.getKind(StackGresDistributedLogs.class)))
             )
             ) {
-          fail("SGCluster update is forbidden. It is locked by some SGBackup or SGDbOps"
-              + " that is currently running. Please, wait for the operation to finish,"
-              + " stop the operation by deleting it or wait for the lock duration of "
-              + duration + " seconds to expire.");
+            fail("SGCluster update is forbidden. It is locked by some SGBackup or SGDbOps"
+                + " that is currently running. Please, wait for the operation to finish,"
+                + " stop the operation by deleting it or wait for the lock duration of "
+                + duration + " seconds to expire.");
+          }
         }
         break;
       }

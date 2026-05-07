@@ -32,6 +32,7 @@ import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.stackgres.common.KubectlUtil;
+import io.stackgres.common.LeaseLockUtil;
 import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.PatroniUtil;
 import io.stackgres.common.ShardedClusterPath;
@@ -416,12 +417,13 @@ public class ShardedBackupJob
                     .withValue("/tmp")
                     .build(),
                     new EnvVarBuilder()
-                    .withName("LOCK_RESOURCE_NAME")
-                    .withValue(clusterName)
+                    .withName("LOCK_LEASE_NAMESPACE")
+                    .withValue(namespace)
                     .build(),
                     new EnvVarBuilder()
-                    .withName("LOCK_RESOURCE")
-                    .withValue(HasMetadata.getFullResourceName(StackGresShardedCluster.class))
+                    .withName("LOCK_LEASE_NAME")
+                    .withValue(LeaseLockUtil.leaseNameForShardedCluster(
+                        context.getShardedCluster().getMetadata().getUid()))
                     .build(),
                     new EnvVarBuilder()
                     .withName("LOCK_DURATION")
@@ -430,18 +432,6 @@ public class ShardedBackupJob
                     new EnvVarBuilder()
                     .withName("LOCK_POLL_INTERVAL")
                     .withValue(OperatorProperty.LOCK_POLL_INTERVAL.getString())
-                    .build(),
-                    new EnvVarBuilder()
-                    .withName("LOCK_SERVICE_ACCOUNT_KEY")
-                    .withValue(StackGresContext.LOCK_SERVICE_ACCOUNT_KEY)
-                    .build(),
-                    new EnvVarBuilder()
-                    .withName("LOCK_POD_KEY")
-                    .withValue(StackGresContext.LOCK_POD_KEY)
-                    .build(),
-                    new EnvVarBuilder()
-                    .withName("LOCK_TIMEOUT_KEY")
-                    .withValue(StackGresContext.LOCK_TIMEOUT_KEY)
                     .build())
                 .build())
             .withCommand("/bin/bash", "-e" + (LOGGER.isTraceEnabled() ? "x" : ""),

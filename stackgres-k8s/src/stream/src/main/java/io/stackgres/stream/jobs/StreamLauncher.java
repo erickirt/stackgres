@@ -135,6 +135,7 @@ public class StreamLauncher {
           .pollInterval(lockPollInterval)
           .duration(duration)
           .lockResourceName(initializedStream.getMetadata().getName())
+          .lockResourceUid(initializedStream.getMetadata().getUid())
           .build();
 
       Infrastructure.setDroppedExceptionHandler(err -> LOGGER.error("Dropped exception ", err));

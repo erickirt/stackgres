@@ -31,8 +31,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.stackgres.common.CdiUtil;
 import io.stackgres.common.ClusterPath;
 import io.stackgres.common.KubectlUtil;
-import io.stackgres.common.OperatorProperty;
-import io.stackgres.common.StackGresContext;
+import io.stackgres.common.LeaseLockUtil;
 import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.StackGresVolume;
 import io.stackgres.common.crd.sgdbops.DbOpsStatusCondition;
@@ -240,26 +239,6 @@ public abstract class AbstractDbOpsJob implements DbOpsJobFactory {
                     new EnvVarBuilder()
                         .withName("HOME")
                         .withValue("/tmp")
-                        .build(),
-                    new EnvVarBuilder()
-                        .withName("LOCK_DURATION")
-                        .withValue(OperatorProperty.LOCK_DURATION.getString())
-                        .build(),
-                    new EnvVarBuilder()
-                        .withName("LOCK_POLL_INTERVAL")
-                        .withValue(OperatorProperty.LOCK_POLL_INTERVAL.getString())
-                        .build(),
-                    new EnvVarBuilder()
-                        .withName("LOCK_SERVICE_ACCOUNT_KEY")
-                        .withValue(StackGresContext.LOCK_SERVICE_ACCOUNT_KEY)
-                        .build(),
-                    new EnvVarBuilder()
-                        .withName("LOCK_POD_KEY")
-                        .withValue(StackGresContext.LOCK_POD_KEY)
-                        .build(),
-                    new EnvVarBuilder()
-                        .withName("LOCK_TIMEOUT_KEY")
-                        .withValue(StackGresContext.LOCK_TIMEOUT_KEY)
                         .build())
                 .addAll(Seq.of(DbOpsStatusCondition.values())
                     .map(c -> new EnvVarBuilder()
@@ -316,6 +295,15 @@ public abstract class AbstractDbOpsJob implements DbOpsJobFactory {
                         new EnvVarBuilder()
                             .withName("HOME")
                             .withValue("/tmp")
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("LOCK_LEASE_NAMESPACE")
+                            .withValue(context.getCluster().getMetadata().getNamespace())
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("LOCK_LEASE_NAME")
+                            .withValue(LeaseLockUtil.leaseNameForCluster(
+                                context.getCluster().getMetadata().getUid()))
                             .build())
                     .addAll(runEnvVars)
                     .build())

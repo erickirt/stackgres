@@ -73,7 +73,7 @@ class ShardedBackupCronRoleTest {
     List<HasMetadata> resources = shardedBackupCronRole.generateResource(context).toList();
     Role role = findResource(resources, Role.class);
 
-    assertEquals(6, role.getRules().size());
+    assertEquals(7, role.getRules().size());
   }
 
   @Test

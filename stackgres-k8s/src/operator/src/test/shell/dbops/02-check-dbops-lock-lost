@@ -19,10 +19,12 @@ mock kubectl kubectl_mock_overwrite
 kubectl_mock_overwrite() {
   mokked
   case "$*" in
-    ("get $CLUSTER_CRD_NAME "*)
+    ("get lease -n $LOCK_LEASE_NAMESPACE $LOCK_LEASE_NAME --template="*)
     echo '
-      LOCK_POD='"$(cat "$TEST_TARGET_PATH/lock_pod")"'
-      LOCK_TIMEOUT="$(date +%s)"
+      HOLDER_IDENTITY=test/'"$(cat "$TEST_TARGET_PATH/lock_pod")"'
+      RENEW_TIME='"$(date -u +%Y-%m-%dT%H:%M:%S.%6NZ)"'
+      LEASE_DURATION_SECONDS='"$LOCK_DURATION"'
+      LEASE_TRANSITIONS=0
       RESOURCE_VERSION=test
       '
     echo wrong-test > "$TEST_TARGET_PATH/lock_pod"

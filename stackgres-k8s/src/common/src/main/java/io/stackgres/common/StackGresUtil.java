@@ -5,10 +5,6 @@
 
 package io.stackgres.common;
 
-import static io.stackgres.common.StackGresContext.LOCK_POD_KEY;
-import static io.stackgres.common.StackGresContext.LOCK_SERVICE_ACCOUNT_KEY;
-import static io.stackgres.common.StackGresContext.LOCK_TIMEOUT_KEY;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -34,10 +30,8 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LoadBalancerIngress;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceStatus;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -440,86 +434,6 @@ public interface StackGresUtil {
     return List.of(
         new ExtensionTuple("dblink"),
         new ExtensionTuple("postgres_fdw"));
-  }
-
-  static boolean isLocked(HasMetadata resource) {
-    return isLocked(resource, System.currentTimeMillis() / 1000);
-  }
-
-  static boolean isLocked(HasMetadata resource, long checkTimestamp) {
-    return Optional.ofNullable(resource.getMetadata())
-        .map(ObjectMeta::getAnnotations)
-        .filter(annotations -> annotations.containsKey(LOCK_POD_KEY)
-            && annotations.containsKey(LOCK_TIMEOUT_KEY))
-        .map(annotations -> {
-          try {
-            return Long.parseLong(annotations.get(LOCK_TIMEOUT_KEY));
-          } catch (NumberFormatException ex) {
-            return null;
-          }
-        })
-        .map(lockTimeout -> checkTimestamp < lockTimeout)
-        .orElse(false);
-  }
-
-  static boolean isLockedBy(HasMetadata resource, String lockPodName) {
-    return isLockedBy(resource, lockPodName,
-        System.currentTimeMillis() / 1000);
-  }
-
-  static boolean isLockedBy(HasMetadata resource, String lockPodName,
-      long checkTimestamp) {
-    return Optional.ofNullable(resource.getMetadata())
-        .map(ObjectMeta::getAnnotations)
-        .filter(annotation -> annotation.containsKey(LOCK_POD_KEY)
-            && annotation.containsKey(LOCK_TIMEOUT_KEY))
-        .filter(annotations -> annotations.get(LOCK_POD_KEY).equals(lockPodName))
-        .map(annotations -> {
-          try {
-            return Long.parseLong(annotations.get(LOCK_TIMEOUT_KEY));
-          } catch (NumberFormatException ex) {
-            return null;
-          }
-        })
-        .map(lockTimeout -> checkTimestamp < lockTimeout)
-        .orElse(false);
-  }
-
-  static void setLock(HasMetadata resource, String lockServiceAccount,
-      String lockPodName, long lockDuration) {
-    setLock(resource, lockServiceAccount, lockPodName, lockDuration,
-        System.currentTimeMillis() / 1000);
-  }
-
-  static void setLock(HasMetadata resource, String lockServiceAccount, String lockPodName,
-      long lockDuration, long lockTimestamp) {
-    resource.setMetadata(
-        new ObjectMetaBuilder(resource.getMetadata())
-        .removeFromAnnotations(LOCK_SERVICE_ACCOUNT_KEY)
-        .removeFromAnnotations(LOCK_POD_KEY)
-        .removeFromAnnotations(LOCK_TIMEOUT_KEY)
-        .addToAnnotations(LOCK_SERVICE_ACCOUNT_KEY, lockServiceAccount)
-        .addToAnnotations(LOCK_POD_KEY, lockPodName)
-        .addToAnnotations(LOCK_TIMEOUT_KEY, Long.toString(lockTimestamp + lockDuration))
-        .build());
-  }
-
-  static void resetLock(HasMetadata resource) {
-    resource.setMetadata(
-        new ObjectMetaBuilder(resource.getMetadata())
-        .removeFromAnnotations(LOCK_SERVICE_ACCOUNT_KEY)
-        .removeFromAnnotations(LOCK_POD_KEY)
-        .removeFromAnnotations(LOCK_TIMEOUT_KEY)
-        .build());
-  }
-
-  static String getLockServiceAccount(HasMetadata resource) {
-    return Optional.ofNullable(resource.getMetadata())
-        .map(ObjectMeta::getAnnotations)
-        .map(annotations -> annotations.get(LOCK_SERVICE_ACCOUNT_KEY))
-        .orElseThrow(() -> new IllegalArgumentException(
-            "Resource not locked or locked and annotation "
-                + LOCK_SERVICE_ACCOUNT_KEY + " not set"));
   }
 
   static String getPatroniVersion(StackGresCluster cluster) {

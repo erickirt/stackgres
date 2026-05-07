@@ -34,6 +34,7 @@ import io.fabric8.kubernetes.api.model.batch.v1.JobTemplateSpecBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.stackgres.common.JobUtil;
 import io.stackgres.common.KubectlUtil;
+import io.stackgres.common.LeaseLockUtil;
 import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.PatroniUtil;
 import io.stackgres.common.ShardedClusterPath;
@@ -396,12 +397,13 @@ public class ShardedBackupCronJob
                         .withValue("/tmp")
                         .build(),
                         new EnvVarBuilder()
-                        .withName("LOCK_RESOURCE_NAME")
-                        .withValue(name)
+                        .withName("LOCK_LEASE_NAMESPACE")
+                        .withValue(namespace)
                         .build(),
                         new EnvVarBuilder()
-                        .withName("LOCK_RESOURCE")
-                        .withValue(HasMetadata.getFullResourceName(StackGresShardedCluster.class))
+                        .withName("LOCK_LEASE_NAME")
+                        .withValue(LeaseLockUtil.leaseNameForShardedCluster(
+                            cluster.getMetadata().getUid()))
                         .build(),
                         new EnvVarBuilder()
                         .withName("LOCK_DURATION")
@@ -410,18 +412,6 @@ public class ShardedBackupCronJob
                         new EnvVarBuilder()
                         .withName("LOCK_POLL_INTERVAL")
                         .withValue(OperatorProperty.LOCK_POLL_INTERVAL.getString())
-                        .build(),
-                        new EnvVarBuilder()
-                        .withName("LOCK_SERVICE_ACCOUNT_KEY")
-                        .withValue(StackGresContext.LOCK_SERVICE_ACCOUNT_KEY)
-                        .build(),
-                        new EnvVarBuilder()
-                        .withName("LOCK_POD_KEY")
-                        .withValue(StackGresContext.LOCK_POD_KEY)
-                        .build(),
-                        new EnvVarBuilder()
-                        .withName("LOCK_TIMEOUT_KEY")
-                        .withValue(StackGresContext.LOCK_TIMEOUT_KEY)
                         .build(),
                         new EnvVarBuilder()
                         .withName("SCHEDULED_SHARDED_BACKUP_JOB_NAME_KEY")

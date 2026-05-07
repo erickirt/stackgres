@@ -96,7 +96,7 @@ class DbOpsRoleTest {
     List<HasMetadata> resources = dbOpsRole.generateResource(context).toList();
     Role role = findResource(resources, Role.class);
 
-    assertEquals(9, role.getRules().size());
+    assertEquals(10, role.getRules().size());
   }
 
   @Test

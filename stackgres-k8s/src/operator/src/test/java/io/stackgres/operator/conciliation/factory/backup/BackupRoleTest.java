@@ -93,7 +93,7 @@ class BackupRoleTest {
     List<HasMetadata> resources = backupRole.generateResource(context).toList();
     Role role = findResource(resources, Role.class);
 
-    assertEquals(2, role.getRules().size());
+    assertEquals(3, role.getRules().size());
     assertTrue(role.getRules().stream().anyMatch(rule ->
         rule.getApiGroups().contains(CommonDefinition.GROUP)
             && rule.getResources().contains(HasMetadata.getPlural(StackGresBackup.class))
@@ -103,6 +103,10 @@ class BackupRoleTest {
             && rule.getResources().contains(HasMetadata.getPlural(StackGresBackup.class))
             && rule.getVerbs().containsAll(List.of("get", "patch", "update", "delete"))
             && rule.getResourceNames().contains(backup.getMetadata().getName())));
+    assertTrue(role.getRules().stream().anyMatch(rule ->
+        rule.getApiGroups().contains("coordination.k8s.io")
+            && rule.getResources().contains("leases")
+            && rule.getVerbs().containsAll(List.of("get", "list", "watch", "update", "patch"))));
   }
 
   @Test

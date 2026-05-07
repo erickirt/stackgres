@@ -9,12 +9,15 @@ import static io.stackgres.operatorframework.resource.ResourceUtil.getServiceAcc
 import static io.stackgres.operatorframework.resource.ResourceUtil.isServiceAccountUsername;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.stackgres.common.ErrorType;
+import io.stackgres.common.LeaseLockUtil;
 import io.stackgres.common.OperatorProperty;
-import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
+import io.stackgres.common.resource.LeaseFinder;
 import io.stackgres.operator.common.StackGresShardedClusterReview;
 import io.stackgres.operator.configuration.OperatorPropertyContext;
 import io.stackgres.operator.validation.ValidationType;
@@ -27,13 +30,16 @@ import jakarta.inject.Singleton;
 public class LockValidator implements ShardedClusterValidator {
 
   final ObjectMapper objectMapper;
+  final LeaseFinder leaseFinder;
   final int duration;
 
   @Inject
   public LockValidator(OperatorPropertyContext operatorPropertyContext,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      LeaseFinder leaseFinder) {
     this.duration = operatorPropertyContext.getInt(OperatorProperty.LOCK_DURATION);
     this.objectMapper = objectMapper;
+    this.leaseFinder = leaseFinder;
   }
 
   @Override
@@ -46,20 +52,22 @@ public class LockValidator implements ShardedClusterValidator {
             objectMapper.valueToTree(oldCluster.getSpec()))) {
           return;
         }
-        String username = review.getRequest().getUserInfo().getUsername();
-        if (StackGresUtil.isLocked(cluster)
-            && (
-                username == null
-                || !isServiceAccountUsername(username)
-                || !Objects.equals(
-                    StackGresUtil.getLockServiceAccount(cluster),
-                    getServiceAccountFromUsername(username))
-                )
-            ) {
-          fail("SGShardedCluster update is forbidden. It is locked by some SGShardedBackup or SGShardedDbOps"
-              + " that is currently running. Please, wait for the operation to finish,"
-              + " stop the operation by deleting it or wait for the lock duration of "
-              + duration + " seconds to expire.");
+        Optional<Lease> lease = leaseFinder.findByNameAndNamespace(
+            LeaseLockUtil.leaseNameForShardedCluster(cluster.getMetadata().getUid()),
+            cluster.getMetadata().getNamespace());
+        if (lease.isPresent() && LeaseLockUtil.isHeld(lease.get())) {
+          String username = review.getRequest().getUserInfo().getUsername();
+          if (username == null
+              || !isServiceAccountUsername(username)
+              || !Objects.equals(
+                  LeaseLockUtil.getServiceAccount(lease.get()).orElse(null),
+                  getServiceAccountFromUsername(username))
+              ) {
+            fail("SGShardedCluster update is forbidden. It is locked by some SGShardedBackup or SGShardedDbOps"
+                + " that is currently running. Please, wait for the operation to finish,"
+                + " stop the operation by deleting it or wait for the lock duration of "
+                + duration + " seconds to expire.");
+          }
         }
         break;
       }

@@ -29,6 +29,7 @@ import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.stackgres.common.ClusterPath;
 import io.stackgres.common.KubectlUtil;
+import io.stackgres.common.LeaseLockUtil;
 import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.PatroniUtil;
 import io.stackgres.common.StackGresContainer;
@@ -439,24 +440,12 @@ public class BackupJob
                     .withValue(OperatorProperty.LOCK_POLL_INTERVAL.getString())
                     .build(),
                     new EnvVarBuilder()
-                    .withName("LOCK_RESOURCE_NAME")
-                    .withValue(clusterName)
+                    .withName("LOCK_LEASE_NAMESPACE")
+                    .withValue(namespace)
                     .build(),
                     new EnvVarBuilder()
-                    .withName("LOCK_RESOURCE")
-                    .withValue(HasMetadata.getFullResourceName(StackGresCluster.class))
-                    .build(),
-                    new EnvVarBuilder()
-                    .withName("LOCK_SERVICE_ACCOUNT_KEY")
-                    .withValue(StackGresContext.LOCK_SERVICE_ACCOUNT_KEY)
-                    .build(),
-                    new EnvVarBuilder()
-                    .withName("LOCK_POD_KEY")
-                    .withValue(StackGresContext.LOCK_POD_KEY)
-                    .build(),
-                    new EnvVarBuilder()
-                    .withName("LOCK_TIMEOUT_KEY")
-                    .withValue(StackGresContext.LOCK_TIMEOUT_KEY)
+                    .withName("LOCK_LEASE_NAME")
+                    .withValue(LeaseLockUtil.leaseNameForCluster(cluster.getMetadata().getUid()))
                     .build())
                 .build())
             .withCommand("/bin/bash", "-e" + (LOGGER.isTraceEnabled() ? "x" : ""),

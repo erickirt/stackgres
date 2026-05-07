@@ -19,18 +19,16 @@ shell_unit_test_skip() {
 kubectl_mock() {
   mokked
   case "$*" in
-    ("get $CLUSTER_CRD_NAME "*" --template="'
-  LOCK_POD='*'
-  LOCK_TIMEOUT='*'
-  RESOURCE_VERSION={{ .metadata.resourceVersion }}
-  ')
+    ("get lease -n $LOCK_LEASE_NAMESPACE $LOCK_LEASE_NAME --template="*)
     echo '
-      LOCK_POD=test
-      LOCK_TIMEOUT='"$(( $(date +%s) + 1 ))"'
+      HOLDER_IDENTITY=test/test
+      RENEW_TIME='"$(date -u +%Y-%m-%dT%H:%M:%S.%6NZ)"'
+      LEASE_DURATION_SECONDS='"$LOCK_DURATION"'
+      LEASE_TRANSITIONS=0
       RESOURCE_VERSION=test
       '
     ;;
-    ("annotate $CLUSTER_CRD_NAME "*)
+    ("patch lease -n $LOCK_LEASE_NAMESPACE $LOCK_LEASE_NAME --type merge "*)
     ;;
     ("get $CLUSTER_CRD_NAME -n $CLUSTER_NAMESPACE $CLUSTER_NAME --template={{ if .status.dbOps }}{{ if .status.dbOps.$OP_NAME }}true{{ end }}{{ end }}")
     ;;

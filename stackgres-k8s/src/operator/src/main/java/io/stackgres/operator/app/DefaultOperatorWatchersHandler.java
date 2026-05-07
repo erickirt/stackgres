@@ -613,15 +613,7 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
   }
 
   private BiConsumer<Action, StackGresConfig> reconcileConfig() {
-    return (action, config) -> Optional
-        .ofNullable(configs.get(resourceId(config)))
-        .filter(oldConfig -> config.getMetadata().getAnnotations() == null
-            || oldConfig == null
-            || oldConfig.getMetadata().getAnnotations() == null
-            || Objects.equals(
-                config.getMetadata().getAnnotations().get(StackGresContext.LOCK_TIMEOUT_KEY),
-                oldConfig.getMetadata().getAnnotations().get(StackGresContext.LOCK_TIMEOUT_KEY)))
-        .ifPresent(ignore -> configReconciliatorCycle.reconcile(config));
+    return (action, config) -> configReconciliatorCycle.reconcile(config);
   }
 
   private BiConsumer<Action, StackGresCluster> reconcileCluster() {

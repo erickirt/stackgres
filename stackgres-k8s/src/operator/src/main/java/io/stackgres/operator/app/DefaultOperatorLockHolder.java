@@ -5,19 +5,24 @@
 
 package io.stackgres.operator.app;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
+import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfigBuilder;
+import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElector;
+import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.LeaseLock;
 import io.quarkus.runtime.Quarkus;
+import io.stackgres.common.LeaseLockUtil;
 import io.stackgres.common.OperatorProperty;
-import io.stackgres.common.StackGresUtil;
-import io.stackgres.common.crd.sgconfig.StackGresConfig;
-import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.conciliation.AbstractReconciliator;
 import io.stackgres.operator.configuration.OperatorPropertyContext;
 import jakarta.inject.Singleton;
@@ -30,23 +35,24 @@ public class DefaultOperatorLockHolder implements OperatorLockHolder {
   protected static final Logger LOGGER = LoggerFactory.getLogger(
       DefaultOperatorLockHolder.class.getPackage().getName());
 
-  private final CustomResourceScanner<StackGresConfig> scanner;
-  private final CustomResourceWriter<StackGresConfig> scheduler;
+  static final String OPERATOR_LEASE_NAME = LeaseLockUtil.LEASE_NAME_PREFIX_OPERATOR + "-leader";
+
+  private final KubernetesClient client;
   private final OperatorPropertyContext context;
-  private final ScheduledExecutorService executorService;
+  private final ExecutorService executorService;
 
   private final AtomicBoolean leader = new AtomicBoolean(false);
   private final AtomicBoolean doReconciliation = new AtomicBoolean(false);
   private final List<AbstractReconciliator<?, ?>> reconciliators = new ArrayList<>();
 
+  private CompletableFuture<?> electionFuture;
+
   protected DefaultOperatorLockHolder(
-      CustomResourceScanner<StackGresConfig> scanner,
-      CustomResourceWriter<StackGresConfig> scheduler,
+      KubernetesClient client,
       OperatorPropertyContext context) {
-    this.scanner = scanner;
+    this.client = client;
     this.context = context;
-    this.scheduler = scheduler;
-    this.executorService = Executors.newSingleThreadScheduledExecutor(
+    this.executorService = Executors.newSingleThreadExecutor(
         r -> new Thread(r, "OperatorLockHolder"));
   }
 
@@ -58,32 +64,61 @@ public class DefaultOperatorLockHolder implements OperatorLockHolder {
   @Override
   public void register(AbstractReconciliator<?, ?> reconciliator) {
     this.reconciliators.add(reconciliator);
-    if (leader.get()) {
-      if (doReconciliation.get()) {
-        this.reconciliators.forEach(AbstractReconciliator::reconcileAll);
-      }
+    if (leader.get() && doReconciliation.get()) {
+      this.reconciliators.forEach(AbstractReconciliator::reconcileAll);
     }
   }
 
   @Override
   public void startReconciliation() {
     doReconciliation.set(true);
-    this.reconciliators.forEach(AbstractReconciliator::reconcileAll);
+    if (leader.get()) {
+      this.reconciliators.forEach(AbstractReconciliator::reconcileAll);
+    }
   }
 
   @Override
   public void start() {
-    LOGGER.info("Starting Operator Lock Reconciliation");
-    executorService.scheduleWithFixedDelay(this::tryHoldLock,
-        0,
-        context.getInt(OperatorProperty.LOCK_POLL_INTERVAL),
-        TimeUnit.SECONDS);
+    LOGGER.info("Starting Operator Lock Reconciliation using Lease {}/{}",
+        operatorNamespace(), OPERATOR_LEASE_NAME);
+    final int leaseDurationSeconds = context.getInt(OperatorProperty.LOCK_DURATION);
+    final int retryPeriodSeconds = context.getInt(OperatorProperty.LOCK_POLL_INTERVAL);
+    final Duration leaseDuration = Duration.ofSeconds(leaseDurationSeconds);
+    final Duration retryPeriod = Duration.ofSeconds(retryPeriodSeconds);
+    final Duration renewDeadline = computeRenewDeadline(leaseDuration, retryPeriod);
+
+    final LeaseLock lock = new LeaseLock(
+        operatorNamespace(),
+        OPERATOR_LEASE_NAME,
+        holderIdentity());
+
+    final LeaderElector elector = new LeaderElector(
+        client,
+        new LeaderElectionConfigBuilder()
+            .withName(OPERATOR_LEASE_NAME)
+            .withLock(lock)
+            .withLeaseDuration(leaseDuration)
+            .withRenewDeadline(renewDeadline)
+            .withRetryPeriod(retryPeriod)
+            .withReleaseOnCancel(true)
+            .withLeaderCallbacks(new LeaderCallbacks(
+                this::onStartLeading,
+                this::onStopLeading,
+                this::onNewLeader))
+            .build(),
+        executorService);
+
+    electionFuture = elector.start();
   }
 
   @Override
   public void stop() {
-    if (!executorService.isShutdown()) {
+    if (electionFuture != null) {
       LOGGER.info("Stopping Operator Lock Reconciliation");
+      electionFuture.cancel(true);
+      electionFuture = null;
+    }
+    if (!executorService.isShutdown()) {
       executorService.shutdown();
     }
     try {
@@ -93,117 +128,79 @@ public class DefaultOperatorLockHolder implements OperatorLockHolder {
     } catch (Exception ex) {
       LOGGER.error("An error occurred during shutdown of operator lock reconciliator", ex);
     }
-    releaseLock();
   }
 
   @Override
   public void forceUnlockOthers() {
-    if (!isLeader()) {
-      List<StackGresConfig> configs = scanner.getResources();
-      if (configs.size() == 0) {
-        throw new IllegalArgumentException("No SGConfig found. Please create an SGConfig for the"
-            + " operator to function properly");
-      }
-      if (configs.size() > 1) {
-        throw new IllegalArgumentException("More than one SGConfig found. Please remove extra"
-            + " SGConfig for the operator to function properly");
-      }
-      StackGresConfig config = configs.getFirst();
-
-      final String podName = context.getString(OperatorProperty.OPERATOR_POD_NAME);
-      scheduler.update(config, foundConfig -> {
-        if (!StackGresUtil.isLockedBy(foundConfig, podName)) {
-          if (StackGresUtil.isLocked(foundConfig)) {
-            StackGresUtil.resetLock(foundConfig);
-            LOGGER.info("Lock on SGConfig was released forcibly");
-          } else {
-            LOGGER.info("Lock on SGConfig was already release");
-          }
-        } else {
-          LOGGER.info("Lock on SGConfig is already locked by me");
-        }
-      });
-    }
-  }
-
-  private void tryHoldLock() {
-    try {
-      List<StackGresConfig> configs = scanner.getResources();
-      if (configs.size() == 0) {
-        throw new IllegalArgumentException("No SGConfig found. Please create an SGConfig for the"
-            + " operator to function properly");
-      }
-      if (configs.size() > 1) {
-        throw new IllegalArgumentException("More than one SGConfig found. Please remove extra"
-            + " SGConfig for the operator to function properly");
-      }
-      StackGresConfig config = configs.getFirst();
-
-      final String serviceAccount = context.getString(OperatorProperty.OPERATOR_SERVICE_ACCOUNT);
-      final String podName = context.getString(OperatorProperty.OPERATOR_POD_NAME);
-      final int lockDuration = context.getInt(OperatorProperty.LOCK_DURATION);
-      scheduler.update(config, foundConfig -> {
-        if (!StackGresUtil.isLockedBy(foundConfig, podName)) {
-          if (leader.get()) {
-            LOGGER.warn("Lock on SGConfig was lost");
-            leader.set(false);
-            if (context.getBoolean(OperatorProperty.FORCE_UNLOCK_OPERATOR)) {
-              LOGGER.error("Lock on SGConfig was lost while forcing unlock operator, exiting");
-              Quarkus.asyncExit(1);
-            }
-          }
-          if (StackGresUtil.isLocked(foundConfig)) {
-            LOGGER.warn("Waiting for the lock on SGConfig to be released");
-            return;
-          }
-        }
-        StackGresUtil.setLock(
-            foundConfig,
-            serviceAccount,
-            podName,
-            lockDuration);
-        if (!leader.get()) {
-          LOGGER.info("Lock on SGConfig was set. I am the leader!");
-          leader.set(true);
-          if (doReconciliation.get()) {
-            this.reconciliators.forEach(AbstractReconciliator::reconcileAll);
-          }
-        }
-      });
-    } catch (Exception ex) {
-      LOGGER.error("Reconciliation of operator lock failed", ex);
-    }
-  }
-
-  private void releaseLock() {
-    if (!leader.get()) {
+    if (isLeader()) {
       return;
     }
-    List<StackGresConfig> configs = scanner.getResources();
-    if (configs.size() == 0) {
-      throw new IllegalArgumentException("No SGConfig found. Please create an SGConfig for the"
-          + " operator to function properly");
-    }
-    if (configs.size() > 1) {
-      throw new IllegalArgumentException("More than one SGConfig found. Please remove extra"
-          + " SGConfig for the operator to function properly");
-    }
-    StackGresConfig config = configs.getFirst();
-    final String podName = context.getString(OperatorProperty.OPERATOR_POD_NAME);
-    scheduler.update(config, foundConfig -> {
-      if (StackGresUtil.isLockedBy(foundConfig, podName)) {
-        StackGresUtil.resetLock(foundConfig);
-        LOGGER.info("Lock on SGConfig was released");
-        if (leader.get()) {
-          leader.set(false);
-        }
-      } else {
-        LOGGER.info("Lock on SGConfig was already unlocked");
-        if (leader.get()) {
-          leader.set(false);
-        }
+    try {
+      var deleted = client.leases()
+          .inNamespace(operatorNamespace())
+          .withName(OPERATOR_LEASE_NAME)
+          .delete();
+      if (deleted != null && !deleted.isEmpty()) {
+        LOGGER.info("Lease {}/{} was forcibly deleted",
+            operatorNamespace(), OPERATOR_LEASE_NAME);
       }
-    });
+    } catch (KubernetesClientException ex) {
+      LOGGER.warn("Could not forcibly delete operator Lease {}/{}: {}",
+          operatorNamespace(), OPERATOR_LEASE_NAME, ex.getMessage());
+    }
+  }
+
+  private void onStartLeading() {
+    LOGGER.info("Lease on {}/{} was acquired. I am the leader!",
+        operatorNamespace(), OPERATOR_LEASE_NAME);
+    leader.set(true);
+    if (doReconciliation.get()) {
+      this.reconciliators.forEach(AbstractReconciliator::reconcileAll);
+    }
+  }
+
+  private void onStopLeading() {
+    LOGGER.warn("Lease on {}/{} was lost", operatorNamespace(), OPERATOR_LEASE_NAME);
+    boolean wasLeader = leader.getAndSet(false);
+    if (wasLeader && context.getBoolean(OperatorProperty.FORCE_UNLOCK_OPERATOR)) {
+      LOGGER.error("Lease was lost while forcing unlock operator, exiting");
+      Quarkus.asyncExit(1);
+    }
+  }
+
+  private void onNewLeader(String newLeaderIdentity) {
+    if (!holderIdentity().equals(newLeaderIdentity)) {
+      LOGGER.info("Operator Lease is held by {}", newLeaderIdentity);
+    }
+  }
+
+  private String holderIdentity() {
+    return LeaseLockUtil.holderIdentity(
+        context.getString(OperatorProperty.OPERATOR_SERVICE_ACCOUNT),
+        context.getString(OperatorProperty.OPERATOR_POD_NAME));
+  }
+
+  private String operatorNamespace() {
+    return context.getString(OperatorProperty.OPERATOR_NAMESPACE);
+  }
+
+  /**
+   * fabric8's LeaderElectorBuilder requires renewDeadline > retryPeriod * (1 + JITTER_FACTOR)
+   * and leaseDuration > renewDeadline. Pick a renew deadline that satisfies both bounds.
+   */
+  static Duration computeRenewDeadline(Duration leaseDuration, Duration retryPeriod) {
+    long lease = leaseDuration.toMillis();
+    long retry = retryPeriod.toMillis();
+    long minRenew = retry + (long) Math.ceil(retry * 1.21d) + 1L;
+    long preferred = Math.max(minRenew, lease * 2L / 3L);
+    long maxRenew = lease - 1L;
+    if (preferred >= maxRenew) {
+      throw new IllegalArgumentException(
+          "LOCK_DURATION (" + leaseDuration.toSeconds() + "s) must be larger than"
+              + " LOCK_POLL_INTERVAL (" + retryPeriod.toSeconds() + "s)"
+              + " to leave room for renew deadline (need at least " + (preferred + 1) + "ms)");
+    }
+    return Duration.ofMillis(preferred);
   }
 
 }

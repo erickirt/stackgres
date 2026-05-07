@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.v1.CronJob;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -149,6 +150,7 @@ public class ClusterDeployedResourceScanner
           Map.entry(Job.class, client -> client.batch().v1().jobs()),
           Map.entry(CronJob.class, client -> client.batch().v1().cronjobs()),
           Map.entry(StatefulSet.class, client -> client.apps().statefulSets()),
+          Map.entry(Lease.class, KubernetesClient::leases),
           Map.entry(StackGresScript.class, client -> client
               .resources(StackGresScript.class, StackGresScriptList.class)),
           Map.entry(StackGresInstanceProfile.class, client -> client

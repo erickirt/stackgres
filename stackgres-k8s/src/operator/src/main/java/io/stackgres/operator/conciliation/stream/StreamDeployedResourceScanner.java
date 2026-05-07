@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -87,7 +88,8 @@ public class StreamDeployedResourceScanner extends AbstractDeployedResourcesScan
           Map.entry(Role.class, client -> client.rbac().roles()),
           Map.entry(RoleBinding.class, client -> client.rbac().roleBindings()),
           Map.entry(Job.class, client -> client.batch().v1().jobs()),
-          Map.entry(Deployment.class, client -> client.apps().deployments())
+          Map.entry(Deployment.class, client -> client.apps().deployments()),
+          Map.entry(Lease.class, KubernetesClient::leases)
           );
 
 }

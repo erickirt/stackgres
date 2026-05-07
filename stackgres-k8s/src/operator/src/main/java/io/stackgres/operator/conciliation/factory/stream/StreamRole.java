@@ -127,6 +127,11 @@ public class StreamRole implements ResourceGenerator<StackGresStreamContext> {
             .withResources(HasMetadata.getPlural(StackGresCluster.class))
             .withVerbs("get")
             .build())
+        .addToRules(new PolicyRuleBuilder()
+            .withApiGroups("coordination.k8s.io")
+            .withResources("leases")
+            .withVerbs("get", "list", "watch", "update", "patch")
+            .build())
         .build();
   }
 
