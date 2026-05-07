@@ -25,7 +25,7 @@ import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.conciliation.AbstractReconciliator;
 import io.stackgres.operator.configuration.OperatorPropertyContext;
 import io.stackgres.testutil.JsonUtil;
@@ -52,13 +52,13 @@ class DefaultOperatorLockHolderTest {
   private CustomResourceScanner<StackGresConfig> scanner;
 
   @Mock
-  private CustomResourceScheduler<StackGresConfig> scheduler;
+  private CustomResourceWriter<StackGresConfig> scheduler;
 
   @Mock
   private OperatorPropertyContext context;
 
   @Mock
-  private AbstractReconciliator<?> reconciliator;
+  private AbstractReconciliator<?, ?> reconciliator;
 
   private DefaultOperatorLockHolder operatorLockHolder;
 

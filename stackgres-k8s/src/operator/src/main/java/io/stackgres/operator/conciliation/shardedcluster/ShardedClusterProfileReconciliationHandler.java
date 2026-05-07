@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.labels.LabelFactoryForShardedCluster;
 import io.stackgres.operator.conciliation.FireAndForgetReconciliationHandler;
@@ -18,7 +18,7 @@ import io.stackgres.operator.conciliation.ReconciliationHandler;
 import io.stackgres.operator.conciliation.ReconciliationScope;
 import jakarta.enterprise.context.ApplicationScoped;
 
-@ReconciliationScope(value = StackGresShardedCluster.class, kind = StackGresProfile.KIND)
+@ReconciliationScope(value = StackGresShardedCluster.class, kind = StackGresInstanceProfile.KIND)
 @ApplicationScoped
 public class ShardedClusterProfileReconciliationHandler
     extends FireAndForgetReconciliationHandler<StackGresShardedCluster> {

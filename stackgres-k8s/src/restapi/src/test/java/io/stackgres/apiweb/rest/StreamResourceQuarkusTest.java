@@ -32,7 +32,7 @@ import io.stackgres.common.crd.SecretKeySelector;
 import io.stackgres.common.crd.sgstream.StackGresStream;
 import io.stackgres.common.crd.sgstream.StackGresStreamList;
 import io.stackgres.common.fixture.Fixtures;
-import io.stackgres.common.resource.StreamScheduler;
+import io.stackgres.common.resource.StreamWriter;
 import io.stackgres.testutil.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +46,7 @@ class StreamResourceQuarkusTest implements AuthenticatedResourceTest {
   KubernetesServer mockServer;
 
   @InjectMock
-  StreamScheduler streamScheduler;
+  StreamWriter streamWriter;
 
   private final StackGresStream stream = getStream();
 
@@ -90,7 +90,7 @@ class StreamResourceQuarkusTest implements AuthenticatedResourceTest {
     final Metadata metadata = stream.getMetadata();
     metadata.setNamespace("test");
 
-    when(streamScheduler.create(any(), anyBoolean())).thenReturn(this.stream);
+    when(streamWriter.create(any(), anyBoolean())).thenReturn(this.stream);
 
     given()
         .header(AUTHENTICATION_HEADER)
@@ -138,7 +138,7 @@ class StreamResourceQuarkusTest implements AuthenticatedResourceTest {
     final Metadata metadata = stream.getMetadata();
     metadata.setNamespace("test");
 
-    when(streamScheduler.create(any(), anyBoolean())).thenReturn(this.stream);
+    when(streamWriter.create(any(), anyBoolean())).thenReturn(this.stream);
 
     given()
         .header(AUTHENTICATION_HEADER)

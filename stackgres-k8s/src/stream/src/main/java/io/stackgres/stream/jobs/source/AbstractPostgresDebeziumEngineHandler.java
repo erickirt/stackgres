@@ -30,7 +30,7 @@ import io.stackgres.common.crd.sgstream.StackGresStreamSourceSgCluster;
 import io.stackgres.common.crd.sgstream.StackGresStreamSpec;
 import io.stackgres.common.crd.sgstream.StreamSourceType;
 import io.stackgres.common.resource.CustomResourceFinder;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.common.resource.ResourceFinder;
 import io.stackgres.operatorframework.resource.ResourceUtil;
 import io.stackgres.stream.jobs.DebeziumUtil;
@@ -58,7 +58,7 @@ public abstract class AbstractPostgresDebeziumEngineHandler implements SourceEve
   CustomResourceFinder<StackGresStream> streamFinder;
 
   @Inject
-  CustomResourceScheduler<StackGresStream> streamScheduler;
+  CustomResourceWriter<StackGresStream> streamWriter;
 
   @Inject
   StreamExecutorService executorService;
@@ -154,7 +154,7 @@ public abstract class AbstractPostgresDebeziumEngineHandler implements SourceEve
     }
     try {
       TombstoneDebeziumSignalAction tombstoneSignalAction = new TombstoneDebeziumSignalAction(
-          stream, streamScheduler, clusterFinder, secretFinder, engine, streamCompleted);
+          stream, streamWriter, clusterFinder, secretFinder, engine, streamCompleted);
       StreamDebeziumSignalActionProvider.registerSignalAction(
           StreamDebeziumSignalActionProvider.TOMBSTONE_SIGNAL_TYPE, tombstoneSignalAction);
       executor.execute(engine);

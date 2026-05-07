@@ -8,7 +8,7 @@ package io.stackgres.operator.conciliation.cluster.context;
 import java.util.Optional;
 
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.operator.conciliation.ContextAppender;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext.Builder;
@@ -19,11 +19,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class ClusterInstanceProfileContextAppender
     extends ContextAppender<StackGresCluster, Builder> {
 
-  private final CustomResourceFinder<StackGresProfile> profileFinder;
+  private final CustomResourceFinder<StackGresInstanceProfile> profileFinder;
   private final DefaultProfileFactory defaultProfileFactory;
 
   public ClusterInstanceProfileContextAppender(
-      CustomResourceFinder<StackGresProfile> profileFinder,
+      CustomResourceFinder<StackGresInstanceProfile> profileFinder,
       DefaultProfileFactory defaultProfileFactory) {
     this.profileFinder = profileFinder;
     this.defaultProfileFactory = defaultProfileFactory;
@@ -31,14 +31,14 @@ public class ClusterInstanceProfileContextAppender
 
   @Override
   public void appendContext(StackGresCluster cluster, Builder contextBuilder) {
-    final Optional<StackGresProfile> profile = profileFinder
+    final Optional<StackGresInstanceProfile> profile = profileFinder
         .findByNameAndNamespace(
             cluster.getSpec().getSgInstanceProfile(),
             cluster.getMetadata().getNamespace());
     if (!cluster.getSpec().getSgInstanceProfile().equals(defaultProfileFactory.getDefaultResourceName(cluster))
         && profile.isEmpty()) {
       throw new IllegalArgumentException(
-          StackGresProfile.KIND + " " + cluster.getSpec().getSgInstanceProfile() + " was not found");
+          StackGresInstanceProfile.KIND + " " + cluster.getSpec().getSgInstanceProfile() + " was not found");
     }
     contextBuilder.profile(profile);
   }

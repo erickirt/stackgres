@@ -7,7 +7,7 @@ package io.stackgres.operator.mutation.cluster;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.operator.common.StackGresClusterReview;
 import io.stackgres.operator.initialization.DefaultCustomResourceFactory;
 import io.stackgres.operator.mutation.AbstractDefaultResourceMutator;
@@ -16,13 +16,13 @@ import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class DefaultInstanceProfileMutator
-    extends AbstractDefaultResourceMutator<StackGresProfile, HasMetadata,
+    extends AbstractDefaultResourceMutator<StackGresInstanceProfile, HasMetadata,
         StackGresCluster, StackGresClusterReview>
     implements ClusterMutator {
 
   @Inject
   public DefaultInstanceProfileMutator(
-      DefaultCustomResourceFactory<StackGresProfile, HasMetadata> resourceFactory) {
+      DefaultCustomResourceFactory<StackGresInstanceProfile, HasMetadata> resourceFactory) {
     super(resourceFactory);
   }
 

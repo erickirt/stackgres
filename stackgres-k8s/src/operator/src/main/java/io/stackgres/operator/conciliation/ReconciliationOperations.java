@@ -26,7 +26,7 @@ import io.stackgres.common.crd.sgbackup.StackGresBackup;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgscript.StackGresScript;
 
 public interface ReconciliationOperations {
@@ -45,7 +45,7 @@ public interface ReconciliationOperations {
       CronJob.class,
       StatefulSet.class,
       StackGresScript.class,
-      StackGresProfile.class,
+      StackGresInstanceProfile.class,
       StackGresPostgresConfig.class,
       StackGresPoolingConfig.class,
       StackGresBackup.class,

@@ -36,7 +36,7 @@ import io.stackgres.common.crd.sgstream.StreamTargetType;
 import io.stackgres.common.kubernetesclient.KubernetesClientUtil;
 import io.stackgres.common.patroni.StackGresPasswordKeys;
 import io.stackgres.common.resource.CustomResourceFinder;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.common.resource.ResourceFinder;
 import io.stackgres.operatorframework.resource.ResourceUtil;
 import io.stackgres.stream.jobs.StreamDebeziumSignalActionProvider;
@@ -53,7 +53,7 @@ public class TombstoneDebeziumSignalAction implements SignalAction<Partition> {
   private static final Logger LOGGER = LoggerFactory.getLogger(TombstoneDebeziumSignalAction.class);
 
   final StackGresStream stream;
-  final CustomResourceScheduler<StackGresStream> streamScheduler;
+  final CustomResourceWriter<StackGresStream> streamWriter;
   final CustomResourceFinder<StackGresCluster> clusterFinder;
   final ResourceFinder<Secret> secretFinder;
   final DebeziumEngine<?> engine;
@@ -62,13 +62,13 @@ public class TombstoneDebeziumSignalAction implements SignalAction<Partition> {
 
   public TombstoneDebeziumSignalAction(
       StackGresStream stream,
-      CustomResourceScheduler<StackGresStream> streamScheduler,
+      CustomResourceWriter<StackGresStream> streamWriter,
       CustomResourceFinder<StackGresCluster> clusterFinder,
       ResourceFinder<Secret> secretFinder,
       DebeziumEngine<?> engine,
       CompletableFuture<Void> streamCompleted) {
     this.stream = stream;
-    this.streamScheduler = streamScheduler;
+    this.streamWriter = streamWriter;
     this.clusterFinder = clusterFinder;
     this.secretFinder = secretFinder;
     this.engine = engine;
@@ -112,7 +112,7 @@ public class TombstoneDebeziumSignalAction implements SignalAction<Partition> {
         }))
         .thenRunAsync(this::restoreTargetConstraints)
         .thenRunAsync(this::cleanupSource)
-        .thenRunAsync(() -> KubernetesClientUtil.retryOnConflict(() -> streamScheduler
+        .thenRunAsync(() -> KubernetesClientUtil.retryOnConflict(() -> streamWriter
             .update(stream, this::setCompletedStatusCondition)))
         .handleAsync((ignore, ex) -> {
           if (ex != null) {

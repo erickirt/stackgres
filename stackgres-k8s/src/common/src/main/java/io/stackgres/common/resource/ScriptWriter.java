@@ -10,10 +10,10 @@ import io.stackgres.common.crd.sgscript.StackGresScriptList;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class ScriptScheduler extends
-    AbstractCustomResourceScheduler<StackGresScript, StackGresScriptList> {
+public class ScriptWriter extends
+    AbstractCustomResourceWriter<StackGresScript, StackGresScriptList> {
 
-  public ScriptScheduler() {
+  public ScriptWriter() {
     super(StackGresScript.class, StackGresScriptList.class);
   }
 

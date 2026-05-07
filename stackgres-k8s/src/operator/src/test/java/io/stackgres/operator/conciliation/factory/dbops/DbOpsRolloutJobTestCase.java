@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgdbops.StackGresDbOps;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.dbops.StackGresDbOpsContext;
@@ -34,7 +34,7 @@ abstract class DbOpsRolloutJobTestCase {
 
   StackGresDbOps dbOps;
 
-  StackGresProfile clusterProfile;
+  StackGresInstanceProfile clusterProfile;
 
   @BeforeEach
   void setUp() {

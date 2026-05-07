@@ -19,7 +19,7 @@ import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.operator.conciliation.GenerationContext;
 import org.immutables.value.Value;
@@ -44,13 +44,13 @@ public interface StackGresShardedClusterContext
 
   StackGresCluster getCoordinator();
 
-  Optional<StackGresProfile> getCoordinatorProfile();
+  Optional<StackGresInstanceProfile> getCoordinatorProfile();
 
   Optional<StackGresPostgresConfig> getCoordinatorPostgresConfig();
 
   Optional<StackGresPoolingConfig> getCoordinatorPoolingConfig();
 
-  Optional<StackGresProfile> getWorkersProfile();
+  Optional<StackGresInstanceProfile> getWorkersProfile();
 
   Optional<StackGresPostgresConfig> getWorkersPostgresConfig();
 

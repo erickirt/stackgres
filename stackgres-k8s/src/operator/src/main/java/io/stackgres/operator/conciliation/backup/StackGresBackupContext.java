@@ -20,7 +20,7 @@ import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterConfigurations;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
 import io.stackgres.common.crd.sgobjectstorage.StackGresObjectStorage;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.storages.BackupStorage;
 import io.stackgres.operator.conciliation.GenerationContext;
 import org.immutables.value.Value;
@@ -31,7 +31,7 @@ public interface StackGresBackupContext extends GenerationContext<StackGresBacku
 
   Optional<StackGresCluster> getFoundCluster();
 
-  Optional<StackGresProfile> getFoundProfile();
+  Optional<StackGresInstanceProfile> getFoundProfile();
 
   @Override
   @Value.Lazy
@@ -42,10 +42,10 @@ public interface StackGresBackupContext extends GenerationContext<StackGresBacku
   }
 
   @Value.Lazy
-  default StackGresProfile getProfile() {
+  default StackGresInstanceProfile getProfile() {
     return getFoundProfile()
         .orElseThrow(() -> new IllegalArgumentException(
-            StackGresProfile.KIND + " " + getCluster().getSpec().getSgInstanceProfile() + " not found"));
+            StackGresInstanceProfile.KIND + " " + getCluster().getSpec().getSgInstanceProfile() + " not found"));
   }
 
   Set<String> getClusterBackupNamespaces();

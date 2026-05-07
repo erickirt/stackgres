@@ -20,12 +20,16 @@ import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.event.EventEmitter;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.resource.CustomResourceFinder;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.common.Metrics;
+import io.stackgres.operator.common.StackGresBackupReview;
 import io.stackgres.operator.conciliation.AbstractConciliator;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
 import io.stackgres.operator.conciliation.HandlerDelegator;
 import io.stackgres.operator.conciliation.ReconciliationResult;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
 import io.stackgres.operator.conciliation.factory.cluster.KubernetessMockResourceGenerationUtil;
 import io.stackgres.testutil.JsonUtil;
 import org.jooq.lambda.tuple.Tuple;
@@ -51,26 +55,35 @@ class BackupReconciliatorTest {
   @Mock
   EventEmitter<StackGresBackup> eventController;
   @Mock
-  CustomResourceScheduler<StackGresBackup> backupScheduler;
+  CustomResourceWriter<StackGresBackup> backupWriter;
   @Mock
   CustomResourceFinder<StackGresCluster> clusterFinder;
   @Mock
   BackupStatusManager statusManager;
   @Mock
   Metrics metrics;
+  @Mock
+  OperatorPropertyContext operatorPropertyContext;
+  @Mock
+  MutationPipeline<StackGresBackup, StackGresBackupReview> mutationPipeline;
+  @Mock
+  ValidationPipeline<StackGresBackupReview> validationPipeline;
 
   private BackupReconciliator reconciliator;
 
   @BeforeEach
   void setUp() {
     BackupReconciliator.Parameters parameters = new BackupReconciliator.Parameters();
+    parameters.operatorPropertyContext = operatorPropertyContext;
+    parameters.mutationPipeline = mutationPipeline;
+    parameters.validationPipeline = validationPipeline;
     parameters.finder = finder;
-    parameters.backupScheduler = backupScheduler;
+    parameters.backupWriter = backupWriter;
     parameters.conciliator = conciliator;
     parameters.deployedResourcesCache = deployedResourcesCache;
     parameters.handlerDelegator = handlerDelegator;
     parameters.eventController = eventController;
-    parameters.backupScheduler = backupScheduler;
+    parameters.backupWriter = backupWriter;
     parameters.objectMapper = JsonUtil.jsonMapper();
     parameters.statusManager = statusManager;
     parameters.metrics = metrics;

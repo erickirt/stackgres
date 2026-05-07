@@ -32,7 +32,7 @@ import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfigStatus;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfig;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfigPgBouncerStatus;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfigStatus;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.resource.BackupFinder;
 import io.stackgres.common.resource.ClusterFinder;
@@ -88,7 +88,7 @@ class ClusterRequiredResourcesGeneratorTest {
   StackGresObjectStorage objectStorage;
   StackGresPostgresConfig postgresConfig;
   StackGresPoolingConfig poolingConfig;
-  StackGresProfile instanceProfile;
+  StackGresInstanceProfile instanceProfile;
   StackGresBackup backup;
   Secret minioSecret;
 

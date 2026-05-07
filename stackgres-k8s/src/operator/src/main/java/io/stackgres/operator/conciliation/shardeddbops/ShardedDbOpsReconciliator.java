@@ -14,16 +14,20 @@ import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOps;
 import io.stackgres.common.event.EventEmitter;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.app.OperatorLockHolder;
 import io.stackgres.operator.common.Metrics;
 import io.stackgres.operator.common.PatchResumer;
+import io.stackgres.operator.common.StackGresShardedDbOpsReview;
 import io.stackgres.operator.conciliation.AbstractConciliator;
 import io.stackgres.operator.conciliation.AbstractReconciliator;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
 import io.stackgres.operator.conciliation.HandlerDelegator;
 import io.stackgres.operator.conciliation.ReconciliationResult;
 import io.stackgres.operator.conciliation.ReconciliatorWorkerThreadPool;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.event.Observes;
@@ -32,19 +36,23 @@ import org.slf4j.helpers.MessageFormatter;
 
 @ApplicationScoped
 public class ShardedDbOpsReconciliator
-    extends AbstractReconciliator<StackGresShardedDbOps> {
+    extends AbstractReconciliator<StackGresShardedDbOps, StackGresShardedDbOpsReview> {
 
   @Dependent
   static class Parameters {
+    @Inject OperatorPropertyContext operatorPropertyContext;
     @Inject CustomResourceScanner<StackGresShardedDbOps> scanner;
     @Inject CustomResourceFinder<StackGresShardedDbOps> finder;
+    @Inject MutationPipeline<StackGresShardedDbOps, StackGresShardedDbOpsReview> mutationPipeline;
+    @Inject ValidationPipeline<StackGresShardedDbOpsReview> validationPipeline;
+    @Inject CustomResourceWriter<StackGresShardedDbOps> writer;
     @Inject AbstractConciliator<StackGresShardedDbOps> conciliator;
     @Inject DeployedResourcesCache deployedResourcesCache;
     @Inject HandlerDelegator<StackGresShardedDbOps> handlerDelegator;
     @Inject KubernetesClient client;
     @Inject EventEmitter<StackGresShardedDbOps> eventController;
     @Inject ShardedDbOpsStatusManager statusManager;
-    @Inject CustomResourceScheduler<StackGresShardedDbOps> dbOpsScheduler;
+    @Inject CustomResourceWriter<StackGresShardedDbOps> dbOpsWriter;
     @Inject ObjectMapper objectMapper;
     @Inject OperatorLockHolder operatorLockReconciliator;
     @Inject ReconciliatorWorkerThreadPool reconciliatorWorkerThreadPool;
@@ -54,13 +62,22 @@ public class ShardedDbOpsReconciliator
   private final EventEmitter<StackGresShardedDbOps> eventController;
   private final PatchResumer<StackGresShardedDbOps> patchResumer;
   private final ShardedDbOpsStatusManager statusManager;
-  private final CustomResourceScheduler<StackGresShardedDbOps> dbOpsScheduler;
+  private final CustomResourceWriter<StackGresShardedDbOps> dbOpsWriter;
 
   @Inject
   public ShardedDbOpsReconciliator(Parameters parameters) {
-    super(parameters.scanner, parameters.finder,
-        parameters.conciliator, parameters.deployedResourcesCache,
-        parameters.handlerDelegator, parameters.client,
+    super(
+        parameters.operatorPropertyContext,
+        parameters.scanner,
+        parameters.finder,
+        parameters.objectMapper,
+        parameters.mutationPipeline,
+        parameters.validationPipeline,
+        parameters.writer,
+        parameters.conciliator,
+        parameters.deployedResourcesCache,
+        parameters.handlerDelegator,
+        parameters.client,
         parameters.operatorLockReconciliator,
         parameters.reconciliatorWorkerThreadPool,
         parameters.metrics,
@@ -68,7 +85,24 @@ public class ShardedDbOpsReconciliator
     this.eventController = parameters.eventController;
     this.patchResumer = new PatchResumer<>(parameters.objectMapper);
     this.statusManager = parameters.statusManager;
-    this.dbOpsScheduler = parameters.dbOpsScheduler;
+    this.dbOpsWriter = parameters.dbOpsWriter;
+  }
+
+  @Override
+  protected void setSpecAndStatus(StackGresShardedDbOps currentConfig,
+      StackGresShardedDbOps mutatedAndValidatedConfig) {
+    currentConfig.setSpec(mutatedAndValidatedConfig.getSpec());
+    currentConfig.setStatus(mutatedAndValidatedConfig.getStatus());
+  }
+
+  @Override
+  protected StackGresShardedDbOpsReview createAdmissionReview() {
+    return new StackGresShardedDbOpsReview();
+  }
+
+  @Override
+  protected Class<StackGresShardedDbOps> getResourceClass() {
+    return StackGresShardedDbOps.class;
   }
 
   void onStart(@Observes StartupEvent ev) {
@@ -90,7 +124,7 @@ public class ShardedDbOpsReconciliator
 
   @Override
   protected void onPostReconciliation(StackGresShardedDbOps config) {
-    dbOpsScheduler.update(config, statusManager::refreshCondition);
+    dbOpsWriter.update(config, statusManager::refreshCondition);
   }
 
   @Override

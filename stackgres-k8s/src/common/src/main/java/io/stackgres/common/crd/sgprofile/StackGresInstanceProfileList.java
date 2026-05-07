@@ -17,7 +17,7 @@ import io.sundr.builder.annotations.Buildable;
 @Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
-public final class StackGresProfileList extends DefaultKubernetesResourceList<StackGresProfile> {
+public final class StackGresInstanceProfileList extends DefaultKubernetesResourceList<StackGresInstanceProfile> {
 
   private static final long serialVersionUID = 1L;
 

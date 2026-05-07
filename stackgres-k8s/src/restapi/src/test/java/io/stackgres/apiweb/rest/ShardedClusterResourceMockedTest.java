@@ -77,7 +77,7 @@ import io.stackgres.common.labels.ShardedClusterLabelFactory;
 import io.stackgres.common.labels.ShardedClusterLabelMapper;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.common.resource.PersistentVolumeClaimFinder;
 import io.stackgres.common.resource.PodExecutor;
 import io.stackgres.common.resource.PodFinder;
@@ -112,7 +112,7 @@ class ShardedClusterResourceMockedTest extends
   @Mock
   protected CustomResourceScanner<StackGresCluster> clusterScanner;
   @Mock
-  private CustomResourceScheduler<StackGresScript> scriptScheduler;
+  private CustomResourceWriter<StackGresScript> scriptWriter;
   @Mock
   private ResourceWriter<ConfigMap> configMapWriter;
   @Mock
@@ -232,8 +232,8 @@ class ShardedClusterResourceMockedTest extends
     verify(finder, times(0)).findByNameAndNamespace(any(), any());
     verify(scheduler, times(1)).create(any(), anyBoolean());
     verify(scheduler, times(0)).update(any(), any());
-    verify(scriptScheduler, times(0)).create(any(), anyBoolean());
-    verify(scriptScheduler, times(0)).update(any(), anyBoolean());
+    verify(scriptWriter, times(0)).create(any(), anyBoolean());
+    verify(scriptWriter, times(0)).update(any(), anyBoolean());
     verify(secretWriter, times(0)).create(any(), anyBoolean());
     verify(secretWriter, times(0)).update(any(), anyBoolean());
     verify(configMapWriter, times(0)).create(any(), anyBoolean());
@@ -253,8 +253,8 @@ class ShardedClusterResourceMockedTest extends
     verify(finder, times(1)).findByNameAndNamespace(any(), any());
     verify(scheduler, times(0)).create(any(), anyBoolean());
     verify(scheduler, times(1)).update(any(), any());
-    verify(scriptScheduler, times(0)).create(any(), anyBoolean());
-    verify(scriptScheduler, times(0)).update(any(), anyBoolean());
+    verify(scriptWriter, times(0)).create(any(), anyBoolean());
+    verify(scriptWriter, times(0)).update(any(), anyBoolean());
     verify(secretWriter, times(0)).create(any(), anyBoolean());
     verify(secretWriter, times(0)).update(any(), anyBoolean());
     verify(configMapWriter, times(0)).create(any(), anyBoolean());
@@ -280,8 +280,8 @@ class ShardedClusterResourceMockedTest extends
     verify(finder, times(0)).findByNameAndNamespace(any(), any());
     verify(scheduler, times(1)).create(any(), anyBoolean());
     verify(scheduler, times(0)).update(any(), any());
-    verify(scriptScheduler, times(0)).create(any(), anyBoolean());
-    verify(scriptScheduler, times(1)).update(any(), anyBoolean());
+    verify(scriptWriter, times(0)).create(any(), anyBoolean());
+    verify(scriptWriter, times(1)).update(any(), anyBoolean());
     verify(secretWriter, times(0)).create(any(), anyBoolean());
     verify(secretWriter, times(0)).update(any(), anyBoolean());
     verify(configMapWriter, times(0)).create(any(), anyBoolean());
@@ -304,8 +304,8 @@ class ShardedClusterResourceMockedTest extends
     verify(finder, times(0)).findByNameAndNamespace(any(), any());
     verify(scheduler, times(1)).create(any(), anyBoolean());
     verify(scheduler, times(0)).update(any(), any());
-    verify(scriptScheduler, times(1)).create(any(), anyBoolean());
-    verify(scriptScheduler, times(0)).update(any(), anyBoolean());
+    verify(scriptWriter, times(1)).create(any(), anyBoolean());
+    verify(scriptWriter, times(0)).update(any(), anyBoolean());
     verify(secretWriter, times(0)).create(any(), anyBoolean());
     verify(secretWriter, times(0)).update(any(), anyBoolean());
     verify(configMapWriter, times(0)).create(any(), anyBoolean());
@@ -329,8 +329,8 @@ class ShardedClusterResourceMockedTest extends
     verify(finder, times(0)).findByNameAndNamespace(any(), any());
     verify(scheduler, times(1)).create(any(), anyBoolean());
     verify(scheduler, times(0)).update(any(), any());
-    verify(scriptScheduler, times(1)).create(any(), anyBoolean());
-    verify(scriptScheduler, times(0)).update(any(), anyBoolean());
+    verify(scriptWriter, times(1)).create(any(), anyBoolean());
+    verify(scriptWriter, times(0)).update(any(), anyBoolean());
     verify(secretWriter, times(0)).create(any(), anyBoolean());
     verify(secretWriter, times(0)).update(any(), anyBoolean());
     verify(configMapWriter, times(0)).create(any(), anyBoolean());
@@ -370,8 +370,8 @@ class ShardedClusterResourceMockedTest extends
     verify(finder, times(0)).findByNameAndNamespace(any(), any());
     verify(scheduler, times(1)).create(any(), anyBoolean());
     verify(scheduler, times(0)).update(any(), any());
-    verify(scriptScheduler, times(1)).create(any(), anyBoolean());
-    verify(scriptScheduler, times(0)).update(any(), anyBoolean());
+    verify(scriptWriter, times(1)).create(any(), anyBoolean());
+    verify(scriptWriter, times(0)).update(any(), anyBoolean());
     verify(secretWriter, times(1)).create(any(), anyBoolean());
     verify(secretWriter, times(0)).update(any(), anyBoolean());
     verify(configMapWriter, times(0)).create(any(), anyBoolean());
@@ -414,8 +414,8 @@ class ShardedClusterResourceMockedTest extends
     verify(finder, times(0)).findByNameAndNamespace(any(), any());
     verify(scheduler, times(1)).create(any(), anyBoolean());
     verify(scheduler, times(0)).update(any(), any());
-    verify(scriptScheduler, times(1)).create(any(), anyBoolean());
-    verify(scriptScheduler, times(0)).update(any(), anyBoolean());
+    verify(scriptWriter, times(1)).create(any(), anyBoolean());
+    verify(scriptWriter, times(0)).update(any(), anyBoolean());
     verify(secretWriter, times(0)).create(any(), anyBoolean());
     verify(secretWriter, times(1)).update(any(), anyBoolean());
     verify(configMapWriter, times(0)).create(any(), anyBoolean());
@@ -456,8 +456,8 @@ class ShardedClusterResourceMockedTest extends
     verify(finder, times(0)).findByNameAndNamespace(any(), any());
     verify(scheduler, times(1)).create(any(), anyBoolean());
     verify(scheduler, times(0)).update(any(), any());
-    verify(scriptScheduler, times(1)).create(any(), anyBoolean());
-    verify(scriptScheduler, times(0)).update(any(), anyBoolean());
+    verify(scriptWriter, times(1)).create(any(), anyBoolean());
+    verify(scriptWriter, times(0)).update(any(), anyBoolean());
     verify(secretWriter, times(1)).create(any(), anyBoolean());
     verify(secretWriter, times(0)).update(any(), anyBoolean());
     verify(configMapWriter, times(0)).create(any(), anyBoolean());
@@ -495,8 +495,8 @@ class ShardedClusterResourceMockedTest extends
     verify(finder, times(0)).findByNameAndNamespace(any(), any());
     verify(scheduler, times(1)).create(any(), anyBoolean());
     verify(scheduler, times(0)).update(any(), any());
-    verify(scriptScheduler, times(1)).create(any(), anyBoolean());
-    verify(scriptScheduler, times(0)).update(any(), anyBoolean());
+    verify(scriptWriter, times(1)).create(any(), anyBoolean());
+    verify(scriptWriter, times(0)).update(any(), anyBoolean());
     verify(secretWriter, times(0)).create(any(), anyBoolean());
     verify(secretWriter, times(0)).update(any(), anyBoolean());
     verify(configMapWriter, times(1)).create(any(), anyBoolean());
@@ -537,8 +537,8 @@ class ShardedClusterResourceMockedTest extends
     verify(finder, times(0)).findByNameAndNamespace(any(), any());
     verify(scheduler, times(1)).create(any(), anyBoolean());
     verify(scheduler, times(0)).update(any(), any());
-    verify(scriptScheduler, times(1)).create(any(), anyBoolean());
-    verify(scriptScheduler, times(0)).update(any(), anyBoolean());
+    verify(scriptWriter, times(1)).create(any(), anyBoolean());
+    verify(scriptWriter, times(0)).update(any(), anyBoolean());
     verify(secretWriter, times(0)).create(any(), anyBoolean());
     verify(secretWriter, times(0)).update(any(), anyBoolean());
     verify(configMapWriter, times(0)).create(any(), anyBoolean());
@@ -577,8 +577,8 @@ class ShardedClusterResourceMockedTest extends
     verify(finder, times(0)).findByNameAndNamespace(any(), any());
     verify(scheduler, times(1)).create(any(), anyBoolean());
     verify(scheduler, times(0)).update(any(), any());
-    verify(scriptScheduler, times(1)).create(any(), anyBoolean());
-    verify(scriptScheduler, times(0)).update(any(), anyBoolean());
+    verify(scriptWriter, times(1)).create(any(), anyBoolean());
+    verify(scriptWriter, times(0)).update(any(), anyBoolean());
     verify(secretWriter, times(0)).create(any(), anyBoolean());
     verify(secretWriter, times(0)).update(any(), anyBoolean());
     verify(configMapWriter, times(1)).create(any(), anyBoolean());
@@ -709,7 +709,7 @@ class ShardedClusterResourceMockedTest extends
   @Override
   protected ShardedClusterResource getService() {
     return new ShardedClusterResource(
-        shardedClusterFinder, scriptScheduler, secretWriter, configMapWriter,
+        shardedClusterFinder, scriptWriter, secretWriter, configMapWriter,
         scriptFinder, scriptTransformer, secretFinder, configMapFinder, serviceFinder);
   }
 

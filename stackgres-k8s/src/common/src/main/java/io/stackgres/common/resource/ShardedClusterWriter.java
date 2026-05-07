@@ -10,10 +10,10 @@ import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterList;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class ShardedClusterScheduler extends
-    AbstractCustomResourceScheduler<StackGresShardedCluster, StackGresShardedClusterList> {
+public class ShardedClusterWriter extends
+    AbstractCustomResourceWriter<StackGresShardedCluster, StackGresShardedClusterList> {
 
-  public ShardedClusterScheduler() {
+  public ShardedClusterWriter() {
     super(StackGresShardedCluster.class, StackGresShardedClusterList.class);
   }
 

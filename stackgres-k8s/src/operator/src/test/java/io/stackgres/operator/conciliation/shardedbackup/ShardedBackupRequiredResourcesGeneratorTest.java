@@ -20,7 +20,7 @@ import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterConfigurationsBuilder;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgobjectstorage.StackGresObjectStorage;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackup;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterBackupConfigurationBuilder;
@@ -62,7 +62,7 @@ class ShardedBackupRequiredResourcesGeneratorTest {
   private StackGresShardedBackup backup;
   private StackGresObjectStorage objectStorage;
   private StackGresCluster coordinator;
-  private StackGresProfile profile;
+  private StackGresInstanceProfile profile;
   private StackGresShardedCluster cluster;
 
   @BeforeEach

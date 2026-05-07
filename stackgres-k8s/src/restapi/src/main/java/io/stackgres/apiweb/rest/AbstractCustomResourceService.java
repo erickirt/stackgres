@@ -14,7 +14,7 @@ import io.stackgres.apiweb.dto.ResourceDto;
 import io.stackgres.apiweb.transformer.ResourceTransformer;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
@@ -38,7 +38,7 @@ public abstract class AbstractCustomResourceService
   public CustomResourceFinder<R> finder;
 
   @Inject
-  CustomResourceScheduler<R> scheduler;
+  CustomResourceWriter<R> scheduler;
 
   @Inject
   public ResourceTransformer<T, R> transformer;

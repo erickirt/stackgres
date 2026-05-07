@@ -18,7 +18,7 @@ import io.stackgres.common.crd.sgdistributedlogs.StackGresDistributedLogs;
 import io.stackgres.common.crd.sgobjectstorage.StackGresObjectStorage;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgscript.StackGresScript;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackup;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
@@ -33,7 +33,7 @@ public class CrdEqualsAndHashTest {
   @ParameterizedTest
   @ValueSource(classes = {
       StackGresCluster.class,
-      StackGresProfile.class,
+      StackGresInstanceProfile.class,
       StackGresPostgresConfig.class,
       StackGresPoolingConfig.class,
       StackGresBackup.class,

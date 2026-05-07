@@ -8,9 +8,9 @@ package io.stackgres.operator.mutation.profile;
 import java.io.IOException;
 import java.util.Random;
 
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileContainer;
-import io.stackgres.common.crd.sgprofile.StackGresProfileSpec;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileContainer;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileSpec;
 import io.stackgres.operator.common.StackGresInstanceProfileReview;
 import io.stackgres.operator.common.fixture.AdmissionReviewFixtures;
 import io.stackgres.operator.initialization.DefaultProfileFactory;
@@ -36,9 +36,9 @@ class DefaultContainersProfileMutatorTest {
 
   @Test
   void alreadyFilledContainersProfiles_shouldSetNothing() throws Exception {
-    StackGresProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
+    StackGresInstanceProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
 
-    StackGresProfile result = mutator.mutate(
+    StackGresInstanceProfile result = mutator.mutate(
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     JsonUtil.assertJsonEquals(
@@ -48,8 +48,8 @@ class DefaultContainersProfileMutatorTest {
 
   @Test
   void emptyProfiles_shouldSetOnlySections() throws Exception {
-    StackGresProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
-    review.getRequest().getObject().setSpec(new StackGresProfileSpec());
+    StackGresInstanceProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
+    review.getRequest().getObject().setSpec(new StackGresInstanceProfileSpec());
     expectedProfile.getSpec().setCpu(null);
     expectedProfile.getSpec().setMemory(null);
     expectedProfile.getSpec().getContainers().values()
@@ -71,7 +71,7 @@ class DefaultContainersProfileMutatorTest {
     expectedProfile.getSpec().getRequests().getInitContainers().values()
         .forEach(container -> container.setMemory(null));
 
-    StackGresProfile result = mutator.mutate(
+    StackGresInstanceProfile result = mutator.mutate(
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     JsonUtil.assertJsonEquals(
@@ -81,10 +81,10 @@ class DefaultContainersProfileMutatorTest {
 
   @Test
   void missingRequestsProfiles_shouldSetThem() throws Exception {
-    StackGresProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
+    StackGresInstanceProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
     review.getRequest().getObject().getSpec().setRequests(null);
 
-    StackGresProfile result = mutator.mutate(
+    StackGresInstanceProfile result = mutator.mutate(
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     JsonUtil.assertJsonEquals(
@@ -94,11 +94,11 @@ class DefaultContainersProfileMutatorTest {
 
   @Test
   void missingLimitsContainersProfiles_shouldSetThem() throws Exception {
-    StackGresProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
+    StackGresInstanceProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
     review.getRequest().getObject().getSpec().setContainers(null);
     review.getRequest().getObject().getSpec().setInitContainers(null);
 
-    StackGresProfile result = mutator.mutate(
+    StackGresInstanceProfile result = mutator.mutate(
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     JsonUtil.assertJsonEquals(
@@ -108,11 +108,11 @@ class DefaultContainersProfileMutatorTest {
 
   @Test
   void missingRequestsContainersProfiles_shouldSetThem() throws Exception {
-    StackGresProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
+    StackGresInstanceProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
     review.getRequest().getObject().getSpec().getRequests().setContainers(null);
     review.getRequest().getObject().getSpec().getRequests().setInitContainers(null);
 
-    StackGresProfile result = mutator.mutate(
+    StackGresInstanceProfile result = mutator.mutate(
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     JsonUtil.assertJsonEquals(
@@ -125,10 +125,10 @@ class DefaultContainersProfileMutatorTest {
     var keys = review.getRequest().getObject().getSpec().getContainers()
         .keySet().stream().toList();
     review.getRequest().getObject().getSpec().getContainers()
-        .put(keys.get(new Random().nextInt(keys.size())), new StackGresProfileContainer());
-    StackGresProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
+        .put(keys.get(new Random().nextInt(keys.size())), new StackGresInstanceProfileContainer());
+    StackGresInstanceProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
 
-    StackGresProfile result = mutator.mutate(
+    StackGresInstanceProfile result = mutator.mutate(
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     JsonUtil.assertJsonEquals(
@@ -141,10 +141,10 @@ class DefaultContainersProfileMutatorTest {
     var keys = review.getRequest().getObject().getSpec().getContainers()
         .keySet().stream().toList();
     review.getRequest().getObject().getSpec().getRequests().getContainers()
-        .put(keys.get(new Random().nextInt(keys.size())), new StackGresProfileContainer());
-    StackGresProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
+        .put(keys.get(new Random().nextInt(keys.size())), new StackGresInstanceProfileContainer());
+    StackGresInstanceProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
 
-    StackGresProfile result = mutator.mutate(
+    StackGresInstanceProfile result = mutator.mutate(
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     JsonUtil.assertJsonEquals(
@@ -158,9 +158,9 @@ class DefaultContainersProfileMutatorTest {
         .forEach(container -> container.setCpu(null));
     review.getRequest().getObject().getSpec().getInitContainers().values()
         .forEach(container -> container.setCpu(null));
-    StackGresProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
+    StackGresInstanceProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
 
-    StackGresProfile result = mutator.mutate(
+    StackGresInstanceProfile result = mutator.mutate(
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     JsonUtil.assertJsonEquals(
@@ -174,9 +174,9 @@ class DefaultContainersProfileMutatorTest {
         .forEach(container -> container.setMemory(null));
     review.getRequest().getObject().getSpec().getInitContainers().values()
         .forEach(container -> container.setMemory(null));
-    StackGresProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
+    StackGresInstanceProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
 
-    StackGresProfile result = mutator.mutate(
+    StackGresInstanceProfile result = mutator.mutate(
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     JsonUtil.assertJsonEquals(
@@ -190,9 +190,9 @@ class DefaultContainersProfileMutatorTest {
         .forEach(container -> container.setCpu(null));
     review.getRequest().getObject().getSpec().getRequests().getInitContainers().values()
         .forEach(container -> container.setCpu(null));
-    StackGresProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
+    StackGresInstanceProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
 
-    StackGresProfile result = mutator.mutate(
+    StackGresInstanceProfile result = mutator.mutate(
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     JsonUtil.assertJsonEquals(
@@ -206,9 +206,9 @@ class DefaultContainersProfileMutatorTest {
         .forEach(container -> container.setMemory(null));
     review.getRequest().getObject().getSpec().getRequests().getInitContainers().values()
         .forEach(container -> container.setMemory(null));
-    StackGresProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
+    StackGresInstanceProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
 
-    StackGresProfile result = mutator.mutate(
+    StackGresInstanceProfile result = mutator.mutate(
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     JsonUtil.assertJsonEquals(
@@ -219,9 +219,9 @@ class DefaultContainersProfileMutatorTest {
   @Test
   void changingLimits_shouldChangeOnlyForInitContainers() throws Exception {
     review = AdmissionReviewFixtures.instanceProfile().loadUpdate().get();
-    StackGresProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
+    StackGresInstanceProfile expectedProfile = JsonUtil.copy(review.getRequest().getObject());
 
-    StackGresProfile result = mutator.mutate(
+    StackGresInstanceProfile result = mutator.mutate(
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     JsonUtil.assertJsonEquals(

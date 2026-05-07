@@ -15,7 +15,7 @@ import io.stackgres.common.StackGresShardedClusterUtil;
 import io.stackgres.common.StackGresVersion;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgobjectstorage.StackGresObjectStorage;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackup;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterConfigurations;
@@ -32,7 +32,7 @@ public interface StackGresShardedBackupContext
 
   Optional<StackGresCluster> getFoundCoordinator();
 
-  Optional<StackGresProfile> getFoundProfile();
+  Optional<StackGresInstanceProfile> getFoundProfile();
 
   @Value.Lazy
   @Override
@@ -54,10 +54,10 @@ public interface StackGresShardedBackupContext
                     + getSource().getSpec().getSgShardedCluster()));
   }
 
-  default StackGresProfile getProfile() {
+  default StackGresInstanceProfile getProfile() {
     return getFoundProfile()
         .orElseThrow(() -> new IllegalArgumentException(
-            StackGresProfile.KIND + " "
+            StackGresInstanceProfile.KIND + " "
                 + Optional.of(getShardedCluster())
                     .map(StackGresShardedCluster::getSpec)
                     .map(StackGresShardedClusterSpec::getCoordinator)

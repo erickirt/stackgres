@@ -6,7 +6,7 @@
 package io.stackgres.operator.conversion;
 
 import io.quarkus.runtime.StartupEvent;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -33,7 +33,7 @@ public class SgInstanceProfileConversionResource implements ConversionResource {
 
   @Inject
   public SgInstanceProfileConversionResource(
-      @Conversion(StackGresProfile.KIND) ConversionPipeline pipeline) {
+      @Conversion(StackGresInstanceProfile.KIND) ConversionPipeline pipeline) {
     this.pipeline = pipeline;
   }
 

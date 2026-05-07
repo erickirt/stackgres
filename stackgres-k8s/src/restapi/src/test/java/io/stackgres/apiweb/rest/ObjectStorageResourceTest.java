@@ -31,7 +31,7 @@ import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.resource.ClusterScanner;
 import io.stackgres.common.resource.ObjectStorageFinder;
 import io.stackgres.common.resource.ObjectStorageScanner;
-import io.stackgres.common.resource.ObjectStorageScheduler;
+import io.stackgres.common.resource.ObjectStorageWriter;
 import io.stackgres.testutil.JsonUtil;
 import io.stackgres.testutil.StringUtils;
 import org.junit.jupiter.api.DisplayName;
@@ -43,7 +43,7 @@ import org.mockito.stubbing.Answer;
 class ObjectStorageResourceTest implements AuthenticatedResourceTest {
 
   @InjectMock
-  ObjectStorageScheduler scheduler;
+  ObjectStorageWriter scheduler;
 
   @InjectMock
   ObjectStorageFinder finder;

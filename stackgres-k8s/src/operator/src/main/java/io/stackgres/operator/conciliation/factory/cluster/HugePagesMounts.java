@@ -14,8 +14,8 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.stackgres.common.ClusterPath;
 import io.stackgres.common.StackGresVolume;
-import io.stackgres.common.crd.sgprofile.StackGresProfileHugePages;
-import io.stackgres.common.crd.sgprofile.StackGresProfileSpec;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileHugePages;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileSpec;
 import io.stackgres.operator.conciliation.factory.VolumeMountsProvider;
 import io.stackgres.operator.initialization.DefaultProfileFactory;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -39,16 +39,16 @@ public class HugePagesMounts implements VolumeMountsProvider<ClusterContainerCon
         .orElseGet(() -> defaultProfileFactory.buildResource(context.getClusterContext().getSource()));
     return Stream.concat(
         Optional.of(profile.getSpec())
-            .map(StackGresProfileSpec::getHugePages)
-            .map(StackGresProfileHugePages::getHugepages2Mi)
+            .map(StackGresInstanceProfileSpec::getHugePages)
+            .map(StackGresInstanceProfileHugePages::getHugepages2Mi)
             .map(quantity -> new VolumeMountBuilder()
                 .withName(StackGresVolume.HUGEPAGES_2M.getName())
                 .withMountPath(ClusterPath.HUGEPAGES_2M_PATH.path())
                 .build())
             .stream(),
         Optional.of(profile.getSpec())
-            .map(StackGresProfileSpec::getHugePages)
-            .map(StackGresProfileHugePages::getHugepages1Gi)
+            .map(StackGresInstanceProfileSpec::getHugePages)
+            .map(StackGresInstanceProfileHugePages::getHugepages1Gi)
             .map(quantity -> new VolumeMountBuilder()
                 .withName(StackGresVolume.HUGEPAGES_1G.getName())
                 .withMountPath(ClusterPath.HUGEPAGES_1G_PATH.path())

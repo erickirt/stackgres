@@ -11,14 +11,14 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.stackgres.common.crd.sgdistributedlogs.StackGresDistributedLogs;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.labels.LabelFactoryForDistributedLogs;
 import io.stackgres.operator.conciliation.FireAndForgetReconciliationHandler;
 import io.stackgres.operator.conciliation.ReconciliationHandler;
 import io.stackgres.operator.conciliation.ReconciliationScope;
 import jakarta.enterprise.context.ApplicationScoped;
 
-@ReconciliationScope(value = StackGresDistributedLogs.class, kind = StackGresProfile.KIND)
+@ReconciliationScope(value = StackGresDistributedLogs.class, kind = StackGresInstanceProfile.KIND)
 @ApplicationScoped
 public class DistributedLogsProfileReconciliationHandler
     extends FireAndForgetReconciliationHandler<StackGresDistributedLogs> {

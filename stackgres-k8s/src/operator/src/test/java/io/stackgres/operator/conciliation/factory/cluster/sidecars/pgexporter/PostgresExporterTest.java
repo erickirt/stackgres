@@ -21,7 +21,7 @@ import io.stackgres.common.crd.sgcluster.StackGresClusterPostgresExporter;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPostgresExporterQueries;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.labels.LabelFactoryForCluster;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
@@ -199,7 +199,7 @@ class PostgresExporterTest {
             .config(getDefaultConfig())
             .source(getDefaultCluster())
             .postgresConfig(new StackGresPostgresConfig())
-            .profile(new StackGresProfile())
+            .profile(new StackGresInstanceProfile())
             .currentInstances(0)
             .build())
         .dataVolumeName("test")

@@ -34,7 +34,7 @@ import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgobjectstorage.StackGresObjectStorage;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.storages.BackupStorage;
 import io.stackgres.operator.conciliation.GenerationContext;
 import io.stackgres.operator.conciliation.backup.BackupConfiguration;
@@ -77,7 +77,7 @@ public interface StackGresClusterContext extends GenerationContext<StackGresClus
 
   Optional<StackGresPostgresConfig> getPostgresConfig();
 
-  Optional<StackGresProfile> getProfile();
+  Optional<StackGresInstanceProfile> getProfile();
 
   Optional<StackGresPoolingConfig> getPoolingConfig();
 

@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.stackgres.common.crd.sgdistributedlogs.StackGresDistributedLogs;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.operator.common.StackGresDistributedLogsReview;
 import io.stackgres.operator.common.fixture.AdmissionReviewFixtures;
 import io.stackgres.operator.initialization.DefaultProfileFactory;
@@ -21,7 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class DefaultProfileConfigMutatorTest
-    extends AbstractDefaultResourceMutatorTest<StackGresProfile, HasMetadata, StackGresDistributedLogs,
+    extends AbstractDefaultResourceMutatorTest<StackGresInstanceProfile, HasMetadata, StackGresDistributedLogs,
         StackGresDistributedLogsReview, DefaultProfileMutator> {
 
   @Override

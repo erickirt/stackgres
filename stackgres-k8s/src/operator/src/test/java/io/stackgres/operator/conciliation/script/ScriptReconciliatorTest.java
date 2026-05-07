@@ -17,13 +17,18 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.stackgres.common.crd.sgscript.StackGresScript;
 import io.stackgres.common.event.EventEmitter;
 import io.stackgres.common.fixture.Fixtures;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.common.Metrics;
+import io.stackgres.operator.common.StackGresScriptReview;
 import io.stackgres.operator.conciliation.AbstractConciliator;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
 import io.stackgres.operator.conciliation.HandlerDelegator;
 import io.stackgres.operator.conciliation.ReconciliationResult;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
 import io.stackgres.operator.conciliation.factory.cluster.KubernetessMockResourceGenerationUtil;
+import io.stackgres.testutil.JsonUtil;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,21 +52,31 @@ class ScriptReconciliatorTest {
   @Mock
   EventEmitter<StackGresScript> eventController;
   @Mock
-  CustomResourceScheduler<StackGresScript> scriptScheduler;
+  CustomResourceWriter<StackGresScript> scriptWriter;
   @Mock
   Metrics metrics;
+  @Mock
+  OperatorPropertyContext operatorPropertyContext;
+  @Mock
+  MutationPipeline<StackGresScript, StackGresScriptReview> mutationPipeline;
+  @Mock
+  ValidationPipeline<StackGresScriptReview> validationPipeline;
 
   private ScriptReconciliator reconciliator;
 
   @BeforeEach
   void setUp() {
     ScriptReconciliator.Parameters parameters = new ScriptReconciliator.Parameters();
+    parameters.operatorPropertyContext = operatorPropertyContext;
+    parameters.mutationPipeline = mutationPipeline;
+    parameters.validationPipeline = validationPipeline;
     parameters.conciliator = conciliator;
     parameters.deployedResourcesCache = deployedResourcesCache;
     parameters.handlerDelegator = handlerDelegator;
     parameters.eventController = eventController;
     parameters.statusManager = statusManager;
-    parameters.scriptScheduler = scriptScheduler;
+    parameters.scriptWriter = scriptWriter;
+    parameters.objectMapper = JsonUtil.jsonMapper();
     parameters.metrics = metrics;
     reconciliator = new ScriptReconciliator(parameters);
   }

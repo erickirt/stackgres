@@ -10,11 +10,11 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.apiweb.dto.ResourceClassForDto;
 import io.stackgres.apiweb.dto.ResourceDto;
 import io.stackgres.common.StackGresUtil;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@ResourceClassForDto(StackGresProfile.class)
+@ResourceClassForDto(StackGresInstanceProfile.class)
 public class ProfileDto extends ResourceDto {
 
   private ProfileSpec spec;

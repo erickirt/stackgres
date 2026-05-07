@@ -5,10 +5,10 @@
 
 package io.stackgres.operator.mutation.profile;
 
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.operator.common.StackGresInstanceProfileReview;
 import io.stackgres.operatorframework.admissionwebhook.mutating.Mutator;
 
-public interface ProfileMutator extends Mutator<StackGresProfile, StackGresInstanceProfileReview> {
+public interface ProfileMutator extends Mutator<StackGresInstanceProfile, StackGresInstanceProfileReview> {
 
 }

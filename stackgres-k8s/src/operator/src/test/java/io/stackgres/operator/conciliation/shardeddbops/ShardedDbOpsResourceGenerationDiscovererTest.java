@@ -12,7 +12,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.kubernetes.client.WithKubernetesTestServer;
 import io.stackgres.common.KubernetesTestServerSetup;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOps;
 import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOpsStatus;
@@ -37,7 +37,7 @@ class ShardedDbOpsResourceGenerationDiscovererTest
 
   private StackGresShardedCluster cluster;
 
-  private StackGresProfile profile;
+  private StackGresInstanceProfile profile;
 
   @BeforeEach
   public void setup() {

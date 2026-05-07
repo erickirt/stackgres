@@ -12,8 +12,8 @@ import io.fabric8.kubernetes.api.model.EmptyDirVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.stackgres.common.StackGresVolume;
-import io.stackgres.common.crd.sgprofile.StackGresProfileHugePages;
-import io.stackgres.common.crd.sgprofile.StackGresProfileSpec;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileHugePages;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileSpec;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
 import io.stackgres.operator.conciliation.factory.ImmutableVolumePair;
@@ -47,8 +47,8 @@ public class PatroniHugePages1Gi implements VolumeFactory<StackGresClusterContex
             .volume(buildVolume(context))
             .build())
         .filter(volumePair -> Optional.of(profile.getSpec())
-            .map(StackGresProfileSpec::getHugePages)
-            .map(StackGresProfileHugePages::getHugepages1Gi)
+            .map(StackGresInstanceProfileSpec::getHugePages)
+            .map(StackGresInstanceProfileHugePages::getHugepages1Gi)
             .isPresent());
   }
 

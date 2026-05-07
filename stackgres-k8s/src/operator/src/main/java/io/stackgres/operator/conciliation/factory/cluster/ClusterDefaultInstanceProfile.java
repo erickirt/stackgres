@@ -13,8 +13,8 @@ import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileBuilder;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileBuilder;
 import io.stackgres.common.labels.LabelFactoryForCluster;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.ResourceGenerator;
@@ -61,8 +61,8 @@ public class ClusterDefaultInstanceProfile implements ResourceGenerator<StackGre
         .map(ignored -> getDefaultProfile(context.getSource()));
   }
 
-  private StackGresProfile getDefaultProfile(StackGresCluster cluster) {
-    return new StackGresProfileBuilder()
+  private StackGresInstanceProfile getDefaultProfile(StackGresCluster cluster) {
+    return new StackGresInstanceProfileBuilder()
         .withNewMetadata()
         .withNamespace(cluster.getMetadata().getNamespace())
         .withName(cluster.getSpec().getSgInstanceProfile())

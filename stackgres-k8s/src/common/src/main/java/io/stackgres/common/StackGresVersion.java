@@ -23,7 +23,7 @@ import io.stackgres.common.crd.sgdistributedlogs.StackGresDistributedLogs;
 import io.stackgres.common.crd.sgobjectstorage.StackGresObjectStorage;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgscript.StackGresScript;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackup;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
@@ -177,7 +177,7 @@ public enum StackGresVersion {
     return getStackGresVersionFromResourceAsNumber(config);
   }
 
-  public static long getStackGresVersionAsNumber(StackGresProfile profile) {
+  public static long getStackGresVersionAsNumber(StackGresInstanceProfile profile) {
     return getStackGresVersionFromResourceAsNumber(profile);
   }
 

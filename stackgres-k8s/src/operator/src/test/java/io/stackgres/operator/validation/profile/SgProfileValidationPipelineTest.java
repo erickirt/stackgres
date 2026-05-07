@@ -8,7 +8,7 @@ package io.stackgres.operator.validation.profile;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.kubernetes.client.WithKubernetesTestServer;
 import io.stackgres.common.KubernetesTestServerSetup;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.operator.common.StackGresInstanceProfileReview;
 import io.stackgres.operator.common.fixture.AdmissionReviewFixtures;
 import io.stackgres.operator.validation.ValidationPipelineTest;
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 @QuarkusTest
 @EnabledIfEnvironmentVariable(named = "QUARKUS_PROFILE", matches = "test")
 public class SgProfileValidationPipelineTest
-    extends ValidationPipelineTest<StackGresProfile, StackGresInstanceProfileReview> {
+    extends ValidationPipelineTest<StackGresInstanceProfile, StackGresInstanceProfileReview> {
 
   @Inject
   public SgProfileValidationPipeline pipeline;

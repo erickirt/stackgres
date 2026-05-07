@@ -11,14 +11,14 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.labels.LabelFactoryForCluster;
 import io.stackgres.operator.conciliation.FireAndForgetReconciliationHandler;
 import io.stackgres.operator.conciliation.ReconciliationHandler;
 import io.stackgres.operator.conciliation.ReconciliationScope;
 import jakarta.enterprise.context.ApplicationScoped;
 
-@ReconciliationScope(value = StackGresCluster.class, kind = StackGresProfile.KIND)
+@ReconciliationScope(value = StackGresCluster.class, kind = StackGresInstanceProfile.KIND)
 @ApplicationScoped
 public class ClusterProfileReconciliationHandler
     extends FireAndForgetReconciliationHandler<StackGresCluster> {

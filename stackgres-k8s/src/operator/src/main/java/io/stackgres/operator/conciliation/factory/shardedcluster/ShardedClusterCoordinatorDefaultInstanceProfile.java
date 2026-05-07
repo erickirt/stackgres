@@ -12,8 +12,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileBuilder;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileBuilder;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.labels.LabelFactoryForShardedCluster;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
@@ -62,8 +62,8 @@ public class ShardedClusterCoordinatorDefaultInstanceProfile
         .map(ignored -> getDefaultProfile(context.getSource()));
   }
 
-  private StackGresProfile getDefaultProfile(StackGresShardedCluster cluster) {
-    return new StackGresProfileBuilder()
+  private StackGresInstanceProfile getDefaultProfile(StackGresShardedCluster cluster) {
+    return new StackGresInstanceProfileBuilder()
         .withNewMetadata()
         .withNamespace(cluster.getMetadata().getNamespace())
         .withName(cluster.getSpec().getCoordinator().getSgInstanceProfile())

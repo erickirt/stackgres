@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.stackgres.common.StackGresComponent;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.operator.common.StackGresShardedClusterReview;
 import io.stackgres.operator.common.fixture.AdmissionReviewFixtures;
@@ -20,7 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class DefaultWorkersProfileConfigMutatorTest
-    extends AbstractDefaultResourceMutatorTest<StackGresProfile, HasMetadata, StackGresShardedCluster,
+    extends AbstractDefaultResourceMutatorTest<StackGresInstanceProfile, HasMetadata, StackGresShardedCluster,
         StackGresShardedClusterReview, DefaultWorkersProfileMutator> {
 
   private static final String POSTGRES_VERSION =

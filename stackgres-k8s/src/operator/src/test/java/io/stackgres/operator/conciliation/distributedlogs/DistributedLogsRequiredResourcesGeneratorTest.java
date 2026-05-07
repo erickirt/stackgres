@@ -18,7 +18,7 @@ import io.stackgres.common.KubernetesTestServerSetup;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgdistributedlogs.StackGresDistributedLogs;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.resource.ConfigScanner;
 import io.stackgres.common.resource.PostgresConfigFinder;
@@ -46,7 +46,7 @@ class DistributedLogsRequiredResourcesGeneratorTest {
   private StackGresConfig config;
   private StackGresDistributedLogs distributedLogs;
   private StackGresPostgresConfig postgresConfig;
-  private StackGresProfile profile;
+  private StackGresInstanceProfile profile;
 
   @BeforeEach
   void setUp() {

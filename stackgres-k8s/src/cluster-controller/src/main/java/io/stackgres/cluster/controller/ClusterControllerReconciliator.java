@@ -22,7 +22,7 @@ import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPodStatus;
 import io.stackgres.common.crd.sgcluster.StackGresClusterStatus;
 import io.stackgres.common.kubernetesclient.KubernetesClientUtil;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operatorframework.reconciliation.ReconciliationResult;
 import io.stackgres.operatorframework.reconciliation.Reconciliator;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -34,7 +34,7 @@ import org.jooq.lambda.tuple.Tuple;
 public class ClusterControllerReconciliator
     extends Reconciliator<StackGresClusterContext> {
 
-  private final CustomResourceScheduler<StackGresCluster> clusterScheduler;
+  private final CustomResourceWriter<StackGresCluster> clusterWriter;
   private final ClusterControllerPostgresBootstrapReconciliator postgresBootstrapReconciliator;
   private final ClusterExtensionReconciliator extensionReconciliator;
   private final PgBouncerReconciliator pgbouncerReconciliator;
@@ -55,7 +55,7 @@ public class ClusterControllerReconciliator
 
   @Inject
   public ClusterControllerReconciliator(Parameters parameters) {
-    this.clusterScheduler = parameters.clusterScheduler;
+    this.clusterWriter = parameters.clusterWriter;
     this.postgresBootstrapReconciliator = parameters.postgresBootstrapReconciliator;
     this.extensionReconciliator = parameters.extensionReconciliator;
     this.pgbouncerReconciliator = parameters.pgbouncerReconciliator;
@@ -80,7 +80,7 @@ public class ClusterControllerReconciliator
   public ClusterControllerReconciliator() {
     super();
     CdiUtil.checkPublicNoArgsConstructorIsCalledToCreateProxy(getClass());
-    this.clusterScheduler = null;
+    this.clusterWriter = null;
     this.postgresBootstrapReconciliator = null;
     this.extensionReconciliator = null;
     this.pgbouncerReconciliator = null;
@@ -165,12 +165,12 @@ public class ClusterControllerReconciliator
         || postgresBootstrapReconciliatorResult.result().orElse(false)
         || extensionReconciliationResult.result().orElse(false)
         || patroniReconciliationResult.result().orElse(false)) {
-      updatedCluster = clusterScheduler.update(cluster,
+      updatedCluster = clusterWriter.update(cluster,
           (currentCluster) -> updateClusterPodStatus(currentCluster, cluster));
     }
 
     if (extensionReconciliationResult.result().orElse(false)) {
-      updatedCluster = KubernetesClientUtil.retryOnConflict(() -> clusterScheduler.update(cluster,
+      updatedCluster = KubernetesClientUtil.retryOnConflict(() -> clusterWriter.update(cluster,
           (currentCluster) -> {
             Optional.ofNullable(cluster.getStatus())
                 .map(StackGresClusterStatus::getExtensions)
@@ -248,7 +248,7 @@ public class ClusterControllerReconciliator
 
   @Dependent
   public static class Parameters {
-    @Inject CustomResourceScheduler<StackGresCluster> clusterScheduler;
+    @Inject CustomResourceWriter<StackGresCluster> clusterWriter;
     @Inject ClusterControllerPostgresBootstrapReconciliator postgresBootstrapReconciliator;
     @Inject ClusterExtensionReconciliator extensionReconciliator;
     @Inject PgBouncerReconciliator pgbouncerReconciliator;

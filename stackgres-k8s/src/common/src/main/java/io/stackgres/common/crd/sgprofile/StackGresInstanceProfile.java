@@ -37,11 +37,11 @@ import jakarta.validation.constraints.NotNull;
     })
 @Group(CommonDefinition.GROUP)
 @Version(CommonDefinition.VERSION)
-@Kind(StackGresProfile.KIND)
+@Kind(StackGresInstanceProfile.KIND)
 @Singular("sginstanceprofile")
 @Plural("sginstanceprofiles")
-public final class StackGresProfile
-    extends CustomResource<StackGresProfileSpec, Void>
+public final class StackGresInstanceProfile
+    extends CustomResource<StackGresInstanceProfileSpec, Void>
     implements Namespaced {
 
   private static final long serialVersionUID = 1L;
@@ -50,9 +50,9 @@ public final class StackGresProfile
 
   @NotNull(message = "spec is required")
   @Valid
-  private StackGresProfileSpec spec;
+  private StackGresInstanceProfileSpec spec;
 
-  public StackGresProfile() {
+  public StackGresInstanceProfile() {
     super();
   }
 
@@ -67,12 +67,12 @@ public final class StackGresProfile
   }
 
   @Override
-  public StackGresProfileSpec getSpec() {
+  public StackGresInstanceProfileSpec getSpec() {
     return spec;
   }
 
   @Override
-  public void setSpec(StackGresProfileSpec spec) {
+  public void setSpec(StackGresInstanceProfileSpec spec) {
     this.spec = spec;
   }
 
@@ -86,10 +86,10 @@ public final class StackGresProfile
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof StackGresProfile)) {
+    if (!(obj instanceof StackGresInstanceProfile)) {
       return false;
     }
-    StackGresProfile other = (StackGresProfile) obj;
+    StackGresInstanceProfile other = (StackGresInstanceProfile) obj;
     return Objects.equals(spec, other.spec);
   }
 

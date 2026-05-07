@@ -13,7 +13,7 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.operator.conciliation.dbops.StackGresDbOpsContext;
@@ -31,13 +31,13 @@ class DbOpsClusterInstanceProfileContextAppenderTest {
 
   private StackGresCluster cluster;
 
-  private StackGresProfile profile;
+  private StackGresInstanceProfile profile;
 
   @Spy
   private StackGresDbOpsContext.Builder contextBuilder;
 
   @Mock
-  private CustomResourceFinder<StackGresProfile> profileFinder;
+  private CustomResourceFinder<StackGresInstanceProfile> profileFinder;
 
   @BeforeEach
   void setUp() {

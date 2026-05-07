@@ -11,7 +11,7 @@ import io.smallrye.mutiny.Uni;
 import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.crd.sgstream.StackGresStream;
 import io.stackgres.common.resource.CustomResourceFinder;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.stream.jobs.MutinyUtil;
 import io.stackgres.stream.jobs.StreamExecutorService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -25,7 +25,7 @@ public class LockAcquirer {
   private static final Logger LOGGER = LoggerFactory.getLogger(LockAcquirer.class);
 
   @Inject
-  CustomResourceScheduler<StackGresStream> streamScheduler;
+  CustomResourceWriter<StackGresStream> streamWriter;
 
   @Inject
   CustomResourceFinder<StackGresStream> streamFinder;
@@ -91,7 +91,7 @@ public class LockAcquirer {
   }
 
   private void acquireLock(LockRequest lockRequest, StackGresStream stream) {
-    streamScheduler.update(stream, foundStream -> {
+    streamWriter.update(stream, foundStream -> {
       if (StackGresUtil.isLocked(foundStream)
           && !StackGresUtil.isLockedBy(foundStream, lockRequest.getPodName())) {
         LOGGER.info("Stream {} is locked, waiting for release",
@@ -105,7 +105,7 @@ public class LockAcquirer {
   }
 
   private void refreshLock(LockRequest lockRequest, StackGresStream stream) {
-    streamScheduler.update(stream, foundStream -> {
+    streamWriter.update(stream, foundStream -> {
       if (!StackGresUtil.isLockedBy(foundStream, lockRequest.getPodName())) {
         LOGGER.error("Lock lost for stream {}", stream.getMetadata().getName());
         throw new RuntimeException(
@@ -118,7 +118,7 @@ public class LockAcquirer {
   }
 
   private void releaseLock(LockRequest lockRequest, StackGresStream stream) {
-    streamScheduler.update(stream, foundStream -> {
+    streamWriter.update(stream, foundStream -> {
       if (!StackGresUtil.isLockedBy(foundStream, lockRequest.getPodName())) {
         return;
       }

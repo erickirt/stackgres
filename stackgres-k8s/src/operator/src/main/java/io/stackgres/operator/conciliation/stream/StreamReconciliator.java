@@ -14,16 +14,20 @@ import io.stackgres.common.crd.sgstream.StreamEventReason;
 import io.stackgres.common.event.EventEmitter;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.app.OperatorLockHolder;
 import io.stackgres.operator.common.Metrics;
 import io.stackgres.operator.common.PatchResumer;
+import io.stackgres.operator.common.StackGresStreamReview;
 import io.stackgres.operator.conciliation.AbstractConciliator;
 import io.stackgres.operator.conciliation.AbstractReconciliator;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
 import io.stackgres.operator.conciliation.HandlerDelegator;
 import io.stackgres.operator.conciliation.ReconciliationResult;
 import io.stackgres.operator.conciliation.ReconciliatorWorkerThreadPool;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.event.Observes;
@@ -32,19 +36,23 @@ import org.slf4j.helpers.MessageFormatter;
 
 @ApplicationScoped
 public class StreamReconciliator
-    extends AbstractReconciliator<StackGresStream> {
+    extends AbstractReconciliator<StackGresStream, StackGresStreamReview> {
 
   @Dependent
   static class Parameters {
+    @Inject OperatorPropertyContext operatorPropertyContext;
     @Inject CustomResourceScanner<StackGresStream> scanner;
     @Inject CustomResourceFinder<StackGresStream> finder;
+    @Inject MutationPipeline<StackGresStream, StackGresStreamReview> mutationPipeline;
+    @Inject ValidationPipeline<StackGresStreamReview> validationPipeline;
+    @Inject CustomResourceWriter<StackGresStream> writer;
     @Inject AbstractConciliator<StackGresStream> conciliator;
     @Inject DeployedResourcesCache deployedResourcesCache;
     @Inject HandlerDelegator<StackGresStream> handlerDelegator;
     @Inject KubernetesClient client;
     @Inject EventEmitter<StackGresStream> eventController;
     @Inject StreamStatusManager statusManager;
-    @Inject CustomResourceScheduler<StackGresStream> streamScheduler;
+    @Inject CustomResourceWriter<StackGresStream> streamWriter;
     @Inject ObjectMapper objectMapper;
     @Inject OperatorLockHolder operatorLockReconciliator;
     @Inject ReconciliatorWorkerThreadPool reconciliatorWorkerThreadPool;
@@ -54,13 +62,22 @@ public class StreamReconciliator
   private final EventEmitter<StackGresStream> eventController;
   private final PatchResumer<StackGresStream> patchResumer;
   private final StreamStatusManager statusManager;
-  private final CustomResourceScheduler<StackGresStream> streamScheduler;
+  private final CustomResourceWriter<StackGresStream> streamWriter;
 
   @Inject
   public StreamReconciliator(Parameters parameters) {
-    super(parameters.scanner, parameters.finder,
-        parameters.conciliator, parameters.deployedResourcesCache,
-        parameters.handlerDelegator, parameters.client,
+    super(
+        parameters.operatorPropertyContext,
+        parameters.scanner,
+        parameters.finder,
+        parameters.objectMapper,
+        parameters.mutationPipeline,
+        parameters.validationPipeline,
+        parameters.writer,
+        parameters.conciliator,
+        parameters.deployedResourcesCache,
+        parameters.handlerDelegator,
+        parameters.client,
         parameters.operatorLockReconciliator,
         parameters.reconciliatorWorkerThreadPool,
         parameters.metrics,
@@ -68,7 +85,23 @@ public class StreamReconciliator
     this.eventController = parameters.eventController;
     this.patchResumer = new PatchResumer<>(parameters.objectMapper);
     this.statusManager = parameters.statusManager;
-    this.streamScheduler = parameters.streamScheduler;
+    this.streamWriter = parameters.streamWriter;
+  }
+
+  @Override
+  protected void setSpecAndStatus(StackGresStream currentConfig, StackGresStream mutatedAndValidatedConfig) {
+    currentConfig.setSpec(mutatedAndValidatedConfig.getSpec());
+    currentConfig.setStatus(mutatedAndValidatedConfig.getStatus());
+  }
+
+  @Override
+  protected StackGresStreamReview createAdmissionReview() {
+    return new StackGresStreamReview();
+  }
+
+  @Override
+  protected Class<StackGresStream> getResourceClass() {
+    return StackGresStream.class;
   }
 
   void onStart(@Observes StartupEvent ev) {
@@ -90,7 +123,7 @@ public class StreamReconciliator
 
   @Override
   protected void onPostReconciliation(StackGresStream config) {
-    streamScheduler.update(config, statusManager::refreshCondition);
+    streamWriter.update(config, statusManager::refreshCondition);
   }
 
   @Override

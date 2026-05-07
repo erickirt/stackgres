@@ -10,10 +10,10 @@ import io.stackgres.common.crd.sgstream.StackGresStreamList;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class StreamScheduler
-    extends AbstractCustomResourceScheduler<StackGresStream, StackGresStreamList> {
+public class StreamWriter
+    extends AbstractCustomResourceWriter<StackGresStream, StackGresStreamList> {
 
-  public StreamScheduler() {
+  public StreamWriter() {
     super(StackGresStream.class, StackGresStreamList.class);
   }
 

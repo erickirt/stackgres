@@ -24,17 +24,17 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.stackgres.common.StackGresGroupKind;
 import io.stackgres.common.StackGresVolume;
 import io.stackgres.common.StringUtil;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileContainer;
-import io.stackgres.common.crd.sgprofile.StackGresProfileHugePages;
-import io.stackgres.common.crd.sgprofile.StackGresProfileRequests;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileContainer;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileHugePages;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileRequests;
 import org.jooq.lambda.Seq;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
 public abstract class AbstractProfileDecoratorTestCase {
 
-  protected abstract StackGresProfile getProfile();
+  protected abstract StackGresInstanceProfile getProfile();
 
   protected abstract PodSpec getPodSpec();
 
@@ -54,19 +54,19 @@ public abstract class AbstractProfileDecoratorTestCase {
     return true;
   }
 
-  protected Map<String, StackGresProfileContainer> getFilteredContainerResource() {
+  protected Map<String, StackGresInstanceProfileContainer> getFilteredContainerResource() {
     return Map.of();
   }
 
-  protected Map<String, StackGresProfileContainer> getFilteredInitContainerResource() {
+  protected Map<String, StackGresInstanceProfileContainer> getFilteredInitContainerResource() {
     return Map.of();
   }
 
-  protected Map<String, StackGresProfileContainer> getFilteredContainerResourceRequests() {
+  protected Map<String, StackGresInstanceProfileContainer> getFilteredContainerResourceRequests() {
     return Map.of();
   }
 
-  protected Map<String, StackGresProfileContainer> getFilteredInitContainerResourceRequests() {
+  protected Map<String, StackGresInstanceProfileContainer> getFilteredInitContainerResourceRequests() {
     return Map.of();
   }
 
@@ -264,14 +264,14 @@ public abstract class AbstractProfileDecoratorTestCase {
 
   @Test
   void withRequestsCpuAndMemoryForAllContainers_shouldBeAppliedToAll() {
-    getProfile().getSpec().setRequests(new StackGresProfileRequests());
+    getProfile().getSpec().setRequests(new StackGresInstanceProfileRequests());
     getProfile().getSpec().getRequests().setCpu(new Random().nextInt(32000) + "m");
     getProfile().getSpec().getRequests().setMemory(new Random().nextInt(32) + "Gi");
     getProfile().getSpec().getRequests().setContainers(new HashMap<>());
     getProfile().getSpec().getRequests().setInitContainers(new HashMap<>());
     Seq.seq(getPodSpec().getContainers())
         .forEach(container -> {
-          StackGresProfileContainer containerProfile = new StackGresProfileContainer();
+          StackGresInstanceProfileContainer containerProfile = new StackGresInstanceProfileContainer();
           containerProfile.setCpu(new Random().nextInt(32000) + "m");
           containerProfile.setMemory(new Random().nextInt(32) + "Gi");
           getProfile().getSpec().getRequests().getContainers().put(
@@ -279,13 +279,13 @@ public abstract class AbstractProfileDecoratorTestCase {
         });
     Seq.seq(getPodSpec().getInitContainers())
         .forEach(container -> {
-          StackGresProfileContainer containerProfile = new StackGresProfileContainer();
+          StackGresInstanceProfileContainer containerProfile = new StackGresInstanceProfileContainer();
           containerProfile.setCpu(new Random().nextInt(32000) + "m");
           containerProfile.setMemory(new Random().nextInt(32) + "Gi");
           getProfile().getSpec().getRequests().getInitContainers().put(
               getKind().getContainerPrefix() + container.getName(), containerProfile);
         });
-    StackGresProfileContainer containerProfile = new StackGresProfileContainer();
+    StackGresInstanceProfileContainer containerProfile = new StackGresInstanceProfileContainer();
     containerProfile.setCpu(new Random().nextInt(32000) + "m");
     containerProfile.setMemory(new Random().nextInt(32) + "Gi");
     getProfile().getSpec().getRequests().getContainers().put(
@@ -473,13 +473,13 @@ public abstract class AbstractProfileDecoratorTestCase {
 
   @Test
   void withCpuAndMemoryAndHugePagesForAllContainers_shouldBeAppliedToAll() {
-    getProfile().getSpec().setHugePages(new StackGresProfileHugePages());
+    getProfile().getSpec().setHugePages(new StackGresInstanceProfileHugePages());
     getProfile().getSpec().getHugePages().setHugepages2Mi(new Random().nextInt(32) + "Gi");
     getProfile().getSpec().getHugePages().setHugepages1Gi(new Random().nextInt(32) + "Gi");
     Seq.seq(getProfile().getSpec().getContainers().values())
         .append(getProfile().getSpec().getInitContainers().values())
         .forEach(containerProfile -> {
-          var hugePages = new StackGresProfileHugePages();
+          var hugePages = new StackGresInstanceProfileHugePages();
           hugePages.setHugepages2Mi(new Random().nextInt(32) + "Gi");
           hugePages.setHugepages1Gi(new Random().nextInt(32) + "Gi");
           containerProfile.setHugePages(hugePages);
@@ -565,13 +565,13 @@ public abstract class AbstractProfileDecoratorTestCase {
   void withCpuAndMemoryWithLimitsAndHugePagesForAllContainers_shouldBeAppliedToAll() {
     enableLimits();
 
-    getProfile().getSpec().setHugePages(new StackGresProfileHugePages());
+    getProfile().getSpec().setHugePages(new StackGresInstanceProfileHugePages());
     getProfile().getSpec().getHugePages().setHugepages2Mi(new Random().nextInt(32) + "Gi");
     getProfile().getSpec().getHugePages().setHugepages1Gi(new Random().nextInt(32) + "Gi");
     Seq.seq(getProfile().getSpec().getContainers().values())
         .append(getProfile().getSpec().getInitContainers().values())
         .forEach(containerProfile -> {
-          var hugePages = new StackGresProfileHugePages();
+          var hugePages = new StackGresInstanceProfileHugePages();
           hugePages.setHugepages2Mi(new Random().nextInt(32) + "Gi");
           hugePages.setHugepages1Gi(new Random().nextInt(32) + "Gi");
           containerProfile.setHugePages(hugePages);
@@ -685,7 +685,7 @@ public abstract class AbstractProfileDecoratorTestCase {
   }
 
   private void assertContainerOnlyRequestsCpuAndMemory(
-      Entry<String, StackGresProfileContainer> entry, Container container) {
+      Entry<String, StackGresInstanceProfileContainer> entry, Container container) {
     assertNotNull(container.getResources());
     assertNotNull(container.getResources().getLimits());
     assertTrue(container.getResources().getLimits().isEmpty());
@@ -699,8 +699,8 @@ public abstract class AbstractProfileDecoratorTestCase {
   }
 
   private void assertContainerLimitsAndRequestsCpuAndMemory(
-      Entry<String, StackGresProfileContainer> entry,
-      Entry<String, StackGresProfileContainer> requestEntry,
+      Entry<String, StackGresInstanceProfileContainer> entry,
+      Entry<String, StackGresInstanceProfileContainer> requestEntry,
       Container container) {
     assertNotNull(container.getResources());
     assertEquals(
@@ -719,8 +719,8 @@ public abstract class AbstractProfileDecoratorTestCase {
   }
 
   private void assertContainerLimitsAndRequestsCpuAndMemoryAndHugePages(
-      Entry<String, StackGresProfileContainer> entry,
-      Entry<String, StackGresProfileContainer> entryRequests,
+      Entry<String, StackGresInstanceProfileContainer> entry,
+      Entry<String, StackGresInstanceProfileContainer> entryRequests,
       Container container) {
     assertNotNull(container.getResources());
     assertEquals(
@@ -751,8 +751,8 @@ public abstract class AbstractProfileDecoratorTestCase {
   }
 
   private void assertContainerLimitsAndRequestsCpuAndMemoryAndHugePagesWithoutVolumes(
-      Entry<String, StackGresProfileContainer> entry,
-      Entry<String, StackGresProfileContainer> entryRequests,
+      Entry<String, StackGresInstanceProfileContainer> entry,
+      Entry<String, StackGresInstanceProfileContainer> entryRequests,
       Container container) {
     assertNotNull(container.getResources());
     assertEquals(

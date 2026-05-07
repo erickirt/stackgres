@@ -26,9 +26,9 @@ import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterNonProduction;
 import io.stackgres.common.crd.sgcluster.StackGresClusterResources;
 import io.stackgres.common.crd.sgobjectstorage.StackGresObjectStorage;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileContainer;
-import io.stackgres.common.crd.sgprofile.StackGresProfileRequests;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileContainer;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileRequests;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.operator.conciliation.backup.StackGresBackupContext;
 import io.stackgres.operator.conciliation.factory.AbstractProfileDecoratorTestCase;
@@ -54,7 +54,7 @@ class BackupJobContainerProfileDecoratorTest extends AbstractProfileDecoratorTes
 
   private StackGresCluster cluster;
 
-  private StackGresProfile profile;
+  private StackGresInstanceProfile profile;
 
   private Job job;
 
@@ -81,7 +81,7 @@ class BackupJobContainerProfileDecoratorTest extends AbstractProfileDecoratorTes
     Seq.seq(job.getSpec()
             .getTemplate().getSpec().getContainers())
         .forEach(container -> {
-          StackGresProfileContainer containerProfile = new StackGresProfileContainer();
+          StackGresInstanceProfileContainer containerProfile = new StackGresInstanceProfileContainer();
           containerProfile.setCpu(new Random().nextInt(32000) + "m");
           containerProfile.setMemory(new Random().nextInt(32) + "Gi");
           profile.getSpec().getContainers().put(
@@ -90,20 +90,20 @@ class BackupJobContainerProfileDecoratorTest extends AbstractProfileDecoratorTes
     Seq.seq(job.getSpec()
             .getTemplate().getSpec().getInitContainers())
         .forEach(container -> {
-          StackGresProfileContainer containerProfile = new StackGresProfileContainer();
+          StackGresInstanceProfileContainer containerProfile = new StackGresInstanceProfileContainer();
           containerProfile.setCpu(new Random().nextInt(32000) + "m");
           containerProfile.setMemory(new Random().nextInt(32) + "Gi");
           profile.getSpec().getInitContainers().put(
               KIND.getContainerPrefix() + container.getName(), containerProfile);
         });
-    profile.getSpec().setRequests(new StackGresProfileRequests());
+    profile.getSpec().setRequests(new StackGresInstanceProfileRequests());
     profile.getSpec().getRequests().setCpu(new Random().nextInt(32000) + "m");
     profile.getSpec().getRequests().setMemory(new Random().nextInt(32) + "Gi");
     profile.getSpec().getRequests().setContainers(new HashMap<>());
     profile.getSpec().getRequests().setInitContainers(new HashMap<>());
     Seq.seq(job.getSpec().getTemplate().getSpec().getContainers())
         .forEach(container -> {
-          StackGresProfileContainer containerProfile = new StackGresProfileContainer();
+          StackGresInstanceProfileContainer containerProfile = new StackGresInstanceProfileContainer();
           containerProfile.setCpu(new Random().nextInt(32000) + "m");
           containerProfile.setMemory(new Random().nextInt(32) + "Gi");
           profile.getSpec().getRequests().getContainers().put(
@@ -111,13 +111,13 @@ class BackupJobContainerProfileDecoratorTest extends AbstractProfileDecoratorTes
         });
     Seq.seq(job.getSpec().getTemplate().getSpec().getInitContainers())
         .forEach(container -> {
-          StackGresProfileContainer containerProfile = new StackGresProfileContainer();
+          StackGresInstanceProfileContainer containerProfile = new StackGresInstanceProfileContainer();
           containerProfile.setCpu(new Random().nextInt(32000) + "m");
           containerProfile.setMemory(new Random().nextInt(32) + "Gi");
           profile.getSpec().getRequests().getInitContainers().put(
               KIND.getContainerPrefix() + container.getName(), containerProfile);
         });
-    StackGresProfileContainer containerProfile = new StackGresProfileContainer();
+    StackGresInstanceProfileContainer containerProfile = new StackGresInstanceProfileContainer();
     containerProfile.setCpu(new Random().nextInt(32000) + "m");
     containerProfile.setMemory(new Random().nextInt(32) + "Gi");
     profile.getSpec().getContainers().put(
@@ -134,7 +134,7 @@ class BackupJobContainerProfileDecoratorTest extends AbstractProfileDecoratorTes
   }
 
   @Override
-  protected StackGresProfile getProfile() {
+  protected StackGresInstanceProfile getProfile() {
     return profile;
   }
 

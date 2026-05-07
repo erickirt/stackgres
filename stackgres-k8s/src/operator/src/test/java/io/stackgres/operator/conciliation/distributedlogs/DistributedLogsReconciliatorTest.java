@@ -19,14 +19,19 @@ import io.stackgres.common.crd.sgdistributedlogs.StackGresDistributedLogs;
 import io.stackgres.common.event.EventEmitter;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.resource.CustomResourceFinder;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.common.Metrics;
+import io.stackgres.operator.common.StackGresDistributedLogsReview;
 import io.stackgres.operator.conciliation.AbstractConciliator;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
 import io.stackgres.operator.conciliation.HandlerDelegator;
 import io.stackgres.operator.conciliation.ReconciliationResult;
 import io.stackgres.operator.conciliation.StatusManager;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
 import io.stackgres.operator.conciliation.factory.cluster.KubernetessMockResourceGenerationUtil;
+import io.stackgres.testutil.JsonUtil;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,9 +58,15 @@ class DistributedLogsReconciliatorTest {
   @Mock
   EventEmitter<StackGresDistributedLogs> eventController;
   @Mock
-  CustomResourceScheduler<StackGresDistributedLogs> distributedlogsScheduler;
+  CustomResourceWriter<StackGresDistributedLogs> distributedlogsWriter;
   @Mock
   Metrics metrics;
+  @Mock
+  OperatorPropertyContext operatorPropertyContext;
+  @Mock
+  MutationPipeline<StackGresDistributedLogs, StackGresDistributedLogsReview> mutationPipeline;
+  @Mock
+  ValidationPipeline<StackGresDistributedLogsReview> validationPipeline;
 
   private DistributedLogsReconciliator reconciliator;
 
@@ -63,13 +74,17 @@ class DistributedLogsReconciliatorTest {
   void setUp() {
     final DistributedLogsReconciliator.Parameters parameters =
         new DistributedLogsReconciliator.Parameters();
+    parameters.operatorPropertyContext = operatorPropertyContext;
+    parameters.mutationPipeline = mutationPipeline;
+    parameters.validationPipeline = validationPipeline;
     parameters.finder = finder;
     parameters.conciliator = conciliator;
     parameters.deployedResourcesCache = deployedResourcesCache;
     parameters.handlerDelegator = handlerDelegator;
     parameters.eventController = eventController;
     parameters.statusManager = statusManager;
-    parameters.distributedLogsScheduler = distributedlogsScheduler;
+    parameters.distributedLogsWriter = distributedlogsWriter;
+    parameters.objectMapper = JsonUtil.jsonMapper();
     parameters.metrics = metrics;
     reconciliator = new DistributedLogsReconciliator(parameters);
   }

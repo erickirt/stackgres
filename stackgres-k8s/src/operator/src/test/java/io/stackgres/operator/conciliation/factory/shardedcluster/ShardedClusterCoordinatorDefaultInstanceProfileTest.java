@@ -16,8 +16,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileBuilder;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileBuilder;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.labels.LabelFactoryForShardedCluster;
@@ -57,7 +57,7 @@ class ShardedClusterCoordinatorDefaultInstanceProfileTest {
     when(context.getSource()).thenReturn(cluster);
 
     lenient().when(defaultProfileFactory.buildResource(any())).thenReturn(
-        new StackGresProfileBuilder().withNewSpec().endSpec().build());
+        new StackGresInstanceProfileBuilder().withNewSpec().endSpec().build());
   }
 
   @Test
@@ -68,14 +68,14 @@ class ShardedClusterCoordinatorDefaultInstanceProfileTest {
         shardedClusterCoordinatorDefaultInstanceProfile.generateResource(context).toList();
 
     assertEquals(1, resources.size());
-    StackGresProfile profile = (StackGresProfile) resources.getFirst();
+    StackGresInstanceProfile profile = (StackGresInstanceProfile) resources.getFirst();
     assertEquals(cluster.getSpec().getCoordinator().getSgInstanceProfile(),
         profile.getMetadata().getName());
   }
 
   @Test
   void generateResource_whenProfileExistsWithDefaultLabelsAndOwner_shouldGenerate() {
-    StackGresProfile existingProfile = new StackGresProfileBuilder()
+    StackGresInstanceProfile existingProfile = new StackGresInstanceProfileBuilder()
         .withNewMetadata()
         .withLabels(Map.copyOf(labelFactory.defaultConfigLabels(cluster)))
         .withOwnerReferences(List.of(ResourceUtil.getControllerOwnerReference(cluster)))
@@ -87,14 +87,14 @@ class ShardedClusterCoordinatorDefaultInstanceProfileTest {
         shardedClusterCoordinatorDefaultInstanceProfile.generateResource(context).toList();
 
     assertEquals(1, resources.size());
-    StackGresProfile profile = (StackGresProfile) resources.getFirst();
+    StackGresInstanceProfile profile = (StackGresInstanceProfile) resources.getFirst();
     assertEquals(cluster.getSpec().getCoordinator().getSgInstanceProfile(),
         profile.getMetadata().getName());
   }
 
   @Test
   void generateResource_whenProfileExistsWithoutMatchingLabels_shouldNotGenerate() {
-    StackGresProfile existingProfile = new StackGresProfileBuilder()
+    StackGresInstanceProfile existingProfile = new StackGresInstanceProfileBuilder()
         .withNewMetadata()
         .withLabels(Map.of("other-label", "other-value"))
         .withOwnerReferences(List.of(ResourceUtil.getControllerOwnerReference(cluster)))
@@ -116,7 +116,7 @@ class ShardedClusterCoordinatorDefaultInstanceProfileTest {
         shardedClusterCoordinatorDefaultInstanceProfile.generateResource(context).toList();
 
     assertEquals(1, resources.size());
-    StackGresProfile profile = (StackGresProfile) resources.getFirst();
+    StackGresInstanceProfile profile = (StackGresInstanceProfile) resources.getFirst();
     assertEquals("size-s", profile.getMetadata().getName());
     assertEquals("stackgres", profile.getMetadata().getNamespace());
   }

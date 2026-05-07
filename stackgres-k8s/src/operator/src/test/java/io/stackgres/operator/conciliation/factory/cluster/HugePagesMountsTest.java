@@ -16,8 +16,8 @@ import java.util.Optional;
 import io.stackgres.common.ClusterPath;
 import io.stackgres.common.StackGresVolume;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileHugePages;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileHugePages;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
 import io.stackgres.operator.initialization.DefaultProfileFactory;
@@ -38,7 +38,7 @@ class HugePagesMountsTest {
   @Mock
   private StackGresClusterContext clusterContext;
 
-  private StackGresProfile profile;
+  private StackGresInstanceProfile profile;
 
   @BeforeEach
   void setUp() {
@@ -50,7 +50,7 @@ class HugePagesMountsTest {
 
   @Test
   void givenAClusterWithAProfileWithHugePages_itShouldCreateTheMountsWithHugePages() {
-    profile.getSpec().setHugePages(new StackGresProfileHugePages());
+    profile.getSpec().setHugePages(new StackGresInstanceProfileHugePages());
     profile.getSpec().getHugePages().setHugepages2Mi("2Mi");
     profile.getSpec().getHugePages().setHugepages1Gi("1Gi");
     when(clusterContext.getProfile()).thenReturn(Optional.of(profile));
@@ -121,7 +121,7 @@ class HugePagesMountsTest {
 
   @Test
   void getVolumeMounts_whenOnly2MiSet_shouldMountOnly2Mi() {
-    profile.getSpec().setHugePages(new StackGresProfileHugePages());
+    profile.getSpec().setHugePages(new StackGresInstanceProfileHugePages());
     profile.getSpec().getHugePages().setHugepages2Mi("2Mi");
     when(clusterContext.getProfile()).thenReturn(Optional.of(profile));
 
@@ -147,7 +147,7 @@ class HugePagesMountsTest {
 
   @Test
   void getVolumeMounts_whenOnly1GiSet_shouldMountOnly1Gi() {
-    profile.getSpec().setHugePages(new StackGresProfileHugePages());
+    profile.getSpec().setHugePages(new StackGresInstanceProfileHugePages());
     profile.getSpec().getHugePages().setHugepages1Gi("1Gi");
     when(clusterContext.getProfile()).thenReturn(Optional.of(profile));
 

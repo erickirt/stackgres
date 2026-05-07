@@ -46,7 +46,7 @@ import io.stackgres.common.crd.sgscript.StackGresScript;
 import io.stackgres.common.crd.sgscript.StackGresScriptSpec;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.common.resource.ResourceFinder;
 import io.stackgres.common.resource.ResourceWriter;
 import io.stackgres.operatorframework.resource.ResourceUtil;
@@ -92,7 +92,7 @@ public class ClusterResource
 
   private final CustomResourceScanner<ClusterDto> clusterScanner;
   private final CustomResourceFinder<StackGresCluster> clusterFinder;
-  private final CustomResourceScheduler<StackGresScript> scriptScheduler;
+  private final CustomResourceWriter<StackGresScript> scriptWriter;
   private final ResourceWriter<Secret> secretWriter;
   private final ResourceWriter<ConfigMap> configMapWriter;
   private final CustomResourceFinder<StackGresScript> scriptFinder;
@@ -105,7 +105,7 @@ public class ClusterResource
   public ClusterResource(
       CustomResourceScanner<ClusterDto> clusterScanner,
       CustomResourceFinder<StackGresCluster> clusterFinder,
-      CustomResourceScheduler<StackGresScript> scriptScheduler,
+      CustomResourceWriter<StackGresScript> scriptWriter,
       ResourceWriter<Secret> secretWriter,
       ResourceWriter<ConfigMap> configMapWriter,
       CustomResourceFinder<StackGresScript> scriptFinder,
@@ -115,7 +115,7 @@ public class ClusterResource
       ResourceFinder<Service> serviceFinder) {
     this.clusterScanner = clusterScanner;
     this.clusterFinder = clusterFinder;
-    this.scriptScheduler = scriptScheduler;
+    this.scriptWriter = scriptWriter;
     this.secretWriter = secretWriter;
     this.configMapWriter = configMapWriter;
     this.scriptFinder = scriptFinder;
@@ -363,11 +363,11 @@ public class ClusterResource
     scriptsToCreate.stream()
         .filter(t -> t.v3.isEmpty())
         .forEach(t -> addFieldPrefixOnScriptValidationError(
-            t.v1, t.v2, script -> scriptScheduler.create(script, dryRun)));
+            t.v1, t.v2, script -> scriptWriter.create(script, dryRun)));
     scriptsToCreate.stream()
         .filter(t -> t.v3.isPresent())
         .forEach(t -> addFieldPrefixOnScriptValidationError(
-            t.v1, t.v2, script -> scriptScheduler.update(script, dryRun)));
+            t.v1, t.v2, script -> scriptWriter.update(script, dryRun)));
   }
 
   private boolean isNotDefaultScript(StackGresScript script) {

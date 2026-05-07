@@ -17,7 +17,7 @@ import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.conciliation.AbstractReconciliator;
 import io.stackgres.operator.configuration.OperatorPropertyContext;
 import jakarta.inject.Singleton;
@@ -31,17 +31,17 @@ public class DefaultOperatorLockHolder implements OperatorLockHolder {
       DefaultOperatorLockHolder.class.getPackage().getName());
 
   private final CustomResourceScanner<StackGresConfig> scanner;
-  private final CustomResourceScheduler<StackGresConfig> scheduler;
+  private final CustomResourceWriter<StackGresConfig> scheduler;
   private final OperatorPropertyContext context;
   private final ScheduledExecutorService executorService;
 
   private final AtomicBoolean leader = new AtomicBoolean(false);
   private final AtomicBoolean doReconciliation = new AtomicBoolean(false);
-  private final List<AbstractReconciliator<?>> reconciliators = new ArrayList<>();
+  private final List<AbstractReconciliator<?, ?>> reconciliators = new ArrayList<>();
 
   protected DefaultOperatorLockHolder(
       CustomResourceScanner<StackGresConfig> scanner,
-      CustomResourceScheduler<StackGresConfig> scheduler,
+      CustomResourceWriter<StackGresConfig> scheduler,
       OperatorPropertyContext context) {
     this.scanner = scanner;
     this.context = context;
@@ -56,7 +56,7 @@ public class DefaultOperatorLockHolder implements OperatorLockHolder {
   }
 
   @Override
-  public void register(AbstractReconciliator<?> reconciliator) {
+  public void register(AbstractReconciliator<?, ?> reconciliator) {
     this.reconciliators.add(reconciliator);
     if (leader.get()) {
       if (doReconciliation.get()) {

@@ -31,7 +31,7 @@ import io.stackgres.common.crd.sgconfig.StackGresConfigSpec;
 import io.stackgres.common.crd.sgconfig.StackGresConfigStatus;
 import io.stackgres.common.labels.LabelFactoryForConfig;
 import io.stackgres.common.resource.CustomResourceFinder;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.common.resource.ResourceFinder;
 import io.stackgres.common.resource.ResourceScanner;
 import io.stackgres.common.resource.ResourceWriter;
@@ -59,7 +59,7 @@ public class ConfigInstaller {
   private final ResourceFinder<CustomResourceDefinition> crdResourceFinder;
   private final ResourceWriter<CustomResourceDefinition> crdResourceWriter;
   private final CustomResourceFinder<StackGresConfig> configFinder;
-  private final CustomResourceScheduler<StackGresConfig> configWriter;
+  private final CustomResourceWriter<StackGresConfig> configWriter;
   private final ResourceScanner<ClusterRoleBinding> clusterRoleBindingScanner;
   private final ResourceFinder<ClusterRoleBinding> clusterRoleBindingFinder;
   private final ResourceWriter<ClusterRoleBinding> clusterRoleBindingWriter;
@@ -71,7 +71,7 @@ public class ConfigInstaller {
       ResourceFinder<CustomResourceDefinition> crdResourceFinder,
       ResourceWriter<CustomResourceDefinition> crdResourceWriter,
       CustomResourceFinder<StackGresConfig> configFinder,
-      CustomResourceScheduler<StackGresConfig> configWriter,
+      CustomResourceWriter<StackGresConfig> configWriter,
       ResourceScanner<ClusterRoleBinding> clusterRoleBindingScanner,
       ResourceFinder<ClusterRoleBinding> clusterRoleBindingFinder,
       ResourceWriter<ClusterRoleBinding> clusterRoleBindingWriter,

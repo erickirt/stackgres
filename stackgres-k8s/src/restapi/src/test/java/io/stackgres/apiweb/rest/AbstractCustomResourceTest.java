@@ -21,7 +21,7 @@ import io.stackgres.apiweb.dto.ResourceDto;
 import io.stackgres.apiweb.transformer.AbstractResourceTransformer;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import org.jooq.lambda.Seq;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ public abstract class AbstractCustomResourceTest
   protected CustomResourceFinder<R> finder;
 
   @Mock
-  protected CustomResourceScheduler<R> scheduler;
+  protected CustomResourceWriter<R> scheduler;
 
   protected DefaultKubernetesResourceList<R> customResources;
   protected T dto;

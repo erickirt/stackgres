@@ -6,20 +6,20 @@
 package io.stackgres.common.resource;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileList;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileList;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-public class ProfileFinder extends AbstractCustomResourceFinder<StackGresProfile> {
+public class ProfileFinder extends AbstractCustomResourceFinder<StackGresInstanceProfile> {
 
   /**
    * Create a {@code ProfileConfigFinder} instance.
    */
   @Inject
   public ProfileFinder(KubernetesClient client) {
-    super(client, StackGresProfile.class, StackGresProfileList.class);
+    super(client, StackGresInstanceProfile.class, StackGresInstanceProfileList.class);
   }
 
 }

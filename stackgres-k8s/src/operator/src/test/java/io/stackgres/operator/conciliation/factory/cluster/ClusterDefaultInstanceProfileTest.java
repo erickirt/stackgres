@@ -17,8 +17,8 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileBuilder;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileBuilder;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.labels.ClusterLabelFactory;
 import io.stackgres.common.labels.ClusterLabelMapper;
@@ -56,7 +56,7 @@ class ClusterDefaultInstanceProfileTest {
     when(context.getSource()).thenReturn(cluster);
 
     lenient().when(defaultProfileFactory.buildResource(any())).thenReturn(
-        new StackGresProfileBuilder().withNewSpec().endSpec().build());
+        new StackGresInstanceProfileBuilder().withNewSpec().endSpec().build());
   }
 
   @Test
@@ -67,13 +67,13 @@ class ClusterDefaultInstanceProfileTest {
         clusterDefaultInstanceProfile.generateResource(context).toList();
 
     assertEquals(1, resources.size());
-    StackGresProfile profile = (StackGresProfile) resources.getFirst();
+    StackGresInstanceProfile profile = (StackGresInstanceProfile) resources.getFirst();
     assertEquals(cluster.getSpec().getSgInstanceProfile(), profile.getMetadata().getName());
   }
 
   @Test
   void generateResource_whenProfileExistsWithDefaultLabelsAndOwner_shouldGenerate() {
-    StackGresProfile existingProfile = new StackGresProfileBuilder()
+    StackGresInstanceProfile existingProfile = new StackGresInstanceProfileBuilder()
         .withNewMetadata()
         .withLabels(Map.copyOf(labelFactory.defaultConfigLabels(cluster)))
         .withOwnerReferences(List.of(ResourceUtil.getControllerOwnerReference(cluster)))
@@ -85,13 +85,13 @@ class ClusterDefaultInstanceProfileTest {
         clusterDefaultInstanceProfile.generateResource(context).toList();
 
     assertEquals(1, resources.size());
-    StackGresProfile profile = (StackGresProfile) resources.getFirst();
+    StackGresInstanceProfile profile = (StackGresInstanceProfile) resources.getFirst();
     assertEquals(cluster.getSpec().getSgInstanceProfile(), profile.getMetadata().getName());
   }
 
   @Test
   void generateResource_whenProfileExistsWithoutMatchingLabels_shouldNotGenerate() {
-    StackGresProfile existingProfile = new StackGresProfileBuilder()
+    StackGresInstanceProfile existingProfile = new StackGresInstanceProfileBuilder()
         .withNewMetadata()
         .withLabels(Map.of("other-label", "other-value"))
         .withOwnerReferences(List.of(ResourceUtil.getControllerOwnerReference(cluster)))
@@ -111,7 +111,7 @@ class ClusterDefaultInstanceProfileTest {
     Map<String, String> partialLabels = Map.of(
         defaultLabels.keySet().iterator().next(),
         defaultLabels.values().iterator().next());
-    StackGresProfile existingProfile = new StackGresProfileBuilder()
+    StackGresInstanceProfile existingProfile = new StackGresInstanceProfileBuilder()
         .withNewMetadata()
         .withLabels(partialLabels)
         .withOwnerReferences(List.of(ResourceUtil.getControllerOwnerReference(cluster)))
@@ -127,11 +127,11 @@ class ClusterDefaultInstanceProfileTest {
 
   @Test
   void generateResource_whenProfileExistsWithDifferentOwner_shouldNotGenerate() {
-    StackGresProfile existingProfile = new StackGresProfileBuilder()
+    StackGresInstanceProfile existingProfile = new StackGresInstanceProfileBuilder()
         .withNewMetadata()
         .withLabels(Map.copyOf(labelFactory.defaultConfigLabels(cluster)))
         .withOwnerReferences(List.of(ResourceUtil.getControllerOwnerReference(
-            new StackGresProfileBuilder()
+            new StackGresInstanceProfileBuilder()
                 .withNewMetadata()
                 .withName("different-owner")
                 .withUid("different-uid")
@@ -155,7 +155,7 @@ class ClusterDefaultInstanceProfileTest {
         clusterDefaultInstanceProfile.generateResource(context).toList();
 
     assertEquals(1, resources.size());
-    StackGresProfile profile = (StackGresProfile) resources.getFirst();
+    StackGresInstanceProfile profile = (StackGresInstanceProfile) resources.getFirst();
     assertEquals("size-s", profile.getMetadata().getName());
     assertEquals("stackgres", profile.getMetadata().getNamespace());
   }

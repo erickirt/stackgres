@@ -21,13 +21,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.app.OperatorLockHolder;
 import io.stackgres.operator.common.Metrics;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
+import io.stackgres.testutil.JsonUtil;
 import org.jooq.lambda.tuple.Tuple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -45,10 +51,22 @@ class AbstractReconciliatorTest {
       AbstractReconciliator.class.getPackage().getName());
 
   @Mock
+  private OperatorPropertyContext operatorPropertyContext;
+
+  @Mock
   private CustomResourceScanner<TestResource> scanner;
 
   @Mock
   private CustomResourceFinder<TestResource> finder;
+
+  @Mock
+  private MutationPipeline<TestResource, TestResourceReview> mutationPipeline;
+
+  @Mock
+  private ValidationPipeline<TestResourceReview> validationPipeline;
+
+  @Mock
+  private CustomResourceWriter<TestResource> writer;
 
   @Mock
   private AbstractConciliator<TestResource> conciliator;
@@ -69,7 +87,7 @@ class AbstractReconciliatorTest {
 
   private TestResource customResource;
 
-  private AbstractReconciliator<TestResource> reconciliator;
+  private AbstractReconciliator<TestResource, TestResourceReview> reconciliator;
 
   @BeforeEach
   void setUp() {
@@ -80,7 +98,7 @@ class AbstractReconciliatorTest {
     customResource.setMetadata(new ObjectMeta());
     customResource.getMetadata().setName("test");
     customResource.getMetadata().setNamespace("test-namespace");
-    customResource.getMetadata().setUid("1");
+    customResource.getMetadata().setUid("00000000-0000-0000-0000-000000000001");
     lenient().when(operatorLockReconciliator.isLeader()).thenReturn(true);
   }
 
@@ -366,19 +384,37 @@ class AbstractReconciliatorTest {
     verify(finder, times(1)).findByNameAndNamespace(any(), any());
   }
 
-  private AbstractReconciliator<TestResource> buildConciliator() {
-    final AbstractReconciliator<TestResource> reconciliator =
-        new TestReconciliator(scanner, finder, conciliator, deployedResourcesCache,
-            handlerDelegator, null, operatorLockReconciliator, reconciliatorWorkerThreadPool, metrics);
+  private AbstractReconciliator<TestResource, TestResourceReview> buildConciliator() {
+    final AbstractReconciliator<TestResource, TestResourceReview> reconciliator =
+        new TestReconciliator(
+            operatorPropertyContext,
+            scanner,
+            finder,
+            JsonUtil.jsonMapper(),
+            mutationPipeline,
+            validationPipeline,
+            writer,
+            conciliator,
+            deployedResourcesCache,
+            handlerDelegator,
+            null,
+            operatorLockReconciliator,
+            reconciliatorWorkerThreadPool,
+            metrics);
     return reconciliator;
   }
 
   public static class TestReconciliator
-      extends AbstractReconciliator<TestResource> {
+      extends AbstractReconciliator<TestResource, TestResourceReview> {
 
     TestReconciliator(
+        OperatorPropertyContext operatorPropertyContext,
         CustomResourceScanner<TestResource> scanner,
         CustomResourceFinder<TestResource> finder,
+        ObjectMapper objectMapper,
+        MutationPipeline<TestResource, TestResourceReview> mutationPipeline,
+        ValidationPipeline<TestResourceReview> validationPipeline,
+        CustomResourceWriter<TestResource> writer,
         AbstractConciliator<TestResource> conciliator,
         DeployedResourcesCache deployedResourcesCache,
         HandlerDelegator<TestResource> handlerDelegator,
@@ -386,11 +422,38 @@ class AbstractReconciliatorTest {
         OperatorLockHolder operatorLockReconciliator,
         ReconciliatorWorkerThreadPool reconciliatorWorkerThreadPool,
         Metrics metrics) {
-      super(scanner, finder, conciliator, deployedResourcesCache,
-          handlerDelegator, client, operatorLockReconciliator,
+      super(
+          operatorPropertyContext,
+          scanner,
+          finder,
+          objectMapper,
+          mutationPipeline,
+          validationPipeline,
+          writer,
+          conciliator,
+          deployedResourcesCache,
+          handlerDelegator,
+          client,
+          operatorLockReconciliator,
           reconciliatorWorkerThreadPool,
           metrics,
           "Test");
+    }
+
+    @Override
+    protected void setSpecAndStatus(TestResource currentConfig, TestResource mutatedAndValidatedConfig) {
+      currentConfig.setSpec(mutatedAndValidatedConfig.getSpec());
+      currentConfig.setStatus(mutatedAndValidatedConfig.getStatus());
+    }
+
+    @Override
+    protected TestResourceReview createAdmissionReview() {
+      return new TestResourceReview();
+    }
+
+    @Override
+    protected Class<TestResource> getResourceClass() {
+      return TestResource.class;
     }
 
     @Override

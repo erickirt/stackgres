@@ -6,7 +6,7 @@
 package io.stackgres.operator.common;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.operatorframework.admissionwebhook.AdmissionReview;
 import io.sundr.builder.annotations.Buildable;
 
@@ -14,5 +14,5 @@ import io.sundr.builder.annotations.Buildable;
 @Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
-public class StackGresInstanceProfileReview extends AdmissionReview<StackGresProfile> {
+public class StackGresInstanceProfileReview extends AdmissionReview<StackGresInstanceProfile> {
 }

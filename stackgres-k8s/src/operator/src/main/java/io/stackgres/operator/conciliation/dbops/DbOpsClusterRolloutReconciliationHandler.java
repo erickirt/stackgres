@@ -16,7 +16,7 @@ import io.stackgres.common.crd.sgcluster.StackGresClusterPostgres;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
 import io.stackgres.common.crd.sgcluster.StackGresClusterStatus;
 import io.stackgres.common.crd.sgdbops.StackGresDbOps;
-import io.stackgres.common.resource.ClusterScheduler;
+import io.stackgres.common.resource.ClusterWriter;
 import io.stackgres.operator.common.DbOpsUtil;
 import io.stackgres.operator.conciliation.ReconciliationHandler;
 import io.stackgres.operator.conciliation.ReconciliationScope;
@@ -35,11 +35,11 @@ public class DbOpsClusterRolloutReconciliationHandler
   protected static final Logger LOGGER =
       LoggerFactory.getLogger(DbOpsClusterRolloutReconciliationHandler.class);
 
-  protected final ClusterScheduler clusterScheduler;
+  protected final ClusterWriter clusterWriter;
 
   @Inject
-  public DbOpsClusterRolloutReconciliationHandler(ClusterScheduler clusterScheduler) {
-    this.clusterScheduler = clusterScheduler;
+  public DbOpsClusterRolloutReconciliationHandler(ClusterWriter clusterWriter) {
+    this.clusterWriter = clusterWriter;
   }
 
   private StackGresCluster safeCast(HasMetadata resource) {
@@ -69,7 +69,7 @@ public class DbOpsClusterRolloutReconciliationHandler
     if (!DbOpsUtil.ROLLOUT_OPS.contains(context.getSpec().getOp())) {
       return resource;
     }
-    return clusterScheduler.update(cluster, currentCluster -> {
+    return clusterWriter.update(cluster, currentCluster -> {
       if (Optional.ofNullable(cluster.getSpec())
           .map(StackGresClusterSpec::getPostgres)
           .map(StackGresClusterPostgres::getVersion)

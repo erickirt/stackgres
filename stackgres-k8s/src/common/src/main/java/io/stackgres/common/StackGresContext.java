@@ -129,4 +129,6 @@ public interface StackGresContext {
 
   String UPDATE_UNOWNED_RESOURCE_KEY = INTERNAL_STACKGRES_KEY_PREFIX + "update-unowned-resource";
 
+  String PREVIOUS_KEY = INTERNAL_STACKGRES_KEY_PREFIX + "previous";
+
 }

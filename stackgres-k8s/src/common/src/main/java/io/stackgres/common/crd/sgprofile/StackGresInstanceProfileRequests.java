@@ -21,15 +21,15 @@ import jakarta.validation.Valid;
 @Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
-public class StackGresProfileRequests {
+public class StackGresInstanceProfileRequests {
 
   private String cpu;
 
   private String memory;
 
-  private Map<String, @Valid StackGresProfileContainer> containers;
+  private Map<String, @Valid StackGresInstanceProfileContainer> containers;
 
-  private Map<String, @Valid StackGresProfileContainer> initContainers;
+  private Map<String, @Valid StackGresInstanceProfileContainer> initContainers;
 
   public String getCpu() {
     return cpu;
@@ -47,19 +47,19 @@ public class StackGresProfileRequests {
     this.memory = memory;
   }
 
-  public Map<String, StackGresProfileContainer> getContainers() {
+  public Map<String, StackGresInstanceProfileContainer> getContainers() {
     return containers;
   }
 
-  public void setContainers(Map<String, StackGresProfileContainer> containers) {
+  public void setContainers(Map<String, StackGresInstanceProfileContainer> containers) {
     this.containers = containers;
   }
 
-  public Map<String, StackGresProfileContainer> getInitContainers() {
+  public Map<String, StackGresInstanceProfileContainer> getInitContainers() {
     return initContainers;
   }
 
-  public void setInitContainers(Map<String, StackGresProfileContainer> initContainers) {
+  public void setInitContainers(Map<String, StackGresInstanceProfileContainer> initContainers) {
     this.initContainers = initContainers;
   }
 
@@ -73,10 +73,10 @@ public class StackGresProfileRequests {
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof StackGresProfileRequests)) {
+    if (!(obj instanceof StackGresInstanceProfileRequests)) {
       return false;
     }
-    StackGresProfileRequests other = (StackGresProfileRequests) obj;
+    StackGresInstanceProfileRequests other = (StackGresInstanceProfileRequests) obj;
     return Objects.equals(containers, other.containers) && Objects.equals(cpu, other.cpu)
         && Objects.equals(initContainers, other.initContainers)
         && Objects.equals(memory, other.memory);

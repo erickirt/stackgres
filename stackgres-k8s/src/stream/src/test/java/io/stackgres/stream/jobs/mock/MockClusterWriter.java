@@ -9,13 +9,13 @@ import java.util.function.Consumer;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import org.jetbrains.annotations.NotNull;
 
-public class MockClusterScheduler implements CustomResourceScheduler<StackGresCluster> {
+public class MockClusterWriter implements CustomResourceWriter<StackGresCluster> {
   final MockKubeDb mockKubeDb;
 
-  public MockClusterScheduler(MockKubeDb mockKubeDb) {
+  public MockClusterWriter(MockKubeDb mockKubeDb) {
     this.mockKubeDb = mockKubeDb;
   }
 

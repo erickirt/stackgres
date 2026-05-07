@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture;
 
 import io.stackgres.common.crd.sgstream.StackGresStream;
 import io.stackgres.common.crd.sgstream.StackGresStreamStatus;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ public class StreamJob {
   private static final Logger LOGGER = LoggerFactory.getLogger(StreamJob.class);
 
   @Inject
-  CustomResourceScheduler<StackGresStream> streamScheduler;
+  CustomResourceWriter<StackGresStream> streamWriter;
 
   @Inject
   StreamExecutorService executorService;
@@ -46,7 +46,7 @@ public class StreamJob {
   private void reportFailure(StackGresStream stream, Throwable ex) {
     String message = ex.getMessage();
 
-    streamScheduler.update(stream, currentStream -> {
+    streamWriter.update(stream, currentStream -> {
       if (currentStream.getStatus() == null) {
         currentStream.setStatus(new StackGresStreamStatus());
       }

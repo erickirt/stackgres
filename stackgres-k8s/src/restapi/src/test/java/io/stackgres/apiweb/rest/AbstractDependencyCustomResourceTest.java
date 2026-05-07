@@ -24,7 +24,7 @@ import io.stackgres.common.crd.sgcluster.StackGresClusterList;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -45,7 +45,7 @@ abstract class AbstractDependencyCustomResourceTest
   protected CustomResourceFinder<R> finder;
 
   @Mock
-  protected CustomResourceScheduler<R> scheduler;
+  protected CustomResourceWriter<R> scheduler;
 
   protected DefaultKubernetesResourceList<R> customResources;
   protected T resourceDto;
