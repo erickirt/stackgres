@@ -34,7 +34,8 @@ export K8S_REUSE="${K8S_REUSE:-true}"
 export K8S_FROM_DIND=true
 export E2E_BUILD_IMAGES=false
 export E2E_WAIT_OPERATOR=false
-export E2E_PULLED_IMAGES_PATH="/tmp/pulled-images$SUFFIX"
+export E2E_TEMP_PATH="${E2E_TEMP_PATH:-/tmp}"
+export E2E_PULLED_IMAGES_PATH="${E2E_TEMP_PATH}/pulled-images$SUFFIX"
 export E2E_OPERATOR_REGISTRY=$CI_REGISTRY
 export E2E_OPERATOR_REGISTRY_PATH=/$SG_CI_PROJECT_PATH/
 export E2E_FORCE_IMAGE_PULL=true
@@ -43,11 +44,11 @@ export E2E_DISABLE_CACHE="${E2E_DISABLE_CACHE:-false}"
 export E2E_DISABLE_LOGS="${E2E_DISABLE_LOGS:-true}"
 export E2E_SPEC_TRY_UNINSTALL_ON_FAILURE="${E2E_SPEC_TRY_UNINSTALL_ON_FAILURE:-$([ "$E2E_SKIP_OPERATOR_INSTALL" = true ] && printf false || printf true)}"
 export E2E_SKIP_SPEC_UNINSTALL="${E2E_SKIP_SPEC_UNINSTALL:-$([ "$E2E_SKIP_OPERATOR_INSTALL" = true ] && printf true || printf false)}"
-export KIND_LOCK_PATH="/tmp/kind-lock$SUFFIX"
+export KIND_LOCK_PATH="${E2E_TEMP_PATH}/kind-lock$SUFFIX"
 export KIND_LOG="${KIND_LOG:-true}"
-export KIND_LOG_PATH="/tmp/kind-log$SUFFIX"
+export KIND_LOG_PATH="${E2E_TEMP_PATH}/kind-log$SUFFIX"
 export KIND_LOG_RESOURCES="${KIND_LOG_RESOURCES:-false}"
-export KIND_CONTAINERD_CACHE_PATH="/tmp/kind-cache$SUFFIX"
+export KIND_CONTAINERD_CACHE_PATH="${E2E_TEMP_PATH}/kind-cache$SUFFIX"
 export EXTENSIONS_CACHE_HOST_PATH="/containerd-cache/extensions"
 export E2E_TEST_REGISTRY="$CI_REGISTRY"
 export E2E_TEST_REGISTRY_PATH="$SG_CI_PROJECT_PATH"
@@ -123,8 +124,8 @@ run_all_tests_loop() {
 
   # shellcheck disable=SC2086
   # shellcheck disable=SC2046
-  flock -s /tmp/stackgres-build-operator-native-executable \
-    flock -s /tmp/stackgres-build-restapi-native-executable \
+  flock -s "${E2E_TEMP_PATH}/stackgres-build-operator-native-executable" \
+    flock -s "${E2E_TEMP_PATH}/stackgres-build-restapi-native-executable" \
     "$E2E_SHELL" "$0" run_with_e2e_lock \
     timeout -s KILL 3600 \
     "$E2E_SHELL" "$0" run_all_e2e
@@ -233,12 +234,12 @@ run_with_e2e_lock() {
       -native-image-non-exclusive-3 \
       -native-image-ui-1            
     do
-      SUFFIX="$POSSIBLE_SUFFIX" flock -n "/tmp/stackgres-integration-test$POSSIBLE_SUFFIX" \
+      SUFFIX="$POSSIBLE_SUFFIX" flock -n "${E2E_TEMP_PATH}/stackgres-integration-test$POSSIBLE_SUFFIX" \
         "$E2E_SHELL" "$0" run_in_e2e_lock "$@"
       EXIT_CODE="$?"
-      if [ -f "/tmp/stackgres-integration-test$POSSIBLE_SUFFIX-was-locked-by-$CI_JOB_ID" ]
+      if [ -f "${E2E_TEMP_PATH}/stackgres-integration-test$POSSIBLE_SUFFIX-was-locked-by-$CI_JOB_ID" ]
       then
-        rm -f "/tmp/stackgres-integration-test$POSSIBLE_SUFFIX-was-locked-by-$CI_JOB_ID"
+        rm -f "${E2E_TEMP_PATH}/stackgres-integration-test$POSSIBLE_SUFFIX-was-locked-by-$CI_JOB_ID"
         return "$EXIT_CODE"
       fi
     done
@@ -247,7 +248,7 @@ run_with_e2e_lock() {
 }
 
 run_in_e2e_lock() {
-  touch "/tmp/stackgres-integration-test$SUFFIX-was-locked-by-$CI_JOB_ID"
+  touch "${E2E_TEMP_PATH}/stackgres-integration-test$SUFFIX-was-locked-by-$CI_JOB_ID"
   echo "Locked kind with name kind$SUFFIX"
   "$@"
 }
