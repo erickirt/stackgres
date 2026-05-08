@@ -62,8 +62,6 @@
 
 .build jvm image amd64:
   extends: .build image
-  dependencies:
-    - build amd64
   tags:
     - stackgres-runner-v2
     - linux-amd64
@@ -72,8 +70,6 @@
 
 .build native image amd64:
   extends: .build image
-  dependencies:
-    - build amd64
   tags:
     - stackgres-runner-v2
     - linux-amd64
@@ -148,8 +144,6 @@ build cluster-controller native image amd64:
 
 build admin-ui image amd64:
   extends: .build image
-  dependencies:
-    - build amd64
   tags:
     - stackgres-runner-v2
     - linux-amd64
@@ -161,8 +155,6 @@ build admin-ui image amd64:
 
 .build jvm image arm64:
   extends: .build image
-  dependencies:
-    - build arm64
   tags:
     - stackgres-runner-v2
     - linux-arm64
@@ -178,8 +170,6 @@ build admin-ui image amd64:
 
 .build native image arm64:
   extends: .build image
-  dependencies:
-    - build arm64
   tags:
     - stackgres-runner-v2
     - linux-arm64
@@ -251,8 +241,6 @@ build cluster-controller native image arm64:
 
 build admin-ui image arm64:
   extends: .build image
-  dependencies:
-    - build arm64
   tags:
     - stackgres-runner-v2
     - linux-arm64
@@ -341,8 +329,6 @@ build admin-ui image multi archs:
 
 .build operator bundle image amd64:
   extends: .build image
-  dependencies:
-    - build amd64
   tags:
     - stackgres-runner-v2
     - linux-amd64
@@ -352,8 +338,6 @@ build admin-ui image multi archs:
 
 .build operator bundle image arm64:
   extends: .build image
-  dependencies:
-    - build arm64
   tags:
     - stackgres-runner-v2
     - linux-arm64
@@ -420,8 +404,6 @@ build operator openshift bundle image multi archs:
 
 .build pglambda javascript image arm64:
   extends: .build image
-  dependencies:
-    - build arm64
   tags:
     - stackgres-runner-v2
     - linux-arm64

@@ -22,18 +22,9 @@
       paths:
       - .m2/
       when: always
-  artifacts:
-    expire_in: 1 week
-    when: always
-    paths:
-      - stackgres-k8s/src/*/target/stackgres-*-runner
-      - stackgres-k8s/src/*/target/lib/
-      - stackgres-k8s/src/*/target/stackgres-*-runner.jar
 
 .build native executable amd64:
   extends: .build native executable
-  dependencies:
-    - build amd64
   tags:
     - stackgres-runner-v2
     - stackgres-native-build-runner
@@ -77,8 +68,6 @@ build cluster-controller native executable amd64:
 
 .build native executable arm64:
   extends: .build native executable
-  dependencies:
-    - build arm64
   tags:
     - stackgres-runner-v2
     - stackgres-native-build-runner

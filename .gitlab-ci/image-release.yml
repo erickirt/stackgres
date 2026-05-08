@@ -62,8 +62,6 @@
 
 .release jvm image amd64:
   extends: .release image
-  dependencies:
-    - build amd64
   tags:
     - stackgres-runner-v2
     - linux-amd64
@@ -81,8 +79,6 @@
 
 .release native image amd64:
   extends: .release image
-  dependencies:
-    - build amd64
   tags:
     - stackgres-runner-v2
     - linux-amd64
@@ -156,8 +152,6 @@ release cluster-controller native image amd64:
 
 release admin-ui image amd64:
   extends: .release image
-  dependencies:
-    - build amd64
   tags:
     - stackgres-runner-v2
     - linux-amd64
@@ -178,8 +172,6 @@ release admin-ui image amd64:
 
 .release jvm image arm64:
   extends: .release image
-  dependencies:
-    - build arm64
   tags:
     - stackgres-runner-v2
     - linux-arm64
@@ -196,8 +188,6 @@ release admin-ui image amd64:
 
 .release native image arm64:
   extends: .release image
-  dependencies:
-    - build arm64
   tags:
     - stackgres-runner-v2
     - linux-arm64
@@ -270,8 +260,6 @@ release cluster-controller native image arm64:
 
 release admin-ui image arm64:
   extends: .release image
-  dependencies:
-    - build arm64
   tags:
     - stackgres-runner-v2
     - linux-arm64
@@ -380,8 +368,6 @@ release admin-ui image multi archs:
 
 .release operator bundle image amd64:
   extends: .release image
-  dependencies:
-    - build amd64
   tags:
     - stackgres-runner-v2
     - linux-amd64
@@ -400,8 +386,6 @@ release admin-ui image multi archs:
 
 .release operator bundle image arm64:
   extends: .release image
-  dependencies:
-    - build arm64
   tags:
     - stackgres-runner-v2
     - linux-arm64

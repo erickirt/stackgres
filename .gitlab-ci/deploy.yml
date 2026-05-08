@@ -161,8 +161,6 @@ deploy pglambda javascript image:
 deploy helm packages and templates:
   image: $CI_REGISTRY/$SG_CI_PROJECT_PATH/$SG_CI_IMAGE_NAME
   stage: deploy
-  dependencies:
-    - build amd64
   script:
     - |
       set -e
@@ -218,11 +216,8 @@ pages:
   environment:
     name: development
     url: https://ongresinc.gitlab.io/stackgres/
-  dependencies:
-    - build amd64
-  dependencies:
-    - build documentation
   script:
+    - sh stackgres-k8s/ci/build/build-gitlab.sh extract documentation stackgres-k8s/install/helm/target/templates
     - tar cC doc public | tar x
     - find public | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
   cache:

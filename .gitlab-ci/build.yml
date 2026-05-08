@@ -42,10 +42,6 @@
       junit:
         - stackgres-k8s/ci/build/target/junit-build.hashes.xml
         - stackgres-k8s/src/*/target/surefire-reports/TEST-*.xml
-    paths:
-        - stackgres-k8s/ci/build/target/*
-        - stackgres-k8s/src/restapi/target/swagger*
-        - stackgres-k8s/ci/build/target
 
 build amd64:
   extends: .build
@@ -131,11 +127,6 @@ build documentation:
         --extract documentation:doc/public \
         documentation
   retry: 2
-  artifacts:
-    expire_in: 1 week
-    when: always
-    paths:
-    - doc
 
 build helm packages:
   image: $CI_REGISTRY/$SG_CI_PROJECT_PATH/$SG_CI_IMAGE_NAME
@@ -150,11 +141,6 @@ build helm packages:
         --extract helm-packages:stackgres-k8s/install/helm/target/packages \
         helm-packages operator-bundle operator-openshift-bundle
   retry: 2
-  artifacts:
-    expire_in: 1 week
-    when: always
-    paths:
-      - stackgres-k8s/install/helm/target/packages
 
 build helm templates:
   image: $CI_REGISTRY/$SG_CI_PROJECT_PATH/$SG_CI_IMAGE_NAME
@@ -169,11 +155,6 @@ build helm templates:
         --extract helm-templates:stackgres-k8s/install/helm/target/templates \
         helm-templates
   retry: 2
-  artifacts:
-    expire_in: 1 week
-    when: always
-    paths:
-      - stackgres-k8s/install/helm/target/templates
 
 build helm release packages:
   image: $CI_REGISTRY/$SG_CI_PROJECT_PATH/$SG_CI_IMAGE_NAME
@@ -188,11 +169,6 @@ build helm release packages:
         --extract helm-packages:stackgres-k8s/install/helm/target/packages \
         helm-release-packages operator-release-bundle operator-release-openshift-bundle
   retry: 2
-  artifacts:
-    expire_in: 1 week
-    when: always
-    paths:
-      - stackgres-k8s/install/helm/target/packages
 
 build helm release templates:
   image: $CI_REGISTRY/$SG_CI_PROJECT_PATH/$SG_CI_IMAGE_NAME
@@ -207,8 +183,3 @@ build helm release templates:
         --extract helm-templates:stackgres-k8s/install/helm/target/templates \
         helm-release-templates
   retry: 2
-  artifacts:
-    expire_in: 1 week
-    when: always
-    paths:
-      - stackgres-k8s/install/helm/target/templates
