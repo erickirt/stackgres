@@ -82,16 +82,12 @@ build arm64:
 
 build ui amd64:
   extends: .build ui
-  dependencies:
-    - build amd64
   tags:
     - stackgres-runner
     - linux-amd64
 
 build ui arm64:
   extends: .build ui
-  dependencies:
-    - build arm64
   tags:
     - stackgres-runner
     - linux-arm64
@@ -108,8 +104,6 @@ build documentation:
   stage: build 2
   tags:
     - stackgres-runner
-  dependencies:
-    - build amd64
   script:
     - |
       [ "$DEBUG" != true ] || set -x
@@ -133,8 +127,6 @@ build helm packages:
   stage: build 2
   tags:
     - stackgres-runner
-  dependencies:
-    - build amd64
   script:
     - |
       sh stackgres-k8s/ci/build/build-gitlab.sh build \
@@ -147,8 +139,6 @@ build helm templates:
   stage: build 2
   tags:
     - stackgres-runner
-  dependencies:
-    - build amd64
   script:
     - |
       sh stackgres-k8s/ci/build/build-gitlab.sh build \
@@ -161,8 +151,6 @@ build helm release packages:
   stage: build 2
   tags:
     - stackgres-runner
-  dependencies:
-    - build amd64
   script:
     - |
       sh stackgres-k8s/ci/build/build-gitlab.sh build \
@@ -175,8 +163,6 @@ build helm release templates:
   stage: build 2
   tags:
     - stackgres-runner
-  dependencies:
-    - build amd64
   script:
     - |
       sh stackgres-k8s/ci/build/build-gitlab.sh build \
