@@ -368,7 +368,7 @@ wait_sharded_cluster() {
   local WORKER_NAME_TEMPLATE
   SHARDING_TYPE="$(kubectl get sgshardedcluster -n "$NAMESPACE" "$SHARDED_RELEASE" --template '{{ .spec.type }}')"
   WORKER_NAME_TEMPLATE="$(kubectl get sgshardedcluster -n "$NAMESPACE" "$SHARDED_RELEASE" \
-    --template '{{ if .spec.workers.clusterNameTemplate }}{{ .spec.workers.clusterNameTemplate }}{{ else }}{{ .metadata.name }}-worker{{ end }}')"
+    --template '{{ if .spec.workers }}{{ if .spec.workers.clusterNameTemplate }}{{ .spec.workers.clusterNameTemplate }}{{ else }}{{ .metadata.name }}-worker{{ end }}{{ else }}{{ .metadata.name }}-shard{{ end }}')"
   for RELEASE in \
     $(
     if [ "$SHARDING_TYPE" != shardingsphere ]
@@ -376,7 +376,7 @@ wait_sharded_cluster() {
       printf '%s-coord' "$SHARDED_RELEASE"
     fi) \
     $(
-      seq 0 "$(( -1 + $(kubectl get sgshardedcluster -n "$NAMESPACE" "$SHARDED_RELEASE" --template '{{ .spec.workers.clusters }}') ))" \
+      seq 0 "$(( -1 + $(kubectl get sgshardedcluster -n "$NAMESPACE" "$SHARDED_RELEASE" --template '{{ if .spec.workers }}{{ .spec.workers.clusters }}{{ else }}{{ .spec.shards.clusters }}{{ end }}') ))" \
         | while read INDEX
           do
             printf '%s%s ' "$WORKER_NAME_TEMPLATE" "$INDEX"
@@ -425,7 +425,7 @@ switch_sharded_cluster_to_first() {
   local WORKER_NAME_TEMPLATE
   SHARDING_TYPE="$(kubectl get sgshardedcluster -n "$NAMESPACE" "$SHARDED_RELEASE" --template '{{ .spec.type }}')"
   WORKER_NAME_TEMPLATE="$(kubectl get sgshardedcluster -n "$NAMESPACE" "$SHARDED_RELEASE" \
-    --template '{{ if .spec.workers.clusterNameTemplate }}{{ .spec.workers.clusterNameTemplate }}{{ else }}{{ .metadata.name }}-worker{{ end }}')"
+    --template '{{ if .spec.workers }}{{ if .spec.workers.clusterNameTemplate }}{{ .spec.workers.clusterNameTemplate }}{{ else }}{{ .metadata.name }}-worker{{ end }}{{ else }}{{ .metadata.name }}-shard{{ end }}')"
   for RELEASE in \
     $(
     if [ "$SHARDING_TYPE" != shardingsphere ]
@@ -433,7 +433,7 @@ switch_sharded_cluster_to_first() {
       printf '%s-coord' "$SHARDED_RELEASE"
     fi) \
     $(
-      seq 0 "$(( -1 + $(kubectl get sgshardedcluster -n "$NAMESPACE" "$SHARDED_RELEASE" --template '{{ .spec.workers.clusters }}') ))" \
+      seq 0 "$(( -1 + $(kubectl get sgshardedcluster -n "$NAMESPACE" "$SHARDED_RELEASE" --template '{{ if .spec.workers }}{{ .spec.workers.clusters }}{{ else }}{{ .spec.shards.clusters }}{{ end }}') ))" \
         | while read INDEX
           do
             printf '%s%s ' "$WORKER_NAME_TEMPLATE" "$INDEX"

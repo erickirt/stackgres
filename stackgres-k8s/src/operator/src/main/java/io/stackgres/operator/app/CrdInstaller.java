@@ -224,6 +224,7 @@ public class CrdInstaller {
       CustomResourceDefinition installedCrd) {
     installedCrd.getSpec().getVersions().stream()
         .forEach(version -> {
+          version.setAdditionalPrinterColumns(null);
           var openApiV3Schema = version.getSchema().getOpenAPIV3Schema();
           openApiV3Schema.setProperties(null);
           openApiV3Schema.setXKubernetesPreserveUnknownFields(true);

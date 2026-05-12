@@ -59,7 +59,8 @@ class CrdSchemaCompatibilityTest {
     // 2. Load CRD YAML directly as JsonNode
     CrdLoader crdLoader = new CrdLoader(JsonUtil.yamlMapper());
     JsonNode crdTree = JsonUtil.jsonMapper().valueToTree(crdLoader.getCrd(kind));
-    JsonNode schema = crdTree.at("/spec/versions/0/schema/openAPIV3Schema");
+    JsonNode versions = crdTree.at("/spec/versions");
+    JsonNode schema = crdTree.at("/spec/versions/" + (versions.size() - 1) + "/schema/openAPIV3Schema");
 
     // 3. Generate random spec and status from schema
     JsonNode specSchema = schema.at("/properties/spec");

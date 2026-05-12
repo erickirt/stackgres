@@ -13,6 +13,14 @@ spec:
     shortNames:
       - sgscl
   versions:
+  - name: v1alpha1
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: object
+        required: ["metadata", "spec"]
+        "x-kubernetes-preserve-unknown-fields": true
   - name: v1beta1
     served: true
     storage: true
