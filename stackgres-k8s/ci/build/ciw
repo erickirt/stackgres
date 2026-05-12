@@ -19,7 +19,8 @@ then
     --env-file "/tmp/$CONTAINER_NAME.env" \
     -v /tmp:/tmp \
     -v '/var/run/docker.sock:/var/run/docker.sock:rw' \
-    -v "$HOME":"$HOME":rw \
+    -v "$HOME:$HOME:rw" \
+    -v "${STACKGRES_HOME:-/var/lib/stackgres}:$HOME/.stackgres:rw" \
     -e HOME="$HOME" \
     -e PROMPT_COMMAND= \
     -e PROJECT_PATH="$(pwd)" \
@@ -35,7 +36,8 @@ else
     --env-file "/tmp/$CONTAINER_NAME.env" \
     -v /tmp:/tmp \
     -v '/var/run/docker.sock:/var/run/docker.sock:rw' \
-    -v "$HOME":"$HOME":rw \
+    -v "$HOME:$HOME":rw \
+    -v "${STACKGRES_HOME:-/var/lib/stackgres}:$HOME/.stackgres:rw" \
     -e HOME="$HOME" \
     -e PROMPT_COMMAND= \
     -e PROJECT_PATH="$(pwd)" \
