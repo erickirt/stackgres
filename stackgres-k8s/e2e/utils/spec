@@ -523,8 +523,9 @@ get_already_passed_tests() {
   do
     SPEC_NAME="${SPEC_HASH%:*}"
     SPEC_HASH="${SPEC_HASH#*:}"
-    printf '%s=%s:%s-%s\n' \
-      "$SPEC_NAME" "$BUILD_REPOSITORY" "$SPEC_NAME" "$SPEC_HASH"
+    TAG_NAME="$(printf '%s-%s' "$SPEC_NAME" "$SPEC_HASH" | tr -d '\n' | tr -c '[a-zA-Z0-9]._-' '-')"
+    printf '%s=%s:%s\n' \
+      "$SPEC_NAME" "$BUILD_REPOSITORY" "$TAG_NAME"
   done < "$TARGET_PATH/test-hashes" \
     > "$TARGET_PATH/test-result-images"
 
