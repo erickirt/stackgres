@@ -1130,7 +1130,8 @@ describe('Create SGShardedCluster', () => {
             .type('0')
 
         cy.get('input[data-field="spec.workers.pods.customVolumes[2].secret.items[0].path"]')
-        
+            .type('path')
+
         // Note: Disabled until repeater gets optimized. Causes test to wait and fail
         /* cy.get('fieldset[data-field="spec.workers.pods.customVolumes[2].secret.items"] + .fieldsetFooter a.addRow')
             .click()
@@ -1378,8 +1379,9 @@ describe('Create SGShardedCluster', () => {
         cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[1].hostPort"]')
             .type('2')
 
+        cy.get('input[data-field="spec.workers.pods.customContainers[0].ports[1].containerPort"]')
             .type('2')
-        
+
         cy.get('select[data-field="spec.workers.pods.customContainers[0].ports[1].protocol"]')
             .select('UDP')
 
