@@ -218,7 +218,12 @@ spec() {
   local EXIT_CODE
   local SPEC_FILE="$1"
   local SPEC_VALUE="${SPEC_FILE##*@}"
-  SPEC_FILE="${SPEC_FILE%@*}"
+  if [ "$SPEC_VALUE" = "$SPEC_FILE" ]
+  then
+    SPEC_VALUE=
+  else
+    SPEC_FILE="${SPEC_FILE%@*}"
+  fi
   local SPEC_NAME="${SPEC_FILE##*/}"
   local SPEC_VALUES_FILE="${SPEC_FILE}.values.yaml"
   local CLUSTER_NAMESPACE="${CLUSTER_NAMESPACE:-$SPEC_NAME-$(printf '%x' "$(date +%s)")}"
@@ -328,7 +333,8 @@ run_spec() {
     done
   fi
 
-  if ! e2e_test_values | grep -qxF "$SPEC_VALUE"
+  if [ -n "$SPEC_VALUE" ] \
+    && ! e2e_test_values | grep -qxF "$SPEC_VALUE"
   then
     echo "Can not find $SPEC_NAME@$SPEC_VALUE (availables: $(e2e_test_values | tr '\n' ' '))"
     return 1
