@@ -303,7 +303,7 @@ spec_emitter() {
       rm -f "$TARGET_PATH/$SPEC_NAME.lock"
       rm -f "$TARGET_PATH/$SPEC_NAME.completed"
       rm -f "$TARGET_PATH/$SPEC_NAME.failed"
-      if ! [ -f "$SPEC_TO_RUN" ]
+      if ! [ -f "${SPEC_TO_RUN%@*}" ]
       then
         echo "Spec file $SPEC_TO_RUN not found! Aborting..."
         OVERALL_RESULT=false
