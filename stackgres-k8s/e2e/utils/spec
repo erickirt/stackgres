@@ -341,7 +341,7 @@ run_spec() {
   fi
   for CURRENT_SPEC_VALUE in $(e2e_test_values)
   do
-    if [ -n "$SPEC_VALUE" ] && [ "$SPEC_VALUE" = "$CURRENT_SPEC_VALUE" ]
+    if [ -n "$SPEC_VALUE" ] && [ "$SPEC_VALUE" != "$CURRENT_SPEC_VALUE" ]
     then
       continue
     fi
