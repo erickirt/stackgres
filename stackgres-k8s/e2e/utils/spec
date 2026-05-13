@@ -220,7 +220,7 @@ spec() {
   local SPEC_VALUE="${SPEC_FILE##*@}"
   SPEC_FILE="${SPEC_FILE%@*}"
   local SPEC_NAME="${SPEC_FILE##*/}"
-  local SPEC_VALUES_FILE="$1.values.yaml"
+  local SPEC_VALUES_FILE="${SPEC_FILE}.values.yaml"
   local CLUSTER_NAMESPACE="${CLUSTER_NAMESPACE:-$SPEC_NAME-$(printf '%x' "$(date +%s)")}"
   local CLUSTER_NAME
   CLUSTER_NAME="$(get_sgcluster_name "$SPEC_NAME")"
