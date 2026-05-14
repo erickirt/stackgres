@@ -6,7 +6,10 @@ DO $$
     CREATE TEMPORARY TABLE __migration__constraints_to_restore AS SELECT statement FROM __migration__.constraints; 
     FOR statement_to_restore IN (
         SELECT statement
-        FROM __migration__constraints_to_restore) LOOP
+        FROM __migration__constraints_to_restore WHERE type = 'inherit'
+        UNION ALL
+        SELECT statement
+        FROM __migration__constraints_to_restore WHERE type <> 'inherit') LOOP
       RAISE NOTICE 'Executing: %', statement_to_restore;
       EXECUTE statement_to_restore;
       DELETE FROM __migration__.constraints WHERE statement = statement_to_restore;

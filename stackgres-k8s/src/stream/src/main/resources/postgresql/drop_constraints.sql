@@ -3,6 +3,20 @@ DO $$
     statement_to_drop text;
   BEGIN
     FOR statement_to_drop IN (
+        SELECT
+          'inherit' AS type,
+          pg_namespace.nspname AS schema_name,
+          pg_class.relname AS table_name,
+          pg_namespace.nspname ||'.'|| pg_class.relname || '->' || pg_namespace.nspname ||'.'|| pg_parent_class.relname AS name,
+          'ALTER TABLE ' || quote_ident(pg_namespace.nspname) ||'.'|| quote_ident(pg_class.relname)
+          || ' NO INHERIT ' || quote_ident(pg_namespace.nspname) ||'.'|| quote_ident(pg_parent_class.relname)
+          || ';' AS statement
+        FROM pg_inherits
+          JOIN pg_class ON pg_class.oid = pg_inherits.inhrelid
+          JOIN pg_class AS pg_parent_class ON pg_parent_class.oid = pg_inherits.inhparent
+          JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace
+          AND pg_namespace.nspname NOT IN ('pg_catalog', 'pg_toast', 'information_schema')
+          AND pg_class.relkind = 'r'
         SELECT statement FROM (
           SELECT
             pg_constraint.contype AS type,
