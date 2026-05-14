@@ -187,6 +187,18 @@ public class WebConsoleGrafanaIntegrationJob
         .withNewSpec()
         .withRestartPolicy("OnFailure")
         .withTerminationGracePeriodSeconds(0L)
+        .withSchedulerName(jobs
+            .map(StackGresConfigJobs::getSchedulerName)
+            .orElse(null))
+        .withRuntimeClassName(jobs
+            .map(StackGresConfigJobs::getRuntimeClassName)
+            .orElse(null))
+        .withPreemptionPolicy(jobs
+            .map(StackGresConfigJobs::getPreemptionPolicy)
+            .orElse(null))
+        .withPriorityClassName(jobs
+            .map(StackGresConfigJobs::getPriorityClassName)
+            .orElse(null))
         .withAffinity(jobs
             .map(StackGresConfigJobs::getAffinity)
             .orElse(null))
