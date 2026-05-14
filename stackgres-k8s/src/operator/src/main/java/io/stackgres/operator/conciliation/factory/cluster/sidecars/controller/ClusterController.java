@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.stackgres.common.ClusterControllerProperty;
 import io.stackgres.common.ClusterPath;
 import io.stackgres.common.OperatorProperty;
+import io.stackgres.common.PatroniUtil;
 import io.stackgres.common.StackGresContainer;
 import io.stackgres.common.StackGresContext;
 import io.stackgres.common.StackGresModules;
@@ -98,6 +99,12 @@ public class ClusterController implements ContainerFactory<ClusterContainerConte
             .withValue(context
                 .getClusterContext()
                 .getCluster().getMetadata().getName())
+            .build(),
+            new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_ENDPOINTS_NAME.getEnvironmentVariableName())
+            .withValue(PatroniUtil.readWriteName(context
+                .getClusterContext()
+                .getCluster()))
             .build(),
             new EnvVarBuilder()
             .withName(ClusterControllerProperty.CLUSTER_NAMESPACE.getEnvironmentVariableName())

@@ -11,6 +11,7 @@ public enum ClusterControllerProperty implements StackGresPropertyReader {
 
   CLUSTER_NAMESPACE("stackgres.clusterNamespace"),
   CLUSTER_NAME("stackgres.clusterName"),
+  CLUSTER_ENDPOINTS_NAME("stackgres.clusterEndpointsName"),
   CLUSTER_CONTROLLER_POD_NAME("stackgres.clusterControllerPodName"),
   CLUSTER_CONTROLLER_POD_UID("stackgres.clusterControllerPodUid"),
   CLUSTER_CONTROLLER_POD_IP("stackgres.clusterControllerPodIp"),

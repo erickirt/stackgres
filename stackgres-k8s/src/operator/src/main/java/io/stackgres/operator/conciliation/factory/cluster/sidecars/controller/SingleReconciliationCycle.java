@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.stackgres.common.ClusterControllerProperty;
 import io.stackgres.common.ClusterPath;
 import io.stackgres.common.OperatorProperty;
+import io.stackgres.common.PatroniUtil;
 import io.stackgres.common.StackGresInitContainer;
 import io.stackgres.common.StackGresModules;
 import io.stackgres.common.StackGresVolume;
@@ -83,6 +84,12 @@ public class SingleReconciliationCycle implements ContainerFactory<ClusterContai
             .withValue(context
                 .getClusterContext()
                 .getCluster().getMetadata().getName())
+            .build(),
+            new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_ENDPOINTS_NAME.getEnvironmentVariableName())
+            .withValue(PatroniUtil.readWriteName(context
+                .getClusterContext()
+                .getCluster()))
             .build(),
             new EnvVarBuilder()
             .withName(ClusterControllerProperty.CLUSTER_NAMESPACE.getEnvironmentVariableName())
