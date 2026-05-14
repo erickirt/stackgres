@@ -17,6 +17,7 @@ DO $$
           JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace
           AND pg_namespace.nspname NOT IN ('pg_catalog', 'pg_toast', 'information_schema')
           AND pg_class.relkind = 'r'
+        UNION ALL
         SELECT statement FROM (
           SELECT
             pg_constraint.contype AS type,
