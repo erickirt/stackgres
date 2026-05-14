@@ -1,23 +1,9 @@
 CREATE SCHEMA IF NOT EXISTS __migration__;
 CREATE TABLE IF NOT EXISTS __migration__.constraints AS
-  SELECT statement FROM (
+  SELECT priority, type, schema_name, table_name, name, statement FROM (
     SELECT
-      'inherit' AS type,
-      pg_namespace.nspname AS schema_name,
-      pg_class.relname AS table_name,
-      pg_namespace.nspname ||'.'|| pg_class.relname || '->' || pg_namespace.nspname ||'.'|| pg_parent_class.relname AS name,
-      'ALTER TABLE ' || quote_ident(pg_namespace.nspname) ||'.'|| quote_ident(pg_class.relname)
-      || ' INHERIT ' || quote_ident(pg_namespace.nspname) ||'.'|| quote_ident(pg_parent_class.relname)
-      || ';' AS statement
-    FROM pg_inherits
-      JOIN pg_class ON pg_class.oid = pg_inherits.inhrelid
-      JOIN pg_class AS pg_parent_class ON pg_parent_class.oid = pg_inherits.inhparent
-      JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace
-      AND pg_namespace.nspname NOT IN ('pg_catalog', 'pg_toast', 'information_schema')
-      AND pg_class.relkind = 'r'
-    UNION ALL
-    SELECT
-      pg_constraint.contype AS type,
+      1 AS priority,
+      'constraint-' || pg_constraint.contype::text AS type,
       pg_namespace.nspname AS schema_name,
       pg_class.relname AS table_name,
       pg_constraint.conname AS name,
@@ -30,9 +16,16 @@ CREATE TABLE IF NOT EXISTS __migration__.constraints AS
     WHERE contype IN ('c', 'f', 'u', 't', 'x')
       AND pg_namespace.nspname NOT IN ('pg_catalog', 'pg_toast', 'information_schema')
       AND pg_class.relkind = 'r'
-    UNION ALL
+      AND (contype IN ('f', 'u', 't', 'x')
+         OR (pg_class.oid NOT IN (SELECT inhrelid FROM pg_inherits)
+        AND pg_class.oid NOT IN (SELECT inhparent FROM pg_inherits)))
+    ORDER BY type DESC,schema_name DESC,table_name DESC,name DESC
+  )
+  UNION ALL
+  SELECT priority, type, schema_name, table_name, name, statement FROM (
     SELECT
-      'n' AS type,
+      2 AS priority,
+      'not-null' AS type,
       pg_namespace.nspname AS schema_name,
       pg_class.relname AS table_name,
       attname AS name,
@@ -47,5 +40,7 @@ CREATE TABLE IF NOT EXISTS __migration__.constraints AS
     WHERE indisprimary IS NULL AND attnum > 0 AND attnotnull
       AND pg_namespace.nspname NOT IN ('pg_catalog', 'pg_toast', 'information_schema', '__migration__')
       AND pg_class.relkind = 'r'
+      AND ((pg_class.oid NOT IN (SELECT inhrelid FROM pg_inherits)
+        AND pg_class.oid NOT IN (SELECT inhparent FROM pg_inherits)))
     ORDER BY type DESC,schema_name DESC,table_name DESC,name DESC
   );

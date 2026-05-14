@@ -3,24 +3,9 @@ DO $$
     statement_to_drop text;
   BEGIN
     FOR statement_to_drop IN (
-        SELECT
-          'inherit' AS type,
-          pg_namespace.nspname AS schema_name,
-          pg_class.relname AS table_name,
-          pg_namespace.nspname ||'.'|| pg_class.relname || '->' || pg_namespace.nspname ||'.'|| pg_parent_class.relname AS name,
-          'ALTER TABLE ' || quote_ident(pg_namespace.nspname) ||'.'|| quote_ident(pg_class.relname)
-          || ' NO INHERIT ' || quote_ident(pg_namespace.nspname) ||'.'|| quote_ident(pg_parent_class.relname)
-          || ';' AS statement
-        FROM pg_inherits
-          JOIN pg_class ON pg_class.oid = pg_inherits.inhrelid
-          JOIN pg_class AS pg_parent_class ON pg_parent_class.oid = pg_inherits.inhparent
-          JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace
-          AND pg_namespace.nspname NOT IN ('pg_catalog', 'pg_toast', 'information_schema')
-          AND pg_class.relkind = 'r'
-        UNION ALL
         SELECT statement FROM (
           SELECT
-            pg_constraint.contype AS type,
+            'constraint-' || pg_constraint.contype::text AS type,
             pg_namespace.nspname AS schema_name,
             pg_class.relname AS table_name,
             pg_constraint.conname AS name,
@@ -32,9 +17,15 @@ DO $$
           WHERE contype IN ('c', 'f', 'u', 't', 'x')
             AND pg_namespace.nspname NOT IN ('pg_catalog', 'pg_toast', 'information_schema')
             AND pg_class.relkind = 'r'
-          UNION ALL
+            AND (contype IN ('f', 'u', 't', 'x')
+               OR (pg_class.oid NOT IN (SELECT inhrelid FROM pg_inherits)
+              AND pg_class.oid NOT IN (SELECT inhparent FROM pg_inherits)))
+          ORDER BY type DESC,schema_name DESC,table_name DESC,name DESC
+        )
+        UNION ALL
+        SELECT statement FROM (
           SELECT
-            'n' AS type,
+            'not-null' AS type,
             pg_namespace.nspname AS schema_name,
             pg_class.relname AS table_name,
             attname AS name,
@@ -49,6 +40,8 @@ DO $$
           WHERE indisprimary IS NULL AND attnum > 0 AND attnotnull
             AND pg_namespace.nspname NOT IN ('pg_catalog', 'pg_toast', 'information_schema', '__migration__')
             AND pg_class.relkind = 'r'
+            AND ((pg_class.oid NOT IN (SELECT inhrelid FROM pg_inherits)
+              AND pg_class.oid NOT IN (SELECT inhparent FROM pg_inherits)))
           ORDER BY type DESC,schema_name DESC,table_name DESC,name DESC
         )) LOOP
       EXECUTE statement_to_drop;

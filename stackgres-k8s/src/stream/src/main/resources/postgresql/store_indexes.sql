@@ -1,5 +1,9 @@
 CREATE TABLE IF NOT EXISTS __migration__.indexes AS
   SELECT
+      1 AS priority,
+      pg_namespace.nspname AS schema_name,
+      pg_class_table.relname AS table_name,
+      pg_class_index.relname AS index_name,
       REPLACE(pg_catalog.pg_get_indexdef(pg_class_index.oid), ' WHERE ',
         COALESCE(' TABLESPACE ' || pg_catalog.quote_ident(pg_tablespace.spcname), '')
       || ' WHERE ') || ';'
