@@ -14,6 +14,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
+import io.fabric8.kubernetes.api.model.ConfigMapList;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.Endpoints;
 import io.fabric8.kubernetes.api.model.EndpointsList;
@@ -23,6 +26,9 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
+import io.fabric8.kubernetes.api.model.SecretList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watcher.Action;
@@ -52,7 +58,9 @@ import io.stackgres.common.crd.sgpooling.StackGresPoolingConfigList;
 import io.stackgres.common.crd.sgprofile.StackGresProfile;
 import io.stackgres.common.crd.sgprofile.StackGresProfileList;
 import io.stackgres.common.crd.sgscript.StackGresScript;
+import io.stackgres.common.crd.sgscript.StackGresScriptFrom;
 import io.stackgres.common.crd.sgscript.StackGresScriptList;
+import io.stackgres.common.crd.sgscript.StackGresScriptSpec;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackup;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackupList;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
@@ -72,6 +80,7 @@ import io.stackgres.operator.conciliation.cluster.ClusterReconciliator;
 import io.stackgres.operator.conciliation.config.ConfigReconciliator;
 import io.stackgres.operator.conciliation.dbops.DbOpsReconciliator;
 import io.stackgres.operator.conciliation.distributedlogs.DistributedLogsReconciliator;
+import io.stackgres.operator.conciliation.script.ScriptReconciliator;
 import io.stackgres.operator.conciliation.shardedbackup.ShardedBackupReconciliator;
 import io.stackgres.operator.conciliation.shardedcluster.ShardedClusterReconciliator;
 import io.stackgres.operator.conciliation.shardeddbops.ShardedDbOpsReconciliator;
@@ -96,6 +105,7 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
   private final DistributedLogsReconciliator distributedLogsReconciliatorCycle;
   private final DbOpsReconciliator dbOpsReconciliatorCycle;
   private final BackupReconciliator backupReconciliatorCycle;
+  private final ScriptReconciliator scriptReconciliatorCycle;
   private final ShardedClusterReconciliator shardedClusterReconciliatorCycle;
   private final ShardedBackupReconciliator shardedBackupReconciliatorCycle;
   private final ShardedDbOpsReconciliator shardedDbOpsReconciliatorCycle;
@@ -119,6 +129,8 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
       Collections.synchronizedMap(new HashMap<>());
   private final Map<String, StackGresStream> streams =
       Collections.synchronizedMap(new HashMap<>());
+  private final Map<String, StackGresScript> scripts =
+      Collections.synchronizedMap(new HashMap<>());
   private final DeployedResourcesCache deployedResourcesCache;
   private final Metrics metrics;
 
@@ -130,6 +142,7 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
       DistributedLogsReconciliator distributedLogsReconciliatorCycle,
       DbOpsReconciliator dbOpsReconciliatorCycle,
       BackupReconciliator backupReconciliatorCycle,
+      ScriptReconciliator scriptReconciliatorCycle,
       ShardedClusterReconciliator shardedClusterReconciliatorCycle,
       ShardedBackupReconciliator shardedBackupReconciliatorCycle,
       ShardedDbOpsReconciliator shardedDbOpsReconciliatorCycle,
@@ -143,6 +156,7 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
     this.distributedLogsReconciliatorCycle = distributedLogsReconciliatorCycle;
     this.dbOpsReconciliatorCycle = dbOpsReconciliatorCycle;
     this.backupReconciliatorCycle = backupReconciliatorCycle;
+    this.scriptReconciliatorCycle = scriptReconciliatorCycle;
     this.shardedClusterReconciliatorCycle = shardedClusterReconciliatorCycle;
     this.shardedBackupReconciliatorCycle = shardedBackupReconciliatorCycle;
     this.shardedDbOpsReconciliatorCycle = shardedDbOpsReconciliatorCycle;
@@ -173,6 +187,17 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
             .andThen(removeCluster()))));
 
     monitors.addAll(createCustomResourceWatchers(
+        StackGresScript.class,
+        StackGresScriptList.class,
+        onCreateOrUpdateAndOnDelete(
+            putScript()
+            .andThen(reconcileScript())
+            .andThen(reconcileScriptClusters())
+            .andThen(reconcileScriptShardedClusters()),
+            invalidateScript()
+            .andThen(removeScript()))));
+
+    monitors.addAll(createCustomResourceWatchers(
         StackGresProfile.class,
         StackGresProfileList.class,
         onCreateOrUpdate(
@@ -200,13 +225,6 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
         onCreateOrUpdate(
             reconcileObjectStorageClusters()
             .andThen(reconcileObjectStorageShardedClusters()))));
-
-    monitors.addAll(createCustomResourceWatchers(
-        StackGresScript.class,
-        StackGresScriptList.class,
-        onCreateOrUpdate(
-            reconcileScriptClusters()
-            .andThen(reconcileScriptShardedClusters()))));
 
     monitors.addAll(createCustomResourceWatchers(
         StackGresBackup.class,
@@ -295,6 +313,18 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
         PersistentVolumeClaimList.class,
         onCreateOrUpdateOrDelete(
             reconcilePvcClusters())));
+
+    monitors.addAll(createWatchers(
+        ConfigMap.class,
+        ConfigMapList.class,
+        onCreateOrUpdateOrDelete(
+            reconcileConfigMapScripts())));
+
+    monitors.addAll(createWatchers(
+        Secret.class,
+        SecretList.class,
+        onCreateOrUpdateOrDelete(
+            reconcileSecretScripts())));
   }
 
   private <T extends CustomResource<?, ?>,
@@ -432,6 +462,16 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
     return dbOps;
   }
 
+  private BiConsumer<Action, StackGresScript> putScript() {
+    return (action, script) -> putScript(script);
+  }
+
+  private StackGresScript putScript(StackGresScript script) {
+    scripts.put(resourceId(script), script);
+    metrics.setWatchCacheSize(script.getClass(), configs.size());
+    return script;
+  }
+
   private BiConsumer<Action, StackGresShardedCluster> putShardedCluster() {
     return (action, cluster) -> putShardedCluster(cluster);
   }
@@ -522,6 +562,16 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
     return dbOps;
   }
 
+  private BiConsumer<Action, StackGresScript> removeScript() {
+    return (action, script) -> removeScript(script);
+  }
+
+  private StackGresScript removeScript(StackGresScript script) {
+    scripts.remove(resourceId(script));
+    metrics.setWatchCacheSize(script.getClass(), scripts.size());
+    return script;
+  }
+
   private BiConsumer<Action, StackGresShardedCluster> removeShardedCluster() {
     return (action, cluster) -> removeShardedCluster(cluster);
   }
@@ -593,6 +643,10 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
 
   private BiConsumer<Action, StackGresBackup> reconcileBackup() {
     return (action, backup) -> backupReconciliatorCycle.reconcile(backup);
+  }
+
+  private BiConsumer<Action, StackGresScript> reconcileScript() {
+    return (action, script) -> scriptReconciliatorCycle.reconcile(script);
   }
 
   private BiConsumer<Action, StackGresShardedBackup> reconcileShardedBackup() {
@@ -999,16 +1053,52 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
   private BiConsumer<Action, PersistentVolumeClaim> reconcilePvcClusters() {
     String clusterNameKey =
         StackGresContext.STACKGRES_KEY_PREFIX + StackGresContext.CLUSTER_NAME_KEY;
-    return (action, pod) -> synchronizedCopyOfValues(clusters)
+    return (action, pvc) -> synchronizedCopyOfValues(clusters)
         .stream()
         .filter(cluster -> Objects.equals(
             cluster.getMetadata().getNamespace(),
-            pod.getMetadata().getNamespace()))
-        .filter(cluster -> pod.getMetadata().getLabels() != null)
+            pvc.getMetadata().getNamespace()))
+        .filter(cluster -> pvc.getMetadata().getLabels() != null)
         .filter(cluster -> Objects.equals(
-            pod.getMetadata().getLabels().get(clusterNameKey),
+            pvc.getMetadata().getLabels().get(clusterNameKey),
             cluster.getMetadata().getName()))
         .forEach(cluster -> reconcileCluster().accept(action, cluster));
+  }
+
+  private BiConsumer<Action, ConfigMap> reconcileConfigMapScripts() {
+    return (action, configMap) -> synchronizedCopyOfValues(scripts)
+        .stream()
+        .filter(script -> Objects.equals(
+            script.getMetadata().getNamespace(),
+            configMap.getMetadata().getNamespace()))
+        .filter(script -> Optional.ofNullable(script.getSpec())
+            .map(StackGresScriptSpec::getScripts)
+            .stream()
+            .flatMap(List::stream)
+            .flatMap(scriptEntry -> Optional.ofNullable(scriptEntry.getScriptFrom())
+                .map(StackGresScriptFrom::getConfigMapKeyRef)
+                .map(ConfigMapKeySelector::getName)
+                .stream())
+            .anyMatch(configMap.getMetadata().getName()::equals))
+        .forEach(script -> reconcileScript().accept(action, script));
+  }
+
+  private BiConsumer<Action, Secret> reconcileSecretScripts() {
+    return (action, configMap) -> synchronizedCopyOfValues(scripts)
+        .stream()
+        .filter(script -> Objects.equals(
+            script.getMetadata().getNamespace(),
+            configMap.getMetadata().getNamespace()))
+        .filter(script -> Optional.ofNullable(script.getSpec())
+            .map(StackGresScriptSpec::getScripts)
+            .stream()
+            .flatMap(List::stream)
+            .flatMap(scriptEntry -> Optional.ofNullable(scriptEntry.getScriptFrom())
+                .map(StackGresScriptFrom::getSecretKeyRef)
+                .map(SecretKeySelector::getName)
+                .stream())
+            .anyMatch(configMap.getMetadata().getName()::equals))
+        .forEach(script -> reconcileScript().accept(action, script));
   }
 
   private BiConsumer<Action, StackGresConfig> invalidateConfig() {
@@ -1045,6 +1135,10 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
 
   private BiConsumer<Action, StackGresStream> invalidateStream() {
     return (action, stream) -> deployedResourcesCache.removeAll(stream);
+  }
+
+  private BiConsumer<Action, StackGresScript> invalidateScript() {
+    return (action, script) -> deployedResourcesCache.removeAll(script);
   }
 
   @Override
