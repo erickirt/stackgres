@@ -142,6 +142,18 @@ public class WebConsoleDeployment
         .withLabels(labelFactory.restapiLabels(config))
         .endMetadata()
         .withNewSpec()
+        .withSchedulerName(restapi
+            .map(StackGresConfigRestapi::getSchedulerName)
+            .orElse(null))
+        .withRuntimeClassName(restapi
+            .map(StackGresConfigRestapi::getRuntimeClassName)
+            .orElse(null))
+        .withPreemptionPolicy(restapi
+            .map(StackGresConfigRestapi::getPreemptionPolicy)
+            .orElse(null))
+        .withPriorityClassName(restapi
+            .map(StackGresConfigRestapi::getPriorityClassName)
+            .orElse(null))
         .withAffinity(restapi
             .map(StackGresConfigRestapi::getAffinity)
             .orElse(null))

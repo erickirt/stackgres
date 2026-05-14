@@ -220,6 +220,22 @@ spec:
 
                       > This value can only be set in operator helm chart.
                     x-kubernetes-preserve-unknown-fields: true
+                  schedulerName:
+                    type: string
+                    description: |
+                      Operator Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  runtimeClassName:
+                    type: string
+                    description: |
+                      Operator Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  preemptionPolicy:
+                    type: string
+                    description: |
+                      Operator Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  priorityClassName:
+                    type: string
+                    description: |
+                      Operator Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
                   nodeSelector:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
@@ -332,6 +348,22 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                     description: REST API Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                  schedulerName:
+                    type: string
+                    description: |
+                      REST API Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  runtimeClassName:
+                    type: string
+                    description: |
+                      REST API Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  preemptionPolicy:
+                    type: string
+                    description: |
+                      REST API Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  priorityClassName:
+                    type: string
+                    description: |
+                      REST API Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
                   nodeSelector:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
@@ -588,6 +620,22 @@ spec:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
                               description: OpenTelemetry Collector Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                            schedulerName:
+                              type: string
+                              description: |
+                                OpenTelemetry Collector Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                            runtimeClassName:
+                              type: string
+                              description: |
+                                OpenTelemetry Collector Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                            preemptionPolicy:
+                              type: string
+                              description: |
+                                OpenTelemetry Collector Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                            priorityClassName:
+                              type: string
+                              description: |
+                                OpenTelemetry Collector Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
                             nodeSelector:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
@@ -610,6 +658,22 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                     description: OpenTelemetry Collector Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                  schedulerName:
+                    type: string
+                    description: |
+                      OpenTelemetry Collector Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  runtimeClassName:
+                    type: string
+                    description: |
+                      OpenTelemetry Collector Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  preemptionPolicy:
+                    type: string
+                    description: |
+                      OpenTelemetry Collector Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  priorityClassName:
+                    type: string
+                    description: |
+                      OpenTelemetry Collector Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
                   nodeSelector:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
@@ -754,6 +818,22 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                     description: Operator Installation Jobs resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                  schedulerName:
+                    type: string
+                    description: |
+                      Operator Installation Job's Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  runtimeClassName:
+                    type: string
+                    description: |
+                      Operator Installation Job's Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  preemptionPolicy:
+                    type: string
+                    description: |
+                      Operator Installation Job's Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  priorityClassName:
+                    type: string
+                    description: |
+                      Operator Installation Job's Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
                   nodeSelector:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true

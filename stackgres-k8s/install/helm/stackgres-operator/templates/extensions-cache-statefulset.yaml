@@ -29,6 +29,30 @@ spec:
       shareProcessNamespace: true
       terminationGracePeriodSeconds: 0
       restartPolicy: Always
+      {{- with .Values.extensions.cache.schedulerName }}
+      schedulerName: {{ . }}
+      {{- end }}
+      {{- with .Values.extensions.cache.runtimeClassName }}
+      runtimeClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.extensions.cache.preemptionPolicy }}
+      preemptionPolicy: {{ . }}
+      {{- end }}
+      {{- with .Values.extensions.cache.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.extensions.cache.affinity}}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end}}
+      {{- with .Values.extensions.cache.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end}}
+      {{- with .Values.extensions.cache.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
       - name: http
         image: "registry.access.redhat.com/ubi8/nginx-120:1-92.1679484498"
