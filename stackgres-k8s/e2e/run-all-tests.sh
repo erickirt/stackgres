@@ -81,11 +81,11 @@ then
   E2E_EXCLUDES="$(echo "$E2E_EXCLUDES $E2E_EXCLUDES_BY_HASH" | tr ' ' '\n' | sort | uniq | tr '\n' ' ')"
 
   echo "Retrieved image digests:"
-  sort stackgres-k8s/e2e/target/all-test-result-images | uniq \
+  sort "$TARGET_PATH"/all-test-result-images | uniq \
     | while read -r IMAGE_NAME
       do
         printf ' - %s => %s\n' "$IMAGE_NAME" "$(
-          { grep "^$IMAGE_NAME=" stackgres-k8s/e2e/target/test-result-image-digests || echo '=<not found>'; } \
+          { grep "^$IMAGE_NAME=" "$TARGET_PATH"/test-result-image-digests || echo '=<not found>'; } \
             | cut -d = -f 2-)"
       done
   echo "done"

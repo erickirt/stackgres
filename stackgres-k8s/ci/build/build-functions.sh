@@ -704,7 +704,7 @@ find_image_digests() {
         -c 'IMAGE_NAME="@"
             if grep -q "^${IMAGE_NAME##*:}$" "stackgres-k8s/ci/build/target/registry-tags" 2>/dev/null
             then
-              printf '%s=%s\n' "$IMAGE_NAME" "$IMAGE_NAME" \
+              printf '\''%s=%s\n'\'' "$IMAGE_NAME" "$IMAGE_NAME" \
                 > "stackgres-k8s/ci/build/target/image-digests.${IMAGE_NAME##*/}"
             fi'
     sort "$1" | uniq \
@@ -749,32 +749,62 @@ list_image_tags() {
 
   # Try direct/basic auth first
   # shellcheck disable=SC2086
-  RESPONSE="$(curl -sf $AUTH_OPTS "$TAGS_URL" 2>/dev/null)" && {
-    printf %s "$RESPONSE" | jq -r '.tags // [] | .[]' 2>/dev/null
-    return
-  }
-
-  # Token-based auth: parse WWW-Authenticate from 401
-  # shellcheck disable=SC2086
-  AUTH_HEADER="$(curl -si $AUTH_OPTS "$TAGS_URL" 2>/dev/null \
-    | grep -i '^www-authenticate:' | head -1)"
-  REALM="$(printf %s "$AUTH_HEADER" | sed 's/.*realm="\([^"]*\)".*/\1/')"
-  SERVICE="$(printf %s "$AUTH_HEADER" | sed 's/.*service="\([^"]*\)".*/\1/')"
-  SCOPE="$(printf %s "$AUTH_HEADER" | sed 's/.*scope="\([^"]*\)".*/\1/')"
-
-  if [ -z "$REALM" ]; then
-    return 1
+  local NO_AUTH=false
+  if RESPONSE="$(curl -sf $AUTH_OPTS "$TAGS_URL?n=10000" 2>/dev/null)"
+  then
+    NO_AUTH=true
   fi
 
-  # shellcheck disable=SC2086
-  TOKEN="$(curl -sf $AUTH_OPTS \
-    "${REALM}?service=${SERVICE}&scope=${SCOPE}" 2>/dev/null \
-    | jq -r '.token // .access_token // empty')"
+  if [ "$NO_AUTH" = false ]; then
+    # Token-based auth: parse WWW-Authenticate from 401
+    # shellcheck disable=SC2086
+    AUTH_HEADER="$(curl -si $AUTH_OPTS "$TAGS_URL?n=10000" 2>/dev/null \
+      | grep -i '^www-authenticate:' | head -1)"
+    REALM="$(printf %s "$AUTH_HEADER" | sed 's/.*realm="\([^"]*\)".*/\1/')"
+    SERVICE="$(printf %s "$AUTH_HEADER" | sed 's/.*service="\([^"]*\)".*/\1/')"
+    SCOPE="$(printf %s "$AUTH_HEADER" | sed 's/.*scope="\([^"]*\)".*/\1/')"
 
+    if [ -z "$REALM" ]; then
+      return 1
+    fi
+
+    # shellcheck disable=SC2086
+    TOKEN="$(curl -sf $AUTH_OPTS \
+      "${REALM}?service=${SERVICE}&scope=${SCOPE}" 2>/dev/null \
+      | jq -r '.token // .access_token // empty')"
+  fi
+
+  local LAST
   if [ -n "$TOKEN" ]; then
-    curl -sf -H "Authorization: Bearer $TOKEN" "$TAGS_URL" 2>/dev/null \
-      | jq -r '.tags // [] | .[]' 2>/dev/null
+    RESPONSE=""
+    LAST=""
+  else
+    if printf %s "$RESPONSE" | jq -r '.tags // [] | length' | grep -qxF 0; then
+      return
+    fi
+    LAST="$(printf %s "$RESPONSE" | jq -r '.tags // [] | . as $tags | .[($tags|length - 1)]')"
   fi
+  while true; do
+    printf %s "$RESPONSE" | jq -r '.tags // [] | .[]' 2>/dev/null
+    if [ -n "$TOKEN" ]; then
+      if [ -n "$LAST" ]; then
+        RESPONSE="$(curl -sf -H "Authorization: Bearer $TOKEN" "$TAGS_URL?n=10000&last=$LAST" 2>/dev/null)"
+      else
+        RESPONSE="$(curl -sf -H "Authorization: Bearer $TOKEN" "$TAGS_URL?n=10000" 2>/dev/null)"
+      fi
+    else
+      if [ -n "$LAST" ]; then
+        RESPONSE="$(curl -sf $AUTH_OPTS "$TAGS_URL?n=10000&last=$LAST" 2>/dev/null)"
+      else
+        RESPONSE="$(curl -sf $AUTH_OPTS "$TAGS_URL?n=10000" 2>/dev/null)"
+      fi
+    fi
+    printf %s "$RESPONSE" | jq -r '.tags // [] | .[]' 2>/dev/null
+    if printf %s "$RESPONSE" | jq -r '.tags // [] | length' | grep -qxF 0; then
+      return
+    fi
+    LAST="$(printf %s "$RESPONSE" | jq -r '.tags // [] | . as $tags | .[($tags|length - 1)]')"
+  done
 }
 
 find_image_digest() {

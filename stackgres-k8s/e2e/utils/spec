@@ -217,10 +217,10 @@ spec() {
   local RESULT
   local EXIT_CODE
   local SPEC_FILE="$1"
-  local SPEC_VALUE="${SPEC_FILE##*@}"
-  if [ "$SPEC_VALUE" = "$SPEC_FILE" ]
+  local TARGET_SPEC_VALUE="${SPEC_FILE##*@}"
+  if [ "$TARGET_SPEC_VALUE" = "$SPEC_FILE" ]
   then
-    SPEC_VALUE=
+    TARGET_SPEC_VALUE=
   else
     SPEC_FILE="${SPEC_FILE%@*}"
   fi
@@ -333,25 +333,25 @@ run_spec() {
     done
   fi
 
-  if [ -n "$SPEC_VALUE" ] \
-    && ! e2e_test_values | grep -qxF "$SPEC_VALUE"
+  if [ -n "$TARGET_SPEC_VALUE" ] \
+    && ! e2e_test_values | grep -qxF "$TARGET_SPEC_VALUE"
   then
-    echo "Can not find $SPEC_NAME@$SPEC_VALUE (availables: $(e2e_test_values | tr '\n' ' '))"
+    echo "Can not find $SPEC_NAME@$TARGET_SPEC_VALUE (availables: $(e2e_test_values | tr '\n' ' '))"
     return 1
   fi
-  for CURRENT_SPEC_VALUE in $(e2e_test_values)
+  for SPEC_VALUE in $(e2e_test_values)
   do
-    if [ -n "$SPEC_VALUE" ] && [ "$SPEC_VALUE" != "$CURRENT_SPEC_VALUE" ]
+    if [ -n "$TARGET_SPEC_VALUE" ] && [ "$TARGET_SPEC_VALUE" != "$SPEC_VALUE" ]
     then
       continue
     fi
-    if [ "$CURRENT_SPEC_VALUE" != none ]
+    if [ "$SPEC_VALUE" != none ]
     then
-      if [ "$E2E_USE_TEST_CACHE" = true ] && grep -qxF "$SPEC_NAME@$CURRENT_SPEC_VALUE" "$TARGET_PATH/already-passed-tests"
+      if [ "$E2E_USE_TEST_CACHE" = true ] && grep -qxF "$SPEC_NAME@$SPEC_VALUE" "$TARGET_PATH/already-passed-tests"
       then
         echo
         echo "================================================================"
-        echo "Skipping $SPEC_NAME@$CURRENT_SPEC_VALUE tests since it is excluded"
+        echo "Skipping $SPEC_NAME@$SPEC_VALUE tests since it is excluded"
         echo "================================================================"
         echo
         continue
@@ -359,20 +359,20 @@ run_spec() {
     fi
     for FUNCTION in $E2E_TEST_FUNCTION
     do
-      if [ "$CURRENT_SPEC_VALUE" != none ]
+      if [ "$SPEC_VALUE" != none ]
       then
         echo
         echo "================================================================"
-        echo "Running $SPEC_NAME@$CURRENT_SPEC_VALUE tests"
+        echo "Running $SPEC_NAME@$SPEC_VALUE tests"
         echo "================================================================"
         echo
       fi
       "$FUNCTION"
     done
-    if [ "$CURRENT_SPEC_VALUE" != none ] \
+    if [ "$SPEC_VALUE" != none ] \
       && [ "$E2E_USE_TEST_CACHE_PER_TEST" = true ]
     then
-      store_test_result "$SPEC_NAME" "$CURRENT_SPEC_VALUE"
+      store_test_result "$SPEC_NAME" "$SPEC_VALUE"
     fi
   done
 
@@ -509,11 +509,11 @@ calculate_spec_hashes() {
         printf '%s:%s-%s\n' "${SPEC_FILE##*spec/}" "$SPEC_HASH" "$SPEC_PLATFORM"
         (
         . "$SPEC_FILE"
-        for CURRENT_SPEC_VALUE in $(e2e_test_values)
+        for SPEC_VALUE in $(e2e_test_values)
         do
-          if [ "$CURRENT_SPEC_VALUE" != none ]
+          if [ "$SPEC_VALUE" != none ]
           then
-            printf '%s:%s-%s\n' "${SPEC_FILE##*spec/}@$CURRENT_SPEC_VALUE" "$SPEC_HASH" "$SPEC_PLATFORM"
+            printf '%s:%s-%s\n' "${SPEC_FILE##*spec/}@$SPEC_VALUE" "$SPEC_HASH" "$SPEC_PLATFORM"
           fi
         done
         )
