@@ -137,8 +137,8 @@ public class StackGresClusterControllerMain {
                   return exception;
                 },
                 (u, v) -> v);
-        if (!isReconciliationCycle(args)
-            && !ClusterControllerReconciliationCycle.existsContextResource()) {
+        if (isReconciliationCycle(args)
+            || !ClusterControllerReconciliationCycle.existsContextResource()) {
           throw ex;
         }
       }
