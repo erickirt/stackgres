@@ -592,7 +592,46 @@ load_image_k8s() {
     echo "Image $1 already loaded in kind environemnt $KIND_NAME"
     return
   fi
-  "$KIND" load docker-image --name "$KIND_NAME" "$1"
+  # Workaround kubernetes-sigs/kind#3795: `kind load docker-image` imports with
+  # `ctr images import --all-platforms`, which fails when Docker's containerd
+  # image store is enabled because `docker save` emits a multi-platform OCI
+  # archive missing blobs for non-host platforms.
+  local PLATFORM
+  PLATFORM="$(docker version --format '{{ .Server.Os }}/{{ .Server.Arch }}')"
+  local ARCHIVE
+  ARCHIVE="$(mktemp)"
+  if docker save --help 2>&1 | grep -q -- '--platform'
+  then
+    docker save --platform "$PLATFORM" -o "$ARCHIVE" "$1"
+  else
+    # Docker CLI <28 has no --platform; call the daemon API directly. The
+    # API has accepted ?platform on /images/get since Docker 28 / API 1.48.
+    local SOCK
+    case "${DOCKER_HOST:-unix:///var/run/docker.sock}" in
+      unix://*)
+        SOCK="${DOCKER_HOST#unix://}"
+        [ -n "$SOCK" ] || SOCK=/var/run/docker.sock
+        ;;
+      *)
+        echo "docker save --platform unavailable and DOCKER_HOST=$DOCKER_HOST is not a unix socket" >&2
+        rm -f "$ARCHIVE"
+        return 1
+        ;;
+    esac
+    local PLATFORM_JSON
+    PLATFORM_JSON="$(printf '%s' "$PLATFORM" | jq -Rc \
+      'split("/") | {os: .[0], architecture: .[1]} + (if length > 2 then {variant: .[2]} else {} end)')"
+    curl --silent --show-error --fail --unix-socket "$SOCK" --output "$ARCHIVE" \
+      --get --data-urlencode "names=$1" --data-urlencode "platform=$PLATFORM_JSON" \
+      'http://docker/images/get'
+  fi
+  local RC=0
+  "$KIND" get nodes --name "$KIND_NAME" \
+    | xargs -r -n 1 -I % -P "$E2E_PARALLELISM" sh -ec "
+      docker exec --privileged -i % ctr --namespace=k8s.io images import --digests --snapshotter=overlayfs - < '$ARCHIVE'
+      " || RC=$?
+  rm -f "$ARCHIVE"
+  [ "$RC" -eq 0 ] || return "$RC"
 
   echo "Loaded image $1 in kind environemnt $KIND_NAME"
 }
