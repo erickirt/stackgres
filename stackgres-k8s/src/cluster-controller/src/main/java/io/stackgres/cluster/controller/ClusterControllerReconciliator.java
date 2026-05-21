@@ -46,6 +46,7 @@ public class ClusterControllerReconciliator
   private final PatroniConfigReconciliator patroniConfigReconciliator;
   private final PatroniMajorVersionUpgradeReconciliator patroniMajorVersionUpgradeReconciliator;
   private final PatroniBackupFailoverRestartReconciliator patroniBackupFailoverRestartReconciliator;
+  private final PatroniOperationReconciliator patroniOperationReconciliator;
   private final ObjectMapper objectMapper;
   private final ClusterControllerPropertyContext propertyContext;
   private final String podName;
@@ -65,6 +66,7 @@ public class ClusterControllerReconciliator
     this.patroniConfigReconciliator = parameters.patroniConfigReconciliator;
     this.patroniMajorVersionUpgradeReconciliator = parameters.patroniMajorVersionUpgradeReconciliator;
     this.patroniBackupFailoverRestartReconciliator = parameters.patroniBackupFailoverRestartReconciliator;
+    this.patroniOperationReconciliator = parameters.patroniOperationReconciliator;
     this.objectMapper = parameters.objectMapper;
     this.propertyContext = parameters.propertyContext;
     this.podName = parameters.propertyContext
@@ -88,6 +90,7 @@ public class ClusterControllerReconciliator
     this.patroniConfigReconciliator = null;
     this.patroniMajorVersionUpgradeReconciliator = null;
     this.patroniBackupFailoverRestartReconciliator = null;
+    this.patroniOperationReconciliator = null;
     this.objectMapper = null;
     this.propertyContext = null;
     this.podName = null;
@@ -146,6 +149,8 @@ public class ClusterControllerReconciliator
         patroniMajorVersionUpgradeReconciliator.reconcile(client, context);
     ReconciliationResult<Void> patroniBackupFailoverRestartReconciliatorResult =
         patroniBackupFailoverRestartReconciliator.reconcile(client, context);
+    ReconciliationResult<Void> patroniOperationReconciliatorResult =
+        patroniOperationReconciliator.reconcile(client, context);
 
     StackGresCluster updatedCluster = cluster;
     if (foundPodStatus.isEmpty()
@@ -195,6 +200,7 @@ public class ClusterControllerReconciliator
         .join(patroniConfigReconciliationResult)
         .join(patroniMajorVersionUpgradeReconciliatorResult)
         .join(patroniBackupFailoverRestartReconciliatorResult)
+        .join(patroniOperationReconciliatorResult)
         .join(pvcSizeReconciliatorResult);
     if (result.success()) {
       writeCustomResource(logger, objectMapper, updatedCluster);
@@ -249,6 +255,7 @@ public class ClusterControllerReconciliator
     @Inject PatroniConfigReconciliator patroniConfigReconciliator;
     @Inject PatroniMajorVersionUpgradeReconciliator patroniMajorVersionUpgradeReconciliator;
     @Inject PatroniBackupFailoverRestartReconciliator patroniBackupFailoverRestartReconciliator;
+    @Inject PatroniOperationReconciliator patroniOperationReconciliator;
     @Inject ObjectMapper objectMapper;
   }
 

@@ -33,6 +33,10 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end}}
+      {{- with .Values.operator.affinity}}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end}}
       {{- with .Values.operator.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
@@ -50,6 +54,9 @@ spec:
         fsGroup: 1000
         {{- end }}
         {{- end }}
+      {{- with .Values.operator.hostNetwork }}
+      hostNetwork: {{ . }}
+      {{- end }}
       containers:
       - name: {{ .Release.Name }}
         image: "{{ include "operator-image" . }}"
@@ -81,7 +88,7 @@ spec:
           - name: INSTALL_WEBHOOKS
             value: "true"
           - name: INSTALL_CONVERSION_WEBHOOKS
-            value: "{{ if or .Values.allowedNamespaces .Values.allowedNamespaceLabelSelector .Values.disableClusterRole }}false{{ else }}true{{ end }}"
+            value: "{{ if or (not .Values.enableConversionWebhooks) .Values.allowedNamespaces .Values.allowedNamespaceLabelSelector .Values.disableClusterRole }}false{{ else }}true{{ end }}"
           - name: ALLOWED_NAMESPACES
             {{- $allowedNamespaces := regexSplit " " (include "allowedNamespaces" .) -1 }}
             value: "{{ if not ($allowedNamespaces | has "_all_namespaces_placeholder") }}{{ range $index, $namespace := $allowedNamespaces }}{{ if $index }},{{ end }}{{ $namespace }}{{ end }}{{ end }}"
@@ -91,6 +98,8 @@ spec:
           - name: INSTALL_CERTS
             value: "true"
           {{- end }}
+          - name: SGCONFIG_NAMESPACE
+            value: {{ .Values.sgConfigNamespace | default .Release.Namespace }}
           {{- if .Values.developer.logLevel }}
           - name: OPERATOR_LOG_LEVEL
             value: "{{ .Values.developer.logLevel }}"
@@ -114,6 +123,14 @@ spec:
           {{- if .Values.developer.enableJvmDebugSuspend }}
           - name: DEBUG_OPERATOR_SUSPEND
             value: "{{ .Values.developer.enableJvmDebugSuspend }}"
+          {{- end }}
+          {{- with .Values.operator.listenHttpPort }}
+          - name: OPERATOR_HTTP_PORT
+            value: {{ . }}
+          {{- end }}
+          {{- with .Values.operator.listenHttpsPort }}
+          - name: OPERATOR_HTTPS_PORT
+            value: {{ . }}
           {{- end }}
           - name: OPERATOR_SERVICE_ACCOUNT
             valueFrom:

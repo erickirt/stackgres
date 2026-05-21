@@ -91,6 +91,8 @@ public interface StackGresContext {
   String ROLLOUT_SCHEDULE_VALUE = "schedule";
   String ROLLOUT_NEVER_VALUE = "never";
 
+  String PATRONI_OPERATION_KEY = STACKGRES_KEY_PREFIX + "patroni-operation";
+
   String VERSION_KEY = STACKGRES_KEY_PREFIX + "operatorVersion";
   String RECONCILIATION_PAUSE_KEY = STACKGRES_KEY_PREFIX + "reconciliation-pause";
   String CLUSTER_CONTROLLER_VERSION_KEY = STACKGRES_KEY_PREFIX + "cluster-controller-version";

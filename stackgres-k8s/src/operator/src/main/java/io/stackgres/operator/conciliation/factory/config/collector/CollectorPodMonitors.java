@@ -67,7 +67,10 @@ public class CollectorPodMonitors
         .map(StackGresConfigSpec::getDeploy)
         .map(StackGresConfigDeploy::getCollector)
         .orElse(true)
-        || context.getObservedClusters().isEmpty()) {
+        || (context.getObservedClusters().isEmpty()
+            && !Optional.ofNullable(context.getSource().getSpec().getCollector())
+            .map(StackGresConfigCollector::getAlwaysEnabled)
+            .orElse(false))) {
       return Stream.of();
     }
 

@@ -218,7 +218,17 @@ public class ClusterResource
     serviceFinder.findByNameAndNamespace(PatroniUtil.readOnlyName(clusterName), namespace)
         .ifPresent(service -> info.setReplicasDns(StackGresUtil.getServiceDnsName(service)));
 
-    info.setSuperuserUsername(SUPERUSER_USERNAME);
+    String superuserUsername = foundCluster
+        .flatMap(cluster -> secretFinder.findByNameAndNamespace(
+            cluster.getMetadata().getName(),
+            cluster.getMetadata().getNamespace()))
+        .map(Secret::getData)
+        .filter(data -> data.get(SUPERUSER_USERNAME_KEY) != null)
+        .map(data -> data.get(SUPERUSER_USERNAME_KEY))
+        .map(ResourceUtil::decodeSecret)
+        .orElse(SUPERUSER_USERNAME);
+
+    info.setSuperuserUsername(superuserUsername);
     info.setSuperuserSecretName(clusterName);
     info.setSuperuserUsernameKey(SUPERUSER_USERNAME_KEY);
     info.setSuperuserPasswordKey(SUPERUSER_PASSWORD_KEY);

@@ -28,6 +28,7 @@ then
   then
     mkdir -p $HOME/.docker
     cat "$DOCKER_AUTH_CONFIG" > "$HOME/.docker/config.json"
+    unset DOCKER_AUTH_CONFIG
   fi
   if [ "x$CI_REGISTRY" != x ]
   then
@@ -69,6 +70,7 @@ then
   then
     mkdir -p $HOME/.docker
     cat "$DOCKER_AUTH_CONFIG" > "$HOME/.docker/config.json"
+    unset DOCKER_AUTH_CONFIG
   fi
   if [ "x$CI_REGISTRY" != x ]
   then

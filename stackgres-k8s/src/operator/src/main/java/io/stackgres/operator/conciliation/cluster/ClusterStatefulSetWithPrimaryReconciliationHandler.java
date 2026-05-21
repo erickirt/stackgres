@@ -52,8 +52,9 @@ import io.stackgres.common.patroni.StackGresPasswordKeys;
 import io.stackgres.common.resource.ResourceFinder;
 import io.stackgres.common.resource.ResourceScanner;
 import io.stackgres.operator.common.ClusterRolloutUtil;
-import io.stackgres.operator.common.ClusterRolloutUtil.RestartReason;
-import io.stackgres.operator.common.ClusterRolloutUtil.RestartReasons;
+import io.stackgres.operator.common.ClusterRolloutUtil.PodRestartReason;
+import io.stackgres.operator.common.ClusterRolloutUtil.PodRestartReasons;
+import io.stackgres.operator.common.ClusterRolloutUtil.PostgresRestartReasons;
 import io.stackgres.operator.conciliation.ReconciliationHandler;
 import io.stackgres.operator.conciliation.ReconciliationScope;
 import io.stackgres.operatorframework.resource.ResourceUtil;
@@ -229,7 +230,10 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
     final boolean isRolloutAllowed = ClusterRolloutUtil.isRolloutAllowed(context);
     final boolean isReducedImpact = ClusterRolloutUtil.isRolloutReducedImpact(context);
     final boolean requiresRestart = ClusterRolloutUtil
-        .getRestartReasons(context, currentSts, currentPods, patroniMembers)
+        .getPodsRestartReasons(context, currentSts, currentPods)
+        .requiresRestart()
+        || ClusterRolloutUtil
+        .getPostgresRestartReasons(currentPods, patroniMembers)
         .requiresRestart();
 
     final int desiredReplicas;
@@ -295,12 +299,15 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
       BiFunction<StackGresCluster, StatefulSet, StatefulSet> writer) {
     List<Pod> pods = findStatefulSetPods(requiredSts, appLabel);
     final List<PatroniMember> patroniMembers = patroniCtl.list();
-    RestartReasons restartReasons = ClusterRolloutUtil.getRestartReasons(
-        context,
-        Optional.of(updatedSts),
+    PostgresRestartReasons postgresRestartReasons = ClusterRolloutUtil.getPostgresRestartReasons(
         pods,
         patroniMembers);
-    if (!restartReasons.requiresRestart()
+    PodRestartReasons podRestartReasons = ClusterRolloutUtil.getPodsRestartReasons(
+        context,
+        Optional.of(updatedSts),
+        pods);
+    if (!postgresRestartReasons.requiresRestart()
+        && !podRestartReasons.requiresRestart()
         && pods.stream().noneMatch(ClusterRolloutUtil::isPodInFailedPhase)) {
       return;
     }
@@ -309,7 +316,7 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
         .findFirst();
     final Optional<Pod> foundPrimaryPodAndPendingRestart = foundPrimaryPod
         .filter(pod -> ClusterRolloutUtil
-            .getRestartReasons(context, Optional.of(updatedSts), pod, List.of())
+            .getPodRestartReasons(context, Optional.of(updatedSts), pod)
             .requiresRestart());
     final Optional<Pod> foundPrimaryPodAndPendingRestartAndFailed = foundPrimaryPodAndPendingRestart
         .filter(ClusterRolloutUtil::isPodInFailedPhase);
@@ -328,7 +335,7 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
     final Optional<Pod> anyOtherPodAndPendingRestartAndFailed = otherPods
         .stream()
         .filter(pod -> ClusterRolloutUtil
-            .getRestartReasons(context, Optional.of(updatedSts), pod, List.of())
+            .getPodRestartReasons(context, Optional.of(updatedSts), pod)
             .requiresRestart())
         .filter(ClusterRolloutUtil::isPodInFailedPhase)
         .findAny();
@@ -344,8 +351,8 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
     final Optional<Pod> anyOtherPodAndPendingRestart = otherPods
         .stream()
         .filter(pod -> ClusterRolloutUtil
-            .getRestartReasons(context, Optional.of(updatedSts), pod, List.of())
-            .getReasons().contains(RestartReason.STATEFULSET))
+            .getPodRestartReasons(context, Optional.of(updatedSts), pod)
+            .getReasons().contains(PodRestartReason.STATEFULSET))
         .findAny();
     if (foundPrimaryPod.isEmpty()
         && anyOtherPodAndPendingRestart.isPresent()) {
@@ -367,7 +374,7 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
     final Optional<Pod> anyOtherPodAndPendingRestartAnyReason = otherPods
         .stream()
         .filter(pod -> ClusterRolloutUtil
-            .getRestartReasons(context, Optional.of(updatedSts), pod, List.of())
+            .getPodRestartReasons(context, Optional.of(updatedSts), pod)
             .requiresRestart())
         .findAny();
     if (foundPrimaryPod.isEmpty()
@@ -380,9 +387,8 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
       return;
     }
     if (foundPrimaryPod
-        .map(pod -> patroniMembers.stream()
-            .anyMatch(patroniMember -> patroniMember.getMember().equals(pod.getMetadata().getName())
-                && patroniMember.getPendingRestart() != null))
+        .map(pod -> ClusterRolloutUtil.getPostgresRestartReasons(pod, patroniMembers)
+            .requiresRestart())
         .orElse(false)) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug("Restarting Postgres instance of primary Pod {} since pending restart",
@@ -395,9 +401,8 @@ public class ClusterStatefulSetWithPrimaryReconciliationHandler implements Recon
     }
     var anyOtherPodAndPendingRestartInstance = otherPods
         .stream()
-        .filter(pod -> patroniMembers.stream()
-            .anyMatch(patroniMember -> patroniMember.getMember().equals(pod.getMetadata().getName())
-                && patroniMember.getPendingRestart() != null))
+        .filter(pod -> ClusterRolloutUtil.getPostgresRestartReasons(pod, patroniMembers)
+            .requiresRestart())
         .findFirst();
     if (anyOtherPodAndPendingRestartInstance.isPresent()) {
       if (LOGGER.isDebugEnabled()) {

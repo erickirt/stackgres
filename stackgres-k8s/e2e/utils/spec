@@ -11,8 +11,6 @@ export E2E_TEST_AFTER_ALL_FUNCTION="${E2E_TEST_AFTER_ALL_FUNCTION:-e2e_test_afte
 export E2E_BEFORE_RUN_TEST_COUNT=0
 export SPEC_PATH="${SPEC_PATH:-$E2E_PATH/spec}"
 export E2E_LOCK
-export E2E_TEST_REGISTRY
-export E2E_TEST_REGISTRY_PATH
 export E2E_HASH_VARIABLES='
     E2E_VERSION
     E2E_ENV
@@ -219,8 +217,15 @@ spec() {
   local RESULT
   local EXIT_CODE
   local SPEC_FILE="$1"
+  local TARGET_SPEC_VALUE="${SPEC_FILE##*@}"
+  if [ "$TARGET_SPEC_VALUE" = "$SPEC_FILE" ]
+  then
+    TARGET_SPEC_VALUE=
+  else
+    SPEC_FILE="${SPEC_FILE%@*}"
+  fi
   local SPEC_NAME="${SPEC_FILE##*/}"
-  local SPEC_VALUES_FILE="$1.values.yaml"
+  local SPEC_VALUES_FILE="${SPEC_FILE}.values.yaml"
   local CLUSTER_NAMESPACE="${CLUSTER_NAMESPACE:-$SPEC_NAME-$(printf '%x' "$(date +%s)")}"
   local CLUSTER_NAME
   CLUSTER_NAME="$(get_sgcluster_name "$SPEC_NAME")"
@@ -328,15 +333,25 @@ run_spec() {
     done
   fi
 
+  if [ -n "$TARGET_SPEC_VALUE" ] \
+    && ! e2e_test_values | grep -qxF "$TARGET_SPEC_VALUE"
+  then
+    echo "Can not find $SPEC_NAME@$TARGET_SPEC_VALUE (availables: $(e2e_test_values | tr '\n' ' '))"
+    return 1
+  fi
   for SPEC_VALUE in $(e2e_test_values)
   do
+    if [ -n "$TARGET_SPEC_VALUE" ] && [ "$TARGET_SPEC_VALUE" != "$SPEC_VALUE" ]
+    then
+      continue
+    fi
     if [ "$SPEC_VALUE" != none ]
     then
-      if grep -qxF "$SPEC_NAME.$SPEC_VALUE" "$TARGET_PATH/already-passed-tests"
+      if [ "$E2E_USE_TEST_CACHE" = true ] && grep -qxF "$SPEC_NAME@$SPEC_VALUE" "$TARGET_PATH/already-passed-tests"
       then
         echo
         echo "================================================================"
-        echo "Skipping $SPEC_NAME.$SPEC_VALUE tests since it is excluded"
+        echo "Skipping $SPEC_NAME@$SPEC_VALUE tests since it is excluded"
         echo "================================================================"
         echo
         continue
@@ -348,7 +363,7 @@ run_spec() {
       then
         echo
         echo "================================================================"
-        echo "Running $SPEC_NAME.$SPEC_VALUE tests"
+        echo "Running $SPEC_NAME@$SPEC_VALUE tests"
         echo "================================================================"
         echo
       fi
@@ -498,7 +513,7 @@ calculate_spec_hashes() {
         do
           if [ "$SPEC_VALUE" != none ]
           then
-            printf '%s:%s-%s\n' "${SPEC_FILE##*spec/}.$SPEC_VALUE" "$SPEC_HASH" "$SPEC_PLATFORM"
+            printf '%s:%s-%s\n' "${SPEC_FILE##*spec/}@$SPEC_VALUE" "$SPEC_HASH" "$SPEC_PLATFORM"
           fi
         done
         )
@@ -518,18 +533,16 @@ get_variables_for_hash() {
 }
 
 get_already_passed_tests() {
-  [ -n "$E2E_TEST_REGISTRY" ] \
-    && [ -n "$E2E_TEST_REGISTRY_PATH" ] \
-    && true || false
-
   "$SHELL" "$PROJECT_PATH/stackgres-k8s/e2e/e2e" calculate_spec_hashes \
     > "$TARGET_PATH/test-hashes"
+  BUILD_REPOSITORY="$(yq -r .build_repository "$PROJECT_PATH/stackgres-k8s/ci/build/config.yml")"
   while read -r SPEC_HASH
   do
     SPEC_NAME="${SPEC_HASH%:*}"
     SPEC_HASH="${SPEC_HASH#*:}"
-    printf '%s=%s/%s/e2e-test-result-%s:%s\n' \
-      "$SPEC_NAME" "$E2E_TEST_REGISTRY" "$E2E_TEST_REGISTRY_PATH" "$SPEC_NAME" "$SPEC_HASH"
+    TAG_NAME="$(printf '%s-%s' "$SPEC_NAME" "$SPEC_HASH" | tr -d '\n' | tr -c '[a-zA-Z0-9]._-' '-')"
+    printf '%s=%s:%s\n' \
+      "$SPEC_NAME" "$BUILD_REPOSITORY" "$TAG_NAME"
   done < "$TARGET_PATH/test-hashes" \
     > "$TARGET_PATH/test-result-images"
 
@@ -560,10 +573,6 @@ get_already_passed_tests() {
 store_test_results() {
   E2E_SUFFIX="${E2E_SUFFIX:-$(printf '%s%x-%s' - "$(date +%s)" "$(random_string_lowercase 3)")}"
 
-  [ -n "$E2E_TEST_REGISTRY" ] \
-    && [ -n "$E2E_TEST_REGISTRY_PATH" ] \
-    && true || false
-
   sort "$TARGET_PATH/runned-tests" 2>/dev/null | uniq > "$TARGET_PATH/uniq-runned-tests"
   sort "$TARGET_PATH/passed-tests" 2>/dev/null | uniq > "$TARGET_PATH/uniq-passed-tests"
 
@@ -577,17 +586,13 @@ store_test_results() {
     IMAGE_NAME="$(grep "^$SPEC_NAME=" "$TARGET_PATH/test-result-images" \
       | cut -d = -f 2-)"
     docker tag registry.access.redhat.com/ubi8-micro:8.8-7 "$IMAGE_NAME"
-    docker push "$IMAGE_NAME"
+    docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$IMAGE_NAME"
   done < "$TARGET_PATH/uniq-passed-tests"
 }
 
 store_test_result() {
   local SPEC_NAME="$1"
   local SPEC_VALUE="$2"
-
-  [ -n "$E2E_TEST_REGISTRY" ] \
-    && [ -n "$E2E_TEST_REGISTRY_PATH" ] \
-    && true || false
 
   local SPEC_PLATFORM
   SPEC_PLATFORM="$("$SHELL" "$PROJECT_PATH/stackgres-k8s/ci/build/build-functions.sh" get_platform_tag_suffix)"
@@ -596,14 +601,14 @@ store_test_result() {
   then
     IMAGE_NAME="$(grep "^$SPEC_NAME=" "$TARGET_PATH/test-result-images")"
    else
-    IMAGE_NAME="$(grep "^$SPEC_NAME.$SPEC_VALUE=" "$TARGET_PATH/test-result-images")"
+    IMAGE_NAME="$(grep "^$SPEC_NAME@$SPEC_VALUE=" "$TARGET_PATH/test-result-images")"
   fi
   IMAGE_NAME="$(printf %s "$IMAGE_NAME" | cut -d = -f 2-)"
   # shellcheck disable=SC2046
   docker image registry.access.redhat.com/ubi8-micro:8.8-7 > /dev/null 2>&1 \
     || docker pull registry.access.redhat.com/ubi8-micro:8.8-7
   docker tag registry.access.redhat.com/ubi8-micro:8.8-7 "$IMAGE_NAME"
-  docker push "$IMAGE_NAME"
+  docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$IMAGE_NAME"
 }
 
 add_already_passed_tests_to_report() {

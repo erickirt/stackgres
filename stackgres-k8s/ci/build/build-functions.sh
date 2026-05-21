@@ -7,6 +7,7 @@ BUILDER_VERSION=1.0.0
 set -e
 
 export BUILD_UID="${BUILD_UID:-$(id -u):$(ls -n /var/run/docker.sock | cut -d ' ' -f 4)}"
+export DOCKER_CLI_HINTS=false
 
 [ "$DEBUG" != true ] || set -x
 
@@ -69,15 +70,29 @@ EOF
     done
   } > "stackgres-k8s/ci/build/target/$MODULE-hash"
   MODULE_HASH="$(md5sum "stackgres-k8s/ci/build/target/$MODULE-hash" | cut -d ' ' -f 1)"
+  local BUILD_REPOSITORY
+  BUILD_REPOSITORY="$(jq -r '.build_repository' stackgres-k8s/ci/build/target/config.json)"
   if "$MODULE_PLATFORM_DEPENDENT"
   then
     MODULE_PLATFORM="${MODULE_PLATFORM:-$(get_platform)}"
     TAG_MODULE_PLATFORM="$(printf %s "$MODULE_PLATFORM" | tr '/' '-')"
-    printf 'registry.gitlab.com/ongresinc/stackgres/build/%s:hash-%s-%s\n' \
-      "$MODULE" "$MODULE_HASH" "$TAG_MODULE_PLATFORM"
+    if [ "$BUILD_IMAGE_PER_MODULE" = true ]
+    then
+      printf '%s/%s:hash-%s-%s\n' \
+        "$BUILD_REPOSITORY" "$MODULE" "$MODULE_HASH" "$TAG_MODULE_PLATFORM"
+    else
+      printf '%s:%s-hash-%s-%s\n' \
+        "$BUILD_REPOSITORY" "$MODULE" "$MODULE_HASH" "$TAG_MODULE_PLATFORM"
+    fi
   else
-    printf 'registry.gitlab.com/ongresinc/stackgres/build/%s:hash-%s\n' \
-      "$MODULE" "$MODULE_HASH"
+    if [ "$BUILD_IMAGE_PER_MODULE" = true ]
+    then
+      printf '%s/%s:hash-%s\n' \
+        "$BUILD_REPOSITORY" "$MODULE" "$MODULE_HASH"
+    else
+      printf '%s:%s-hash-%s\n' \
+        "$BUILD_REPOSITORY" "$MODULE" "$MODULE_HASH"
+    fi
   fi
 }
 
@@ -166,7 +181,7 @@ EOF
    "  > "stackgres-k8s/ci/build/target/$MODULE-build-env"
   # shellcheck disable=SC2046
   docker_run -i $(! test -t 1 || printf %s '-t') --rm \
-    --platform "${BUILD_PLATFORM:-$(get_platform)}" \
+    --platform "$(docker_platform "${BUILD_PLATFORM:-$(get_platform)}")" \
     $([ "$SKIP_REMOTE_MANIFEST" = true ] || printf %s '--pull always') \
     --volume "/var/run/docker.sock:/var/run/docker.sock" \
     --volume "${PROJECT_PATH:-$(pwd)}:/project" \
@@ -275,7 +290,7 @@ EOF
   # shellcheck disable=SC2046
   docker_build $DOCKER_BUILD_OPTS -t "$IMAGE_NAME" \
     $([ "$SKIP_REMOTE_MANIFEST" = true ] || printf %s '--pull') \
-    --platform "${BUILD_PLATFORM:-$(get_platform)}" \
+    --platform "$(docker_platform "${BUILD_PLATFORM:-$(get_platform)}")" \
     --build-arg "BUILD_UID=${BUILD_UID%:*}" \
     --build-arg "TARGET_IMAGE_NAME=$TARGET_IMAGE_NAME" \
     $(jq -r ".modules[\"$MODULE\"].dockerfile.args
@@ -317,7 +332,7 @@ init_hash() {
     then
       tar cf - -C "$PROJECT_PATH" .git | tar xf - -C stackgres-k8s/ci/build/target
     else
-      git --git-dir stackgres-k8s/ci/build/target/.git init > /dev/null
+      git --git-dir stackgres-k8s/ci/build/target/.git -c init.defaultBranch=main init > /dev/null
     fi
   fi
   if git --git-dir stackgres-k8s/ci/build/target/.git status --porcelain 2>&1 | grep -q .
@@ -362,6 +377,14 @@ source_image_name() {
   printf '%s\n' "$SOURCE_IMAGE_NAME"
 }
 
+is_source_for_any_module() {
+  [ "$#" -ge 1 ] || false
+  local MODULE="$1"
+  local HAS_TARGET_MODULE
+  HAS_TARGET_MODULE="$(jq -r ".stages | any(to_entries | any(.value == \"$MODULE\"))" stackgres-k8s/ci/build/target/config.json)"
+  [ "$HAS_TARGET_MODULE" = true ]
+}
+
 image_name() {
   [ "$#" -ge 1 ] || false
   local BUILD_HASH
@@ -403,14 +426,21 @@ build_image() {
   echo "Image $IMAGE_NAME"
   echo "Source image $SOURCE_IMAGE_NAME"
   echo
+  local BUILD_SKIPPED=false
   if {
       [ "$DO_BUILD" != true ] \
         && ! printf " $DO_BUILD_MODULES " | grep -qF " $MODULE " \
         && grep -q "^$IMAGE_NAME=" "stackgres-k8s/ci/build/target/image-digests.$BUILD_HASH"
     }
   then
-    echo "Already exists on remote repository. Just extracting..."
-    copy_from_image "$SOURCE_IMAGE_NAME"
+    if is_source_for_any_module
+    then
+      echo "Already exists on remote repository. Just extracting..."
+      copy_from_image "$IMAGE_NAME"
+    else
+      echo "Already exists on remote repository."
+    fi
+    BUILD_SKIPPED=true
   else
     if {
         [ "$DO_BUILD" != true ] \
@@ -418,20 +448,35 @@ build_image() {
           && docker_inspect "$IMAGE_NAME" >/dev/null 2>&1
       }
     then
-      echo "Already exists locally. Just extracting ..."
-      copy_from_image "$SOURCE_IMAGE_NAME"
+      if is_source_for_any_module
+      then
+        echo "Already exists locally. Just extracting ..."
+        copy_from_image "$IMAGE_NAME"
+      else
+        echo "Already exists locally."
+      fi
+      BUILD_SKIPPED=true
     else
       echo "Building $MODULE ..."
       build_module_image "$MODULE" "$SOURCE_IMAGE_NAME" "$IMAGE_NAME"
     fi
-    if [ "$SKIP_PUSH" != true ]
+    if [ "$SKIP_PUSH" != true ] || [ "$DO_PUSH" = true ]
     then
-      docker_push "$IMAGE_NAME"
+      push_build_image "$IMAGE_NAME"
     fi
+  fi
+  if [ "$BUILD_SKIPPED" = true ] && [ "$DO_PUSH" = true ]
+  then
+    push_build_image "$IMAGE_NAME"
   fi
   echo
   echo "--------------------------------------------------------------------------------------------------------------------------------"
   echo
+}
+
+push_build_image() {
+  local IMAGE_NAME="$1"
+  docker_push --platform "$(docker_platform "${BUILD_PLATFORM:-$(get_platform)}")" "$IMAGE_NAME"
 }
 
 extract_all() {
@@ -645,11 +690,121 @@ show_image_hashes() {
 find_image_digests() {
   (! ls stackgres-k8s/ci/build/target/image-digests.* > /dev/null 2>&1 \
     || rm -rf stackgres-k8s/ci/build/target/image-digests.*)
-  sort "$1" | uniq \
-    | xargs -I @ -P 16 sh $(! echo $- | grep -q x || printf %s "-x") \
-      stackgres-k8s/ci/build/build-functions.sh find_image_digest @
+  if [ "$BUILD_IMAGE_PER_MODULE" != true ] && [ "$SKIP_REMOTE_MANIFEST" != true ]
+  then
+    # Single-repo format: list all tags at once, then match locally
+    local BUILD_REPOSITORY
+    BUILD_REPOSITORY="$(jq -r '.build_repository' stackgres-k8s/ci/build/target/config.json)"
+    list_image_tags "$BUILD_REPOSITORY" \
+      > "stackgres-k8s/ci/build/target/registry-tags"
+    sort "$1" | uniq \
+      | grep "^${BUILD_REPOSITORY}:" \
+      | grep -v "@sha256:" \
+      | xargs -I @ -P 16 sh $(! echo $- | grep -q x || printf %s "-x") \
+        -c 'IMAGE_NAME="@"
+            if grep -q "^${IMAGE_NAME##*:}$" "stackgres-k8s/ci/build/target/registry-tags" 2>/dev/null
+            then
+              printf '\''%s=%s\n'\'' "$IMAGE_NAME" "$IMAGE_NAME" \
+                > "stackgres-k8s/ci/build/target/image-digests.${IMAGE_NAME##*/}"
+            fi'
+    sort "$1" | uniq \
+      | grep -v "^${BUILD_REPOSITORY}:" \
+      | grep -v "@sha256:" \
+      | xargs -I @ -P 16 sh $(! echo $- | grep -q x || printf %s "-x") \
+        stackgres-k8s/ci/build/build-functions.sh find_image_digest @
+    sort "$1" | uniq \
+      | grep -v "^${BUILD_REPOSITORY}:" \
+      | grep "@sha256:" \
+      | xargs -I @ -P 16 sh $(! echo $- | grep -q x || printf %s "-x") \
+        -c 'IMAGE_NAME="@"; printf '%s=%s' "$IMAGE_NAME" "${IMAGE_NAME#*@}" > "stackgres-k8s/ci/build/target/image-digests.${IMAGE_NAME##*/}"'
+  else
+    # Legacy multi-repo or skip-remote: per-image parallel lookup
+    sort "$1" | uniq \
+      | grep -v "@sha256:" \
+      | xargs -I @ -P 16 sh $(! echo $- | grep -q x || printf %s "-x") \
+        stackgres-k8s/ci/build/build-functions.sh find_image_digest @
+    sort "$1" | uniq \
+      | grep "@sha256:" \
+      | xargs -I @ -P 16 sh $(! echo $- | grep -q x || printf %s "-x") \
+        -c 'IMAGE_NAME="@"; printf '%s=%s' "$IMAGE_NAME" "${IMAGE_NAME#*@}" > "stackgres-k8s/ci/build/target/image-digests.${IMAGE_NAME##*/}"'
+  fi
   (! ls stackgres-k8s/ci/build/target/image-digests.* > /dev/null 2>&1 \
     || cat stackgres-k8s/ci/build/target/image-digests.*)
+}
+
+list_image_tags() {
+  local REPO="$1"
+  local REGISTRY="${REPO%%/*}"
+  local REPO_PATH="${REPO#*/}"
+  local AUTH AUTH_OPTS RESPONSE AUTH_HEADER REALM SERVICE SCOPE TOKEN
+
+  # Extract basic auth from Docker config
+  AUTH="$(jq -r ".auths[\"$REGISTRY\"].auth // empty" "$HOME/.docker/config.json" 2>/dev/null)"
+  AUTH_OPTS=""
+  if [ -n "$AUTH" ]; then
+    AUTH_OPTS="-u $(printf %s "$AUTH" | base64 -d)"
+  fi
+
+  local TAGS_URL="https://$REGISTRY/v2/$REPO_PATH/tags/list"
+
+  # Try direct/basic auth first
+  # shellcheck disable=SC2086
+  local NO_AUTH=false
+  if RESPONSE="$(curl -sf $AUTH_OPTS "$TAGS_URL?n=10000" 2>/dev/null)"
+  then
+    NO_AUTH=true
+  fi
+
+  if [ "$NO_AUTH" = false ]; then
+    # Token-based auth: parse WWW-Authenticate from 401
+    # shellcheck disable=SC2086
+    AUTH_HEADER="$(curl -si $AUTH_OPTS "$TAGS_URL?n=10000" 2>/dev/null \
+      | grep -i '^www-authenticate:' | head -1)"
+    REALM="$(printf %s "$AUTH_HEADER" | sed 's/.*realm="\([^"]*\)".*/\1/')"
+    SERVICE="$(printf %s "$AUTH_HEADER" | sed 's/.*service="\([^"]*\)".*/\1/')"
+    SCOPE="$(printf %s "$AUTH_HEADER" | sed 's/.*scope="\([^"]*\)".*/\1/')"
+
+    if [ -z "$REALM" ]; then
+      return 1
+    fi
+
+    # shellcheck disable=SC2086
+    TOKEN="$(curl -sf $AUTH_OPTS \
+      "${REALM}?service=${SERVICE}&scope=${SCOPE}" 2>/dev/null \
+      | jq -r '.token // .access_token // empty')"
+  fi
+
+  local LAST
+  if [ -n "$TOKEN" ]; then
+    RESPONSE=""
+    LAST=""
+  else
+    if printf %s "$RESPONSE" | jq -r '.tags // [] | length' | grep -qxF 0; then
+      return
+    fi
+    LAST="$(printf %s "$RESPONSE" | jq -r '.tags // [] | . as $tags | .[($tags|length - 1)]')"
+  fi
+  while true; do
+    printf %s "$RESPONSE" | jq -r '.tags // [] | .[]' 2>/dev/null
+    if [ -n "$TOKEN" ]; then
+      if [ -n "$LAST" ]; then
+        RESPONSE="$(curl -sf -H "Authorization: Bearer $TOKEN" "$TAGS_URL?n=10000&last=$LAST" 2>/dev/null)"
+      else
+        RESPONSE="$(curl -sf -H "Authorization: Bearer $TOKEN" "$TAGS_URL?n=10000" 2>/dev/null)"
+      fi
+    else
+      if [ -n "$LAST" ]; then
+        RESPONSE="$(curl -sf $AUTH_OPTS "$TAGS_URL?n=10000&last=$LAST" 2>/dev/null)"
+      else
+        RESPONSE="$(curl -sf $AUTH_OPTS "$TAGS_URL?n=10000" 2>/dev/null)"
+      fi
+    fi
+    printf %s "$RESPONSE" | jq -r '.tags // [] | .[]' 2>/dev/null
+    if printf %s "$RESPONSE" | jq -r '.tags // [] | length' | grep -qxF 0; then
+      return
+    fi
+    LAST="$(printf %s "$RESPONSE" | jq -r '.tags // [] | . as $tags | .[($tags|length - 1)]')"
+  done
 }
 
 find_image_digest() {
@@ -729,7 +884,8 @@ retrieve_image_manifest() {
         REGISTRY_PORT="$(docker_inspect "$REGISTRY_CONTAINER_ID" | jq '.[0].NetworkSettings.Ports["5000/tcp"][0].HostPort' -r)"
         REGISTRY_IMAGE_NAME="localhost:$REGISTRY_PORT/$(printf %s "${IMAGE_NAME%:*}" | tr '/:' '_'):${IMAGE_NAME##*:}"
         docker_tag "$IMAGE_NAME" "$REGISTRY_IMAGE_NAME"
-        docker_push "$REGISTRY_IMAGE_NAME"
+        REGISTRY_IMAGE_PLATFORM="$(get_image_platform "$REGISTRY_IMAGE_NAME")"
+        docker_push --platform "$REGISTRY_IMAGE_PLATFORM" "$REGISTRY_IMAGE_NAME"
         docker_inspect "$REGISTRY_IMAGE_NAME" \
           > "stackgres-k8s/ci/build/target/manifest.local.${IMAGE_NAME##*/}"
         docker_rm -fv "$REGISTRY_CONTAINER_ID"
@@ -782,7 +938,7 @@ get_module_hash() {
   else
     TAG_MODULE_PLATFORM=
   fi
-  sed -n "s/^${MODULE}=.*:hash-\([^:]\+\)$TAG_MODULE_PLATFORM$/\1/p" "$IMAGE_HASHES_FILE"
+  sed -n "s/^${MODULE}=.*[:-]hash-\([^:]\+\)$TAG_MODULE_PLATFORM$/\1/p" "$IMAGE_HASHES_FILE"
 }
 
 project_hash() {
@@ -818,6 +974,11 @@ docker_build() {
 
 docker_push() {
   docker push "$@"
+}
+
+docker_platform() {
+  local PLATFORM="$1"
+  printf "${PLATFORM%/*}/$(printf %s "${PLATFORM#*/}" | grep -qxF aarch64 && printf arm64 || printf amd64)"
 }
 
 docker_tag() {

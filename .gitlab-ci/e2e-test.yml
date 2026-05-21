@@ -2,17 +2,17 @@
 .e2e tests:
   stage: test
   image: $CI_REGISTRY/$SG_CI_PROJECT_PATH/$SG_CI_IMAGE_NAME
-  dependencies:
-    - build helm packages
-    - build helm templates
   variables:
     IMAGE_TAG_SUFFIX: ""
     E2E_JOB: ""
     IS_NATIVE: "false"
     IS_WEB: "false"
+    GIT_CLONE_PATH: $CI_BUILDS_DIR/$CI_CONCURRENT_ID/$CI_PROJECT_PATH
   timeout: 1 hour
   script:
     - |
+      sh stackgres-k8s/ci/build/build-gitlab.sh extract helm-release-templates stackgres-k8s/install/helm/target/templates
+      sh stackgres-k8s/ci/build/build-gitlab.sh extract helm-release-packages stackgres-k8s/install/helm/target/packages
       [ "$DEBUG" != true ] || set -x
       if ! {
           test "$E2E_JOBS" -ge 1 && test "$E2E_JOBS" -le 6
@@ -36,10 +36,6 @@
   artifacts:
     expire_in: 1 week
     when: always
-    paths:
-    - stackgres-k8s/ci/build/target
-    - stackgres-k8s/ci/test/target
-    - stackgres-k8s/e2e/target
     reports:
       junit:
         - stackgres-k8s/e2e/target/e2e-tests-junit-report.xml
@@ -59,11 +55,6 @@
        || $CI_PIPELINE_SOURCE == 'merge_request_event' )
        && (
         $SKIP_E2E != "true" ) )
-  artifacts:
-    expire_in: 1 week
-    when: always
-    paths:
-    - stackgres-k8s/e2e/target
 
 .e2e ex tests jvm amd64:
   extends: .e2e tests jvm amd64
@@ -85,11 +76,6 @@
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_REF_NAME =~ /^main.*$/ )
         || ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $CI_COMMIT_TAG )
         || $DO_NATIVE ) )
-  artifacts:
-    expire_in: 1 week
-    when: always
-    paths:
-    - stackgres-k8s/e2e/target
 
 .e2e ex tests native amd64:
   extends: .e2e tests native amd64
@@ -109,11 +95,6 @@
        && (
         ( $SKIP_E2E != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_ARM ) )
-  artifacts:
-    expire_in: 1 week
-    when: always
-    paths:
-    - stackgres-k8s/e2e/target
 
 .e2e ex tests jvm arm64:
   extends: .e2e tests jvm arm64
@@ -141,11 +122,6 @@
        && (
         ( $SKIP_E2E != "true" && $SKIP_NATIVE != "true" && $SKIP_ARM != "true" && $CI_COMMIT_TAG )
         || ( $DO_NATIVE && $DO_ARM ) ) )
-  artifacts:
-    expire_in: 1 week
-    when: always
-    paths:
-    - stackgres-k8s/e2e/target
 
 .e2e ex tests native arm64:
   extends: .e2e tests native arm64

@@ -27,6 +27,8 @@ public class StackGresConfigCollector {
 
   private String name;
 
+  private Boolean alwaysEnabled;
+
   private StackGresConfigCollectorReceiver receivers;
 
   private Map<String, String> annotations;
@@ -59,6 +61,14 @@ public class StackGresConfigCollector {
 
   public void setName(String name) {
     this.name = name;
+  }
+
+  public Boolean getAlwaysEnabled() {
+    return alwaysEnabled;
+  }
+
+  public void setAlwaysEnabled(Boolean alwaysEnabled) {
+    this.alwaysEnabled = alwaysEnabled;
   }
 
   public StackGresConfigCollectorReceiver getReceivers() {
@@ -167,7 +177,7 @@ public class StackGresConfigCollector {
 
   @Override
   public int hashCode() {
-    return Objects.hash(affinity, annotations, config, name, nodeSelector, ports,
+    return Objects.hash(affinity, alwaysEnabled, annotations, config, name, nodeSelector, ports,
         prometheusOperator, receivers, resources, service, serviceAccount, tolerations,
         volumeMounts, volumes);
   }
@@ -182,6 +192,7 @@ public class StackGresConfigCollector {
     }
     StackGresConfigCollector other = (StackGresConfigCollector) obj;
     return Objects.equals(affinity, other.affinity)
+        && Objects.equals(alwaysEnabled, other.alwaysEnabled)
         && Objects.equals(annotations, other.annotations) && Objects.equals(config, other.config)
         && Objects.equals(name, other.name) && Objects.equals(nodeSelector, other.nodeSelector)
         && Objects.equals(ports, other.ports)

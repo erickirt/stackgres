@@ -108,7 +108,7 @@ spec:
           - name: INSTALL_WEBHOOKS
             value: "{{ if or .Values.disableClusterRole .Values.disableCrdsAndWebhooksUpdate }}false{{ else }}true{{ end }}"
           - name: INSTALL_CONVERSION_WEBHOOKS
-            value: "{{ if or .Values.allowedNamespaces .Values.allowedNamespaceLabelSelector .Values.disableClusterRole }}false{{ else }}true{{ end }}"
+            value: "{{ if or (not .Values.enableConversionWebhooks) .Values.allowedNamespaces .Values.allowedNamespaceLabelSelector .Values.disableClusterRole }}false{{ else }}true{{ end }}"
           - name: ALLOWED_NAMESPACES
             {{- $allowedNamespaces := regexSplit " " (include "allowedNamespaces" .) -1 }}
             value: "{{ if not ($allowedNamespaces | has "_all_namespaces_placeholder") }}{{ range $index, $namespace := $allowedNamespaces }}{{ if $index }},{{ end }}{{ $namespace }}{{ end }}{{ end }}"
