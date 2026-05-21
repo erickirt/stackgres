@@ -217,7 +217,7 @@ pages:
     name: development
     url: https://ongresinc.gitlab.io/stackgres/
   script:
-    - sh stackgres-k8s/ci/build/build-gitlab.sh extract documentation stackgres-k8s/install/helm/target/templates
+    - sh stackgres-k8s/ci/build/build-gitlab.sh extract documentation doc/public
     - tar cC doc public | tar x
     - find public | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
   cache:
