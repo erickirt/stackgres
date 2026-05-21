@@ -938,7 +938,7 @@ get_module_hash() {
   else
     TAG_MODULE_PLATFORM=
   fi
-  sed -n "s/^${MODULE}=.*:hash-\([^:]\+\)$TAG_MODULE_PLATFORM$/\1/p" "$IMAGE_HASHES_FILE"
+  sed -n "s/^${MODULE}=.*[:-]hash-\([^:]\+\)$TAG_MODULE_PLATFORM$/\1/p" "$IMAGE_HASHES_FILE"
 }
 
 project_hash() {
