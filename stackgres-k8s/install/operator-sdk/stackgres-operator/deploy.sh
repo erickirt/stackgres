@@ -97,7 +97,7 @@ then
   docker save quay.io/stackgres/operator-bundle:$OPERATOR_BUNDLE_IMAGE_TAG | tar tv | tr -s ' ' | cut -d ' ' -f 6 | grep -F layer.tar \
     | while read LAYER
       do
-        docker save quay.io/stackgres/operator-bundle:$OPERATOR_BUNDLE_IMAGE_TAG | tar xO "$LAYER" | tar xv
+        docker save quay.io/stackgres/operator-bundle:$OPERATOR_BUNDLE_IMAGE_TAG | tar xO "$LAYER" | tar xzv
       done
 else
   docker save quay.io/stackgres/operator-bundle:$OPERATOR_BUNDLE_IMAGE_TAG | tar tv | tr -s ' ' | cut -d ' ' -f 6 | grep -F manifest.json \
@@ -106,7 +106,7 @@ else
         docker save quay.io/stackgres/operator-bundle:$OPERATOR_BUNDLE_IMAGE_TAG | tar xO "$MANIFEST" | jq -r '.[]|.Layers[]' \
           | while read LAYER
             do
-              docker save quay.io/stackgres/operator-bundle:$OPERATOR_BUNDLE_IMAGE_TAG | tar xO "$LAYER" | tar xv
+              docker save quay.io/stackgres/operator-bundle:$OPERATOR_BUNDLE_IMAGE_TAG | tar xO "$LAYER" | tar xzv
             done
       done
 fi
