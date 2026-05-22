@@ -33,16 +33,26 @@ import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloper;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperContainerPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigSpec;
+import io.stackgres.operator.app.OperatorInstallationInfoHolder;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.factory.ContainerFactory;
 import io.stackgres.operator.conciliation.factory.InitContainer;
 import io.stackgres.operator.conciliation.factory.cluster.ClusterContainerContext;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 @Singleton
 @OperatorVersionBinder
 @InitContainer(StackGresInitContainer.CLUSTER_RECONCILIATION_CYCLE)
 public class SingleReconciliationCycle implements ContainerFactory<ClusterContainerContext> {
+
+  private final OperatorInstallationInfoHolder installationInfoHolder;
+
+  @Inject
+  public SingleReconciliationCycle(
+      OperatorInstallationInfoHolder installationInfoHolder) {
+    this.installationInfoHolder = installationInfoHolder;
+  }
 
   @Override
   public boolean isActivated(ClusterContainerContext context) {
@@ -102,6 +112,32 @@ public class SingleReconciliationCycle implements ContainerFactory<ClusterContai
                 .getEnvironmentVariableName())
             .withValueFrom(new EnvVarSourceBuilder()
                 .withFieldRef(new ObjectFieldSelector("v1", "metadata.name"))
+                .build())
+            .build(),
+            new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_INSTALLATION_ID
+                .getEnvironmentVariableName())
+            .withValue(installationInfoHolder.getInstallationId())
+            .build(),
+            new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_POD_UID
+                .getEnvironmentVariableName())
+            .withValueFrom(new EnvVarSourceBuilder()
+                .withFieldRef(new ObjectFieldSelector("v1", "metadata.uid"))
+                .build())
+            .build(),
+            new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_POD_IP
+                .getEnvironmentVariableName())
+            .withValueFrom(new EnvVarSourceBuilder()
+                .withFieldRef(new ObjectFieldSelector("v1", "status.podIP"))
+                .build())
+            .build(),
+            new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_NODE_NAME
+                .getEnvironmentVariableName())
+            .withValueFrom(new EnvVarSourceBuilder()
+                .withFieldRef(new ObjectFieldSelector("v1", "spec.nodeName"))
                 .build())
             .build(),
             new EnvVarBuilder()

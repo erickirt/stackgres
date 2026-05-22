@@ -16,6 +16,7 @@ import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgprofile.StackGresProfile;
 import io.stackgres.common.fixture.Fixtures;
+import io.stackgres.operator.app.OperatorInstallationInfoHolder;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
 import io.stackgres.operator.conciliation.factory.cluster.ClusterContainerContext;
 import io.stackgres.operator.conciliation.factory.cluster.ImmutableClusterContainerContext;
@@ -23,16 +24,21 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class SingleReconciliationCycleTest {
 
+  @Mock
+  private OperatorInstallationInfoHolder installationInfoHolder;
+
   private SingleReconciliationCycle singleReconciliationCycle;
 
   @BeforeEach
   void setUp() {
-    singleReconciliationCycle = new SingleReconciliationCycle();
+    singleReconciliationCycle = new SingleReconciliationCycle(
+        installationInfoHolder);
   }
 
   @Test
