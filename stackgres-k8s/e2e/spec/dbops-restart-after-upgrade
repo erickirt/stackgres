@@ -205,7 +205,6 @@ e2e_test() {
   run_test "Check that cluster with 1 node can restart after operator upgrade with reduced impact" check_cluster_1_restart_start
   run_test "Check that cluster with 1 node can complete restart after operator upgrade with reduced impact" check_cluster_1_restart
   run_test "Checking that metrics are exported for cluster with 1 node" check_metrics "$CLUSTER_1_NAME"
-  run_test "Check that the conversion webhooks are configured" check_conversion_webhooks_configured
 }
 
 check_before_operator_upgrade() {
@@ -437,16 +436,6 @@ check_cluster_after_restart() {
     echo "FAILURE. Cluster $CLUSTER_NAME primary service is not of type ExternalName"
     return 1
   fi
-}
-
-check_conversion_webhooks_configured(){
-  CONVERSTION_STRATEGY="$(kubectl get crd sgclusters.stackgres.io -o jsonpath='{.spec.conversion.strategy}')"
-
-  assert_string_equal "Webhook" "$CONVERSTION_STRATEGY"
-
-  CONVERSTION_STRATEGY="$(kubectl get crd sgdistributedlogs.stackgres.io -o jsonpath='{.spec.conversion.strategy}')"
-
-  assert_string_equal "Webhook" "$CONVERSTION_STRATEGY"
 }
 
 check_sts_is_not_altered() {

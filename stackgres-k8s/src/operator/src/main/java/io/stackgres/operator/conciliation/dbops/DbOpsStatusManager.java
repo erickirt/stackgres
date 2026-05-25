@@ -152,8 +152,10 @@ public class DbOpsStatusManager
     List<PatroniMember> patroniMembers = patroniCtl.instanceFor(cluster).list();
     boolean primaryIsReadyAndUpdated = pods.stream()
         .filter(ClusterRolloutUtil::isPodReady)
-        .filter(pod -> !ClusterRolloutUtil.getRestartReasons(
-            cluster, statefulSet, pod, patroniMembers).requiresRestart())
+        .filter(pod -> !ClusterRolloutUtil.getPodRestartReasons(
+            cluster, statefulSet, pod).requiresRestart()
+            && !ClusterRolloutUtil.getPostgresRestartReasons(
+                pod, patroniMembers).requiresRestart())
         .anyMatch(pod -> patroniMembers.stream()
             .anyMatch(patroniMember -> patroniMember.getMember().equals(pod.getMetadata().getName())
                 && patroniMember.isPrimary()));
@@ -165,8 +167,10 @@ public class DbOpsStatusManager
             .noneMatch(patroniMember.getMember()::equals));
     List<Pod> podsReadyAndUpdated = pods.stream()
         .filter(ClusterRolloutUtil::isPodReady)
-        .filter(pod -> !ClusterRolloutUtil.getRestartReasons(
-            cluster, statefulSet, pod, patroniMembers).requiresRestart())
+        .filter(pod -> !ClusterRolloutUtil.getPodRestartReasons(
+            cluster, statefulSet, pod).requiresRestart()
+            && !ClusterRolloutUtil.getPostgresRestartReasons(
+                pod, patroniMembers).requiresRestart())
         .toList();
     final boolean securityUpgradeWasApplied;
     if (Objects.equals(

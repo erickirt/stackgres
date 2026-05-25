@@ -120,7 +120,8 @@ public class CrUpdater {
                         .lockResourceVersion(currentResource.getMetadata().getResourceVersion())
                         .update();
                   }
-                }), 5));
+                }),
+                OperatorProperty.ERROR_MAX_RETRIES.getIntOrDefault(5)));
   }
 
   List<GenericKubernetesResource> listCrdResources(CustomResourceDefinition crd) {
@@ -152,7 +153,10 @@ public class CrUpdater {
         .map(StackGresConfigStatus::getExistingCrUpdatedToVersion)
         .filter(StackGresProperty.OPERATOR_VERSION.getString()::equals)
         .orElseThrow(() -> new ExistingCrNotUpdatedExcpetion()),
-        ex -> ex instanceof ExistingCrNotUpdatedExcpetion, 2000, 2000, 500);
+        ex -> ex instanceof ExistingCrNotUpdatedExcpetion,
+        OperatorProperty.ERROR_INITIAL_SLEEP_MILLISECONDS.getIntOrDefault(3000),
+        OperatorProperty.ERROR_SLEEP_MILLISECONDS.getIntOrDefault(30000),
+        OperatorProperty.ERROR_MAX_SLEEP_MILLISECONDS.getIntOrDefault(1000));
   }
 
   private static class ExistingCrNotUpdatedExcpetion extends RuntimeException {

@@ -14,7 +14,9 @@ public enum WebApiProperty implements StackGresPropertyReader {
   RESTAPI_NAMESPACE("stackgres.restapiNamespace"),
   GRAFANA_EMBEDDED("stackgres.prometheus.grafanaEmbedded"),
   EXTENSIONS_REPOSITORY_URLS("stackgres.extensionsRepositoryUrls"),
-  RESTAPI_JMX_COLLECTOR_YAML_CONFIG("stackgres.restapi.jmxCollectorYamlConfig");
+  RESTAPI_JMX_COLLECTOR_YAML_CONFIG("stackgres.restapi.jmxCollectorYamlConfig"),
+  CAN_I_CACHE_EXPIRATION("stackgres.caniCacheExpiration"),
+  CAN_I_CACHE_SIZE("stackgres.caniCacheSize");
 
   private static final Properties APPLICATION_PROPERTIES =
       StackGresPropertyReader.readApplicationProperties(WebApiProperty.class);

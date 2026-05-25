@@ -76,7 +76,7 @@ public class StackGresClusterControllerMain {
     @Override
     public int run(String... args) throws Exception {
       if (isReconciliationCycle(args)) {
-        runSingleReconciliationCycle();
+        runSingleReconciliationCycle(args);
 
         return 0;
       }
@@ -90,7 +90,7 @@ public class StackGresClusterControllerMain {
         System.setProperty(CLUSTER_CONTROLLER_RECONCILE_PATRONI.getPropertyName(), "false");
         System.setProperty(CLUSTER_CONTROLLER_RECONCILE_MANAGED_SQL.getPropertyName(), "false");
 
-        runSingleReconciliationCycle();
+        runSingleReconciliationCycle(args);
 
         controllerProperties.entrySet().stream()
             .forEach(entry -> entry.getValue()
@@ -115,7 +115,7 @@ public class StackGresClusterControllerMain {
           .orElse(false);
     }
 
-    private void runSingleReconciliationCycle() {
+    private void runSingleReconciliationCycle(String... args) {
       LOGGER.info("Running StackGres Cluster Controller reconciliation cycle");
       List<StackGresCluster> existingContextResources =
           reconciliationCycle.getExistingContextResources();
@@ -137,7 +137,8 @@ public class StackGresClusterControllerMain {
                   return exception;
                 },
                 (u, v) -> v);
-        if (!ClusterControllerReconciliationCycle.existsContextResource()) {
+        if (isReconciliationCycle(args)
+            || !ClusterControllerReconciliationCycle.existsContextResource()) {
           throw ex;
         }
       }

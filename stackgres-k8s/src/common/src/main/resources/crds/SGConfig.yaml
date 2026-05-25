@@ -31,8 +31,9 @@ spec:
           SGConfig stores the configuration of the StackGres Operator
 
           > **WARNING**: Creating more than one SGConfig is forbidden.
-           The single SGConfig should be created automatically during installation.
-           More SGConfig may exist only when allowedNamespaces or allowedNamespaceLabelSelector is used.
+          >  The single SGConfig will be created automatically during installation.
+          >  When using Helm the values of the SGConfig may be overwritten by the values specified for the helm chart.
+          >  More SGConfig may exist only when allowedNamespaces or allowedNamespaceLabelSelector is used.
         properties:
           spec:
             description: Spec defines the desired state of SGConfig
@@ -45,17 +46,26 @@ spec:
                   The container registry host (and port) where the images will be pulled from.
 
                   > This value can only be set in operator helm chart or with the environment variable `SG_CONTAINER_REGISTRY`.
+                  > See also https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/subscription-config.md
               imagePullPolicy:
                 type: string
                 default: "IfNotPresent"
-                description: Image pull policy used for images loaded by the Operator
+                description: |
+                  Image pull policy used for images loaded by the Operator
+
+                  > This value can only be set in operator helm chart or with the environment variable `SG_IMAGE_PULL_POLICY`.
+                  > See also https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/subscription-config.md
               imagePullSecrets:
                 type: array
                 description: |
                   The list of references to secrets in the same namespace where a ServiceAccount is created by the operator to use for pulling any images in pods that reference such ServiceAccount. ImagePullSecrets are distinct from Secrets because Secrets can be mounted in the pod, but ImagePullSecrets are only accessed by the kubelet. More info: https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
                 items:
                   type: object
-                  description: A reference to a secrets in the same namespace where a ServiceAccount is created by the operator to use for pulling any images in pods that reference such ServiceAccount.
+                  description: |
+                    A reference to a secrets in the same namespace where a ServiceAccount is created by the operator to use for pulling any images in pods that reference such ServiceAccount.
+
+                    > This value can only be set in operator helm chart.
+                    > You can set it in OLM in the CatalogSource. See https://olm.operatorframework.io/docs/tasks/make-catalog-available-on-cluster/#using-registry-images-that-require-authentication-as-catalogbundleoperatoroperand-images
                   properties:
                     name:
                       type: string
@@ -66,7 +76,7 @@ spec:
                   Section to configure allowed namespaces that the operator is allowed to use. If empty all namespaces will be allowed (default).
 
                   > This value can only be set in operator helm chart or with the environment variable `ALLOWED_NAMESPACES`.
-                  >   It is set by OLM when [scoping the operator](https://olm.operatorframework.io/docs/advanced-tasks/operator-scoping-with-operatorgroups/).
+                  > It is set by OLM for scoped operator installation. See https://olm.operatorframework.io/docs/advanced-tasks/operator-scoping-with-operatorgroups/
                 items:
                   type: string
                   description: |
@@ -79,6 +89,7 @@ spec:
                   See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#labelselector-v1-meta
 
                   > This value can only be set in operator helm chart.
+                  > It is set by OLM for scoped operator installation. See https://olm.operatorframework.io/docs/advanced-tasks/operator-scoping-with-operatorgroups/
                 additionalProperties:
                   type: string
               disableClusterRole:
@@ -101,6 +112,7 @@ spec:
                   It is `false` by default.
 
                   > This value can only be set in operator helm chart.
+                  > It is set by OLM for global operator installation. See https://olm.operatorframework.io/docs/advanced-tasks/operator-scoping-with-operatorgroups/
               allowImpersonationForRestApi:
                 type: boolean
                 description: |
@@ -117,6 +129,16 @@ spec:
                   It is `false` by default.
 
                   > This value can only be set in operator helm chart.
+                  > For OLM instalations CRDs and Webhooks are created automatically by OLM itself.
+              enableConversionWebhooks:
+                type: boolean
+                description: |
+                  When set to `true` the conversion Webhooks will be enabled.
+                  
+                  It is `false` by default.
+
+                  > This value can only be set in operator helm chart.
+                  > For OLM instalations conversion Webhooks are disabled since they are not supported for scoped operator installation.
               sgConfigNamespace:
                 type: string
                 description: |
@@ -125,9 +147,13 @@ spec:
                   By default the SGConfig will be created in the same namespace as the operator.
 
                   > This value can only be set in operator helm chart.
+                  > This is the namespace where the Subscription is created for OLM installations.
               serviceAccount:
                 type: object
-                description: Section to configure Operator Installation ServiceAccount
+                description: |
+                  Section to configure Operator Installation ServiceAccount
+
+                  > For OLM instalations this section is not used.
                 properties:
                   create:
                     type: boolean
@@ -154,7 +180,10 @@ spec:
                         > This value can only be set in operator helm chart.
               operator:
                 type: object
-                description: Section to configure Operator Pod
+                description: |
+                  Section to configure Operator Pod
+
+                  > For OLM instalations this section is not used. See https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/design/subscription-config.md
                 properties:
                   image:
                     type: object
@@ -481,6 +510,10 @@ spec:
                     type: string
                     default: stackgres-collector
                     description: OpenTelemetry Collector Deployment/DaemonSet base name
+                  alwaysEnabled:
+                    type: boolean
+                    default: false
+                    description: When `true` the collcetor will always be running even when no SGCluster is binded to it.
                   receivers:
                     type: object
                     description: |
@@ -767,7 +800,8 @@ spec:
                     description: When set to `true` the OpenTelemetry Collector will be deployed.
               cert:
                 type: object
-                description: Section to configure the Operator, REST API and Web Console certificates and JWT RSA key-pair.
+                description: |
+                  Section to configure the Operator, REST API and Web Console certificates and JWT RSA key-pair.
                 properties:
                   autoapprove:
                     type: boolean
@@ -778,7 +812,11 @@ spec:
                   createForOperator:
                     type: boolean
                     default: true
-                    description: When set to `true` the Operator certificate will be created.
+                    description: |
+                      When set to `true` the Operator certificate will be created.
+
+                      > This value can only be set in operator helm chart.
+                      > For OLM instalations the certificate for the operator is created by the OLM itself.
                   createForWebApi:
                     type: boolean
                     default: true
@@ -792,16 +830,25 @@ spec:
                     description: |
                       The Secret name with the Operator Webhooks certificate issued by the Kubernetes cluster CA
                        of type kubernetes.io/tls. See https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets
+
+                      > This value can only be set in operator helm chart.
+                      > For OLM instalations the certificate for the operator is created by the OLM itself.
                   regenerateCert:
                     type: boolean
                     default: true
                     description: |
                       When set to `true` the Operator certificates will be regenerated if `createForOperator` is set to `true`, and the certificate is expired or invalid.
+
+                      > This value can only be set in operator helm chart.
+                      > For OLM instalations the certificate for the operator is created by the OLM itself.
                   certDuration:
                     type: integer
                     description: |
                       The duration in days of the generated certificate for the Operator after which it will expire and be regenerated.
                       If not specified it will be set to 730 (2 years) by default.
+
+                      > This value can only be set in operator helm chart.
+                      > For OLM instalations the certificate for the operator is created by the OLM itself.
                   webSecretName:
                     type: string
                     description: |
@@ -844,7 +891,11 @@ spec:
                       If not specified it will be set to 730 (2 years) by default.
                   certManager:
                     type: object
-                    description: Section to configure cert-manager integration to generate Operator certificates
+                    description: |
+                      Section to configure cert-manager integration to generate Operator certificates
+
+                      > This value can only be set in operator helm chart.
+                      > For OLM instalations the certificate for the operator is created by the OLM itself.
                     properties:
                       autoConfigure:
                         type: boolean
@@ -878,6 +929,9 @@ spec:
                     description: |
                       When set to `true` the admin user is assigned the `cluster-admin` ClusterRole by creating
                        ClusterRoleBinding.
+
+                      > This value can only be set in operator helm chart.
+                      > For OLM instalations the admin user is always created.
               authentication:
                 type: object
                 description: Section to configure Web Console authentication

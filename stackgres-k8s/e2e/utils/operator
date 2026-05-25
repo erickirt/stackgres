@@ -419,7 +419,7 @@ push_image_to() {
   local TO_IMAGE="$REPOSITORY${IMAGE_PATH%/}${IMAGE#*/}"
   echo "Pushing $IMAGE to $TO_IMAGE..."
   docker_local_tag "$IMAGE" "$TO_IMAGE"
-  docker_push "$TO_IMAGE"
+  docker_push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$TO_IMAGE"
   echo "Pushed $IMAGE to $TO_IMAGE"
 }
 
@@ -1752,6 +1752,9 @@ set_max_length() {
 
 set_helm_values_for_developer() {
   cat << EOF
+    --set operator.resources=null
+    --set restapi.resources=null
+    --set adminui.resources=null
     --set-string developer.extraEnv.SG_IMAGE_CLUSTER_CONTROLLER=${CLUSTER_CONTROLLER_IMAGE_NAME} 
     --set-string developer.extraOpts[0]=-Dquarkus.log.category."io.stackgres".level=DEBUG 
     --set-string developer.extraOpts[1]=-Dquarkus.log.category."io.quarkus".level=INFO 

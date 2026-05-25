@@ -177,11 +177,6 @@ public class PgBouncerPooling implements ContainerFactory<ClusterContainerContex
             .withProtocol("TCP")
             .withName(EnvoyUtil.POSTGRES_PORT_NAME)
             .withContainerPort(EnvoyUtil.PG_POOL_PORT)
-            .build(),
-        new ContainerPortBuilder()
-            .withName(EnvoyUtil.PATRONI_RESTAPI_PORT_NAME)
-            .withProtocol("TCP")
-            .withContainerPort(EnvoyUtil.PATRONI_PORT)
             .build());
   }
 

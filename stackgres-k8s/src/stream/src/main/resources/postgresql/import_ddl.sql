@@ -27,7 +27,7 @@ DO $$
           COPY input FROM PROGRAM $cmd$sh -c '{ { { pg_dumpall --clean --if-exists --roles-only; echo $? >&3; } | base64 -w 0 >&4; } 3>&1 | { read EXIT_CODE; exit "$EXIT_CODE"; }; } 4>&1'$cmd$ DELIMITER E'\1';
           COPY input FROM PROGRAM $cmd$sh -c '{ { { pg_dump --clean --if-exists --schema-only --dbname=%2$s --no-publications --no-subscriptions; echo $? >&3; } | base64 -w 0 >&4; } 3>&1 | { read EXIT_CODE; exit "$EXIT_CODE"; }; } 4>&1'$cmd$ DELIMITER E'\1';
           SELECT line FROM (SELECT regexp_split_to_table(convert_from(decode(line, 'base64'), 'UTF8'), E'\n') AS line FROM input) AS _
-            WHERE line NOT LIKE '-- %%' AND line NOT LIKE '--' AND line != '' -- Skip comments and empty lines
+            WHERE line NOT LIKE '-- %%' AND line NOT LIKE '--' AND line != '' AND line NOT LIKE '\\%%' -- Skip comments, empty lines and psql commands
             AND line NOT SIMILAR TO '(CREATE|ALTER|DROP) ROLE(| IF EXISTS) %4$s(;| )%%' -- Skip SGCluster existing roles
           UNION ALL
           SELECT 'ALTER ROLE ' || substring(line, 'CREATE ROLE #"%%#";', '#') || ' SET sgstream.ddl_import_completed = true;' FROM input

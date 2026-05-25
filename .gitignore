@@ -125,6 +125,7 @@ hs_err_pid*
 
 ## ignoring target file
 target/
+stackgres-k8s/ci/build/target
 !**/src/main/**/target/
 dist/
 
@@ -170,3 +171,6 @@ chartverifier
 
 # Build
 pom.xml.build
+
+# shellspec reports
+stackgres-k8s/ci/build/test/report/

@@ -26,7 +26,13 @@ operator:
   # -- Operator Pod annotations
   annotations: {}
   # -- Operator Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core
-  resources: {}
+  resources:
+    limits:
+      cpu: 1
+      memory: 512Mi
+    requests:
+      cpu: 10m
+      memory: 128Mi
   # -- Operator Pod node selector
   nodeSelector: {}
   # -- Operator Pod tolerations. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#toleration-v1-core
@@ -67,7 +73,13 @@ restapi:
   # -- REST API Pod annotations
   annotations: {}
   # -- REST API Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core
-  resources: {}
+  resources:
+    limits:
+      cpu: 1
+      memory: 512Mi
+    requests:
+      cpu: 10m
+      memory: 128Mi
   # -- REST API Pod node selector
   nodeSelector: {}
   # -- REST API Pod tolerations. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#toleration-v1-core
@@ -96,7 +108,13 @@ adminui:
     # -- Web Console image pull policy
     pullPolicy: "IfNotPresent"
   # -- Web Console resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core
-  resources: {}
+  resources:
+    limits:
+      cpu: 1
+      memory: 128Mi
+    requests:
+      cpu: 10m
+      memory: 32Mi
   # Section to configure Web Console service.
   service:
     # -- When set to `true` the HTTP port will be exposed in the Web Console Service

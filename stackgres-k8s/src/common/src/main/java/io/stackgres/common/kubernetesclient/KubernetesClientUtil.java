@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.stackgres.common.OperatorProperty;
 import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +33,7 @@ public interface KubernetesClientUtil {
         //  message.
         && kce.getMessage().contains("the object has been modified");
     if (isConflict && LOGGER.isTraceEnabled()) {
-      LOGGER.trace("An conflict error occurred", ex);
+      LOGGER.trace("A conflict error occurred", ex);
     }
     return isConflict;
   }
@@ -51,7 +52,10 @@ public interface KubernetesClientUtil {
    * Retry on conflict (409) error with back-off.
    */
   static <T> T retryOnConflict(Supplier<T> supplier) {
-    return retry(supplier, KubernetesClientUtil::isConflict, 10, 600, 10);
+    return retry(supplier, KubernetesClientUtil::isConflict,
+        OperatorProperty.CONFLICT_INITIAL_SLEEP_MILLISECONDS.getIntOrDefault(10),
+        OperatorProperty.CONFLICT_SLEEP_MILLISECONDS.getIntOrDefault(600),
+        OperatorProperty.CONFLICT_MAX_SLEEP_MILLISECONDS.getIntOrDefault(10));
   }
 
   /**
@@ -68,7 +72,10 @@ public interface KubernetesClientUtil {
    * Retry on error.
    */
   static <T> T retryOnError(Supplier<T> supplier, int retryLimit) {
-    return retryWithLimit(supplier, ex -> true, retryLimit, 3000, 30000, 1000);
+    return retryWithLimit(supplier, ex -> true, retryLimit,
+        OperatorProperty.ERROR_INITIAL_SLEEP_MILLISECONDS.getIntOrDefault(3000),
+        OperatorProperty.ERROR_SLEEP_MILLISECONDS.getIntOrDefault(30000),
+        OperatorProperty.ERROR_MAX_SLEEP_MILLISECONDS.getIntOrDefault(1000));
   }
 
   static <I> List<I> listOrEmptyOnForbiddenOrNotFound(Supplier<List<I>> supplier) {

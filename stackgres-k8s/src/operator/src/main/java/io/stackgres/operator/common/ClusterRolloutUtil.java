@@ -171,23 +171,23 @@ public class ClusterRolloutUtil {
         .orElse(false);
   }
 
-  public static class RestartReasons {
-    final Set<RestartReason> reasons = EnumSet.noneOf(RestartReason.class);
+  public static class ClusterRestartReasons {
+    final Set<ClusterRestartReason> reasons = EnumSet.noneOf(ClusterRestartReason.class);
 
-    public static RestartReasons of(RestartReason...reasons) {
-      RestartReasons restartReasons = new RestartReasons();
-      for (RestartReason reason : reasons) {
+    public static ClusterRestartReasons of(ClusterRestartReason...reasons) {
+      ClusterRestartReasons restartReasons = new ClusterRestartReasons();
+      for (ClusterRestartReason reason : reasons) {
         restartReasons.addReason(reason);
       }
       return restartReasons;
     }
 
-    void addReason(RestartReason reason) {
+    void addReason(ClusterRestartReason reason) {
       reasons.add(reason);
     }
 
-    public Set<RestartReason> getReasons() {
-      return Set.of(reasons.toArray(RestartReason[]::new));
+    public Set<ClusterRestartReason> getReasons() {
+      return Set.of(reasons.toArray(ClusterRestartReason[]::new));
     }
 
     public boolean requiresRestart() {
@@ -195,64 +195,155 @@ public class ClusterRolloutUtil {
     }
 
     public boolean requiresUpgrade() {
-      return reasons.contains(RestartReason.UPGRADE);
+      return reasons.contains(ClusterRestartReason.UPGRADE);
     }
   }
 
-  public enum RestartReason {
+  public static class PodRestartReasons {
+    final Set<PodRestartReason> reasons = EnumSet.noneOf(PodRestartReason.class);
+
+    public static PodRestartReasons of(PodRestartReason...reasons) {
+      PodRestartReasons restartReasons = new PodRestartReasons();
+      for (PodRestartReason reason : reasons) {
+        restartReasons.addReason(reason);
+      }
+      return restartReasons;
+    }
+
+    void addReason(PodRestartReason reason) {
+      reasons.add(reason);
+    }
+
+    public Set<PodRestartReason> getReasons() {
+      return Set.of(reasons.toArray(PodRestartReason[]::new));
+    }
+
+    public boolean requiresRestart() {
+      return !reasons.isEmpty();
+    }
+
+  }
+
+  public static class PostgresRestartReasons {
+    final Set<PostgresRestartReason> reasons = EnumSet.noneOf(PostgresRestartReason.class);
+
+    public static PostgresRestartReasons of(PostgresRestartReason...reasons) {
+      PostgresRestartReasons restartReasons = new PostgresRestartReasons();
+      for (PostgresRestartReason reason : reasons) {
+        restartReasons.addReason(reason);
+      }
+      return restartReasons;
+    }
+
+    void addReason(PostgresRestartReason reason) {
+      reasons.add(reason);
+    }
+
+    public Set<PostgresRestartReason> getReasons() {
+      return Set.of(reasons.toArray(PostgresRestartReason[]::new));
+    }
+
+    public boolean requiresRestart() {
+      return !reasons.isEmpty();
+    }
+
+  }
+
+  public enum ClusterRestartReason {
     STATEFULSET,
     PATRONI,
     POD_STATUS,
     UPGRADE;
   }
 
-  public static RestartReasons getRestartReasons(
+  public enum PodRestartReason {
+    STATEFULSET,
+    POD_STATUS;
+  }
+
+  public enum PostgresRestartReason {
+    PATRONI;
+  }
+
+  public static ClusterRestartReasons getClusterRestartReasons(
       StackGresCluster cluster,
       Optional<StatefulSet> statefulSet,
       List<Pod> pods,
       List<PatroniMember> patroniMembers) {
-    final RestartReasons reasons = new RestartReasons();
+    final ClusterRestartReasons reasons = new ClusterRestartReasons();
 
     if (isStatefulSetPendingRestart(statefulSet, pods)) {
-      reasons.addReason(RestartReason.STATEFULSET);
+      reasons.addReason(ClusterRestartReason.STATEFULSET);
     }
 
     if (isPatroniPendingRestart(pods, patroniMembers)) {
-      reasons.addReason(RestartReason.PATRONI);
+      reasons.addReason(ClusterRestartReason.PATRONI);
     }
 
     if (isAnyPodPendingRestart(cluster, pods)) {
-      reasons.addReason(RestartReason.POD_STATUS);
+      reasons.addReason(ClusterRestartReason.POD_STATUS);
     }
 
     if (isPendingUpgrade(cluster)) {
-      reasons.addReason(RestartReason.UPGRADE);
+      reasons.addReason(ClusterRestartReason.UPGRADE);
     }
 
     return reasons;
   }
 
-  public static RestartReasons getRestartReasons(
+  public static PodRestartReasons getPodsRestartReasons(
       StackGresCluster cluster,
-      Optional<StatefulSet> clusterStatefulSet,
-      Pod pod,
-      List<PatroniMember> patroniMembers) {
-    final RestartReasons reasons = new RestartReasons();
+      Optional<StatefulSet> statefulSet,
+      List<Pod> pods) {
+    final PodRestartReasons reasons = new PodRestartReasons();
 
-    if (isStatefulSetPodPendingRestart(clusterStatefulSet, pod)) {
-      reasons.addReason(RestartReason.STATEFULSET);
+    if (isStatefulSetPendingRestart(statefulSet, pods)) {
+      reasons.addReason(PodRestartReason.STATEFULSET);
     }
 
-    if (isPatroniPendingRestart(pod, patroniMembers)) {
-      reasons.addReason(RestartReason.PATRONI);
+    if (isAnyPodPendingRestart(cluster, pods)) {
+      reasons.addReason(PodRestartReason.POD_STATUS);
+    }
+
+    return reasons;
+  }
+
+  public static PodRestartReasons getPodRestartReasons(
+      StackGresCluster cluster,
+      Optional<StatefulSet> clusterStatefulSet,
+      Pod pod) {
+    final PodRestartReasons reasons = new PodRestartReasons();
+
+    if (isStatefulSetPodPendingRestart(clusterStatefulSet, pod)) {
+      reasons.addReason(PodRestartReason.STATEFULSET);
     }
 
     if (isPodPendingRestart(cluster, pod)) {
-      reasons.addReason(RestartReason.POD_STATUS);
+      reasons.addReason(PodRestartReason.POD_STATUS);
     }
 
-    if (isPendingUpgrade(cluster)) {
-      reasons.addReason(RestartReason.UPGRADE);
+    return reasons;
+  }
+
+  public static PostgresRestartReasons getPostgresRestartReasons(
+      List<Pod> pods,
+      List<PatroniMember> patroniMembers) {
+    final PostgresRestartReasons reasons = new PostgresRestartReasons();
+
+    if (isPatroniPendingRestart(pods, patroniMembers)) {
+      reasons.addReason(PostgresRestartReason.PATRONI);
+    }
+
+    return reasons;
+  }
+
+  public static PostgresRestartReasons getPostgresRestartReasons(
+      Pod pod,
+      List<PatroniMember> patroniMembers) {
+    final PostgresRestartReasons reasons = new PostgresRestartReasons();
+
+    if (isPatroniPendingRestart(pod, patroniMembers)) {
+      reasons.addReason(PostgresRestartReason.PATRONI);
     }
 
     return reasons;

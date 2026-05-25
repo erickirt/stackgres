@@ -5,12 +5,15 @@
 
 package io.stackgres.apiweb.rest.auth;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -30,6 +33,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.stackgres.apiweb.app.KubernetesClientProvider;
+import io.stackgres.apiweb.configuration.WebApiProperty;
 import io.stackgres.apiweb.dto.PermissionsListDto;
 import io.stackgres.apiweb.exception.ErrorResponse;
 import io.stackgres.apiweb.rest.misc.NamespaceResource;
@@ -92,6 +96,8 @@ public class RbacResource {
 
   private static final List<String> NAMESPACED_RESOURCES = getResourcesNamespaced();
   private static final List<String> UNNAMESPACED_RESOURCES = getResourcesUnnamespaced();
+  
+  private static final Cache<String, PermissionsListDto> CACHE = createCache();
 
   private final boolean clusterRoleDisabled = OperatorProperty.CLUSTER_ROLE_DISABLED.getBoolean();
 
@@ -160,6 +166,19 @@ public class RbacResource {
     }
   }
 
+  private static Cache<String, PermissionsListDto> createCache() {
+    var cacheBuilder = Caffeine.newBuilder();
+    WebApiProperty.CAN_I_CACHE_EXPIRATION.get()
+        .map(Integer::valueOf)
+        .or(() -> Optional.of(300))
+        .ifPresent(duration -> cacheBuilder.expireAfterWrite(Duration.ofSeconds(duration)));
+    WebApiProperty.CAN_I_CACHE_SIZE.get()
+        .map(Integer::valueOf)
+        .or(() -> Optional.of(512))
+        .ifPresent(size -> cacheBuilder.maximumSize(size));
+    return cacheBuilder.build();
+  }
+
   @APIResponse(responseCode = "200", description = "OK",
       content = {@Content(
             mediaType = "application/json",
@@ -180,10 +199,16 @@ public class RbacResource {
     } else {
       LOGGER.debug("User to review access {}", impersonated);
     }
+    PermissionsListDto result = CACHE.getIfPresent(impersonated);
+    if (result != null) {
+      return result;
+    }
     try (KubernetesClient client = kubernetesClientProvider.createDefault()) {
-      return new PermissionsListDto(
+      result = new PermissionsListDto(
           buildUnnamespacedPermissionList(client, impersonated),
           buildNamespacedPermissionList(client, impersonated));
+      CACHE.put(impersonated, result);
+      return result;
     }
   }
 

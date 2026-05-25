@@ -63,13 +63,13 @@ set_up_private_repository() {
       fi
     done
 
-    docker push "$PRIVATE_OPERATOR_IMAGE_NAME"
-    docker push "$PRIVATE_RESTAPI_IMAGE_NAME"
-    docker push "$PRIVATE_JOBS_IMAGE_NAME"
-    docker push "$PRIVATE_ADMINUI_IMAGE_NAME"  
-    docker push "$PRIVATE_CLUSTER_CONTROLLER_IMAGE_NAME"
-    docker push "$PRIVATE_DISTRIBUTEDLOGS_CONTROLLER_IMAGE_NAME"
-    docker push "$PRIVATE_STREAM_IMAGE_NAME"
+    docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$PRIVATE_OPERATOR_IMAGE_NAME"
+    docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$PRIVATE_RESTAPI_IMAGE_NAME"
+    docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$PRIVATE_JOBS_IMAGE_NAME"
+    docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$PRIVATE_ADMINUI_IMAGE_NAME"  
+    docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$PRIVATE_CLUSTER_CONTROLLER_IMAGE_NAME"
+    docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$PRIVATE_DISTRIBUTEDLOGS_CONTROLLER_IMAGE_NAME"
+    docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" "$PRIVATE_STREAM_IMAGE_NAME"
   fi
 
   if kubectl get namespace "$OPERATOR_NAMESPACE" > /dev/null 2>&1
@@ -281,7 +281,7 @@ docker_pull() {
 
 docker_push() {
   local IMAGE_NAME="$1"
-  docker push -q "$IMAGE_NAME"
+  docker push --platform=linux/"$(uname -m | grep -qxF aarch64 && printf arm64 || printf amd64)" -q "$IMAGE_NAME"
 }
 
 docker_tag() {

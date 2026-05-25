@@ -982,6 +982,8 @@ spec:
                         type: boolean
                         description: |
                           When `true` disable import of DDL and tables will be created on demand by Debezium.
+
+                          > **IMPORTANT**: DDL import is only supported when the source is an SGCluster.
                       ddlImportRoleSkipFilter:
                         type: string
                         description: |

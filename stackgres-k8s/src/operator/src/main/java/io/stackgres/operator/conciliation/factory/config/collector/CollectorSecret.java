@@ -21,6 +21,7 @@ import io.stackgres.common.ConfigPath;
 import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgconfig.StackGresConfigCert;
+import io.stackgres.common.crd.sgconfig.StackGresConfigCollector;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeploy;
 import io.stackgres.common.crd.sgconfig.StackGresConfigSpec;
 import io.stackgres.common.labels.LabelFactoryForConfig;
@@ -68,7 +69,10 @@ public class CollectorSecret
         .map(StackGresConfigSpec::getCert)
         .map(StackGresConfigCert::getCreateForCollector)
         .orElse(true)
-        || context.getObservedClusters().isEmpty()) {
+        || (context.getObservedClusters().isEmpty()
+            && !Optional.ofNullable(context.getSource().getSpec().getCollector())
+            .map(StackGresConfigCollector::getAlwaysEnabled)
+            .orElse(false))) {
       return Stream.of();
     }
 

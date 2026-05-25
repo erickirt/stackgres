@@ -74,6 +74,16 @@ public interface StackGresPropertyReader {
 
   /**
    * Return first existing value of associated system property, environment variable or application
+   * property (in this exact sequence). Otherwise return the specified default value.
+   */
+  default int getIntOrDefault(int defaultValue) {
+    return get()
+        .map(Integer::parseInt)
+        .orElse(defaultValue);
+  }
+
+  /**
+   * Return first existing value of associated system property, environment variable or application
    * property (in this exact sequence) as an array by splitting string using comma character ",". If
    * the value is empty it returns the an empty array. Otherwise throw a {@code RuntimeException}.
    */
