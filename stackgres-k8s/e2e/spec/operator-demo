@@ -52,7 +52,7 @@ test_yamls() {
     | sed "s/{\(\"name\":\"stackgres\/restapi\",[^}]\+\)\"tag\":\"[^\"]\+\"}/{\1\"tag\":\"$IMAGE_TAG\"}/" \
     | sed "s/{\(\"name\":\"stackgres\/admin-ui\",[^}]\+\)\"tag\":\"[^\"]\+\"}/{\1\"tag\":\"$ADMINUI_IMAGE_TAG\"}/" \
     | sed "s/\"pullPolicy\":\"[^\"]\+\"/\"pullPolicy\":\"$E2E_OPERATOR_PULL_POLICY\"/g" \
-    | sed '/image: \([^/]\+\/\)\?ongres\/.*$/{$!{N;s/image: \([^/]\+\/\)\?\(ongres\/.*\)\n\( *\)imagePullPolicy: .*$/image: \2\n\3imagePullPolicy: IfNotPresent/;ty;P;D;:y}}' \
+    | sed '/image: \([^/]\+\/\)\?ongres\/.*$/{$!{N;s/image: \(\([^/]\+\/\)\?ongres\/.*\)\n\( *\)imagePullPolicy: .*$/image: \1\n\3imagePullPolicy: IfNotPresent/;ty;P;D;:y}}' \
     | if grep -q 'http%3A%2F%2Fstackgres-operator-extensions-cache\.stackgres%3FsetHttpScheme%3Dtrue' "${STACKGRES_YAMLS}/stackgres-operator-demo.yml"
       then
         sed "s|value: \"https://extensions.stackgres.io/postgres/repository?|value: \"$ESCAPED_EXTENSIONS_REPOSITORY_URL$(
