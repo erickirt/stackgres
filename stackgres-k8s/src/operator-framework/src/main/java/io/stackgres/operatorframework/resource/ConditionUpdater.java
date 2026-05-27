@@ -7,22 +7,41 @@ package io.stackgres.operatorframework.resource;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
-public abstract class ConditionUpdater<T, C extends Condition> {
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+
+public abstract class ConditionUpdater<T extends HasMetadata, C extends Condition> {
 
   public void updateCondition(C condition, T context) {
-    Instant now = Instant.now();
+    condition.setObservedGeneration(Optional.ofNullable(context.getMetadata())
+        .map(ObjectMeta::getGeneration)
+        .orElse(null));
 
-    condition.setLastTransitionTime(now.toString());
+    Optional<C> existing = getConditions(context).stream()
+        .filter(c -> Objects.equals(c.getType(), condition.getType()))
+        .findFirst();
 
-    if (getConditions(context).stream()
-        .anyMatch(c -> c.getType().equals(condition.getType())
-            && c.getStatus().equals(condition.getStatus()))) {
-      return;
+    if (existing.isPresent()
+        && Objects.equals(existing.get().getStatus(), condition.getStatus())) {
+      // The status did not change: keep the transition time (Kubernetes semantics) and only
+      // replace the condition when its reason, message or observed generation changed.
+      condition.setLastTransitionTime(Optional.ofNullable(existing.get().getLastTransitionTime())
+          .orElseGet(() -> Instant.now().toString()));
+      if (Objects.equals(existing.get().getReason(), condition.getReason())
+          && Objects.equals(existing.get().getMessage(), condition.getMessage())
+          && Objects.equals(existing.get().getObservedGeneration(),
+              condition.getObservedGeneration())) {
+        return;
+      }
+    } else {
+      condition.setLastTransitionTime(Instant.now().toString());
     }
 
-    // copy list of current conditions
+    // copy list of current conditions removing the one being replaced
     List<C> copyList =
         getConditions(context).stream()
             .filter(c -> !condition.getType().equals(c.getType()))

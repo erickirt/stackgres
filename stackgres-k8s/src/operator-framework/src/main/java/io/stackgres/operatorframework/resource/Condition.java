@@ -31,6 +31,19 @@ public interface Condition {
 
   void setType(String type);
 
+  /**
+   * The {@code .metadata.generation} of the resource that this condition was computed against.
+   * Conditions backed by a CRD status override these to persist the value; other implementations
+   * (e.g. REST DTOs) keep the default no-op behavior.
+   */
+  default Long getObservedGeneration() {
+    return null;
+  }
+
+  default void setObservedGeneration(Long observedGeneration) {
+    // no-op by default
+  }
+
   static void setTransitionTimes(List<? extends Condition> conditions) {
     String currentDateTime = DateTimeFormatter.ISO_INSTANT.format(Instant.now());
     conditions.forEach(condition -> condition.setLastTransitionTime(currentDateTime));
