@@ -262,7 +262,7 @@ EOF
     if ! retry kubectl get "$BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$BACKUP_NAME" --template="{{ .status.process.status }}" \
       | grep -q "^$BACKUP_PHASE_COMPLETED$"
     then
-      DRY_RUN_CLIENT=$(kubectl version --client=true -o json | jq -r 'if (.clientVersion.minor | tonumber) < 18 then "true" else "client" end')
+      DRY_RUN_CLIENT=$(kubectl version --client=true -o json | jq -r 'if (.clientVersion.minor | sub("[^0-9].*$";"") | tonumber) < 18 then "true" else "client" end')
       echo "Updating backup CR"
       retry kubectl get "$BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$BACKUP_NAME" -o yaml > /tmp/backup-found
       {
