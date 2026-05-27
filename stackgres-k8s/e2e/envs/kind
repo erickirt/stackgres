@@ -575,6 +575,50 @@ has_image_k8s() {
   return 1
 }
 
+# With Docker's containerd image store enabled, `docker inspect .ID` on a
+# multi-platform image returns the OCI index / Docker manifest list digest,
+# while `crictl inspecti` inside kind reports the host-platform config digest.
+# Walk the local index -> host-platform manifest -> `.config.digest` so callers
+# can compare apples to apples. Echoes the resolved digest or nothing.
+host_platform_config_digest() {
+  local IMAGE_NAME="$1"
+  local INDEX_DIGEST="${2#sha256:}"
+  [ -n "$INDEX_DIGEST" ] || return
+  local ARCHIVE
+  ARCHIVE="$(mktemp)"
+  # Use a plain `docker save` (no --platform) so this works against older
+  # Docker CLIs too; the archive is daemon-produced and exposes the OCI index
+  # / Docker manifest list as a blob even when the image is multi-platform.
+  if ! docker save -o "$ARCHIVE" "$IMAGE_NAME" >/dev/null 2>&1
+  then
+    rm -f "$ARCHIVE"
+    return
+  fi
+  local INDEX_MT
+  INDEX_MT="$(tar -xOf "$ARCHIVE" index.json 2>/dev/null | jq -r '.manifests[0].mediaType // empty')"
+  case "$INDEX_MT" in
+    application/vnd.oci.image.index.v1+json|application/vnd.docker.distribution.manifest.list.v2+json) ;;
+    *)
+      rm -f "$ARCHIVE"
+      return
+      ;;
+  esac
+  local HOST_OS HOST_ARCH CHILD_DIGEST CONFIG_DIGEST
+  HOST_OS="$(docker version --format '{{ .Server.Os }}')"
+  HOST_ARCH="$(docker version --format '{{ .Server.Arch }}')"
+  CHILD_DIGEST="$(tar -xOf "$ARCHIVE" "blobs/sha256/$INDEX_DIGEST" 2>/dev/null \
+    | jq -r --arg os "$HOST_OS" --arg arch "$HOST_ARCH" \
+        '(.manifests // [])[] | select(.platform.os == $os and .platform.architecture == $arch) | .digest' \
+    | grep -v '^$' | head -n 1)"
+  if [ -n "$CHILD_DIGEST" ]
+  then
+    CONFIG_DIGEST="$(tar -xOf "$ARCHIVE" "blobs/sha256/${CHILD_DIGEST#sha256:}" 2>/dev/null \
+      | jq -r '.config.digest // empty')"
+  fi
+  rm -f "$ARCHIVE"
+  [ -n "$CONFIG_DIGEST" ] && printf '%s' "$CONFIG_DIGEST"
+}
+
 load_image_k8s() {
   check_kind_version
 
@@ -586,6 +630,12 @@ load_image_k8s() {
   then
     echo "Image $1 already loaded in kind environemnt $KIND_NAME"
     return
+  fi
+  if [ "$IMAGE_ID" != unknown ] && [ "$IMAGE_ID" != "$KIND_IMAGE_ID" ]
+  then
+    local RESOLVED_IMAGE_ID
+    RESOLVED_IMAGE_ID="$(host_platform_config_digest "$1" "$IMAGE_ID")"
+    [ -n "$RESOLVED_IMAGE_ID" ] && IMAGE_ID="$RESOLVED_IMAGE_ID"
   fi
   if [ "$KIND_IMAGE_ID" = "$IMAGE_ID" ] && [ "$IMAGE_ID" != unknown ]
   then
@@ -647,6 +697,12 @@ pull_image_k8s() {
   then
     echo "Image $1 already loaded in kind environemnt $KIND_NAME"
     return
+  fi
+  if [ "$IMAGE_ID" != unknown ] && [ "$IMAGE_ID" != "$KIND_IMAGE_ID" ]
+  then
+    local RESOLVED_IMAGE_ID
+    RESOLVED_IMAGE_ID="$(host_platform_config_digest "$1" "$IMAGE_ID")"
+    [ -n "$RESOLVED_IMAGE_ID" ] && IMAGE_ID="$RESOLVED_IMAGE_ID"
   fi
   if [ "$KIND_IMAGE_ID" = "$IMAGE_ID" ] && [ "$IMAGE_ID" != unknown ]
   then
