@@ -24,6 +24,8 @@ public class DbOpsCondition implements Condition {
 
   private String type;
 
+  private Long observedGeneration;
+
   /**
    * Constructor of the required fields.
    *
@@ -88,6 +90,16 @@ public class DbOpsCondition implements Condition {
   @Override
   public void setType(String type) {
     this.type = type;
+  }
+
+  @Override
+  public Long getObservedGeneration() {
+    return observedGeneration;
+  }
+
+  @Override
+  public void setObservedGeneration(Long observedGeneration) {
+    this.observedGeneration = observedGeneration;
   }
 
   @Override

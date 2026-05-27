@@ -2445,6 +2445,10 @@ spec:
                     lastTransitionTime:
                       description: Last time the condition transitioned from one status to another.
                       type: string
+                    observedGeneration:
+                      description: The .metadata.generation the condition was computed against.
+                      type: integer
+                      format: int64
                     message:
                       description: A human readable message indicating details about the transition.
                       type: string

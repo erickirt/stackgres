@@ -16,10 +16,17 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 
 public abstract class ConditionUpdater<T extends HasMetadata, C extends Condition> {
 
+  public static final int MAX_MESSAGE_LENGTH = 4096;
+
   public void updateCondition(C condition, T context) {
     condition.setObservedGeneration(Optional.ofNullable(context.getMetadata())
         .map(ObjectMeta::getGeneration)
         .orElse(null));
+
+    if (condition.getMessage() != null
+        && condition.getMessage().length() > MAX_MESSAGE_LENGTH) {
+      condition.setMessage(condition.getMessage().substring(0, MAX_MESSAGE_LENGTH));
+    }
 
     Optional<C> existing = getConditions(context).stream()
         .filter(c -> Objects.equals(c.getType(), condition.getType()))
