@@ -2467,6 +2467,16 @@ spec:
               buildVersion:
                 type: string
                 description: The Postgres build version used to generate the SGCluster's Pods
+              latestPostgresMinor:
+                type: string
+                description: |
+                  The latest available Postgres minor version for the major version in use, set
+                  only when it does not match the Postgres version in use.
+              latestPostgresMajor:
+                type: string
+                description: |
+                  The latest available Postgres version when a newer major version is available,
+                  set only when the major version in use is not the latest one.
               extensions:
                 type: array
                 description: |
@@ -2501,6 +2511,12 @@ spec:
                       items:
                         type: string
                         description: The extra mount of the installed extension.
+                    latest:
+                      type: string
+                      description: |
+                        The latest available version of the extension, set only when it does not
+                        match the version requested in `.spec.postgres.extensions[]` for the
+                        extension entry with the same name, publisher and repository.
               sgPostgresConfig:
                 type: string
                 description: The Postgres configuration that is being used by the SGCluster's Pods

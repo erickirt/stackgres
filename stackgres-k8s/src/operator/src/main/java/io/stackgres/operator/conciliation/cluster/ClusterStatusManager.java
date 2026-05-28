@@ -5,6 +5,7 @@
 
 package io.stackgres.operator.conciliation.cluster;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -181,6 +182,7 @@ public class ClusterStatusManager
           .map(t -> t.map2(Optional::get))
           .forEach(t -> t.v1.setBuild(t.v2.getBuild()));
     }
+    refreshComponentsUpdated(source);
     source.getStatus().setInstances(context.pods().size());
     source.getStatus().setLabelSelector(labelFactory.clusterLabels(source)
         .entrySet()
@@ -188,6 +190,139 @@ public class ClusterStatusManager
         .map(e -> e.getKey() + "=" + e.getValue())
         .collect(Collectors.joining(",")));
     return source;
+  }
+
+  /**
+   * Advertise the availability of newer PostgreSQL minor/major versions and extension upgrades in
+   * the {@code ComponentsUpdated} condition.
+   *
+   * <p>The condition status is {@code True} only when the latest minor version of the PostgreSQL
+   * major in use is used, independently of the major; when a newer minor is available it is
+   * {@code False}. A newer major appends {@code -NotLatestMajor} and extension upgrades append
+   * {@code -AvailableExtensionsUpgrade} to the reason without changing the status. The reason is a
+   * fixed {@link ClusterStatusCondition} entry per combination ({@code UpToDate} when the latest
+   * minor is used with no newer major nor extension upgrades); the actual versions and the number of
+   * extensions to upgrade are advertised in the message (limited to
+   * {@value io.stackgres.operatorframework.resource.ConditionUpdater#MAX_MESSAGE_LENGTH} chars).
+   */
+  private void refreshComponentsUpdated(StackGresCluster source) {
+    final String usedVersion = Optional.of(source)
+        .map(StackGresCluster::getStatus)
+        .map(StackGresClusterStatus::getPostgresVersion)
+        .orElse(null);
+    if (usedVersion == null) {
+      return;
+    }
+    final String latestMinor = source.getStatus().getLatestPostgresMinor();
+    final String latestMajor = source.getStatus().getLatestPostgresMajor();
+    final List<ExtensionUpgrade> extensionUpgrades = getExtensionUpgrades(source);
+
+    final boolean isLatestMinor = latestMinor == null;
+    final boolean newMajorAvailable = latestMajor != null;
+
+    final StringBuilder message = new StringBuilder();
+    if (isLatestMinor) {
+      message.append("PostgreSQL ").append(usedVersion)
+          .append(" is the latest minor version for major ").append(majorOf(usedVersion))
+          .append('.');
+    } else {
+      message.append("PostgreSQL ").append(usedVersion)
+          .append(" is not the latest minor version for major ").append(majorOf(usedVersion))
+          .append(" (latest is ").append(latestMinor).append(").");
+    }
+    if (newMajorAvailable) {
+      message.append(" A newer major version ").append(latestMajor).append(" is available.");
+    }
+    if (!extensionUpgrades.isEmpty()) {
+      appendExtensionUpgradesMessage(message, extensionUpgrades);
+    }
+
+    Condition condition = getComponentsUpdatedCondition(
+        isLatestMinor, newMajorAvailable, !extensionUpgrades.isEmpty()).getCondition();
+    condition.setMessage(message.toString());
+    updateCondition(condition, source);
+  }
+
+  private static String majorOf(String version) {
+    int indexOfSeparator = version.indexOf('.');
+    return indexOfSeparator > 0 ? version.substring(0, indexOfSeparator) : version;
+  }
+
+  /**
+   * Select the fixed {@link ClusterStatusCondition} reason for every combination of the latest minor
+   * in use, a newer major available and extension upgrades available.
+   */
+  private static ClusterStatusCondition getComponentsUpdatedCondition(
+      boolean isLatestMinor, boolean newMajorAvailable, boolean extensionUpgrades) {
+    if (isLatestMinor) {
+      if (newMajorAvailable && extensionUpgrades) {
+        return ClusterStatusCondition
+            .COMPONENTS_LATEST_MINOR_NOT_LATEST_MAJOR_AVAILABLE_EXTENSIONS_UPGRADE;
+      }
+      if (newMajorAvailable) {
+        return ClusterStatusCondition.COMPONENTS_LATEST_MINOR_NOT_LATEST_MAJOR;
+      }
+      if (extensionUpgrades) {
+        return ClusterStatusCondition.COMPONENTS_LATEST_MINOR_AVAILABLE_EXTENSIONS_UPGRADE;
+      }
+      return ClusterStatusCondition.COMPONENTS_UP_TO_DATE;
+    }
+    if (newMajorAvailable && extensionUpgrades) {
+      return ClusterStatusCondition
+          .COMPONENTS_NOT_LATEST_MINOR_NOT_LATEST_MAJOR_AVAILABLE_EXTENSIONS_UPGRADE;
+    }
+    if (newMajorAvailable) {
+      return ClusterStatusCondition.COMPONENTS_NOT_LATEST_MINOR_NOT_LATEST_MAJOR;
+    }
+    if (extensionUpgrades) {
+      return ClusterStatusCondition.COMPONENTS_NOT_LATEST_MINOR_AVAILABLE_EXTENSIONS_UPGRADE;
+    }
+    return ClusterStatusCondition.COMPONENTS_NOT_LATEST_MINOR;
+  }
+
+  /**
+   * Collect the extensions that have a newer version available, as advertised by
+   * {@code .status.extensions[].latest} (computed by {@code ClusterExtensionsContextAppender} by
+   * comparing against the version requested in {@code .spec.postgres.extensions[]}).
+   */
+  private List<ExtensionUpgrade> getExtensionUpgrades(StackGresCluster cluster) {
+    return Optional.of(cluster)
+        .map(StackGresCluster::getStatus)
+        .map(StackGresClusterStatus::getExtensions)
+        .orElse(List.of())
+        .stream()
+        .filter(installedExtension -> installedExtension.getLatest() != null)
+        .map(installedExtension -> new ExtensionUpgrade(
+            installedExtension.getName(),
+            installedExtension.getVersion(),
+            installedExtension.getLatest()))
+        .sorted(Comparator.comparing(ExtensionUpgrade::name))
+        .toList();
+  }
+
+  /**
+   * Append the number and list of extensions to upgrade to the message, stopping before the message
+   * would exceed {@value io.stackgres.operatorframework.resource.ConditionUpdater#MAX_MESSAGE_LENGTH}
+   * characters and indicating how many were omitted.
+   */
+  private void appendExtensionUpgradesMessage(
+      StringBuilder message, List<ExtensionUpgrade> upgrades) {
+    message.append(" The following").append(upgrades.size())
+        .append(upgrades.size() == 1 ? " extension can be upgraded: " : " extensions can be"
+            + " upgraded: ");
+    int shown = 0;
+    for (ExtensionUpgrade upgrade : upgrades) {
+      final String item = (shown == 0 ? "" : ", ")
+          + upgrade.name() + " (" + upgrade.from() + "->" + upgrade.to() + ")";
+      final String remainingSuffix = " and " + (upgrades.size() - shown) + " more.";
+      if (message.length() + item.length() + remainingSuffix.length() > MAX_MESSAGE_LENGTH) {
+        message.append(remainingSuffix);
+        return;
+      }
+      message.append(item);
+      shown++;
+    }
+    message.append('.');
   }
 
   /**
@@ -278,6 +413,9 @@ public class ClusterStatusManager
       Optional<StatefulSet> statefulSet,
       List<Pod> pods,
       List<PatroniMember> patroniMembers) {
+  }
+
+  record ExtensionUpgrade(String name, String from, String to) {
   }
 
 }

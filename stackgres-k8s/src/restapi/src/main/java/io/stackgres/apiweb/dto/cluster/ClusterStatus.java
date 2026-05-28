@@ -21,6 +21,10 @@ public class ClusterStatus {
 
   private String buildVersion;
 
+  private String latestPostgresMinor;
+
+  private String latestPostgresMajor;
+
   private List<ClusterInstalledExtension> extensions;
 
   private String sgPostgresConfig;
@@ -64,6 +68,22 @@ public class ClusterStatus {
 
   public void setBuildVersion(String buildVersion) {
     this.buildVersion = buildVersion;
+  }
+
+  public String getLatestPostgresMinor() {
+    return latestPostgresMinor;
+  }
+
+  public void setLatestPostgresMinor(String latestPostgresMinor) {
+    this.latestPostgresMinor = latestPostgresMinor;
+  }
+
+  public String getLatestPostgresMajor() {
+    return latestPostgresMajor;
+  }
+
+  public void setLatestPostgresMajor(String latestPostgresMajor) {
+    this.latestPostgresMajor = latestPostgresMajor;
   }
 
   public List<ClusterInstalledExtension> getExtensions() {

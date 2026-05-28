@@ -18,6 +18,7 @@ import io.stackgres.common.StackGresComponent;
 import io.stackgres.common.StackGresContext;
 import io.stackgres.common.StackGresProperty;
 import io.stackgres.common.StackGresVersion;
+import io.stackgres.common.component.Component;
 import io.stackgres.common.crd.sgcluster.ClusterEventReason;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPostgres;
@@ -228,6 +229,7 @@ public class ClusterPostgresVersionContextAppender
     if (version != null && buildVersion != null) {
       cluster.getStatus().setPostgresVersion(version);
       cluster.getStatus().setBuildVersion(buildVersion);
+      setLatestPostgresVersions(cluster, version);
       clusterPostgresConfigContextAppender.appendContext(cluster, contextBuilder, version);
       clusterDefaultBackupPathContextAppender.appendContext(cluster, contextBuilder, version);
       clusterRestoreBackupContextAppender.appendContext(cluster, contextBuilder, version);
@@ -240,6 +242,23 @@ public class ClusterPostgresVersionContextAppender
         || (buildVersion == null && previousBuildVersion.isEmpty())) {
       throw new IllegalArgumentException("Can not determine the Postgres version to use");
     }
+  }
+
+  /**
+   * Advertise in the status the latest available Postgres minor version for the major in use and,
+   * when a newer major exists, the latest available version. Each field is only set when it differs
+   * from the version/major in use so {@code ClusterStatusManager} can build the
+   * {@code ComponentsUpdated} condition straight from the status.
+   */
+  private void setLatestPostgresVersions(StackGresCluster cluster, String version) {
+    final Component postgres = getPostgresFlavorComponent(cluster).get(cluster);
+    final String usedMajor = postgres.getMajorVersion(version);
+    final String latestMinorForMajor = postgres.getVersion(usedMajor);
+    final String latestMajor = postgres.getLatestMajorVersion();
+    cluster.getStatus().setLatestPostgresMinor(
+        Objects.equals(version, latestMinorForMajor) ? null : latestMinorForMajor);
+    cluster.getStatus().setLatestPostgresMajor(
+        Objects.equals(usedMajor, latestMajor) ? null : postgres.getLatestVersion());
   }
 
   private boolean isPostgresVersionSupported(StackGresCluster cluster, String version) {

@@ -42,6 +42,8 @@ public class StackGresClusterInstalledExtension {
 
   private List<String> extraMounts;
 
+  private String latest;
+
   public String getName() {
     return name;
   }
@@ -96,6 +98,14 @@ public class StackGresClusterInstalledExtension {
 
   public void setExtraMounts(List<String> extraMounts) {
     this.extraMounts = extraMounts;
+  }
+
+  public String getLatest() {
+    return latest;
+  }
+
+  public void setLatest(String latest) {
+    this.latest = latest;
   }
 
   @Override

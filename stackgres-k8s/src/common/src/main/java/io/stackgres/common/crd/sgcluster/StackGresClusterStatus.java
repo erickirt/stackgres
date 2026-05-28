@@ -30,6 +30,10 @@ public class StackGresClusterStatus {
 
   private String buildVersion;
 
+  private String latestPostgresMinor;
+
+  private String latestPostgresMajor;
+
   private List<StackGresClusterInstalledExtension> extensions;
 
   private String sgPostgresConfig;
@@ -77,6 +81,22 @@ public class StackGresClusterStatus {
 
   public void setBuildVersion(String buildVersion) {
     this.buildVersion = buildVersion;
+  }
+
+  public String getLatestPostgresMinor() {
+    return latestPostgresMinor;
+  }
+
+  public void setLatestPostgresMinor(String latestPostgresMinor) {
+    this.latestPostgresMinor = latestPostgresMinor;
+  }
+
+  public String getLatestPostgresMajor() {
+    return latestPostgresMajor;
+  }
+
+  public void setLatestPostgresMajor(String latestPostgresMajor) {
+    this.latestPostgresMajor = latestPostgresMajor;
   }
 
   public List<StackGresClusterInstalledExtension> getExtensions() {
@@ -194,7 +214,8 @@ public class StackGresClusterStatus {
   @Override
   public int hashCode() {
     return Objects.hash(arch, backupPaths, binding, buildVersion, conditions, dbOps, extensions,
-        instances, labelPrefix, labelSelector, managedSql, os, podStatuses, postgresVersion,
+        instances, labelPrefix, labelSelector, latestPostgresMajor, latestPostgresMinor, managedSql,
+        os, podStatuses, postgresVersion,
         replicationInitializationFailedSgBackup, sgPostgresConfig);
   }
 
@@ -215,6 +236,8 @@ public class StackGresClusterStatus {
         && Objects.equals(instances, other.instances)
         && Objects.equals(labelPrefix, other.labelPrefix)
         && Objects.equals(labelSelector, other.labelSelector)
+        && Objects.equals(latestPostgresMajor, other.latestPostgresMajor)
+        && Objects.equals(latestPostgresMinor, other.latestPostgresMinor)
         && Objects.equals(managedSql, other.managedSql) && Objects.equals(os, other.os)
         && Objects.equals(podStatuses, other.podStatuses)
         && Objects.equals(postgresVersion, other.postgresVersion)
