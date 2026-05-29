@@ -19,10 +19,6 @@ public abstract class ConditionUpdater<T extends HasMetadata, C extends Conditio
   public static final int MAX_MESSAGE_LENGTH = 4096;
 
   public void updateCondition(C condition, T context) {
-    condition.setObservedGeneration(Optional.ofNullable(context.getMetadata())
-        .map(ObjectMeta::getGeneration)
-        .orElse(null));
-
     if (condition.getMessage() != null
         && condition.getMessage().length() > MAX_MESSAGE_LENGTH) {
       condition.setMessage(condition.getMessage().substring(0, MAX_MESSAGE_LENGTH));
@@ -34,19 +30,28 @@ public abstract class ConditionUpdater<T extends HasMetadata, C extends Conditio
 
     if (existing.isPresent()
         && Objects.equals(existing.get().getStatus(), condition.getStatus())) {
-      // The status did not change: keep the transition time (Kubernetes semantics) and only
-      // replace the condition when its reason, message or observed generation changed.
+      // The status did not change: this is not a transition, so keep the transition time
+      // (Kubernetes semantics).
       condition.setLastTransitionTime(Optional.ofNullable(existing.get().getLastTransitionTime())
           .orElseGet(() -> Instant.now().toString()));
       if (Objects.equals(existing.get().getReason(), condition.getReason())
-          && Objects.equals(existing.get().getMessage(), condition.getMessage())
-          && Objects.equals(existing.get().getObservedGeneration(),
-              condition.getObservedGeneration())) {
+          && Objects.equals(existing.get().getMessage(), condition.getMessage())) {
+        // Nothing changed: preserve the observed generation and skip the write. Updating the
+        // observed generation here would bump metadata.generation on resources without a status
+        // subresource, causing an endless reconciliation loop.
+        condition.setObservedGeneration(existing.get().getObservedGeneration());
         return;
       }
     } else {
+      // The status changed (or the condition is new): record the transition time.
       condition.setLastTransitionTime(Instant.now().toString());
     }
+
+    // A transition, reason or message change is being persisted: record the generation observed
+    // for this change.
+    condition.setObservedGeneration(Optional.ofNullable(context.getMetadata())
+        .map(ObjectMeta::getGeneration)
+        .orElse(null));
 
     // copy list of current conditions removing the one being replaced
     List<C> copyList =
