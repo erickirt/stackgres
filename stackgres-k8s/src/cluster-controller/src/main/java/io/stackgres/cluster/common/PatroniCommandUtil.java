@@ -24,10 +24,10 @@ public interface PatroniCommandUtil {
 
   static void reloadPatroniConfig(WebClientFactory webClientFactory, Credentials credentials) {
     final URI uri = URI.create("http://localhost:" + EnvoyUtil.PATRONI_PORT + "/reload");
-    try (var webClient = webClientFactory.create(uri, Map.of(
-        "username", credentials.username,
-        "password", credentials.password))) {
-      int status = webClient.get(uri).getStatus();
+    try (var webClient = webClientFactory.create(uri, Map.ofEntries(
+        webClientFactory.createBasicAuthorizationHeader(
+            credentials.username, credentials.password)))) {
+      int status = webClient.postJson(uri, null).getStatus();
       if (status >= 300) {
         throw new RuntimeException("Can not reload patroni configuration."
             + " Endpoint /reload returned HTTP status " + status);
