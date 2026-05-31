@@ -12,13 +12,20 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 
 public abstract class ConditionUpdater<T extends HasMetadata, C extends Condition> {
 
   public static final int MAX_MESSAGE_LENGTH = 4096;
 
   public void updateCondition(C condition, T context) {
+    // observedGeneration is intentionally never recorded. StackGres CRDs do not enable the status
+    // subresource, so every write to status increments metadata.generation. A persisted
+    // observedGeneration could therefore never catch up to metadata.generation, and kubectl (which
+    // requires observedGeneration >= generation whenever the field is present) would never consider
+    // the condition met, e.g. `kubectl wait --for=condition=...` would always fail. Keeping the
+    // field absent lets kubectl match on the condition status alone.
+    condition.setObservedGeneration(null);
+
     if (condition.getMessage() != null
         && condition.getMessage().length() > MAX_MESSAGE_LENGTH) {
       condition.setMessage(condition.getMessage().substring(0, MAX_MESSAGE_LENGTH));
@@ -35,23 +42,18 @@ public abstract class ConditionUpdater<T extends HasMetadata, C extends Conditio
       condition.setLastTransitionTime(Optional.ofNullable(existing.get().getLastTransitionTime())
           .orElseGet(() -> Instant.now().toString()));
       if (Objects.equals(existing.get().getReason(), condition.getReason())
-          && Objects.equals(existing.get().getMessage(), condition.getMessage())) {
-        // Nothing changed: preserve the observed generation and skip the write. Updating the
-        // observed generation here would bump metadata.generation on resources without a status
-        // subresource, causing an endless reconciliation loop.
-        condition.setObservedGeneration(existing.get().getObservedGeneration());
+          && Objects.equals(existing.get().getMessage(), condition.getMessage())
+          && existing.get().getObservedGeneration() == null) {
+        // Nothing changed and there is no stale observedGeneration left over from a previous
+        // version to clear: skip the write to avoid bumping metadata.generation.
         return;
       }
+      // Either reason/message changed, or a stale observedGeneration must be cleared: fall through
+      // and persist the condition (with observedGeneration unset).
     } else {
       // The status changed (or the condition is new): record the transition time.
       condition.setLastTransitionTime(Instant.now().toString());
     }
-
-    // A transition, reason or message change is being persisted: record the generation observed
-    // for this change.
-    condition.setObservedGeneration(Optional.ofNullable(context.getMetadata())
-        .map(ObjectMeta::getGeneration)
-        .orElse(null));
 
     // copy list of current conditions removing the one being replaced
     List<C> copyList =
