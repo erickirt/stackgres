@@ -91,6 +91,17 @@ mock_docker_commands() {
     return 0
   }
 
+  docker_create() {
+    echo "docker_create $*" >> "$DOCKER_CALL_LOG"
+    echo "test-container-id"
+    return 0
+  }
+
+  docker_cp() {
+    echo "docker_cp $*" >> "$DOCKER_CALL_LOG"
+    return 0
+  }
+
   docker_build() {
     echo "docker_build $*" >> "$DOCKER_CALL_LOG"
     return 0
