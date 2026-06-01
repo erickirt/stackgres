@@ -6,16 +6,19 @@
 package io.stackgres.operator.common;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.WebClientFactory;
+import io.stackgres.common.crd.sgconfig.StackGresConfig;
+import io.stackgres.common.crd.sgconfig.StackGresConfigSpec;
 import io.stackgres.common.extension.ExtensionMetadataManager;
+import io.stackgres.common.extension.ExtensionsConfigUtil;
+import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.operator.app.OperatorInstallationInfoHolder;
-import io.stackgres.operator.configuration.OperatorPropertyContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import org.jooq.lambda.Seq;
 
 @Singleton
 public class OperatorExtensionMetadataManager extends ExtensionMetadataManager {
@@ -24,18 +27,26 @@ public class OperatorExtensionMetadataManager extends ExtensionMetadataManager {
 
   @Inject
   public OperatorExtensionMetadataManager(
-      OperatorPropertyContext propertyContext,
+      CustomResourceFinder<StackGresConfig> configFinder,
       WebClientFactory webClientFactory,
       OperatorInstallationInfoHolder installationInfoHolder,
       Metrics metrics) {
     super(
         webClientFactory,
-        Seq.of(propertyContext.getStringArray(
-            OperatorProperty.EXTENSIONS_REPOSITORY_URLS))
-        .map(URI::create)
-        .toList(),
+        () -> getExtensionsRepositoryUris(configFinder),
         () -> Map.ofEntries(installationInfoHolder.getUserAgentHeaderEntry()));
     this.metrics = metrics;
+  }
+
+  private static List<URI> getExtensionsRepositoryUris(
+      CustomResourceFinder<StackGresConfig> configFinder) {
+    return ExtensionsConfigUtil.getExtensionsRepositoryUris(
+        configFinder.findByNameAndNamespace(
+            OperatorProperty.OPERATOR_NAME.getString(),
+            OperatorProperty.OPERATOR_NAMESPACE.getString())
+            .map(StackGresConfig::getSpec)
+            .map(StackGresConfigSpec::getExtensions)
+            .orElse(null));
   }
 
   @Override

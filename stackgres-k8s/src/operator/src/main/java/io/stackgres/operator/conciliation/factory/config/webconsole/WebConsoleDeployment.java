@@ -40,13 +40,13 @@ import io.stackgres.common.crd.sgconfig.StackGresConfigDeploy;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloper;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperContainerPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperPatches;
-import io.stackgres.common.crd.sgconfig.StackGresConfigExtensions;
 import io.stackgres.common.crd.sgconfig.StackGresConfigGrafana;
 import io.stackgres.common.crd.sgconfig.StackGresConfigImage;
 import io.stackgres.common.crd.sgconfig.StackGresConfigRestapi;
 import io.stackgres.common.crd.sgconfig.StackGresConfigSpec;
 import io.stackgres.common.crd.sgconfig.StackGresConfigStatus;
 import io.stackgres.common.crd.sgconfig.StackGresConfigStatusGrafana;
+import io.stackgres.common.extension.ExtensionsConfigUtil;
 import io.stackgres.common.labels.LabelFactoryForConfig;
 import io.stackgres.operator.app.OperatorInstallationInfoHolder;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
@@ -257,13 +257,11 @@ public class WebConsoleDeployment
                 .build(),
                 new EnvVarBuilder()
                 .withName("EXTENSIONS_REPOSITORY_URLS")
-                .withValue(
-                    Optional.of(context.getSource().getSpec())
-                    .map(StackGresConfigSpec::getExtensions)
-                    .map(StackGresConfigExtensions::getRepositoryUrls)
-                    .stream()
-                    .flatMap(List::stream)
-                    .collect(Collectors.joining(",")))
+                .withValue(String.join(",",
+                    ExtensionsConfigUtil.getExtensionsRepositoryUrls(
+                        Optional.of(context.getSource().getSpec())
+                        .map(StackGresConfigSpec::getExtensions)
+                        .orElse(null))))
                 .build(),
                 new EnvVarBuilder()
                 .withName("STACKGRES_AUTH_TYPE")

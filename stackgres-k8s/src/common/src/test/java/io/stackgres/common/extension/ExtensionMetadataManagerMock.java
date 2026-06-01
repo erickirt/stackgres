@@ -19,7 +19,7 @@ public class ExtensionMetadataManagerMock extends ExtensionMetadataManager {
   List<StackGresExtension> extraExtensions = List.of();
 
   public ExtensionMetadataManagerMock() {
-    super(null, null, null);
+    super(null, (List<URI>) null, null);
   }
 
   @Override

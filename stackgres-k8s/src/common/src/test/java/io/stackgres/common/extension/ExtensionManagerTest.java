@@ -191,6 +191,36 @@ public class ExtensionManagerTest {
   }
 
   @Test
+  void testMetadataRefreshIsClampedToMinimumOneHour() throws Exception {
+    // A sub-hour cacheTimeout must be clamped up to the 1 hour minimum, so a
+    // second access shortly after the first must not re-download the metadata.
+    URI repository = URI.create(
+        "https://extensions.stackgres.io/postgres/repository?cacheTimeout=PT0.01S");
+    ExtensionMetadataManager manager = new ExtensionMetadataManager(
+        webClientFactory, ImmutableList.of(repository), () -> Map.of()) {};
+    when(webClientFactory.create(any(), any())).thenReturn(webClient);
+    when(webClient.getJson(any(), any())).thenReturn(getExtensions());
+    manager.getExtensions();
+    Thread.sleep(50);
+    manager.getExtensions();
+    verify(webClient, times(1)).getJson(any(), any());
+  }
+
+  @Test
+  void testMetadataRefreshDisabledDoesNotRefreshCache() throws Exception {
+    // With refresh disabled the metadata is downloaded once and reused afterwards.
+    URI repository = URI.create(
+        "https://extensions.stackgres.io/postgres/repository?cacheRefreshDisabled=true");
+    ExtensionMetadataManager manager = new ExtensionMetadataManager(
+        webClientFactory, ImmutableList.of(repository), () -> Map.of()) {};
+    when(webClientFactory.create(any(), any())).thenReturn(webClient);
+    when(webClient.getJson(any(), any())).thenReturn(getExtensions());
+    manager.getExtensions();
+    manager.getExtensions();
+    verify(webClient, times(1)).getJson(any(), any());
+  }
+
+  @Test
   void testVerifyExtension() throws Exception {
     StackGresCluster cluster = getCluster();
     StackGresClusterInstalledExtension extension = getInstalledExtension();

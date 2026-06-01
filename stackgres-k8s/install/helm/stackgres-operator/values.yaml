@@ -474,6 +474,10 @@ grafana:
 extensions:
   # -- A list of extensions repository URLs used to retrieve extensions
   #
+  # This value is propagated to the SGConfig and read by the operator from there. It is
+  #   overridden by the environment variable `EXTENSIONS_REPOSITORY_URLS` when it is set
+  #   (for example through the OLM bundle Subscription); the Helm chart leaves it unset.
+  #
   # To set a proxy for extensions repository add parameter proxyUrl to the URL:
   #   `https://extensions.stackgres.io/postgres/repository?proxyUrl=<proxy scheme>%3A%2F%2F<proxy host>[%3A<proxy port>]` (URL encoded)
   # 
@@ -484,6 +488,13 @@ extensions:
   # * `setHttpScheme`: set it to `true` in order to force using HTTP scheme
   repositoryUrls:
   - https://extensions.stackgres.io/postgres/repository
+  # -- (string) The interval, as an ISO-8601 duration (e.g. `P7D`, `PT1H`), between
+  #   refreshes of the cached extensions metadata. When empty the default of 1 week
+  #   is used. Values lower than the minimum of 1 hour are clamped up to 1 hour.
+  refreshInterval: ""
+  # -- When set to `false` the extensions metadata is retrieved only once and never
+  #   refreshed afterwards
+  refreshEnabled: true
   # Section to configure extensions cache (experimental).
   #
   # This feature is in beta and may cause failures, please use with caution and report any

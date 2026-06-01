@@ -20,7 +20,6 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.stackgres.common.ClusterControllerProperty;
 import io.stackgres.common.ClusterPath;
-import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.PatroniUtil;
 import io.stackgres.common.StackGresInitContainer;
 import io.stackgres.common.StackGresModules;
@@ -29,10 +28,12 @@ import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterDbOpsMajorVersionUpgradeStatus;
 import io.stackgres.common.crd.sgcluster.StackGresClusterDbOpsStatus;
 import io.stackgres.common.crd.sgcluster.StackGresClusterStatus;
+import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloper;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperContainerPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigSpec;
+import io.stackgres.common.extension.ExtensionsConfigUtil;
 import io.stackgres.operator.app.OperatorInstallationInfoHolder;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.factory.ContainerFactory;
@@ -143,8 +144,12 @@ public class SingleReconciliationCycle implements ContainerFactory<ClusterContai
             new EnvVarBuilder()
             .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_EXTENSIONS_REPOSITORY_URLS
                 .getEnvironmentVariableName())
-            .withValue(OperatorProperty.EXTENSIONS_REPOSITORY_URLS
-                .getString())
+            .withValue(String.join(",",
+                ExtensionsConfigUtil.getExtensionsRepositoryUrls(
+                    Optional.of(context.getClusterContext().getConfig())
+                    .map(StackGresConfig::getSpec)
+                    .map(StackGresConfigSpec::getExtensions)
+                    .orElse(null))))
             .build(),
             new EnvVarBuilder()
             .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_SKIP_OVERWRITE_SHARED_LIBRARIES

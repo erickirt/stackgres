@@ -21,7 +21,6 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.stackgres.common.ClusterControllerProperty;
 import io.stackgres.common.ClusterPath;
-import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.PatroniUtil;
 import io.stackgres.common.StackGresContainer;
 import io.stackgres.common.StackGresContext;
@@ -34,10 +33,12 @@ import io.stackgres.common.crd.sgcluster.StackGresClusterPatroniConfig;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPods;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPodsPersistentVolume;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
+import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloper;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperContainerPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigSpec;
+import io.stackgres.common.extension.ExtensionsConfigUtil;
 import io.stackgres.operator.app.OperatorInstallationInfoHolder;
 import io.stackgres.operator.common.Sidecar;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
@@ -148,8 +149,12 @@ public class ClusterController implements ContainerFactory<ClusterContainerConte
             new EnvVarBuilder()
             .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_EXTENSIONS_REPOSITORY_URLS
                 .getEnvironmentVariableName())
-            .withValue(OperatorProperty.EXTENSIONS_REPOSITORY_URLS
-                .getString())
+            .withValue(String.join(",",
+                ExtensionsConfigUtil.getExtensionsRepositoryUrls(
+                    Optional.of(context.getClusterContext().getConfig())
+                    .map(StackGresConfig::getSpec)
+                    .map(StackGresConfigSpec::getExtensions)
+                    .orElse(null))))
             .build(),
             new EnvVarBuilder()
             .withName(ClusterControllerProperty

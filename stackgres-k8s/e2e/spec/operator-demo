@@ -30,7 +30,18 @@ e2e_test() {
 
 test_yamls() {
   OPERATOR_NAMESPACE="$(generate_operator_namespace)"
+
   ESCAPED_EXTENSIONS_REPOSITORY_URL="$(printf '%s' "$EXTENSIONS_REPOSITORY_URL" | sed 's/\&/\\\&/')"
+  if [ "$EXTENSIONS_CACHE_ENABLED" = true ]
+  then
+    if [ "${ESCAPED_EXTENSIONS_REPOSITORY_URL%\?*}" != "${ESCAPED_EXTENSIONS_REPOSITORY_URL}" ]
+    then
+      ESCAPED_EXTENSIONS_REPOSITORY_URL="${ESCAPED_EXTENSIONS_REPOSITORY_URL}\\&"
+    else
+      ESCAPED_EXTENSIONS_REPOSITORY_URL="${ESCAPED_EXTENSIONS_REPOSITORY_URL}?"
+    fi
+    ESCAPED_EXTENSIONS_REPOSITORY_URL="${ESCAPED_EXTENSIONS_REPOSITORY_URL}proxyUrl=http%3A%2F%2Fstackgres-operator-extensions-cache.$OPERATOR_NAMESPACE%3FsetHttpScheme%3Dtrue"
+  fi
 
   echo "Mocking stackgres-operator-demo.yml"
   OPERATOR_IMAGE_VERSION_LN="$(( $(grep -n 'name: OPERATOR_IMAGE_VERSION$' "${STACKGRES_YAMLS}/stackgres-operator-demo.yml" | cut -d : -f 1) + 1))"
@@ -53,15 +64,7 @@ test_yamls() {
     | sed "s/{\(\"name\":\"stackgres\/admin-ui\",[^}]\+\)\"tag\":\"[^\"]\+\"}/{\1\"tag\":\"$ADMINUI_IMAGE_TAG\"}/" \
     | sed "s/\"pullPolicy\":\"[^\"]\+\"/\"pullPolicy\":\"$E2E_OPERATOR_PULL_POLICY\"/g" \
     | sed '/image: \([^/]\+\/\)\?ongres\/.*$/{$!{N;s/image: \(\([^/]\+\/\)\?ongres\/.*\)\n\( *\)imagePullPolicy: .*$/image: \1\n\3imagePullPolicy: IfNotPresent/;ty;P;D;:y}}' \
-    | if grep -q 'http%3A%2F%2Fstackgres-operator-extensions-cache\.stackgres%3FsetHttpScheme%3Dtrue' "${STACKGRES_YAMLS}/stackgres-operator-demo.yml"
-      then
-        sed "s|value: \"https://extensions.stackgres.io/postgres/repository?|value: \"$ESCAPED_EXTENSIONS_REPOSITORY_URL$(
-          [ -z "${EXTENSIONS_REPOSITORY_URL#*\?}" ] && printf '\&' || printf '?')|" \
-        | sed "s|http%3A%2F%2Fstackgres-operator-extensions-cache\.stackgres%3FsetHttpScheme%3Dtrue|http%3A%2F%2Fstackgres-operator-extensions-cache.$OPERATOR_NAMESPACE%3FsetHttpScheme%3Dtrue|"
-      else
-        cat
-      fi \
-    | sed "s|value: \"https://extensions.stackgres.io/postgres/repository\"$|value: \"$ESCAPED_EXTENSIONS_REPOSITORY_URL\"|" \
+    | sed "s|\"repositoryUrls\":\[\"https://extensions.stackgres.io/postgres/repository\"\]|\"repositoryUrls\":\[\"$ESCAPED_EXTENSIONS_REPOSITORY_URL\"\]|" \
     > "${LOG_PATH}/stackgres-operator-demo.yml"
 
   grep -qF "name: $OPERATOR_NAMESPACE" "${LOG_PATH}/stackgres-operator-demo.yml"
@@ -79,13 +82,11 @@ test_yamls() {
     grep -o -i "\"tag\":\"$IMAGE_TAG\"" "${LOG_PATH}/stackgres-operator-demo.yml" | wc -l | grep -qxF 3
   fi
   grep -qF "\"pullPolicy\":\"$E2E_OPERATOR_PULL_POLICY\"" "${LOG_PATH}/stackgres-operator-demo.yml"
-  if grep -q 'http%3A%2F%2Fstackgres-operator-extensions-cache\.stackgres%3FsetHttpScheme%3Dtrue' "${STACKGRES_YAMLS}/stackgres-operator-demo.yml"
+  grep -q "$EXTENSIONS_REPOSITORY_URL" "${LOG_PATH}/stackgres-operator-demo.yml"
+  if [ "$EXTENSIONS_CACHE_ENABLED" = true ]
   then
-    grep -qF "value: \"$EXTENSIONS_REPOSITORY_URL$(
-      [ -z "${EXTENSIONS_REPOSITORY_URL#*\?}" ] && printf '&' || printf '?')" "${LOG_PATH}/stackgres-operator-demo.yml"
-    grep -qF "http%3A%2F%2Fstackgres-operator-extensions-cache.$OPERATOR_NAMESPACE%3FsetHttpScheme%3Dtrue" "${LOG_PATH}/stackgres-operator-demo.yml"
+    grep -q "proxyUrl=http%3A%2F%2Fstackgres-operator-extensions-cache\.$OPERATOR_NAMESPACE%3FsetHttpScheme%3Dtrue" "${LOG_PATH}/stackgres-operator-demo.yml"
   fi
-  grep -qF "value: \"$EXTENSIONS_REPOSITORY_URL\"" "${LOG_PATH}/stackgres-operator-demo.yml"
 
   echo "Installing operator.yml"
   kubectl create -n "${OPERATOR_NAMESPACE}" -f "${LOG_PATH}/stackgres-operator-demo.yml"
@@ -110,8 +111,14 @@ test_yamls() {
     success "The demo StackGres restapi service was available."
   fi
 
-  if grep -q http%3A%2F%2Fstackgres-operator-extensions-cache\.stackgres%3FsetHttpScheme%3Dtrue "${STACKGRES_YAMLS}/stackgres-operator-demo.yml"
+  if [ "$EXTENSIONS_CACHE_ENABLED" = true ]
   then
+    echo "Creating extensions cache"
+    install_operator_only \
+      --set deploy.operator=false \
+      --set deploy.restapi=false \
+      --skip-crds
+
     if ! wait_services_available "$OPERATOR_NAMESPACE" 1 "^stackgres-operator-extensions-cache$"
     then
       fail "The demo StackGres extensions cache service was not available."
@@ -279,6 +286,7 @@ test_packages() {
 }
 
 check_namespace() {
+  check_returned_namespaces || true
   if wait_until check_returned_namespaces
   then
     success "Namespace endpoint returned all namespaces"
