@@ -64,6 +64,9 @@
 												<template v-for="condition in cluster.data.status.conditions" v-if="( (condition.type == 'PendingRestart') && (condition.status == 'True') )">
 													<div class="helpTooltip alert onHover" data-tooltip="A restart operation is pending for this cluster"></div>
 												</template>
+												<template v-for="condition in cluster.data.status.conditions" v-if="( (condition.type == 'ComponentsUpdated') && ( (condition.status == 'False') || (condition.reason != 'UpToDate') ) )">
+													<div class="helpTooltip alert onHover" :data-tooltip="condition.message"></div>
+												</template>
 											</template>
 											<span>
 												<router-link :to="'/' + $route.params.namespace + '/sgcluster/' + cluster.name" title="Cluster Status" class="noColor">

@@ -7,6 +7,9 @@
 					<template v-for="condition in sgshardedcluster.data.status.conditions" v-if="( (condition.type == 'PendingRestart') && (condition.status == 'True') )">
 						<span class="helpTooltip alert" data-tooltip="A restart operation is pending for this cluster"></span>
 					</template>
+					<template v-for="condition in sgshardedcluster.data.status.conditions" v-if="( (condition.type == 'ComponentsUpdated') && ( (condition.status == 'False') || (condition.reason != 'UpToDate') ) )">
+						<span class="helpTooltip alert" :data-tooltip="condition.message"></span>
+					</template>
 				</template>
 			</h2>
 			
