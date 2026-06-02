@@ -168,7 +168,6 @@
 		left: auto;
 		right: 0;
 		position: absolute;
-		transform: translatey(-5px);
 	}
 
 	td.clusterName > div + span {
