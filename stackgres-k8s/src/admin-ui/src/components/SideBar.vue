@@ -624,7 +624,7 @@
 		display: block;
 		height: auto;
 		transition: max-height 0.5s ease-out;
-		max-height: calc(100vh - 725px);
+		max-height: 100vw;
 		overflow-y: auto;
 	}
 
@@ -759,11 +759,6 @@
 
 	body:not(.collapsed) .set:hover .addnew, body:not(.collapsed) .set.active .addnew {
 		display: block;
-	}
-
-	.crdSubmenu {
-		max-height: calc(100vh - 780px);
-		overflow: auto;
 	}
 
 	.item {
