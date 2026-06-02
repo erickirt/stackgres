@@ -1,0 +1,12 @@
+[
+  {
+    "apiVersion": "stackgres.io/v1alpha1",
+    "kind": "SGStream",
+    "metadata": { "name": "orders-cdc", "namespace": "demo", "uid": "aaaa0000-0000-0000-0000-000000000001", "creationTimestamp": "2026-04-02T08:00:00Z" },
+    "spec": {
+      "source": { "type": "SGCluster", "sgCluster": { "name": "ext-available", "database": "myapp" } },
+      "target": { "type": "CloudEvent", "cloudEvent": { "format": "json", "http": { "url": "https://events.demo.svc/ingest" } } }
+    },
+    "status": { "snapshot": { "totalNumberOfEventsSeen": 1240 } }
+  }
+]

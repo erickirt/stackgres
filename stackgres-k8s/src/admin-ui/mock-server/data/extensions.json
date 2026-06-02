@@ -1,0 +1,24 @@
+{
+  "publishers": [
+    { "id": "com.ongres", "name": "OnGres Inc.", "url": "https://stackgres.io" }
+  ],
+  "extensions": [
+    {
+      "name": "postgis",
+      "abstract": "Geographic objects support for PostgreSQL",
+      "publisher": "com.ongres",
+      "versions": [
+        { "version": "3.4.2", "availableFor": [{ "postgresVersion": "16" }, { "postgresVersion": "15" }] },
+        { "version": "3.3.4", "availableFor": [{ "postgresVersion": "15" }] }
+      ]
+    },
+    {
+      "name": "pg_cron",
+      "abstract": "Run periodic jobs in PostgreSQL",
+      "publisher": "com.ongres",
+      "versions": [
+        { "version": "1.6.2", "availableFor": [{ "postgresVersion": "16" }, { "postgresVersion": "15" }] }
+      ]
+    }
+  ]
+}

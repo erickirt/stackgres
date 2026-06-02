@@ -1,0 +1,20 @@
+[
+  {
+    "apiVersion": "stackgres.io/v1",
+    "kind": "SGInstanceProfile",
+    "metadata": { "name": "size-small", "namespace": "default", "uid": "33330000-0000-0000-0000-000000000001", "creationTimestamp": "2026-01-05T08:00:00Z" },
+    "spec": { "cpu": "1", "memory": "2Gi" }
+  },
+  {
+    "apiVersion": "stackgres.io/v1",
+    "kind": "SGInstanceProfile",
+    "metadata": { "name": "size-medium", "namespace": "demo", "uid": "33330000-0000-0000-0000-000000000002", "creationTimestamp": "2026-01-05T08:00:00Z" },
+    "spec": { "cpu": "2", "memory": "4Gi" }
+  },
+  {
+    "apiVersion": "stackgres.io/v1",
+    "kind": "SGInstanceProfile",
+    "metadata": { "name": "size-large", "namespace": "production", "uid": "33330000-0000-0000-0000-000000000003", "creationTimestamp": "2026-01-05T08:00:00Z" },
+    "spec": { "cpu": "4", "memory": "8Gi" }
+  }
+]

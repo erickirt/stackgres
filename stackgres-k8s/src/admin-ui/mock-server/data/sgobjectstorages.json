@@ -1,0 +1,17 @@
+[
+  {
+    "apiVersion": "stackgres.io/v1beta1",
+    "kind": "SGObjectStorage",
+    "metadata": { "name": "minio-backups", "namespace": "default", "uid": "88880000-0000-0000-0000-000000000001", "creationTimestamp": "2026-01-08T08:00:00Z" },
+    "spec": {
+      "type": "s3Compatible",
+      "s3Compatible": {
+        "bucket": "stackgres-backups",
+        "region": "us-east-1",
+        "endpoint": "https://minio.default.svc:9000",
+        "enablePathStyleAddressing": true,
+        "awsCredentials": { "secretKeySelectors": { "accessKeyId": { "name": "minio-creds", "key": "accesskey" }, "secretAccessKey": { "name": "minio-creds", "key": "secretkey" } } }
+      }
+    }
+  }
+]

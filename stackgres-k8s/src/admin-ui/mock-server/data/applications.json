@@ -1,0 +1,10 @@
+{
+  "applications": [
+    {
+      "name": "babelfish-compass",
+      "publisher": "com.ongres",
+      "version": "1.0.0",
+      "description": "Babelfish Compass migration assessment tool."
+    }
+  ]
+}

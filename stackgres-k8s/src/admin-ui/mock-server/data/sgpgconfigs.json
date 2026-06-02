@@ -1,0 +1,12 @@
+[
+  {
+    "apiVersion": "stackgres.io/v1",
+    "kind": "SGPostgresConfig",
+    "metadata": { "name": "pgconfig-default", "namespace": "default", "uid": "44440000-0000-0000-0000-000000000001", "creationTimestamp": "2026-01-05T08:00:00Z" },
+    "spec": {
+      "postgresVersion": "16",
+      "postgresql.conf": { "shared_buffers": "256MB", "max_connections": "200", "work_mem": "16MB" }
+    },
+    "status": { "defaultParameters": { "shared_buffers": "128MB" } }
+  }
+]

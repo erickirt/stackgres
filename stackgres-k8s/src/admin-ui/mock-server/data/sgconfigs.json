@@ -1,0 +1,13 @@
+[
+  {
+    "apiVersion": "stackgres.io/v1",
+    "kind": "SGConfig",
+    "metadata": { "name": "stackgres-operator", "namespace": "stackgres", "uid": "cccc0000-0000-0000-0000-000000000001", "creationTimestamp": "2026-01-01T08:00:00Z" },
+    "spec": {
+      "operator": { "image": { "name": "stackgres/operator", "tag": "1.18.4" } },
+      "adminui": { "service": { "type": "ClusterIP" } },
+      "grafana": { "autoEmbed": false }
+    },
+    "status": { "version": "1.18.4" }
+  }
+]

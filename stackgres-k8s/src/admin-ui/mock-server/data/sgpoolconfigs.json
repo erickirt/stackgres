@@ -1,0 +1,12 @@
+[
+  {
+    "apiVersion": "stackgres.io/v1",
+    "kind": "SGPoolingConfig",
+    "metadata": { "name": "poolconfig-default", "namespace": "default", "uid": "55550000-0000-0000-0000-000000000001", "creationTimestamp": "2026-01-05T08:00:00Z" },
+    "spec": {
+      "pgBouncer": {
+        "pgbouncer.ini": { "pgbouncer": { "pool_mode": "transaction", "max_client_conn": "1000", "default_pool_size": "20" } }
+      }
+    }
+  }
+]
