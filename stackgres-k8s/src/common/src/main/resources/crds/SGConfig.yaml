@@ -1189,6 +1189,7 @@ spec:
               extensions:
                 type: object
                 description: Section to configure extensions
+                default: {}
                 properties:
                   repositoryUrls:
                     type: array
