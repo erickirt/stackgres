@@ -38,6 +38,14 @@ Please read carefully the following sections that includes the changes provided 
 > **NOTE**: the operator upgrades automatically the StackGres custom resources that are created into the Kubernetes cluster, such as adding new default sections, renaming a field, migrate from one section to another, or even create new resources.
 > In some cases, the StackGres resources that are stored as YAML files and updated using `kubectl apply` may lead to errors if the resource updates weren't reflected in the YAML files, accordingly. This behavior is mitigated if the version of kubectl and Kubernetes you are using supports [server-side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/).
 
+**1.19**
+
+* stackgres.io/v1beta1/SGShardedCluster:
+    * `.spec.shards` has been replaced by `.spec.workers` (after upgrade `.spec.workers.clusterNameTemplate` have to be set to `<cluster name>-shard`)
+    * `.spec.metadata.labels.shardsPrimariesService` has been replaced by `.spec.metadata.labels.workersPrimariesService`
+    * `.spec.metadata.annotations.shardsPrimariesService` has been replaced by `.spec.metadata.annotations.workersPrimariesService`
+    * `.spec.postgresServices.shards` has been replaced by `.spec.postgresServices.workers`
+
 **1.15**
 
 * stackgres.io/v1/SGDistributedLogs:

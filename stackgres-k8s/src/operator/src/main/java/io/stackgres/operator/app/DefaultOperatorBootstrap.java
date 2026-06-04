@@ -29,6 +29,7 @@ public class DefaultOperatorBootstrap implements OperatorBootstrap {
   private final CrdInstaller crdInstaller;
   private final CrdWebhookInstaller crdWebhookInstaller;
   private final CrUpdater crUpdater;
+  private final OperatorInstallationInfoHolder installationInfoHolder;
 
   @Inject
   public DefaultOperatorBootstrap(
@@ -38,7 +39,8 @@ public class DefaultOperatorBootstrap implements OperatorBootstrap {
       CertificateInstaller certInstaller,
       CrdInstaller crdInstaller,
       CrdWebhookInstaller crdWebhookInstaller,
-      CrUpdater crUpdater) {
+      CrUpdater crUpdater,
+      OperatorInstallationInfoHolder installationInfoHolder) {
     this.client = client;
     this.operatorLockHolder = operatorLockHolder;
     this.configInstaller = configInstaller;
@@ -46,6 +48,7 @@ public class DefaultOperatorBootstrap implements OperatorBootstrap {
     this.crdInstaller = crdInstaller;
     this.crdWebhookInstaller = crdWebhookInstaller;
     this.crUpdater = crUpdater;
+    this.installationInfoHolder = installationInfoHolder;
   }
 
   @Override
@@ -80,6 +83,7 @@ public class DefaultOperatorBootstrap implements OperatorBootstrap {
           }
         }
         retryWithLimit(this::bootstrapCrds, ex -> true, 10, 10000, 20000, 2000);
+        LOGGER.info("Installation ID: {}", installationInfoHolder.getInstallationId());
         if (!OperatorProperty.DISABLE_RECONCILIATION.getBoolean()) {
           operatorLockHolder.startReconciliation();
         }

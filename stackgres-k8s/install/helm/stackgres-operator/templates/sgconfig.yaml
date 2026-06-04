@@ -1,3 +1,4 @@
+{{- if .Values.deploy.operator }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -28,10 +29,31 @@ data:
     metadata:
       name: {{ .Release.Name }}
       namespace: {{ .Values.sgConfigNamespace | default .Release.Namespace }}
-      {{- $spec := dict }}
-      {{- range .Values.specFields }}
-      {{- $spec := set $spec . (index $.Values .) }}
-      {{- end }}
+    {{- $spec := dict }}
+    {{- range .Values.specFields }}
+    {{- $spec := set $spec . (index $.Values .) }}
+    {{- end }}
+    {{- if .Values.extensions.cache.enabled }}
+    {{- $proxyUrl := printf "proxyUrl=http%%3A%%2F%%2F%s-extensions-cache.%s%%3FsetHttpScheme%%3Dtrue&retry=3%%3A5" $.Release.Name $.Release.Namespace }}
+    {{- $repositoryUrls := list }}
+    {{- range .Values.extensions.repositoryUrls }}
+    {{- $base := . }}
+    {{- $params := list }}
+    {{- if contains "?" . }}
+    {{- $base = (splitn "?" 2 .)._0 }}
+    {{- range splitList "&" (splitn "?" 2 .)._1 }}
+    {{- if and (ne . "") (not (hasPrefix "proxyUrl=" .)) }}
+    {{- $params = append $params . }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+    {{- $params = append $params $proxyUrl }}
+    {{- $repositoryUrls = append $repositoryUrls (printf "%s?%s" $base (join "&" $params)) }}
+    {{- end }}
+    {{- $extensions := deepCopy (index $spec "extensions") }}
+    {{- $_ := set $extensions "repositoryUrls" $repositoryUrls }}
+    {{- $_ := set $spec "extensions" $extensions }}
+    {{- end }}
     spec: {{ toJson $spec }}
 ---
 apiVersion: batch/v1
@@ -60,6 +82,18 @@ spec:
       serviceAccountName: {{ .Release.Name }}-init
       restartPolicy: OnFailure
       terminationGracePeriodSeconds: 0
+      {{- with .Values.jobs.schedulerName }}
+      schedulerName: {{ . }}
+      {{- end }}
+      {{- with .Values.jobs.runtimeClassName }}
+      runtimeClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.jobs.preemptionPolicy }}
+      preemptionPolicy: {{ . }}
+      {{- end }}
+      {{- with .Values.jobs.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
       {{- with .Values.jobs.affinity}}
       affinity:
         {{- toYaml . | nindent 8 }}
@@ -143,6 +177,18 @@ spec:
       serviceAccountName: {{ .Release.Name }}-init
       restartPolicy: OnFailure
       terminationGracePeriodSeconds: 0
+      {{- with .Values.jobs.schedulerName }}
+      schedulerName: {{ . }}
+      {{- end }}
+      {{- with .Values.jobs.runtimeClassName }}
+      runtimeClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.jobs.preemptionPolicy }}
+      preemptionPolicy: {{ . }}
+      {{- end }}
+      {{- with .Values.jobs.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
       {{- with .Values.jobs.affinity}}
       affinity:
         {{- toYaml . | nindent 8 }}
@@ -169,3 +215,4 @@ spec:
           - |
             ! kubectl get crd sgconfigs.stackgres.io >/dev/null 2>&1 \
               || kubectl delete sgconfig --ignore-not-found -n "{{ .Values.sgConfigNamespace | default .Release.Namespace }}" "{{ .Release.Name }}"
+{{- end }}

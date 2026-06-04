@@ -21,16 +21,14 @@ import org.jooq.lambda.Seq;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresExtensions {
 
-  @Valid
-  private List<StackGresExtensionPublisher> publishers;
+  private List<@Valid StackGresExtensionPublisher> publishers;
 
-  @Valid
-  private List<StackGresExtension> extensions;
+  private List<@Valid StackGresExtension> extensions;
 
   @JsonIgnore
   @AssertTrue(message = "elements of publishers must have a unique id.")

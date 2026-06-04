@@ -6,7 +6,7 @@
 package io.stackgres.apiweb.transformer;
 
 import static io.stackgres.common.StackGresShardedClusterUtil.getCoordinatorClusterName;
-import static io.stackgres.common.StackGresShardedClusterUtil.getShardClusterName;
+import static io.stackgres.common.StackGresShardedClusterUtil.getWorkerClusterName;
 
 import java.util.Optional;
 
@@ -64,8 +64,8 @@ public class ShardedClusterTransformer
     }
     transformation.getStatus().setClusters(
         Seq.of(getCoordinatorClusterName(source))
-        .append(Seq.range(0, source.getSpec().getShards().getClusters())
-            .map(index -> getShardClusterName(source, index)))
+        .append(Seq.range(0, source.getSpec().getWorkers().getClusters())
+            .map(index -> getWorkerClusterName(source, index)))
         .toList());
     transformation.setGrafanaEmbedded(isGrafanaEmbeddedEnabled());
     return transformation;

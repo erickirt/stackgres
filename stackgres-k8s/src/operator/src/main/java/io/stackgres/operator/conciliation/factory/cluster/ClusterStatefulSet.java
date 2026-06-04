@@ -33,7 +33,9 @@ import io.stackgres.common.crd.sgbackup.StackGresBackupProcess;
 import io.stackgres.common.crd.sgbackup.StackGresBackupStatus;
 import io.stackgres.common.crd.sgbackup.StackGresBackupVolumeSnapshotStatus;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
+import io.stackgres.common.crd.sgcluster.StackGresClusterPods;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPodsPersistentVolume;
+import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
 import io.stackgres.common.crd.sgcluster.StackGresClusterStatus;
 import io.stackgres.common.crd.sgcluster.StackGresReplicationInitializationMode;
 import io.stackgres.common.labels.LabelFactoryForCluster;
@@ -95,9 +97,6 @@ public class ClusterStatefulSet
 
     StorageConfig dataStorageConfig = ImmutableStorageConfig.builder()
         .size(persistentVolume.getSize())
-        .storageClass(Optional.ofNullable(
-            persistentVolume.getStorageClass())
-            .orElse(null))
         .build();
 
     final Map<String, String> labels = labelFactory.clusterLabels(cluster);
@@ -108,7 +107,8 @@ public class ClusterStatefulSet
     final PersistentVolumeClaimSpecBuilder volumeClaimSpec = new PersistentVolumeClaimSpecBuilder()
         .withAccessModes("ReadWriteOnce")
         .withResources(dataStorageConfig.getVolumeResourceRequirements())
-        .withStorageClassName(dataStorageConfig.getStorageClass())
+        .withStorageClassName(persistentVolume.getStorageClass())
+        .withVolumeAttributesClassName(persistentVolume.getVolumeAttributesClassName())
         .withDataSource(context.getRestoreBackup()
             .filter(backpup -> context.getCurrentInstances() < 1)
             .or(context::getReplicationInitializationBackup)
@@ -178,7 +178,10 @@ public class ClusterStatefulSet
         .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder()
             .withType("OnDelete")
             .build())
-        .withServiceName(name)
+        .withServiceName(Optional.ofNullable(cluster.getSpec())
+            .map(StackGresClusterSpec::getPods)
+            .map(StackGresClusterPods::getStatefulSetServiceName)
+            .orElse(name))
         .withTemplate(podTemplateSpec.getSpec())
         .withVolumeClaimTemplates(
             new PersistentVolumeClaimBuilder()

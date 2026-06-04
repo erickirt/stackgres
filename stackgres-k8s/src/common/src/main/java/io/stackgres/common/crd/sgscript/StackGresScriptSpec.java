@@ -19,7 +19,7 @@ import jakarta.validation.constraints.NotNull;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresScriptSpec {
@@ -29,8 +29,7 @@ public class StackGresScriptSpec {
   private Boolean continueOnError;
 
   @NotNull(message = "scripts section cannot be null")
-  @Valid
-  private List<StackGresScriptEntry> scripts;
+  private List<@Valid StackGresScriptEntry> scripts;
 
   public Boolean isManagedVersions() {
     return managedVersions;

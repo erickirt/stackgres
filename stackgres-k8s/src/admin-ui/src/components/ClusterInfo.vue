@@ -130,7 +130,5 @@
 	.helpTooltip.alert {
 		position: absolute;
 		right: 30px;
-		top: 11px;
 	}
-
 </style>

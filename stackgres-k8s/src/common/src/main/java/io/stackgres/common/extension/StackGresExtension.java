@@ -24,7 +24,7 @@ import jakarta.validation.constraints.NotNull;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresExtension {
@@ -46,8 +46,7 @@ public class StackGresExtension {
   private List<String> tags;
 
   @NotEmpty(message = "versions is required and must not be empty")
-  @Valid
-  private List<StackGresExtensionVersion> versions;
+  private List<@Valid StackGresExtensionVersion> versions;
 
   private Map<String, String> channels;
 

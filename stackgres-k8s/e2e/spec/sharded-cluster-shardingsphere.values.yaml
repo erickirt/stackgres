@@ -30,7 +30,7 @@ cluster:
 shardedCluster:
   type: shardingsphere
   database: shardingsphere
-  shards:
+  workers:
     pods:
       persistentVolume:
         size: 128Mi

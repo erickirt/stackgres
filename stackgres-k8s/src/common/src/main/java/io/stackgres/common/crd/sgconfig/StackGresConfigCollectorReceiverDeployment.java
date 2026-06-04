@@ -21,7 +21,7 @@ import io.sundr.builder.annotations.Buildable;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresConfigCollectorReceiverDeployment {
@@ -31,6 +31,14 @@ public class StackGresConfigCollectorReceiverDeployment {
   private Map<String, String> annotations;
 
   private ResourceRequirements resources;
+
+  private String schedulerName;
+
+  private String runtimeClassName;
+
+  private String preemptionPolicy;
+
+  private String priorityClassName;
 
   private Map<String, String> nodeSelector;
 
@@ -62,6 +70,38 @@ public class StackGresConfigCollectorReceiverDeployment {
     this.resources = resources;
   }
 
+  public String getSchedulerName() {
+    return schedulerName;
+  }
+
+  public void setSchedulerName(String schedulerName) {
+    this.schedulerName = schedulerName;
+  }
+
+  public String getRuntimeClassName() {
+    return runtimeClassName;
+  }
+
+  public void setRuntimeClassName(String runtimeClassName) {
+    this.runtimeClassName = runtimeClassName;
+  }
+
+  public String getPreemptionPolicy() {
+    return preemptionPolicy;
+  }
+
+  public void setPreemptionPolicy(String preemptionPolicy) {
+    this.preemptionPolicy = preemptionPolicy;
+  }
+
+  public String getPriorityClassName() {
+    return priorityClassName;
+  }
+
+  public void setPriorityClassName(String priorityClassName) {
+    this.priorityClassName = priorityClassName;
+  }
+
   public Map<String, String> getNodeSelector() {
     return nodeSelector;
   }
@@ -88,7 +128,8 @@ public class StackGresConfigCollectorReceiverDeployment {
 
   @Override
   public int hashCode() {
-    return Objects.hash(affinity, annotations, nodeSelector, resources, sgClusters, tolerations);
+    return Objects.hash(affinity, annotations, nodeSelector, preemptionPolicy, priorityClassName,
+        resources, runtimeClassName, schedulerName, sgClusters, tolerations);
   }
 
   @Override
@@ -103,7 +144,11 @@ public class StackGresConfigCollectorReceiverDeployment {
     return Objects.equals(affinity, other.affinity)
         && Objects.equals(annotations, other.annotations)
         && Objects.equals(nodeSelector, other.nodeSelector)
+        && Objects.equals(preemptionPolicy, other.preemptionPolicy)
+        && Objects.equals(priorityClassName, other.priorityClassName)
         && Objects.equals(resources, other.resources)
+        && Objects.equals(runtimeClassName, other.runtimeClassName)
+        && Objects.equals(schedulerName, other.schedulerName)
         && Objects.equals(sgClusters, other.sgClusters)
         && Objects.equals(tolerations, other.tolerations);
   }

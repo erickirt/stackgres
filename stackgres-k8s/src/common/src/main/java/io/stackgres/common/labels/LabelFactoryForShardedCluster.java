@@ -18,7 +18,9 @@ public interface LabelFactoryForShardedCluster
 
   Map<String, String> coordinatorLabelsWithoutUid(StackGresShardedCluster resource);
 
-  Map<String, String> shardsLabels(StackGresShardedCluster resource);
+  Map<String, String> workersLabels(StackGresShardedCluster resource);
+
+  Map<String, String> queryRoutersLabels(StackGresShardedCluster resource);
 
   Map<String, String> scheduledBackupPodLabels(StackGresShardedCluster resource);
 

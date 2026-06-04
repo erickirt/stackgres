@@ -7,6 +7,8 @@ package io.stackgres.operator.conciliation.shardedcluster.context;
 
 import static org.mockito.Mockito.verify;
 
+import java.util.Optional;
+
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.fixture.Fixtures;
@@ -44,7 +46,7 @@ class ShardedClusterCoordinatorClusterContextAppenderTest {
 
   @Test
   void givenCluster_shouldPass() {
-    contextAppender.appendContext(cluster, contextBuilder);
+    contextAppender.appendContext(cluster, contextBuilder, Optional.empty());
     ArgumentCaptor<StackGresCluster> coordinator = ArgumentCaptor.captor();
     verify(contextBuilder).coordinator(coordinator.capture());
     verify(shardedClusterCoordinatorPrimaryEndpointsContextAppender).appendContext(

@@ -1,0 +1,15 @@
+[
+  {
+    "apiVersion": "stackgres.io/v1",
+    "kind": "SGScript",
+    "metadata": { "name": "init-schema", "namespace": "default", "uid": "99990000-0000-0000-0000-000000000001", "creationTimestamp": "2026-01-09T08:00:00Z" },
+    "spec": {
+      "continueOnError": false,
+      "managedVersions": true,
+      "scripts": [
+        { "id": 0, "version": 0, "name": "create-app-schema", "script": "CREATE SCHEMA IF NOT EXISTS app;" },
+        { "id": 1, "version": 0, "name": "create-users-table", "script": "CREATE TABLE IF NOT EXISTS app.users (id serial primary key, email text);" }
+      ]
+    }
+  }
+]

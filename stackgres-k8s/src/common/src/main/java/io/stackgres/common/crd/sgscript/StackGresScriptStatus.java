@@ -19,13 +19,12 @@ import jakarta.validation.Valid;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresScriptStatus {
 
-  @Valid
-  private List<StackGresScriptEntryStatus> scripts = new ArrayList<>();
+  private List<@Valid StackGresScriptEntryStatus> scripts = new ArrayList<>();
 
   public List<StackGresScriptEntryStatus> getScripts() {
     return scripts;

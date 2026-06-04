@@ -125,7 +125,7 @@
 					if(typeof cluster != 'undefined') {
 
 						let clusterPods = this.hasProp(cluster, 'stats.coordinator.pods') && this.hasProp(cluster, 'stats.coordinator.pods') 
-							? cluster.stats.coordinator.pods.concat(cluster.stats.shards.pods)
+							? cluster.stats.coordinator.pods.concat(cluster.stats.workers.pods)
 							: []
 
 						// Read Grafana URL
@@ -207,15 +207,15 @@
                         this.cluster.stats.coordinator.pods.filter(p => (p.status == 'Active')).length
                     ) || 
                     (   
-                        this.hasProp(this.cluster, 'stats.shards.pods') && 
-                        this.cluster.stats.shards.pods.filter(p => (p.status == 'Active')).length
+                        this.hasProp(this.cluster, 'stats.workers.pods') && 
+                        this.cluster.stats.workers.pods.filter(p => (p.status == 'Active')).length
                     )
                 )
 			},
 
             clusterPods() {
                 if (this.hasProp(this.cluster, 'stats.coordinator.pods') && this.hasProp(this.cluster, 'stats.coordinator.pods')) {
-                    return this.cluster.stats.coordinator.pods.concat(this.cluster.stats.shards.pods);
+                    return this.cluster.stats.coordinator.pods.concat(this.cluster.stats.workers.pods);
                 } else {
                     return [];
                 }

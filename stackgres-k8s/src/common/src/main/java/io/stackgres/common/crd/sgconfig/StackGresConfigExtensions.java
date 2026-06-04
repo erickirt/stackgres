@@ -17,12 +17,16 @@ import io.sundr.builder.annotations.Buildable;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresConfigExtensions {
 
   private List<String> repositoryUrls;
+
+  private String refreshInterval;
+
+  private Boolean refreshEnabled;
 
   private StackGresConfigExtensionsCache cache;
 
@@ -32,6 +36,22 @@ public class StackGresConfigExtensions {
 
   public void setRepositoryUrls(List<String> repositoryUrls) {
     this.repositoryUrls = repositoryUrls;
+  }
+
+  public String getRefreshInterval() {
+    return refreshInterval;
+  }
+
+  public void setRefreshInterval(String refreshInterval) {
+    this.refreshInterval = refreshInterval;
+  }
+
+  public Boolean getRefreshEnabled() {
+    return refreshEnabled;
+  }
+
+  public void setRefreshEnabled(Boolean refreshEnabled) {
+    this.refreshEnabled = refreshEnabled;
   }
 
   public StackGresConfigExtensionsCache getCache() {
@@ -44,7 +64,7 @@ public class StackGresConfigExtensions {
 
   @Override
   public int hashCode() {
-    return Objects.hash(cache, repositoryUrls);
+    return Objects.hash(cache, refreshEnabled, refreshInterval, repositoryUrls);
   }
 
   @Override
@@ -57,6 +77,8 @@ public class StackGresConfigExtensions {
     }
     StackGresConfigExtensions other = (StackGresConfigExtensions) obj;
     return Objects.equals(cache, other.cache)
+        && Objects.equals(refreshEnabled, other.refreshEnabled)
+        && Objects.equals(refreshInterval, other.refreshInterval)
         && Objects.equals(repositoryUrls, other.repositoryUrls);
   }
 

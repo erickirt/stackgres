@@ -24,7 +24,7 @@ import jakarta.validation.Valid;
 
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder",
     refs = {
@@ -43,8 +43,7 @@ public class StackGresPostgresService extends ServiceSpec {
 
   protected StackGresPostgresServiceNodePort nodePorts;
 
-  @Valid
-  private List<CustomServicePort> customPorts;
+  private List<@Valid CustomServicePort> customPorts;
 
   public StackGresPostgresService() {
     super();

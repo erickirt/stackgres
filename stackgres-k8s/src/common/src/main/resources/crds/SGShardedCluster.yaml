@@ -15,6 +15,14 @@ spec:
   versions:
   - name: v1alpha1
     served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: object
+        required: ["metadata", "spec"]
+        "x-kubernetes-preserve-unknown-fields": true
+  - name: v1beta1
+    served: true
     storage: true
     additionalPrinterColumns:
     - name: version
@@ -22,24 +30,24 @@ spec:
       jsonPath: .status.postgresVersion
     - name: instances
       type: integer
-      jsonPath: .spec.coordinator.instances + (.spec.shards.clusters * .spec.shards.instancesPerCluster) 
+      jsonPath: .spec.coordinator.instances + (.spec.workers.clusters * .spec.workers.instancesPerCluster) 
     - name: Profile
       type: string
-      jsonPath: .spec.coordinator.sgInstanceProfile + ", " + .spec.shards.sgInstanceProfile 
+      jsonPath: .spec.coordinator.sgInstanceProfile + ", " + .spec.workers.sgInstanceProfile 
     - name: Disk
       type: string
-      jsonPath: .spec.coordinator.pods.persistentVolume.size + ", " + .spec.shards.pods.persistentVolume.size
+      jsonPath: .spec.coordinator.pods.persistentVolume.size + ", " + .spec.workers.pods.persistentVolume.size
     - name: prometheus-autobind
       type: string
       jsonPath: .spec.configurations.observability.prometheusAutobind
       priority: 1
     - name: pool-config
       type: string
-      jsonPath: .spec.coordinator.configurations.sgPoolingConfig + ", " + .spec.shards.configurations.sgPoolingConfig
+      jsonPath: .spec.coordinator.configurations.sgPoolingConfig + ", " + .spec.workers.configurations.sgPoolingConfig
       priority: 1
     - name: postgres-config
       type: string
-      jsonPath: .spec.coordinator.configurations.sgPostgresConfig + ", " + .spec.shards.configurations.sgPostgresConfig
+      jsonPath: .spec.coordinator.configurations.sgPostgresConfig + ", " + .spec.workers.configurations.sgPostgresConfig
       priority: 1
     schema:
       openAPIV3Schema:
@@ -51,7 +59,7 @@ spec:
             properties:
               name:
                 type: string
-                maxLength: 37
+                maxLength: 36
                 pattern: "^[a-z]([-a-z0-9]*[a-z0-9])?$"
                 description: |
                   Name of the StackGres sharded cluster. Following [Kubernetes naming conventions](https://github.com/kubernetes/community/blob/master/contributors/design-proposals/architecture/identifiers.md), it must be an rfc1035/rfc1123 subdomain, that is, up to 253 characters consisting of one or more lowercase labels separated by `.`. Where each label is an alphanumeric (a-z, and 0-9) string, with the `-` character allowed anywhere except the first or last character.
@@ -61,7 +69,7 @@ spec:
             type: object
             description: |
               Specification of the desired behavior of a StackGres sharded cluster.
-            required: ["database", "postgres", "coordinator", "shards"]
+            required: ["database", "postgres", "coordinator"]
             properties:
               profile:
                 type: string
@@ -111,13 +119,13 @@ spec:
                   
                   **DDP**
                   
-                  DDP (Distributed Data Partitioning) allows you to distribute data across different physical nodes to improve the query performance of high data volumes, taking advantage of distinct nodes’ resources. Using the entry point named coordinator in charge of sending/distributing the queries to different nodes named shards.
+                  DDP (Distributed Data Partitioning) allows you to distribute data across different physical nodes to improve the query performance of high data volumes, taking advantage of distinct nodes’ resources. Using the entry point named coordinator in charge of sending/distributing the queries to different nodes named workers.
                   
                   **ShardingSphere**
                   
                   Apache ShardingSphere is an ecosystem to transform any database into a distributed database system, and enhance it with sharding, elastic scaling, encryption features & more.
                   
-                  StackGres implementation of ShardingSphere as a sharding technology uses the [ShardingSphere Proxy](https://shardingsphere.apache.org/document/current/en/quick-start/shardingsphere-proxy-quick-start/) as an entry point to distribute SQL traffic among the shards.
+                  StackGres implementation of ShardingSphere as a sharding technology uses the [ShardingSphere Proxy](https://shardingsphere.apache.org/document/current/en/quick-start/shardingsphere-proxy-quick-start/) as an entry point to distribute SQL traffic among the workers.
                   
                   This implementation requires the [ShardingSphere Operator](https://shardingsphere.apache.org/oncloud/current/en/user-manual/cn-sn-operator/) to be installed and will create a ComputeNode
               database:
@@ -162,7 +170,7 @@ spec:
                       **Exmaple:**
 
                       ``` yaml
-                      apiVersion: stackgres.io/v1alpha1
+                      apiVersion: stackgres.io/v1beta1
                       kind: SGShardedCluster
                       metadata:
                         name: stackgres
@@ -200,7 +208,7 @@ spec:
                       **Example:**
 
                       ```yaml
-                      apiVersion: stackgres.io/v1alpha1
+                      apiVersion: stackgres.io/v1beta1
                       kind: SGShardedCluster
                       metadata:
                         name: stackgres
@@ -475,6 +483,17 @@ spec:
 
                           See also https://kubernetes.io/docs/concepts/services-networking/service/
                         properties: *service-properties
+                      queryRouters:
+                        type: object
+                        description: |
+                          Configure the query routers service to any primary in the query router wokrers with the name as the SGShardedCluster plus the `-routers` suffix.
+                          
+                          It provides a stable connection to read-write Postgres servers of any query router worker SGCluster. Read-write servers are load-balanced via this service.
+
+                          See also `.spec.coordinator.queryRouterClusters`
+
+                          See also https://kubernetes.io/docs/concepts/services-networking/service/
+                        properties: *service-properties
                       customPorts:
                         type: array
                         description: |
@@ -509,27 +528,27 @@ spec:
                           required:
                             - port
                           type: object
-                  shards:
+                  workers: &workersServices
                     type: object
                     description: |
-                      Configuration for the shards services
+                      Configuration for the workers services
                     properties:
                       primaries:
                         type: object
                         description: |
-                          Configure the shards service to any primary in the shards with the name as the SGShardedCluster plus the `-shards` suffix.
+                          Configure the workers service to any primary in the workers with the name as the SGShardedCluster plus the `-workers` suffix.
                           
-                          It provides a stable connection (regardless of primary failures or switchovers) to read-write Postgres servers of any shard cluster. Read-write servers are load-balanced via this service.
+                          It provides a stable connection (regardless of primary failures or switchovers) to read-write Postgres servers of any worker SGCluster. Read-write servers are load-balanced via this service.
 
                           See also https://kubernetes.io/docs/concepts/services-networking/service/
                         properties: *service-properties
                       customPorts:
                         type: array
                         description: |
-                          The list of custom ports that will be exposed by the shards services.
+                          The list of custom ports that will be exposed by the workers services.
                           
                           The names of custom ports will be prefixed with the string `c-` so they do not
-                            conflict with ports defined for the shards services.
+                            conflict with ports defined for the workers services.
                           
                           The names of target ports will be prefixed with the string `c-` so that the ports
                             that can be referenced in this section will be only those defined under
@@ -541,10 +560,10 @@ spec:
                           See: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#serviceport-v1-core
                         items:
                           description: |
-                            A custom port that will be exposed by the Postgres shards services.
+                            A custom port that will be exposed by the Postgres workers services.
 
                             The name of the custom port will be prefixed with the string `c-` so it does not
-                              conflict with ports defined for the shards services.
+                              conflict with ports defined for the workers services.
 
                             The name of target port will be prefixed with the string `c-` so that the port
                               that can be referenced in this section will be only those defined under
@@ -556,6 +575,12 @@ spec:
                           required:
                             - port
                           type: object
+                  shards:
+                    <<: *workersServices
+                    description: |
+                      **Deprecated** use `workers` instead.
+
+                      Configuration for the workers services
               configurations:
                 type: object
                 description: |
@@ -564,7 +589,7 @@ spec:
                   **Example:**
 
                   ``` yaml
-                  apiVersion: stackgres.io/v1alpha1
+                  apiVersion: stackgres.io/v1beta1
                   kind: SGShardedCluster
                   metadata:
                     name: stackgres
@@ -623,7 +648,7 @@ spec:
                         cronSchedule:
                           type: string
                           description: |
-                            Continuous Archiving backups are composed of periodic *base backups* and all the WAL segments produced in between those base backups for the coordinator and each shard. This parameter specifies at what time and with what frequency to start performing a new base backup.
+                            Continuous Archiving backups are composed of periodic *base backups* and all the WAL segments produced in between those base backups for the coordinator and each worker. This parameter specifies at what time and with what frequency to start performing a new base backup.
                             
                             Use cron syntax (`m h dom mon dow`) for this parameter, i.e., 5 values separated by spaces:
                             *  `m`: minute, 0 to 59.
@@ -682,12 +707,24 @@ spec:
                             type: string
                             nullable: true
                           description: |
-                            The paths where the backups are stored. If not set this field is filled up by the operator.
+                            The paths where the backups of coordinator and workers are stored. If not set this field is filled up by the operator.
 
                             When provided will indicate where the backups and WAL files will be stored.
                             
-                            The first path indicate the coordinator path and the other paths indicate the shards paths
+                            The first path indicate the coordinator path and the other paths indicate the workers paths
 
+                            > **WARNING**: Most users should leave this field empty since having it manually set could be dangerous. If the value is repeated due to re-creating an SGShardedCluster or
+                             re-using the same value in another SGShardedCluster and you may get a mixed WAL history with unrecoverable backups.
+                        queryRouterPaths:
+                          type: array
+                          items:
+                            type: string
+                            nullable: true
+                          description: |
+                            The paths where the backups of the query routers are stored. If not set this field is filled up by the operator.
+  
+                            When provided will indicate where the backups and WAL files will be stored.
+  
                             > **WARNING**: Most users should leave this field empty since having it manually set could be dangerous. If the value is repeated due to re-creating an SGShardedCluster or
                              re-using the same value in another SGShardedCluster and you may get a mixed WAL history with unrecoverable backups.
                         useVolumeSnapshot:
@@ -921,7 +958,7 @@ spec:
                       **Example:**
 
                       ```yaml
-                      apiVersion: stackgres.io/v1alpha1
+                      apiVersion: stackgres.io/v1beta1
                       kind: SGShardedCluster
                       metadata:
                         name: stackgres
@@ -934,7 +971,7 @@ spec:
                               customAnnotations: customAnnotationValue
                             coordinatorAnyService:
                               customAnnotations: customAnnotationValue
-                            shardsPrimariesService:
+                            workersPrimariesService:
                               customAnnotations: customAnnotationValue
                       ```
                     properties:
@@ -978,11 +1015,22 @@ spec:
                         description: Custom Kubernetes [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/).
                         additionalProperties:
                           type: string
-                      shardsPrimariesService:
+                      queryRoutersPrimariesService:
                         type: object
                         description: Custom Kubernetes [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/).
                         additionalProperties:
                           type: string
+                      workersPrimariesService: &workersPrimariesServiceAnnotations
+                        type: object
+                        description: Custom Kubernetes [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/).
+                        additionalProperties:
+                          type: string
+                      shardsPrimariesService:
+                        <<: *workersPrimariesServiceAnnotations
+                        description: |
+                          **Deprecated** use `workersPrimariesService` instead.
+
+                          Custom Kubernetes [annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/).
                   labels:
                     type: object
                     description: |
@@ -991,7 +1039,7 @@ spec:
                       **Example:**
 
                       ```yaml
-                      apiVersion: stackgres.io/v1alpha1
+                      apiVersion: stackgres.io/v1beta1
                       kind: SGShardedCluster
                       metadata:
                         name: stackgres
@@ -1044,11 +1092,22 @@ spec:
                         description: Custom Kubernetes [labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/).
                         additionalProperties:
                           type: string
-                      shardsPrimariesService:
+                      queryRoutersPrimariesService:
                         type: object
                         description: Custom Kubernetes [labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/).
                         additionalProperties:
                           type: string
+                      workersPrimariesService: &workersPrimariesServiceLabels
+                        type: object
+                        description: Custom Kubernetes [labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/).
+                        additionalProperties:
+                          type: string
+                      shardsPrimariesService:
+                        <<: *workersPrimariesServiceLabels
+                        description: |
+                          **Deprecated** use `workersPrimariesService` instead.
+                          
+                          Custom Kubernetes [labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/).
               replicateFrom:
                 type: object
                 description: |
@@ -1063,7 +1122,7 @@ spec:
                   From SGShardedCluster instance:
 
                   ```yaml
-                  apiVersion: stackgres.io/v1
+                  apiVersion: stackgres.io/v1beta1
                   kind: SGShardedCluster
                   metadata:
                     name: stackgres
@@ -1079,7 +1138,7 @@ spec:
                   From external sharded cluster instance:
 
                   ```yaml
-                  apiVersion: stackgres.io/v1
+                  apiVersion: stackgres.io/v1beta1
                   kind: SGShardedCluster
                   metadata:
                     name: stackgres
@@ -1118,7 +1177,7 @@ spec:
                   From Storage:
 
                   ```yaml
-                  apiVersion: stackgres.io/v1
+                  apiVersion: stackgres.io/v1beta1
                   kind: SGShardedCluster
                   metadata:
                     name: stackgres
@@ -1162,7 +1221,7 @@ spec:
                   From external instance and storage:
 
                   ```yaml
-                  apiVersion: stackgres.io/v1alpha1
+                  apiVersion: stackgres.io/v1beta1
                   kind: SGShardedCluster
                   metadata:
                     name: stackgres
@@ -1228,6 +1287,51 @@ spec:
                             description: The ports of the PostgreSQL instances to replicate from.
                             items:
                               type: integer
+                          customRestoreMethods:
+                            type: array
+                            description: Custom restore methods. See https://patroni.readthedocs.io/en/latest/replica_bootstrap.html#custom-replica-creation
+                            items:
+                              type: object
+                              description: Custom restore method. See https://patroni.readthedocs.io/en/latest/replica_bootstrap.html#custom-replica-creation
+                              properties:
+                                command:
+                                  type: string
+                                  description: A command to be run to restore the leader replica. Mutually exclusive with `script` field.
+                                script:
+                                  type: string
+                                  description: The path to a shell script to be run to restore the leader replica. Mutually exclusive with `command` field.
+                                no_leader:
+                                  type: boolean
+                                  description: |
+                                    If set to `true` allows Patroni to call the replica creation method even if there is no running leader or replicas.
+                                     In that case, an empty string will be passed in a connection string. This is useful for restoring the formerly
+                                     running cluster from the binary backup.
+                                keep_data:
+                                  type: boolean
+                                  description: If set to `true`, will instruct Patroni to not clean PGDATA folder before calling restore.
+                                no_params:
+                                  type: boolean
+                                  description: If set to `true`, restricts passing parameters to custom command or script.
+                                parameters:
+                                  type: object
+                                  description: A list of optional parameters to pass to the command or script.
+                                  additionalProperties:
+                                    type: string
+                                keep_existing_recovery_conf:
+                                  type: boolean
+                                  description: |
+                                    If set to `true`, will instruct Patroni to not remove the existing `recovery.conf` file if it exists (PostgreSQL <= 11).
+                                     Similarly, in that case Patroni will not remove the existing `recovery.signal` or `standby.signal` if either exists,
+                                     nor will it override the configured recovery settings (PostgreSQL >= 12). This is useful when bootstrapping from a
+                                     backup with tools like pgBackRest that generate the appropriate recovery configuration for you.
+                                recovery_conf:
+                                  type: object
+                                  description: |
+                                    When set, Patroni will generate a `recovery.conf` before starting the newly bootstrapped instance (or set the recovery
+                                     settings on Postgres configuration if running PostgreSQL >= 12). Typically, such recovery configuration should contain
+                                     at least one of the `recovery_target_*` parameters, together with the `recovery_target_action` set to promote.
+                                  additionalProperties:
+                                    type: string
                   storage:
                     type: object
                     description: |
@@ -1362,9 +1466,17 @@ spec:
               coordinator:
                 type: object
                 description: |
-                  The coordinator is a StackGres cluster responsible for coordinating data storage and access from the shards.
+                  The coordinator is a StackGres cluster responsible for coordinating data storage and access to the workers.
                 required: ["instances", "pods"]
                 properties:
+                  clusterName:
+                    type: string
+                    description: |
+                      Name of coordinator StackGres cluster.
+
+                      When this name is specified it will be used as the coordinator SGCluster name.
+
+                      **This field can only be set on creation.**
                   instances:
                     type: integer
                     minimum: 0
@@ -1375,6 +1487,41 @@ spec:
                       If sharding type is `shardingsphere` then, instead of an SGCluster a ComputeNode will be created.
                       
                       See also https://shardingsphere.apache.org/oncloud/current/en/user-manual/cn-sn-operator/#computenode 
+                  queryRouterClusters:
+                    type: integer
+                    minimum: 0
+                    description: |
+                      Number of query router StackGres clusters, each composed of a single instance.
+
+                      Query routers are special workers that do not store sharded table data. Like the coordinator, query routers
+                      are StackGres clusters responsible for coordinating access to the workers but do not coordinate data storage.
+                      The instances created as query routers allow horizontal scaling of the entrypoints for read/write operations
+                      without overloading the workers that store the sharded table data.
+
+                      Query router StackGres clusters inherit the same characteristics as the coordinator in their spec, with the
+                      exception of the `instances` which is fixed to one and the `managedSql` that requires an override to be set.
+                      This is because a query router, like the coordinator, is not meant to store data and is architecturally more
+                      similar to a coordinator than to a worker. Their values can still be overridden via `.spec.workers.overrides`.
+                      See also field `queryRouterIndexOffset`.
+
+                      This parameter can only be set if `.spec.type` is `citus`.
+                  queryRouterClusterNameTemplate:
+                    type: string
+                    description: |
+                      Name template of query router worker's StackGres clusters.
+
+                      The SGCluster name will be created using the name template and the index (starting at 0) as a suffix.
+                      For instance with a `clusterNameTemplate` set to `myworker` the first SGCluster name will be `myworker0`.
+
+                      By default the query router cluster name template is `<cluster name>-router`.
+
+                      **This field can only be set on creation.**
+                  queryRouterIndexOffset:
+                    type: integer
+                    minimum: 1024
+                    description: |
+                      Allow to set the index offset for query router workers. Needed only if you plan to have more than 1023 regular
+                      worker nodes.
                   autoscaling: &autoscaling
                     type: object
                     description: |
@@ -1518,7 +1665,7 @@ spec:
                     description: |
                       This section allows referencing SQL scripts that will be applied to the cluster live.
 
-                      If sharding type is `shardingsphere` then this section will be applied to the first cluster shard.
+                      If sharding type is `shardingsphere` then this section will be applied to the first cluster worker.
                        In this case the database postgres will also provide a foreign server called `shardingsphere` and
                        the superuser user mappings that will allow running DistQL queries using command like the following:
                       
@@ -1559,6 +1706,16 @@ spec:
                       If sharding type is `shardingsphere` then this section will apply to the ComputeNode.
                     required: ["persistentVolume"]
                     properties:
+                      statefulSetServiceName: &statefulSetServiceName #!jq_placeholder .definitions["io.k8s.api.apps.v1.StatefulSet"].properties.spec.properties.serviceName
+                        {"description":"serviceName is the name of the service that governs this StatefulSet. This service must exist before the StatefulSet, and is responsible for the network identity of the set. Pods get DNS/hostnames that follow the pattern: pod-specific-string.serviceName.default.svc.cluster.local where \"pod-specific-string\" is managed by the StatefulSet controller.","type":"string"}
+                      setHostnameAsFQDN: &setHostnameAsFQDN #!jq_placeholder .definitions["io.k8s.api.core.v1.Pod"].properties.spec.properties.setHostnameAsFQDN
+                        {"description":"If true the pod's hostname will be configured as the pod's FQDN, rather than the leaf name (the default). In Linux containers, this means setting the FQDN in the hostname field of the kernel (the nodename field of struct utsname). In Windows containers, this means setting the registry value of hostname for the registry key HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\Tcpip\\\\Parameters to FQDN. If a pod does not have FQDN, this has no effect. Default to false.","type":"boolean"}
+                      hostNetwork: &hostNetwork #!jq_placeholder .definitions["io.k8s.api.core.v1.Pod"].properties.spec.properties.hostNetwork
+                        {"description":"Host networking requested for this pod. Use the host's network namespace. When using HostNetwork you should specify ports so the scheduler is aware. When `hostNetwork` is true, specified `hostPort` fields in port definitions must match `containerPort`, and unspecified `hostPort` fields in port definitions are defaulted to match `containerPort`. Default to false.","type":"boolean"}
+                      dnsPolicy: &dnsPolicy #!jq_placeholder .definitions["io.k8s.api.core.v1.Pod"].properties.spec.properties.dnsPolicy
+                        {"description":"Set DNS policy for the pod. Defaults to \"ClusterFirst\". Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst', 'Default' or 'None'. DNS parameters given in DNSConfig will be merged with the policy selected with DNSPolicy. To have DNS options set along with hostNetwork, you have to specify DNS policy explicitly to 'ClusterFirstWithHostNet'.","type":"string"}
+                      dnsConfig: &dnsConfig #!jq_placeholder .definitions["io.k8s.api.core.v1.Pod"].properties.spec.properties.dnsConfig
+                        {"description":"PodDNSConfig defines the DNS parameters of a pod in addition to those generated from DNSPolicy.","properties":{"nameservers":{"description":"A list of DNS name server IP addresses. This will be appended to the base nameservers generated from DNSPolicy. Duplicated nameservers will be removed.","items":{"type":"string"},"type":"array"},"options":{"description":"A list of DNS resolver options. This will be merged with the base options generated from DNSPolicy. Duplicated entries will be removed. Resolution options given in Options will override those that appear in the base DNSPolicy.","items":{"description":"PodDNSConfigOption defines DNS resolver options of a pod.","properties":{"name":{"description":"Name is this DNS resolver option's name. Required.","type":"string"},"value":{"description":"Value is this DNS resolver option's value.","type":"string"}},"type":"object"},"type":"array"},"searches":{"description":"A list of DNS search domains for host-name lookup. This will be appended to the base search paths generated from DNSPolicy. Duplicated search paths will be removed.","items":{"type":"string"},"type":"array"}},"type":"object"}
                       terminationGracePeriodSeconds: &terminationGracePeriodSeconds #!jq_placeholder .definitions["io.k8s.api.core.v1.Pod"].properties.spec.properties.terminationGracePeriodSeconds
                         {"description":"Optional duration in seconds the pod needs to terminate gracefully. May be decreased in delete request. Value must be non-negative integer. The value zero indicates stop immediately via the kill signal (no opportunity to shut down). If this value is nil, the default grace period will be used instead. The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process. Defaults to 30 seconds.","format":"int64","type":"integer"}
                       readinessProbe: &probe  #!jq_placeholder .definitions["io.k8s.api.core.v1.Container"].properties.readinessProbe|.properties=(.properties|to_entries|map(select(.key|test("^(initialDelaySeconds|periodSeconds|successThreshold|failureThreshold|timeoutSeconds|terminationGracePeriodSeconds)$")))|from_entries)
@@ -1585,6 +1742,45 @@ spec:
                               Name of an existing StorageClass in the Kubernetes cluster, used to create the PersistentVolumes for the instances of the cluster.
                       
                               If sharding type is `shardingsphere` then this field is ignored.
+                          volumeAttributesClassName:
+                            type: string
+                            description: |
+                              Name of an existing StorageClass in the Kubernetes cluster, used to create the PersistentVolumes for the instances of the cluster.
+                              
+                              See https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
+                          ioLimits:
+                            type: object
+                            description: |
+                              This section allows to define per-volume I/O limits for nodes using [cgroup v2 `io.max` features](https://docs.kernel.org/admin-guide/cgroup-v2.html).
+                              
+                              When multiple PostgreSQL clusters share the same local storage device on a Kubernetes node, a single cluster running a heavy workload
+                               (for example large COPY, aggressive VACUUM, or an unoptimized query) can saturate the device's I/O bandwidth and degrade performance
+                               for every other cluster on that node. StackGres provides this mechanism to prevent this class of noisy-neighbor problem.
+                              The mechanism operates at the cgroup + block-device layer, not at the PVC abstraction. Since each pod has its own cgroup, limits are
+                               enforced independently across pods even when they share the same physical device — this is the core of the noisy-neighbor protection.
+                              However, if multiple volumes within the same pod share the same backing device, their limits target a single entry in that pod's cgroup
+                               and cannot be enforced independently of each other.
+                              
+                              This feature works on top of existing CSI drivers such as TopoLVM or OpenEBS LocalPV. The primary target is on-premises deployments where
+                               multiple StackGres clusters share local NVMe storage on the same node.
+                              
+                              > **IMPORTANT**: Setting any of the value above will require to create an init container named `setup-io-limits` in each SGCluster's Pods
+                              >  running as root with only the `CHOWN` cabability set. Also both the `setup-io-limits` init container and the `cluster-controller`
+                              >  container will require to mount the host path `/sys/fs/cgroup` in order to be able to set owner of and write to the `io.max` file that
+                              >  will allows to set the io limits.
+                            properties:
+                              readIops:
+                                type: integer
+                                description: Max read IO operations per second. Leave empty to remove this limit.
+                              writeIops:
+                                type: integer
+                                description: Max write IO operations per second. Leave empty to remove this limit.
+                              readMiBps:
+                                type: integer
+                                description: Max read MiB per second. Leave empty to remove this limit.
+                              writeMiBps:
+                                type: integer
+                                description: Max write MiB per second. Leave empty to remove this limit.
                           fsGroupChangePolicy: #!jq_placeholder .definitions["io.k8s.api.core.v1.Pod"].properties.spec.properties.securityContext.properties.fsGroupChangePolicy
                             {"description":"fsGroupChangePolicy defines behavior of changing ownership and permission of the volume before being exposed inside Pod. This field will only apply to volume types which support fsGroup based ownership(and permissions). It will have no effect on ephemeral volume types such as: secret, configmaps and emptydir. Valid values are \"OnRootMismatch\" and \"Always\". If not specified, \"Always\" is used. Note that this field cannot be set when spec.os.name is windows.","type":"string"}
                       disableConnectionPooling:
@@ -1600,7 +1796,7 @@ spec:
                         type: boolean
                         default: false
                         description: |
-                          **Deprecated** use instead .spec.configurations.observability.disableMetrics.
+                          **Deprecated** use `.spec.configurations.observability.disableMetrics` instead.
                       disablePostgresUtil:
                         type: boolean
                         default: false
@@ -1659,32 +1855,58 @@ spec:
 
                           **Changing this field may require a restart.**
                         properties:
+                          preemptionPolicy: &preemptionPolicy #!jq_placeholder .definitions["io.k8s.api.core.v1.Pod"].properties.spec.properties.preemptionPolicy
+                            {"description":"PreemptionPolicy is the Policy for preempting pods with lower priority. One of Never, PreemptLowerPriority. Defaults to PreemptLowerPriority if unset.","type":"string"}
+                          priorityClassName: &priorityClassName #!jq_placeholder .definitions["io.k8s.api.core.v1.Pod"].properties.spec.properties.priorityClassName
+                            {"description":"If specified, indicates the pod's priority. \"system-node-critical\" and \"system-cluster-critical\" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be default or zero if there is no default.","type":"string"}
+                          runtimeClassName: &runtimeClassName #!jq_placeholder .definitions["io.k8s.api.core.v1.Pod"].properties.spec.properties.runtimeClassName
+                            {"description":"RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run this pod.  If no RuntimeClass resource matches the named class, the pod will not be run. If unset or empty, the \"legacy\" RuntimeClass will be used, which is an implicit class with an empty definition that uses the default runtime handler. More info: https://git.k8s.io/enhancements/keps/sig-node/585-runtime-class","type":"string"}
+                          schedulerName: &schedulerName #!jq_placeholder .definitions["io.k8s.api.core.v1.Pod"].properties.spec.properties.schedulerName
+                            {"description":"If specified, the pod will be dispatched by specified scheduler. If not specified, the pod will be dispatched by default scheduler.","type":"string"}
                           nodeSelector: &node-selector
                             type: object
                             additionalProperties:
                               type: string
                             description: |
                               NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
-                          tolerations: &tolerations #!jq_placeholder .definitions["io.k8s.api.core.v1.PodSpec"].properties.tolerations #toleration-v1-core
-                            {"description":"If specified, the pod's tolerations.\n\nSee https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#toleration-v1-core","items":{"description":"The pod this Toleration is attached to tolerates any taint that matches the triple <key,value,effect> using the matching operator <operator>.","properties":{"effect":{"description":"Effect indicates the taint effect to match. Empty means match all taint effects. When specified, allowed values are NoSchedule, PreferNoSchedule and NoExecute.","type":"string"},"key":{"description":"Key is the taint key that the toleration applies to. Empty means match all taint keys. If the key is empty, operator must be Exists; this combination means to match all values and all keys.","type":"string"},"operator":{"description":"Operator represents a key's relationship to the value. Valid operators are Exists, Equal, Lt, and Gt. Defaults to Equal. Exists is equivalent to wildcard for value, so that a pod can tolerate all taints of a particular category. Lt and Gt perform numeric comparisons (requires feature gate TaintTolerationComparisonOperators).","type":"string"},"tolerationSeconds":{"description":"TolerationSeconds represents the period of time the toleration (which must be of effect NoExecute, otherwise this field is ignored) tolerates the taint. By default, it is not set, which means tolerate the taint forever (do not evict). Zero and negative values will be treated as 0 (evict immediately) by the system.","format":"int64","type":"integer"},"value":{"description":"Value is the taint value the toleration matches to. If the operator is Exists, the value should be empty, otherwise just a regular string.","type":"string"}},"type":"object"},"type":"array"}
-                          nodeAffinity: &node-affinity #!jq_placeholder .definitions["io.k8s.api.core.v1.PodSpec"].properties.affinity.properties.nodeAffinity #nodeaffinity-v1-core
-                            {"description":"Node affinity is a group of node affinity scheduling rules.\n\nSee https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#nodeaffinity-v1-core","properties":{"preferredDuringSchedulingIgnoredDuringExecution":{"description":"The scheduler will prefer to schedule pods to nodes that satisfy the affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, requiredDuringScheduling affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding \"weight\" to the sum if the node matches the corresponding matchExpressions; the node(s) with the highest sum are the most preferred.","items":{"description":"An empty preferred scheduling term matches all objects with implicit weight 0 (i.e. it's a no-op). A null preferred scheduling term matches no objects (i.e. is also a no-op).","properties":{"preference":{"description":"A null or empty node selector term matches no objects. The requirements of them are ANDed. The TopologySelectorTerm type implements a subset of the NodeSelectorTerm.","properties":{"matchExpressions":{"description":"A list of node selector requirements by node's labels.","items":{"description":"A node selector requirement is a selector that contains values, a key, and an operator that relates the key and values.","properties":{"key":{"description":"The label key that the selector applies to.","type":"string"},"operator":{"description":"Represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.","type":"string"},"values":{"description":"An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.","items":{"type":"string"},"type":"array"}},"required":["key","operator"],"type":"object"},"type":"array"},"matchFields":{"description":"A list of node selector requirements by node's fields.","items":{"description":"A node selector requirement is a selector that contains values, a key, and an operator that relates the key and values.","properties":{"key":{"description":"The label key that the selector applies to.","type":"string"},"operator":{"description":"Represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.","type":"string"},"values":{"description":"An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.","items":{"type":"string"},"type":"array"}},"required":["key","operator"],"type":"object"},"type":"array"}},"type":"object"},"weight":{"description":"Weight associated with matching the corresponding nodeSelectorTerm, in the range 1-100.","format":"int32","type":"integer"}},"required":["weight","preference"],"type":"object"},"type":"array"},"requiredDuringSchedulingIgnoredDuringExecution":{"description":"A node selector represents the union of the results of one or more label queries over a set of nodes; that is, it represents the OR of the selectors represented by the node selector terms.","properties":{"nodeSelectorTerms":{"description":"Required. A list of node selector terms. The terms are ORed.","items":{"description":"A null or empty node selector term matches no objects. The requirements of them are ANDed. The TopologySelectorTerm type implements a subset of the NodeSelectorTerm.","properties":{"matchExpressions":{"description":"A list of node selector requirements by node's labels.","items":{"description":"A node selector requirement is a selector that contains values, a key, and an operator that relates the key and values.","properties":{"key":{"description":"The label key that the selector applies to.","type":"string"},"operator":{"description":"Represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.","type":"string"},"values":{"description":"An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.","items":{"type":"string"},"type":"array"}},"required":["key","operator"],"type":"object"},"type":"array"},"matchFields":{"description":"A list of node selector requirements by node's fields.","items":{"description":"A node selector requirement is a selector that contains values, a key, and an operator that relates the key and values.","properties":{"key":{"description":"The label key that the selector applies to.","type":"string"},"operator":{"description":"Represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists, DoesNotExist. Gt, and Lt.","type":"string"},"values":{"description":"An array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. If the operator is Gt or Lt, the values array must have a single element, which will be interpreted as an integer. This array is replaced during a strategic merge patch.","items":{"type":"string"},"type":"array"}},"required":["key","operator"],"type":"object"},"type":"array"}},"type":"object"},"type":"array"}},"required":["nodeSelectorTerms"],"type":"object"}},"type":"object"}
-                          priorityClassName: &priority-class-name #!jq_placeholder .definitions["io.k8s.api.core.v1.PodSpec"].properties.priorityClassName
-                            {"description":"If specified, indicates the pod's priority. \"system-node-critical\" and \"system-cluster-critical\" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be default or zero if there is no default.","type":"string"}
-                          podAffinity: &pod-affinity #!jq_placeholder .definitions["io.k8s.api.core.v1.PodSpec"].properties.affinity.properties.podAffinity #podaffinity-v1-core
-                            {"description":"Pod affinity is a group of inter pod affinity scheduling rules.\n\nSee https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#podaffinity-v1-core","properties":{"preferredDuringSchedulingIgnoredDuringExecution":{"description":"The scheduler will prefer to schedule pods to nodes that satisfy the affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, requiredDuringScheduling affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding \"weight\" to the sum if the node has pods which matches the corresponding podAffinityTerm; the node(s) with the highest sum are the most preferred.","items":{"description":"The weights of all of the matched WeightedPodAffinityTerm fields are added per-node to find the most preferred node(s)","properties":{"podAffinityTerm":{"description":"Defines a set of pods (namely those matching the labelSelector relative to the given namespace(s)) that this pod should be co-located (affinity) or not co-located (anti-affinity) with, where co-located is defined as running on a node whose value of the label with key <topologyKey> matches that of any node on which a pod of the set of pods is running","properties":{"labelSelector":{"description":"A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects.","properties":{"matchExpressions":{"description":"matchExpressions is a list of label selector requirements. The requirements are ANDed.","items":{"description":"A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.","properties":{"key":{"description":"key is the label key that the selector applies to.","type":"string"},"operator":{"description":"operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.","type":"string"},"values":{"description":"values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.","items":{"type":"string"},"type":"array"}},"required":["key","operator"],"type":"object"},"type":"array"},"matchLabels":{"additionalProperties":{"type":"string"},"description":"matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.","type":"object"}},"type":"object"},"matchLabelKeys":{"description":"MatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both matchLabelKeys and labelSelector. Also, matchLabelKeys cannot be set when labelSelector isn't set.","items":{"type":"string"},"type":"array"},"mismatchLabelKeys":{"description":"MismatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both mismatchLabelKeys and labelSelector. Also, mismatchLabelKeys cannot be set when labelSelector isn't set.","items":{"type":"string"},"type":"array"},"namespaceSelector":{"description":"A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects.","properties":{"matchExpressions":{"description":"matchExpressions is a list of label selector requirements. The requirements are ANDed.","items":{"description":"A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.","properties":{"key":{"description":"key is the label key that the selector applies to.","type":"string"},"operator":{"description":"operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.","type":"string"},"values":{"description":"values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.","items":{"type":"string"},"type":"array"}},"required":["key","operator"],"type":"object"},"type":"array"},"matchLabels":{"additionalProperties":{"type":"string"},"description":"matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.","type":"object"}},"type":"object"},"namespaces":{"description":"namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector. null or empty namespaces list and null namespaceSelector means \"this pod's namespace\".","items":{"type":"string"},"type":"array"},"topologyKey":{"description":"This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.","type":"string"}},"required":["topologyKey"],"type":"object"},"weight":{"description":"weight associated with matching the corresponding podAffinityTerm, in the range 1-100.","format":"int32","type":"integer"}},"required":["weight","podAffinityTerm"],"type":"object"},"type":"array"},"requiredDuringSchedulingIgnoredDuringExecution":{"description":"If the affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a pod label update), the system may or may not try to eventually evict the pod from its node. When there are multiple elements, the lists of nodes corresponding to each podAffinityTerm are intersected, i.e. all terms must be satisfied.","items":{"description":"Defines a set of pods (namely those matching the labelSelector relative to the given namespace(s)) that this pod should be co-located (affinity) or not co-located (anti-affinity) with, where co-located is defined as running on a node whose value of the label with key <topologyKey> matches that of any node on which a pod of the set of pods is running","properties":{"labelSelector":{"description":"A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects.","properties":{"matchExpressions":{"description":"matchExpressions is a list of label selector requirements. The requirements are ANDed.","items":{"description":"A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.","properties":{"key":{"description":"key is the label key that the selector applies to.","type":"string"},"operator":{"description":"operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.","type":"string"},"values":{"description":"values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.","items":{"type":"string"},"type":"array"}},"required":["key","operator"],"type":"object"},"type":"array"},"matchLabels":{"additionalProperties":{"type":"string"},"description":"matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.","type":"object"}},"type":"object"},"matchLabelKeys":{"description":"MatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both matchLabelKeys and labelSelector. Also, matchLabelKeys cannot be set when labelSelector isn't set.","items":{"type":"string"},"type":"array"},"mismatchLabelKeys":{"description":"MismatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both mismatchLabelKeys and labelSelector. Also, mismatchLabelKeys cannot be set when labelSelector isn't set.","items":{"type":"string"},"type":"array"},"namespaceSelector":{"description":"A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects.","properties":{"matchExpressions":{"description":"matchExpressions is a list of label selector requirements. The requirements are ANDed.","items":{"description":"A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.","properties":{"key":{"description":"key is the label key that the selector applies to.","type":"string"},"operator":{"description":"operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.","type":"string"},"values":{"description":"values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.","items":{"type":"string"},"type":"array"}},"required":["key","operator"],"type":"object"},"type":"array"},"matchLabels":{"additionalProperties":{"type":"string"},"description":"matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.","type":"object"}},"type":"object"},"namespaces":{"description":"namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector. null or empty namespaces list and null namespaceSelector means \"this pod's namespace\".","items":{"type":"string"},"type":"array"},"topologyKey":{"description":"This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.","type":"string"}},"required":["topologyKey"],"type":"object"},"type":"array"}},"type":"object"}
-                          podAntiAffinity: &pod-anti-affinity #!jq_placeholder .definitions["io.k8s.api.core.v1.PodSpec"].properties.affinity.properties.podAntiAffinity #podantiaffinity-v1-core
-                            {"description":"Pod anti affinity is a group of inter pod anti affinity scheduling rules.\n\nSee https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#podantiaffinity-v1-core","properties":{"preferredDuringSchedulingIgnoredDuringExecution":{"description":"The scheduler will prefer to schedule pods to nodes that satisfy the anti-affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, requiredDuringScheduling anti-affinity expressions, etc.), compute a sum by iterating through the elements of this field and subtracting \"weight\" from the sum if the node has pods which matches the corresponding podAffinityTerm; the node(s) with the highest sum are the most preferred.","items":{"description":"The weights of all of the matched WeightedPodAffinityTerm fields are added per-node to find the most preferred node(s)","properties":{"podAffinityTerm":{"description":"Defines a set of pods (namely those matching the labelSelector relative to the given namespace(s)) that this pod should be co-located (affinity) or not co-located (anti-affinity) with, where co-located is defined as running on a node whose value of the label with key <topologyKey> matches that of any node on which a pod of the set of pods is running","properties":{"labelSelector":{"description":"A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects.","properties":{"matchExpressions":{"description":"matchExpressions is a list of label selector requirements. The requirements are ANDed.","items":{"description":"A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.","properties":{"key":{"description":"key is the label key that the selector applies to.","type":"string"},"operator":{"description":"operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.","type":"string"},"values":{"description":"values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.","items":{"type":"string"},"type":"array"}},"required":["key","operator"],"type":"object"},"type":"array"},"matchLabels":{"additionalProperties":{"type":"string"},"description":"matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.","type":"object"}},"type":"object"},"matchLabelKeys":{"description":"MatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both matchLabelKeys and labelSelector. Also, matchLabelKeys cannot be set when labelSelector isn't set.","items":{"type":"string"},"type":"array"},"mismatchLabelKeys":{"description":"MismatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both mismatchLabelKeys and labelSelector. Also, mismatchLabelKeys cannot be set when labelSelector isn't set.","items":{"type":"string"},"type":"array"},"namespaceSelector":{"description":"A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects.","properties":{"matchExpressions":{"description":"matchExpressions is a list of label selector requirements. The requirements are ANDed.","items":{"description":"A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.","properties":{"key":{"description":"key is the label key that the selector applies to.","type":"string"},"operator":{"description":"operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.","type":"string"},"values":{"description":"values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.","items":{"type":"string"},"type":"array"}},"required":["key","operator"],"type":"object"},"type":"array"},"matchLabels":{"additionalProperties":{"type":"string"},"description":"matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.","type":"object"}},"type":"object"},"namespaces":{"description":"namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector. null or empty namespaces list and null namespaceSelector means \"this pod's namespace\".","items":{"type":"string"},"type":"array"},"topologyKey":{"description":"This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.","type":"string"}},"required":["topologyKey"],"type":"object"},"weight":{"description":"weight associated with matching the corresponding podAffinityTerm, in the range 1-100.","format":"int32","type":"integer"}},"required":["weight","podAffinityTerm"],"type":"object"},"type":"array"},"requiredDuringSchedulingIgnoredDuringExecution":{"description":"If the anti-affinity requirements specified by this field are not met at scheduling time, the pod will not be scheduled onto the node. If the anti-affinity requirements specified by this field cease to be met at some point during pod execution (e.g. due to a pod label update), the system may or may not try to eventually evict the pod from its node. When there are multiple elements, the lists of nodes corresponding to each podAffinityTerm are intersected, i.e. all terms must be satisfied.","items":{"description":"Defines a set of pods (namely those matching the labelSelector relative to the given namespace(s)) that this pod should be co-located (affinity) or not co-located (anti-affinity) with, where co-located is defined as running on a node whose value of the label with key <topologyKey> matches that of any node on which a pod of the set of pods is running","properties":{"labelSelector":{"description":"A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects.","properties":{"matchExpressions":{"description":"matchExpressions is a list of label selector requirements. The requirements are ANDed.","items":{"description":"A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.","properties":{"key":{"description":"key is the label key that the selector applies to.","type":"string"},"operator":{"description":"operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.","type":"string"},"values":{"description":"values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.","items":{"type":"string"},"type":"array"}},"required":["key","operator"],"type":"object"},"type":"array"},"matchLabels":{"additionalProperties":{"type":"string"},"description":"matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.","type":"object"}},"type":"object"},"matchLabelKeys":{"description":"MatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `labelSelector` as `key in (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both matchLabelKeys and labelSelector. Also, matchLabelKeys cannot be set when labelSelector isn't set.","items":{"type":"string"},"type":"array"},"mismatchLabelKeys":{"description":"MismatchLabelKeys is a set of pod label keys to select which pods will be taken into consideration. The keys are used to lookup values from the incoming pod labels, those key-value labels are merged with `labelSelector` as `key notin (value)` to select the group of existing pods which pods will be taken into consideration for the incoming pod's pod (anti) affinity. Keys that don't exist in the incoming pod labels will be ignored. The default value is empty. The same key is forbidden to exist in both mismatchLabelKeys and labelSelector. Also, mismatchLabelKeys cannot be set when labelSelector isn't set.","items":{"type":"string"},"type":"array"},"namespaceSelector":{"description":"A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects.","properties":{"matchExpressions":{"description":"matchExpressions is a list of label selector requirements. The requirements are ANDed.","items":{"description":"A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.","properties":{"key":{"description":"key is the label key that the selector applies to.","type":"string"},"operator":{"description":"operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.","type":"string"},"values":{"description":"values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.","items":{"type":"string"},"type":"array"}},"required":["key","operator"],"type":"object"},"type":"array"},"matchLabels":{"additionalProperties":{"type":"string"},"description":"matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.","type":"object"}},"type":"object"},"namespaces":{"description":"namespaces specifies a static list of namespace names that the term applies to. The term is applied to the union of the namespaces listed in this field and the ones selected by namespaceSelector. null or empty namespaces list and null namespaceSelector means \"this pod's namespace\".","items":{"type":"string"},"type":"array"},"topologyKey":{"description":"This pod should be co-located (affinity) or not co-located (anti-affinity) with the pods matching the labelSelector in the specified namespaces, where co-located is defined as running on a node whose value of the label with key topologyKey matches that of any node on which any of the selected pods is running. Empty topologyKey is not allowed.","type":"string"}},"required":["topologyKey"],"type":"object"},"type":"array"}},"type":"object"}
-                          topologySpreadConstraints: #!jq_placeholder .definitions["io.k8s.api.core.v1.PodSpec"].properties.topologySpreadConstraints #topologyspreadconstraint-v1-core
-                            {"description":"TopologySpreadConstraints describes how a group of pods ought to spread across topology domains. Scheduler will schedule pods in a way which abides by the constraints. All topologySpreadConstraints are ANDed.\n\nSee https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#topologyspreadconstraint-v1-core","items":{"description":"TopologySpreadConstraint specifies how to spread matching pods among the given topology.","properties":{"labelSelector":{"description":"A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects.","properties":{"matchExpressions":{"description":"matchExpressions is a list of label selector requirements. The requirements are ANDed.","items":{"description":"A label selector requirement is a selector that contains values, a key, and an operator that relates the key and values.","properties":{"key":{"description":"key is the label key that the selector applies to.","type":"string"},"operator":{"description":"operator represents a key's relationship to a set of values. Valid operators are In, NotIn, Exists and DoesNotExist.","type":"string"},"values":{"description":"values is an array of string values. If the operator is In or NotIn, the values array must be non-empty. If the operator is Exists or DoesNotExist, the values array must be empty. This array is replaced during a strategic merge patch.","items":{"type":"string"},"type":"array"}},"required":["key","operator"],"type":"object"},"type":"array"},"matchLabels":{"additionalProperties":{"type":"string"},"description":"matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.","type":"object"}},"type":"object"},"matchLabelKeys":{"description":"MatchLabelKeys is a set of pod label keys to select the pods over which spreading will be calculated. The keys are used to lookup values from the incoming pod labels, those key-value labels are ANDed with labelSelector to select the group of existing pods over which spreading will be calculated for the incoming pod. The same key is forbidden to exist in both MatchLabelKeys and LabelSelector. MatchLabelKeys cannot be set when LabelSelector isn't set. Keys that don't exist in the incoming pod labels will be ignored. A null or empty list means only match against labelSelector.\n\nThis is a beta field and requires the MatchLabelKeysInPodTopologySpread feature gate to be enabled (enabled by default).","items":{"type":"string"},"type":"array"},"maxSkew":{"description":"MaxSkew describes the degree to which pods may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`, it is the maximum permitted difference between the number of matching pods in the target topology and the global minimum. The global minimum is the minimum number of matching pods in an eligible domain or zero if the number of eligible domains is less than MinDomains. For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same labelSelector spread as 2/2/1: In this case, the global minimum is 1. | zone1 | zone2 | zone3 | |  P P  |  P P  |   P   | - if MaxSkew is 1, incoming pod can only be scheduled to zone3 to become 2/2/2; scheduling it onto zone1(zone2) would make the ActualSkew(3-1) on zone1(zone2) violate MaxSkew(1). - if MaxSkew is 2, incoming pod can be scheduled onto any zone. When `whenUnsatisfiable=ScheduleAnyway`, it is used to give higher precedence to topologies that satisfy it. It's a required field. Default value is 1 and 0 is not allowed.","format":"int32","type":"integer"},"minDomains":{"description":"MinDomains indicates a minimum number of eligible domains. When the number of eligible domains with matching topology keys is less than minDomains, Pod Topology Spread treats \"global minimum\" as 0, and then the calculation of Skew is performed. And when the number of eligible domains with matching topology keys equals or greater than minDomains, this value has no effect on scheduling. As a result, when the number of eligible domains is less than minDomains, scheduler won't schedule more than maxSkew Pods to those domains. If value is nil, the constraint behaves as if MinDomains is equal to 1. Valid values are integers greater than 0. When value is not nil, WhenUnsatisfiable must be DoNotSchedule.\n\nFor example, in a 3-zone cluster, MaxSkew is set to 2, MinDomains is set to 5 and pods with the same labelSelector spread as 2/2/2: | zone1 | zone2 | zone3 | |  P P  |  P P  |  P P  | The number of domains is less than 5(MinDomains), so \"global minimum\" is treated as 0. In this situation, new pod with the same labelSelector cannot be scheduled, because computed skew will be 3(3 - 0) if new Pod is scheduled to any of the three zones, it will violate MaxSkew.","format":"int32","type":"integer"},"nodeAffinityPolicy":{"description":"NodeAffinityPolicy indicates how we will treat Pod's nodeAffinity/nodeSelector when calculating pod topology spread skew. Options are: - Honor: only nodes matching nodeAffinity/nodeSelector are included in the calculations. - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.\n\nIf this value is nil, the behavior is equivalent to the Honor policy.","type":"string"},"nodeTaintsPolicy":{"description":"NodeTaintsPolicy indicates how we will treat node taints when calculating pod topology spread skew. Options are: - Honor: nodes without taints, along with tainted nodes for which the incoming pod has a toleration, are included. - Ignore: node taints are ignored. All nodes are included.\n\nIf this value is nil, the behavior is equivalent to the Ignore policy.","type":"string"},"topologyKey":{"description":"TopologyKey is the key of node labels. Nodes that have a label with this key and identical values are considered to be in the same topology. We consider each <key, value> as a \"bucket\", and try to put balanced number of pods into each bucket. We define a domain as a particular instance of a topology. Also, we define an eligible domain as a domain whose nodes meet the requirements of nodeAffinityPolicy and nodeTaintsPolicy. e.g. If TopologyKey is \"kubernetes.io/hostname\", each Node is a domain of that topology. And, if TopologyKey is \"topology.kubernetes.io/zone\", each zone is a domain of that topology. It's a required field.","type":"string"},"whenUnsatisfiable":{"description":"WhenUnsatisfiable indicates how to deal with a pod if it doesn't satisfy the spread constraint. - DoNotSchedule (default) tells the scheduler not to schedule it. - ScheduleAnyway tells the scheduler to schedule the pod in any location,\n  but giving higher precedence to topologies that would help reduce the\n  skew.\nA constraint is considered \"Unsatisfiable\" for an incoming pod if and only if every possible node assignment for that pod would violate \"MaxSkew\" on some topology. For example, in a 3-zone cluster, MaxSkew is set to 1, and pods with the same labelSelector spread as 3/1/1: | zone1 | zone2 | zone3 | | P P P |   P   |   P   | If WhenUnsatisfiable is set to DoNotSchedule, incoming pod can only be scheduled to zone2(zone3) to become 3/2/1(3/1/2) as ActualSkew(2-1) on zone2(zone3) satisfies MaxSkew(1). In other words, the cluster can still be imbalanced, but scheduler won't make it *more* imbalanced. It's a required field.","type":"string"}},"required":["maxSkew","topologyKey","whenUnsatisfiable"],"type":"object"},"type":"array"}
+                          tolerations: &tolerations
+                            type: array
+                            description: "If specified, the pod's tolerations.\n\nSee https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#toleration-v1-core"
+                            items:
+                              type: object
+                              description: "The pod this Toleration is attached to tolerates any taint that matches the triple <key,value,effect> using the matching operator <operator>."
+                              "x-kubernetes-preserve-unknown-fields": true
+                          nodeAffinity: &node-affinity
+                            type: object
+                            "description": "Node affinity is a group of node affinity scheduling rules.\n\nSee https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#nodeaffinity-v1-core"
+                            "x-kubernetes-preserve-unknown-fields": true
+                          podAffinity: &pod-affinity
+                            type: object
+                            "description": "Pod affinity is a group of inter pod affinity scheduling rules.\n\nSee https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#podaffinity-v1-core"
+                            "x-kubernetes-preserve-unknown-fields": true
+                          podAntiAffinity: &pod-anti-affinity
+                            type: object
+                            "description": "Pod anti affinity is a group of inter pod anti affinity scheduling rules.\n\nSee https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#podantiaffinity-v1-core"
+                            "x-kubernetes-preserve-unknown-fields": true
+                          topologySpreadConstraints:
+                            type: array
+                            "description": "TopologySpreadConstraints describes how a group of pods ought to spread across topology domains. Scheduler will schedule pods in a way which abides by the constraints. All topologySpreadConstraints are ANDed.\n\nSee https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#topologyspreadconstraint-v1-core"
+                            items:
+                              type: object
+                              "description": "TopologySpreadConstraint specifies how to spread matching pods among the given topology."
+                              "required": ["maxSkew","topologyKey","whenUnsatisfiable"]
+                              "x-kubernetes-preserve-unknown-fields": true
                           backup:
                             type: object
                             description: Backup Pod custom scheduling and affinity configuration.
                             properties:
-                              nodeSelector: *node-affinity
-                              tolerations: *node-affinity
+                              preemptionPolicy: *preemptionPolicy
+                              priorityClassName: *priorityClassName
+                              runtimeClassName: *runtimeClassName
+                              schedulerName: *schedulerName
+                              tolerations: *tolerations
+                              nodeSelector: *node-selector
                               nodeAffinity: *node-affinity
-                              priorityClassName: *priority-class-name
                               podAffinity: *pod-affinity
                               podAntiAffinity: *pod-anti-affinity
                       managementPolicy:
@@ -1811,7 +2033,7 @@ spec:
                       customInitContainers:
                         type: array
                         description: |
-                          A list of custom application init containers that run within the shards cluster's Pods. The
+                          A list of custom application init containers that run within the workers cluster's Pods. The
                             custom init containers will run following the defined sequence at the end of
                             cluster's Pods init containers.
                           
@@ -2027,6 +2249,10 @@ spec:
                   
                           If sharding type is `shardingsphere` then this section is ignored.
                         properties:
+                          connectUsingFqdn:
+                            type: boolean
+                            description: |
+                              Configure Patroni to use FQDN instead of the Pod's assigned IPs to connect between Patroni and Postgres instances.
                           dynamicConfig:
                             type: object
                             description: |
@@ -2429,24 +2655,35 @@ spec:
                             description: Custom Kubernetes [labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/).
                             additionalProperties:
                               type: string
-              shards:
+              workers: &workers
                 type: object
                 description: |
-                  The shards are a group of StackGres clusters where the partitioned data chunks are stored.
+                  The workers are a group of StackGres clusters where the partitioned data chunks are stored.
                   
-                  When referring to the cluster in the descriptions below it applies to any shard's StackGres cluster.
+                  When referring to the cluster in the descriptions below it applies to any worker's StackGres cluster.
                 required: ["clusters", "instancesPerCluster", "pods"]
                 properties:
                   clusters:
                     type: integer
                     minimum: 0
                     description: |
-                      Number of shard's StackGres clusters
+                      Number of worker's StackGres clusters
+                  clusterNameTemplate:
+                    type: string
+                    description: |
+                      Name template of worker's StackGres clusters.
+
+                      The SGCluster name will be created using the name template and the index (starting at 0) as a suffix.
+                      For instance with a `clusterNameTemplate` set to `myworker` the first SGCluster name will be `myworker0`.
+
+                      By default the query router cluster name template is `<cluster name>-worker`.
+
+                      **This field can only be set on creation.**
                   instancesPerCluster:
                     type: integer
                     minimum: 0
                     description: |
-                      Number of StackGres instances per shard's StackGres cluster. Each instance contains one Postgres server.
+                      Number of StackGres instances per worker's StackGres cluster. Each instance contains one Postgres server.
                         Out of all of the Postgres servers, one is elected as the primary, the rest remain as read-only replicas.
                   autoscaling: *autoscaling
                   sgInstanceProfile:
@@ -2488,6 +2725,11 @@ spec:
                     description: Cluster pod's configuration.
                     required: ["persistentVolume"]
                     properties:
+                      statefulSetServiceName: *statefulSetServiceName
+                      setHostnameAsFQDN: *setHostnameAsFQDN
+                      hostNetwork: *hostNetwork
+                      dnsPolicy: *dnsPolicy
+                      dnsConfig: *dnsConfig
                       terminationGracePeriodSeconds: *terminationGracePeriodSeconds
                       readinessProbe: *probe
                       livenessProbe: *probe
@@ -2505,6 +2747,45 @@ spec:
                             type: string
                             description: |
                               Name of an existing StorageClass in the Kubernetes cluster, used to create the PersistentVolumes for the instances of the cluster.
+                          volumeAttributesClassName:
+                            type: string
+                            description: |
+                              Name of an existing StorageClass in the Kubernetes cluster, used to create the PersistentVolumes for the instances of the cluster.
+                              
+                              See https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
+                          ioLimits:
+                            type: object
+                            description: |
+                              This section allows to define per-volume I/O limits for nodes using [cgroup v2 `io.max` features](https://docs.kernel.org/admin-guide/cgroup-v2.html).
+                              
+                              When multiple PostgreSQL clusters share the same local storage device on a Kubernetes node, a single cluster running a heavy workload
+                               (for example large COPY, aggressive VACUUM, or an unoptimized query) can saturate the device's I/O bandwidth and degrade performance
+                               for every other cluster on that node. StackGres provides this mechanism to prevent this class of noisy-neighbor problem.
+                              The mechanism operates at the cgroup + block-device layer, not at the PVC abstraction. Since each pod has its own cgroup, limits are
+                               enforced independently across pods even when they share the same physical device — this is the core of the noisy-neighbor protection.
+                              However, if multiple volumes within the same pod share the same backing device, their limits target a single entry in that pod's cgroup
+                               and cannot be enforced independently of each other.
+                              
+                              This feature works on top of existing CSI drivers such as TopoLVM or OpenEBS LocalPV. The primary target is on-premises deployments where
+                               multiple StackGres clusters share local NVMe storage on the same node.
+                              
+                              > **IMPORTANT**: Setting any of the value above will require to create an init container named `setup-io-limits` in each SGCluster's Pods
+                              >  running as root with only the `CHOWN` cabability set. Also both the `setup-io-limits` init container and the `cluster-controller`
+                              >  container will require to mount the host path `/sys/fs/cgroup` in order to be able to set owner of and write to the `io.max` file that
+                              >  will allows to set the io limits.
+                            properties:
+                              readIops:
+                                type: integer
+                                description: Max read IO operations per second. Leave empty to remove this limit.
+                              writeIops:
+                                type: integer
+                                description: Max write IO operations per second. Leave empty to remove this limit.
+                              readMiBps:
+                                type: integer
+                                description: Max read MiB per second. Leave empty to remove this limit.
+                              writeMiBps:
+                                type: integer
+                                description: Max write MiB per second. Leave empty to remove this limit.
                           fsGroupChangePolicy: #!jq_placeholder .definitions["io.k8s.api.core.v1.Pod"].properties.spec.properties.securityContext.properties.fsGroupChangePolicy
                             {"description":"fsGroupChangePolicy defines behavior of changing ownership and permission of the volume before being exposed inside Pod. This field will only apply to volume types which support fsGroup based ownership(and permissions). It will have no effect on ephemeral volume types such as: secret, configmaps and emptydir. Valid values are \"OnRootMismatch\" and \"Always\". If not specified, \"Always\" is used. Note that this field cannot be set when spec.os.name is windows.","type":"string"}
                       disableConnectionPooling:
@@ -2518,7 +2799,7 @@ spec:
                         type: boolean
                         default: false
                         description: |
-                          **Deprecated** use instead .spec.configurations.observability.disableMetrics.
+                          **Deprecated** use `.spec.configurations.observability.disableMetrics` instead.
                       disablePostgresUtil:
                         type: boolean
                         default: false
@@ -2582,7 +2863,7 @@ spec:
                         type: array
                         description: |
                           A list of custom volumes that may be used along with any container defined in
-                            customInitContainers or customContainers sections for the shards.
+                            customInitContainers or customContainers sections for the workers.
                           
                           The name used in this section will be prefixed with the string `c-` so that when
                             referencing them in the customInitContainers or customContainers sections the name used
@@ -2644,7 +2925,7 @@ spec:
                       customContainers:
                         type: array
                         description: |
-                          A list of custom application containers that run within the shards cluster's Pods.
+                          A list of custom application containers that run within the workers cluster's Pods.
                           
                           The name used in this section will be prefixed with the string `c-` so that when
                             referencing them in the .spec.containers section of SGInstanceProfile the name used
@@ -2756,7 +3037,7 @@ spec:
                   replication: *replication
                   metadata:
                     type: object
-                    description: Metadata information from shards cluster created resources.
+                    description: Metadata information from workers cluster created resources.
                     properties:
                       annotations:
                         type: object
@@ -2829,23 +3110,47 @@ spec:
                   overrides:
                     type: array
                     description: |
-                      Any shard can be overridden by this section.
+                      Any worker can be overridden by this section.
                     items:
                       type: object
                       description: |
-                        Any shard can be overridden by this section.
-                      required: ["index"]
+                        Any worker can be overridden by this section.
                       properties:
                         index:
                           type: integer
                           minimum: 0
                           description: |
-                            Identifier of the shard StackGres cluster to override (starting from 0)
+                            Identifier of the SGCluster worker to override (starting from 0).
+
+                            This field is mutually exclusive with `indexes` and one of the two must be set.
+                        indexes:
+                          type: array
+                          description: |
+                            Identifiers of the SGCluster workers to override (starting from 0).
+
+                            Each entry can be a single identifier (e.g. `3`), a range specified by
+                            an initial and a final identifier (both included) separated by a dash
+                            character (e.g. `1-2` will override clusters with index 1 and 2) or `all` to
+                            specify all the identifiers. Type of the entry is IntOrString.
+
+                            This field is mutually exclusive with `index` and one of the two must be set.
+                          items:
+                            format: int-or-string
+                            "x-kubernetes-int-or-string": true
+                        type:
+                          type: string
+                          description: |
+                            Specifies the type of workers to override. Possible values are:
+
+                            * `Worker`: SGClusters that store the data of sharded tables. See also `.spec.workers`.
+                            * `QueryRouter`: SGClusters that do not store data but route read/write queries. See also `.spec.coordinator.queryRouterClusters`.
+
+                            Defaults to `Worker` when not specified.
                         instancesPerCluster:
                           type: integer
                           minimum: 0
                           description: |
-                            Number of StackGres instances per shard's StackGres cluster. Each instance contains one Postgres server.
+                            Number of StackGres instances per worker's StackGres cluster. Each instance contains one Postgres server.
                               Out of all of the Postgres servers, one is elected as the primary, the rest remain as read-only replicas.
                         autoscaling: *autoscaling
                         sgInstanceProfile:
@@ -2880,6 +3185,11 @@ spec:
                           type: object
                           description: Cluster pod's configuration.
                           properties:
+                            statefulSetServiceName: *statefulSetServiceName
+                            setHostnameAsFQDN: *setHostnameAsFQDN
+                            hostNetwork: *hostNetwork
+                            dnsPolicy: *dnsPolicy
+                            dnsConfig: *dnsConfig
                             terminationGracePeriodSeconds: *terminationGracePeriodSeconds
                             readinessProbe: *probe
                             livenessProbe: *probe
@@ -2897,6 +3207,45 @@ spec:
                                   type: string
                                   description: |
                                     Name of an existing StorageClass in the Kubernetes cluster, used to create the PersistentVolumes for the instances of the cluster.
+                                volumeAttributesClassName:
+                                  type: string
+                                  description: |
+                                    Name of an existing StorageClass in the Kubernetes cluster, used to create the PersistentVolumes for the instances of the cluster.
+                                    
+                                    See https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
+                                ioLimits:
+                                  type: object
+                                  description: |
+                                    This section allows to define per-volume I/O limits for nodes using [cgroup v2 `io.max` features](https://docs.kernel.org/admin-guide/cgroup-v2.html).
+                                    
+                                    When multiple PostgreSQL clusters share the same local storage device on a Kubernetes node, a single cluster running a heavy workload
+                                     (for example large COPY, aggressive VACUUM, or an unoptimized query) can saturate the device's I/O bandwidth and degrade performance
+                                     for every other cluster on that node. StackGres provides this mechanism to prevent this class of noisy-neighbor problem.
+                                    The mechanism operates at the cgroup + block-device layer, not at the PVC abstraction. Since each pod has its own cgroup, limits are
+                                     enforced independently across pods even when they share the same physical device — this is the core of the noisy-neighbor protection.
+                                    However, if multiple volumes within the same pod share the same backing device, their limits target a single entry in that pod's cgroup
+                                     and cannot be enforced independently of each other.
+                                    
+                                    This feature works on top of existing CSI drivers such as TopoLVM or OpenEBS LocalPV. The primary target is on-premises deployments where
+                                     multiple StackGres clusters share local NVMe storage on the same node.
+                                    
+                                    > **IMPORTANT**: Setting any of the value above will require to create an init container named `setup-io-limits` in each SGCluster's Pods
+                                    >  running as root with only the `CHOWN` cabability set. Also both the `setup-io-limits` init container and the `cluster-controller`
+                                    >  container will require to mount the host path `/sys/fs/cgroup` in order to be able to set owner of and write to the `io.max` file that
+                                    >  will allows to set the io limits.
+                                  properties:
+                                    readIops:
+                                      type: integer
+                                      description: Max read IO operations per second. Leave empty to remove this limit.
+                                    writeIops:
+                                      type: integer
+                                      description: Max write IO operations per second. Leave empty to remove this limit.
+                                    readMiBps:
+                                      type: integer
+                                      description: Max read MiB per second. Leave empty to remove this limit.
+                                    writeMiBps:
+                                      type: integer
+                                      description: Max write MiB per second. Leave empty to remove this limit.
                                 fsGroupChangePolicy: #!jq_placeholder .definitions["io.k8s.api.core.v1.Pod"].properties.spec.properties.securityContext.properties.fsGroupChangePolicy
                                   {"description":"fsGroupChangePolicy defines behavior of changing ownership and permission of the volume before being exposed inside Pod. This field will only apply to volume types which support fsGroup based ownership(and permissions). It will have no effect on ephemeral volume types such as: secret, configmaps and emptydir. Valid values are \"OnRootMismatch\" and \"Always\". If not specified, \"Always\" is used. Note that this field cannot be set when spec.os.name is windows.","type":"string"}
                             disableConnectionPooling:
@@ -2910,7 +3259,7 @@ spec:
                               type: boolean
                               default: false
                               description: |
-                                **Deprecated** use instead .spec.configurations.observability.disableMetrics.
+                                **Deprecated** use `.spec.configurations.observability.disableMetrics` instead.
                             disablePostgresUtil:
                               type: boolean
                               default: false
@@ -2974,7 +3323,7 @@ spec:
                               type: array
                               description: |
                                 A list of custom volumes that may be used along with any container defined in
-                                  customInitContainers or customContainers sections for the shards.
+                                  customInitContainers or customContainers sections for the workers.
                                 
                                 The name used in this section will be prefixed with the string `c-` so that when
                                   referencing them in the customInitContainers or customContainers sections the name used
@@ -3036,7 +3385,7 @@ spec:
                             customContainers:
                               type: array
                               description: |
-                                A list of custom application containers that run within the shards cluster's Pods.
+                                A list of custom application containers that run within the workers cluster's Pods.
                                 
                                 The name used in this section will be prefixed with the string `c-` so that when
                                   referencing them in the .spec.containers section of SGInstanceProfile the name used
@@ -3149,7 +3498,7 @@ spec:
                         replication: *replication
                         metadata:
                           type: object
-                          description: Metadata information from shards cluster created resources.
+                          description: Metadata information from workers cluster created resources.
                           properties:
                             annotations:
                               type: object
@@ -3219,6 +3568,15 @@ spec:
                                   description: Custom Kubernetes [labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/).
                                   additionalProperties:
                                     type: string
+              shards:
+                type: object
+                description: |
+                  **Deprecated** use `workers` instead.
+
+                  The workers are a group of StackGres clusters where the partitioned data chunks are stored.
+                  
+                  When referring to the cluster in the descriptions below it applies to any worker's StackGres cluster.
+                "x-kubernetes-preserve-unknown-fields": true
               distributedLogs:
                 type: object
                 description: |
@@ -3227,7 +3585,7 @@ spec:
                   **Example:**
 
                   ```yaml
-                  apiVersion: stackgres.io/v1alpha1
+                  apiVersion: stackgres.io/v1beta1
                   kind: SGShardedCluster
                   metadata:
                     name: stackgres
@@ -3354,7 +3712,7 @@ spec:
                           **Example:**
 
                           ```yaml
-                          apiVersion: stackgres.io/v1
+                          apiVersion: stackgres.io/v1beta1
                           kind: SGShardedCluster
                           metadata:
                             name: stackgres
@@ -3412,6 +3770,10 @@ spec:
                     lastTransitionTime:
                       description: Last time the condition transitioned from one status to another.
                       type: string
+                    observedGeneration:
+                      description: The .metadata.generation the condition was computed against.
+                      type: integer
+                      format: int64
                     message:
                       description: A human readable message indicating details about the transition.
                       type: string

@@ -66,7 +66,7 @@ class BabelfishFlavorValidatorTest {
   void givenACreationWithMoreThanOneInstances_shouldFail() {
     final StackGresShardedClusterReview review = getCreationReview();
     review.getRequest().getObject().getSpec().getCoordinator().setInstances(2);
-    review.getRequest().getObject().getSpec().getShards().setInstancesPerCluster(1);
+    review.getRequest().getObject().getSpec().getWorkers().setInstancesPerCluster(1);
     review.getRequest().getObject().getSpec().getPostgres().setVersion(BABELFISH_VERSION);
     review.getRequest().getObject().getSpec().getPostgres().setFlavor(
         StackGresPostgresFlavor.BABELFISH.toString());
@@ -80,15 +80,15 @@ class BabelfishFlavorValidatorTest {
     ValidationUtils.assertValidationFailed(() -> validator.validate(review),
         ErrorType.CONSTRAINT_VIOLATION,
         "Currently \"babelfish\" flavor only support 1 instance."
-            + " Please set \".spec.coordinator.instances\" and \".spec.shards.instancesPerCluster\""
-            + " to 1", ".spec.coordinator.instances", ".spec.shards.instancesPerCluster");
+            + " Please set \".spec.coordinator.instances\" and \".spec.workers.instancesPerCluster\""
+            + " to 1", ".spec.coordinator.instances", ".spec.workers.instancesPerCluster");
   }
 
   @Test
   void givenACreationWithMoreThanOneInstancesPerCluster_shouldFail() {
     final StackGresShardedClusterReview review = getCreationReview();
     review.getRequest().getObject().getSpec().getCoordinator().setInstances(1);
-    review.getRequest().getObject().getSpec().getShards().setInstancesPerCluster(2);
+    review.getRequest().getObject().getSpec().getWorkers().setInstancesPerCluster(2);
     review.getRequest().getObject().getSpec().getPostgres().setVersion(BABELFISH_VERSION);
     review.getRequest().getObject().getSpec().getPostgres().setFlavor(
         StackGresPostgresFlavor.BABELFISH.toString());
@@ -102,8 +102,8 @@ class BabelfishFlavorValidatorTest {
     ValidationUtils.assertValidationFailed(() -> validator.validate(review),
         ErrorType.CONSTRAINT_VIOLATION,
         "Currently \"babelfish\" flavor only support 1 instance."
-            + " Please set \".spec.coordinator.instances\" and \".spec.shards.instancesPerCluster\""
-            + " to 1", ".spec.coordinator.instances", ".spec.shards.instancesPerCluster");
+            + " Please set \".spec.coordinator.instances\" and \".spec.workers.instancesPerCluster\""
+            + " to 1", ".spec.coordinator.instances", ".spec.workers.instancesPerCluster");
   }
 
   private StackGresShardedClusterReview getCreationReview() {

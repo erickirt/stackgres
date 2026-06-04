@@ -5,7 +5,12 @@
 
 package io.stackgres.common;
 
+import java.util.Optional;
+
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.operatorframework.resource.ResourceUtil;
 
 public interface StackGresShardedClusterUtil {
@@ -14,51 +19,96 @@ public interface StackGresShardedClusterUtil {
   String PRIVATE_KEY_KEY = "tls.key";
   int LAST_RESERVER_SCRIPT_ID = 9;
 
-  static String getClusterName(StackGresShardedCluster cluster, int index) {
-    return getClusterName(cluster.getMetadata().getName(), index);
+  static String getClusterName(
+      StackGresShardedCluster cluster,
+      int index) {
+    if (index == 0) {
+      return getCoordinatorClusterName(cluster);
+    }
+    if (index >= Optional.of(cluster.getSpec())
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getQueryRouterIndexOffset)
+        .orElse(1024) + 1) {
+      return getQueryRouterClusterName(cluster, index - 1);
+    }
+    return getWorkerClusterName(cluster, index - 1);
   }
 
-  static String getClusterName(String name, int index) {
-    if (index == 0) {
-      return getCoordinatorClusterName(name);
+  static int getPlainIndex(
+      StackGresShardedCluster cluster,
+      int index) {
+    final int queryRouterIndexOffset = Optional.of(cluster.getSpec())
+            .map(StackGresShardedClusterSpec::getCoordinator)
+            .map(StackGresShardedClusterCoordinator::getQueryRouterIndexOffset)
+            .orElse(1024);
+    if (index >= queryRouterIndexOffset + 1) {
+      final int queryRouterOffset = Optional.of(cluster.getSpec())
+          .map(StackGresShardedClusterSpec::getWorkers)
+          .map(StackGresShardedClusterWorkers::getClusters)
+          .orElse(0);
+      return index - queryRouterIndexOffset + queryRouterOffset;
     }
-    return getShardClusterName(name, index - 1);
+    return index;
+  }
+
+  static boolean isQueryRouterIndex(
+      StackGresShardedCluster cluster,
+      int index) {
+    final int queryRouterIndexOffset = Optional.of(cluster.getSpec())
+            .map(StackGresShardedClusterSpec::getCoordinator)
+            .map(StackGresShardedClusterCoordinator::getQueryRouterIndexOffset)
+            .orElse(1024);
+    return index >= queryRouterIndexOffset + 1;
   }
 
   static String getCoordinatorClusterName(StackGresShardedCluster cluster) {
-    return getCoordinatorClusterName(cluster.getMetadata().getName());
+    return Optional.of(cluster.getSpec())
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getClusterName)
+        .orElseGet(() -> getCoordinatorClusterName(cluster.getMetadata().getName()));
   }
 
   static String getCoordinatorClusterName(String name) {
     return name + "-coord";
   }
 
-  static String getShardClusterName(StackGresShardedCluster cluster, int shardIndex) {
-    return getShardClusterName(cluster.getMetadata().getName(), shardIndex);
+  static String getWorkerClusterName(StackGresShardedCluster cluster, int workerIndex) {
+    return getWorkerClusterName(cluster, String.valueOf(workerIndex));
   }
 
-  static String getShardClusterName(StackGresShardedCluster cluster, String shardIndex) {
-    return getShardClusterName(cluster.getMetadata().getName(), shardIndex);
+  static String getWorkerClusterName(StackGresShardedCluster cluster, String workerIndex) {
+    return Optional.of(cluster.getSpec())
+        .map(StackGresShardedClusterSpec::getWorkers)
+        .map(StackGresShardedClusterWorkers::getClusterNameTemplate)
+        .orElseGet(() -> cluster.getMetadata().getName() + "-worker") + workerIndex;
   }
 
-  static String getShardClusterName(String name, int shardIndex) {
-    return getShardClusterName(name, String.valueOf(shardIndex));
+  static String getQueryRouterClusterName(StackGresShardedCluster cluster, int workerIndex) {
+    return getQueryRouterClusterName(cluster, String.valueOf(
+        workerIndex
+        - Optional.of(cluster.getSpec())
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getQueryRouterIndexOffset)
+        .orElse(1024)));
   }
 
-  static String getShardClusterName(String name, String shardIndex) {
-    return name + "-shard" + shardIndex;
+  static String getQueryRouterClusterName(StackGresShardedCluster cluster, String workerIndex) {
+    return Optional.of(cluster.getSpec())
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getQueryRouterClusterNameTemplate)
+        .orElseGet(() -> cluster.getMetadata().getName() + "-router") + workerIndex;
   }
 
   static String coordinatorConfigName(StackGresShardedCluster cluster) {
-    return cluster.getMetadata().getName() + "-coord";
+    return getCoordinatorClusterName(cluster);
   }
 
   static String coordinatorScriptName(StackGresShardedCluster cluster) {
     return cluster.getMetadata().getName() + "-coord";
   }
 
-  static String shardsScriptName(StackGresShardedCluster cluster) {
-    return cluster.getMetadata().getName() + "-shards";
+  static String workersScriptName(StackGresShardedCluster cluster) {
+    return cluster.getMetadata().getName() + "-workers";
   }
 
   static String postgresSslSecretName(StackGresShardedCluster cluster) {
@@ -75,6 +125,14 @@ public interface StackGresShardedClusterUtil {
 
   static String anyCoordinatorServiceName(StackGresShardedCluster cluster) {
     return ResourceUtil.nameIsValidService(cluster.getMetadata().getName() + "-reads");
+  }
+
+  static String primariesQueryRoutersServiceName(StackGresShardedCluster cluster) {
+    return ResourceUtil.nameIsValidService(cluster.getMetadata().getName() + "-routers");
+  }
+
+  static String primariesWorkersServiceName(StackGresShardedCluster cluster) {
+    return ResourceUtil.nameIsValidService(cluster.getMetadata().getName() + "-workers");
   }
 
   static String primariesShardsServiceName(StackGresShardedCluster cluster) {

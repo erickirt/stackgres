@@ -1,6 +1,6 @@
 {
   "kind": "SGShardedCluster",
-  "apiVersion": "stackgres.io/v1alpha1",
+  "apiVersion": "stackgres.io/v1beta1",
   "metadata": {
     "annotations": {
       "stackgres.io/operatorVersion": "1.3.0"
@@ -27,9 +27,13 @@
         "primary": {
           "enabled": true,
           "type": "ClusterIP"
+        },
+        "queryRouters": {
+          "enabled": true,
+          "type": "ClusterIP"
         }
       },
-      "shards": {
+      "workers": {
         "primaries": {
           "enabled": true,
           "type": "ClusterIP"
@@ -53,7 +57,7 @@
         }
       }
     },
-    "shards": {
+    "workers": {
       "clusters": 2,
       "instancesPerCluster": 1,
       "sgInstanceProfile": "size-s",

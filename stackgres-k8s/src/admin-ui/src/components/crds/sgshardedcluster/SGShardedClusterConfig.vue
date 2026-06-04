@@ -13,6 +13,9 @@
 						<template v-for="condition in sgshardedcluster.data.status.conditions" v-if="( (condition.type == 'PendingRestart') && (condition.status == 'True') )">
 							<span class="helpTooltip alert" data-tooltip="A restart operation is pending for this cluster"></span>
 						</template>
+						<template v-for="condition in sgshardedcluster.data.status.conditions" v-if="( (condition.type == 'ComponentsUpdated') && ( (condition.status == 'False') || (condition.reason != 'UpToDate') ) )">
+							<span class="helpTooltip alert" :data-tooltip="condition.message"></span>
+						</template>
 					</template>
 				</h2>
 				
@@ -114,7 +117,7 @@
 			},
 
 			podsReady() {
-				return (this.hasPods && this.hasProp(this.sgshardedcluster, 'stats.coordinator.podsReady') && this.sgshardedcluster.stats.coordinator.podsReady && this.hasProp(this.sgshardedcluster, 'stats.shards.podsReady') && this.sgshardedcluster.stats.shards.podsReady)
+				return (this.hasPods && this.hasProp(this.sgshardedcluster, 'stats.coordinator.podsReady') && this.sgshardedcluster.stats.coordinator.podsReady && this.hasProp(this.sgshardedcluster, 'stats.workers.podsReady') && this.sgshardedcluster.stats.workers.podsReady)
 			}
 		},
 

@@ -160,6 +160,51 @@
           ]
         }
       ]
+    },
+    {
+      "name": "pg_cron",
+      "publisher": "com.ongres",
+      "description": "Run periodic jobs in PostgreSQL.",
+      "abstract": "Job scheduler for PostgreSQL.",
+      "tags": [
+        "scheduler",
+        "cron"
+      ],
+      "url": "https://github.com/citusdata/pg_cron",
+      "source": "https://github.com/citusdata/pg_cron",
+      "license": "PostgreSQL",
+      "channels": null,
+      "versions": [
+        {
+          "version": "1.6.4",
+          "availableFor": [
+            {
+              "postgresVersion": "13",
+              "build": "6.24"
+            },
+            {
+              "postgresVersion": "14",
+              "build": "6.39"
+            },
+            {
+              "postgresVersion": "15",
+              "build": "6.43"
+            },
+            {
+              "postgresVersion": "16",
+              "build": "6.43"
+            },
+            {
+              "postgresVersion": "17",
+              "build": "6.43"
+            },
+            {
+              "postgresVersion": "18",
+              "build": "6.49"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

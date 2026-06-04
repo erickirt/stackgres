@@ -24,21 +24,25 @@ spec:
         app: {{ .Release.Name }}
         group:  stackgres.io
     spec:
-      {{- with .Values.operator.affinity}}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end}}
       serviceAccountName: {{ .Release.Name }}
+      {{- with .Values.operator.schedulerName }}
+      schedulerName: {{ . }}
+      {{- end }}
+      {{- with .Values.operator.runtimeClassName }}
+      runtimeClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.operator.preemptionPolicy }}
+      preemptionPolicy: {{ . }}
+      {{- end }}
+      {{- with .Values.operator.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
       {{- with .Values.operator.affinity}}
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end}}
       {{- with .Values.operator.nodeSelector }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end}}
-      {{- with .Values.operator.affinity}}
-      affinity:
         {{- toYaml . | nindent 8 }}
       {{- end}}
       {{- with .Values.operator.tolerations }}
@@ -180,13 +184,6 @@ spec:
             value: "{{ .Values.containerRegistry }}"
           - name: SG_IMAGE_PULL_POLICY
             value: "{{ .Values.imagePullPolicy }}"
-          {{- if .Values.extensions.cache.enabled }}
-          - name: EXTENSIONS_REPOSITORY_URLS
-            value: "{{ range $index, $element := .Values.extensions.repositoryUrls }}{{ if $index }},{{ end }}{{ $element := regexReplaceAll "([?&])proxyUrl=[^&]+[&]" $element "${1}" }}{{ $element := regexReplaceAll "([?&])proxyUrl=[^&]+$" $element "" }}{{ $element }}{{ if $element | contains "?" }}&{{ else }}?{{ end }}proxyUrl=http%3A%2F%2F{{ $.Release.Name }}-extensions-cache.{{ $.Release.Namespace }}%3FsetHttpScheme%3Dtrue&retry=3%3A5{{ end }}"
-          {{- else }}
-          - name: EXTENSIONS_REPOSITORY_URLS
-            value: "{{ range $index, $element := .Values.extensions.repositoryUrls }}{{ if $index }},{{ end }}{{ $element }}{{ end }}"
-          {{- end }}
           {{- if .Values.developer.extraEnv }}
           {{- range $name,$value := .Values.developer.extraEnv }}
           - name: {{ $name }}

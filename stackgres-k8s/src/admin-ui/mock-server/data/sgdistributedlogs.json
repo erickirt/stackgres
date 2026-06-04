@@ -1,0 +1,19 @@
+[
+  {
+    "apiVersion": "stackgres.io/v1",
+    "kind": "SGDistributedLogs",
+    "metadata": { "name": "central-logs", "namespace": "default", "uid": "bbbb0000-0000-0000-0000-000000000001", "creationTimestamp": "2026-01-12T08:00:00Z" },
+    "spec": {
+      "persistentVolume": { "size": "20Gi" },
+      "sgInstanceProfile": "size-small"
+    },
+    "status": {
+      "conditions": [
+        { "type": "ComponentsUpdated", "status": "True", "reason": "UpToDate", "message": "All components are up to date.", "lastTransitionTime": "2026-05-30T10:00:00Z" }
+      ]
+    },
+    "info": { "primaryDns": "central-logs.default" },
+    "pods": [ { "name": "central-logs-0", "role": "primary" } ],
+    "podsReady": 1
+  }
+]

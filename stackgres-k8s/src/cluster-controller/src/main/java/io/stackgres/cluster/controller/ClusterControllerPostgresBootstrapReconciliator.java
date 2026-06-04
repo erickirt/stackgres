@@ -5,21 +5,35 @@
 
 package io.stackgres.cluster.controller;
 
+import java.util.Objects;
+
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.stackgres.cluster.common.ClusterBootstrapEventReason;
+import io.stackgres.cluster.common.StackGresClusterContext;
 import io.stackgres.cluster.configuration.ClusterControllerPropertyContext;
 import io.stackgres.common.ClusterControllerProperty;
+import io.stackgres.common.PatroniUtil;
+import io.stackgres.common.crd.sgcluster.StackGresClusterStatus;
+import io.stackgres.common.extension.ExtensionUtil;
 import io.stackgres.common.patroni.PatroniCtl;
-import io.stackgres.common.postgres.PostgresBootstrapReconciliator;
+import io.stackgres.operatorframework.reconciliation.ReconciliationResult;
+import io.stackgres.operatorframework.reconciliation.SafeReconciliator;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class ClusterControllerPostgresBootstrapReconciliator
-    extends PostgresBootstrapReconciliator {
+    extends SafeReconciliator<StackGresClusterContext, Boolean> {
+
+  private static final Logger LOGGER =
+      LoggerFactory.getLogger(PostgresBootstrapReconciliator.class);
 
   private final EventController eventController;
+  private final PatroniCtl patroniCtl;
+  private final String podName;
 
   @Dependent
   public static class Parameters {
@@ -30,15 +44,67 @@ public class ClusterControllerPostgresBootstrapReconciliator
 
   @Inject
   public ClusterControllerPostgresBootstrapReconciliator(Parameters parameters) {
-    super(parameters.patroniCtl, parameters.propertyContext
-        .getString(ClusterControllerProperty.CLUSTER_CONTROLLER_POD_NAME));
+    this.patroniCtl = parameters.patroniCtl;
+    this.podName = parameters.propertyContext
+        .getString(ClusterControllerProperty.CLUSTER_CONTROLLER_POD_NAME);
     this.eventController = parameters.eventController;
   }
 
   @Override
-  protected void onClusterBootstrapped(KubernetesClient client) {
-    eventController.sendEvent(ClusterBootstrapEventReason.CLUSTER_BOOTSTRAP_COMPLETED,
-        "Cluster bootstrap completed", client);
+  public ReconciliationResult<Boolean> safeReconcile(KubernetesClient client, StackGresClusterContext context) {
+    if (context.getCluster().getStatus() != null
+        && context.getCluster().getStatus().getArch() != null
+        && context.getCluster().getStatus().getOs() != null
+        && (
+            !Objects.equals(
+                context.getCluster().getStatus().getArch(),
+                ExtensionUtil.OS_DETECTOR.getArch())
+            || !Objects.equals(
+                context.getCluster().getStatus().getOs(),
+                ExtensionUtil.OS_DETECTOR.getOs())
+            )) {
+      throw new IllegalStateException("The cluster was initialized with "
+          + context.getCluster().getStatus().getArch()
+          + "/" + context.getCluster().getStatus().getOs()
+          + " but this instance is " + ExtensionUtil.OS_DETECTOR.getArch()
+          + "/" + ExtensionUtil.OS_DETECTOR.getOs());
+    }
+    var patroniCtl = this.patroniCtl.instanceFor(context.getCluster());
+    final boolean isBootstrapped = PatroniUtil.isBootstrapped(patroniCtl);
+    if (!isBootstrapped) {
+      return new ReconciliationResult<>(false);
+    }
+    final boolean isPodPrimary = PatroniUtil.isPrimary(podName, patroniCtl);
+    boolean result = false;
+    if (context.getCluster().getStatus().getPodStatuses()
+        .stream()
+        .filter(podStatus -> Objects.equals(podStatus.getName(), podName))
+        .anyMatch(podStatus -> podStatus.getPrimary() == null
+            || isPodPrimary != podStatus.getPrimary().booleanValue())) {
+      context.getCluster().getStatus().getPodStatuses()
+          .stream()
+          .filter(podStatus -> Objects.equals(podStatus.getName(), podName))
+          .forEach(podStatus -> podStatus.setPrimary(isPodPrimary));
+      LOGGER.info("Setting pod as {}", isPodPrimary ? "primary" : "non primary");
+      result = true;
+    }
+    if (isPodPrimary
+        && (context.getCluster().getStatus().getArch() == null
+        || context.getCluster().getStatus().getOs() == null)) {
+      LOGGER.info("Cluster bootstrap completed");
+      if (context.getCluster().getStatus() == null) {
+        context.getCluster().setStatus(new StackGresClusterStatus());
+      }
+      eventController.sendEvent(ClusterBootstrapEventReason.CLUSTER_BOOTSTRAP_COMPLETED,
+          "Cluster bootstrap completed", client);
+      context.getCluster().getStatus().setArch(ExtensionUtil.OS_DETECTOR.getArch());
+      context.getCluster().getStatus().setOs(ExtensionUtil.OS_DETECTOR.getOs());
+      LOGGER.info("Setting cluster arch {} and os {}",
+          context.getCluster().getStatus().getArch(),
+          context.getCluster().getStatus().getOs());
+      result = true;
+    }
+    return new ReconciliationResult<>(result);
   }
 
 }

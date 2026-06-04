@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.common.collect.ImmutableList;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
@@ -219,27 +220,26 @@ public class Envoy implements ContainerFactory<ClusterContainerContext>,
             .build());
   }
 
+  @SuppressFBWarnings(value = "REC_CATCH_EXCEPTION",
+      justification = "False positive")
   private HasMetadata buildSource(StackGresClusterContext context) {
     final StackGresCluster stackGresCluster = context.getSource();
 
     final ObjectNode envoyConfig;
-    try {
-      envoyConfig = (ObjectNode) yamlMapper
-          .readTree(Envoy.class.getResource("/envoy/envoy.yaml"));
+    try (var is = Envoy.class.getResourceAsStream("/envoy/envoy.yaml")) {
+      envoyConfig = (ObjectNode) yamlMapper.readTree(is);
     } catch (Exception ex) {
       throw new IllegalArgumentException("couldn't read envoy config file", ex);
     }
     final ObjectNode envoyConfigLds;
-    try {
-      envoyConfigLds = (ObjectNode) yamlMapper
-          .readTree(Envoy.class.getResource("/envoy/envoy-lds.yaml"));
+    try (var is = Envoy.class.getResourceAsStream("/envoy/envoy-lds.yaml")) {
+      envoyConfigLds = (ObjectNode) yamlMapper.readTree(is);
     } catch (Exception ex) {
       throw new IllegalArgumentException("couldn't read envoy config file", ex);
     }
     final ObjectNode envoyConfigCds;
-    try {
-      envoyConfigCds = (ObjectNode) yamlMapper
-          .readTree(Envoy.class.getResource("/envoy/envoy-cds.yaml"));
+    try (var is = Envoy.class.getResourceAsStream("/envoy/envoy-cds.yaml")) {
+      envoyConfigCds = (ObjectNode) yamlMapper.readTree(is);
     } catch (Exception ex) {
       throw new IllegalArgumentException("couldn't read envoy config file", ex);
     }

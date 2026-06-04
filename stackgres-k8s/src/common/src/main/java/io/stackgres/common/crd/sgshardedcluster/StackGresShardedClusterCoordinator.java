@@ -25,10 +25,18 @@ import jakarta.validation.constraints.AssertTrue;
     value = { "postgres", "postgresServices",
         "initialData", "replicateFrom", "distributedLogs", "toInstallPostgresExtensions",
         "prometheusAutobind", "nonProductionOptions" })
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresShardedClusterCoordinator extends StackGresClusterSpec {
+
+  private String clusterName;
+
+  private Integer queryRouterClusters;
+
+  private Integer queryRouterIndexOffset;
+
+  private String queryRouterClusterNameTemplate;
 
   @JsonProperty("configurations")
   @Valid
@@ -96,6 +104,38 @@ public class StackGresShardedClusterCoordinator extends StackGresClusterSpec {
         || getInstances() > replicationForCoordinator.getSyncInstances();
   }
 
+  public String getClusterName() {
+    return clusterName;
+  }
+
+  public void setClusterName(String clusterName) {
+    this.clusterName = clusterName;
+  }
+
+  public Integer getQueryRouterClusters() {
+    return queryRouterClusters;
+  }
+
+  public void setQueryRouterClusters(Integer queryRouterClusters) {
+    this.queryRouterClusters = queryRouterClusters;
+  }
+
+  public Integer getQueryRouterIndexOffset() {
+    return queryRouterIndexOffset;
+  }
+
+  public void setQueryRouterIndexOffset(Integer queryRouterIndexOffset) {
+    this.queryRouterIndexOffset = queryRouterIndexOffset;
+  }
+
+  public String getQueryRouterClusterNameTemplate() {
+    return queryRouterClusterNameTemplate;
+  }
+
+  public void setQueryRouterClusterNameTemplate(String queryRouterClusterNameTemplate) {
+    this.queryRouterClusterNameTemplate = queryRouterClusterNameTemplate;
+  }
+
   public StackGresShardedClusterCoordinatorConfigurations getConfigurationsForCoordinator() {
     return configurationsForCoordinator;
   }
@@ -118,7 +158,9 @@ public class StackGresShardedClusterCoordinator extends StackGresClusterSpec {
   public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
-    result = prime * result + Objects.hash(configurationsForCoordinator, replicationForCoordinator);
+    result = prime * result
+        + Objects.hash(clusterName, configurationsForCoordinator, queryRouterClusterNameTemplate,
+            queryRouterClusters, queryRouterIndexOffset, replicationForCoordinator);
     return result;
   }
 
@@ -134,7 +176,11 @@ public class StackGresShardedClusterCoordinator extends StackGresClusterSpec {
       return false;
     }
     StackGresShardedClusterCoordinator other = (StackGresShardedClusterCoordinator) obj;
-    return Objects.equals(configurationsForCoordinator, other.configurationsForCoordinator)
+    return Objects.equals(clusterName, other.clusterName)
+        && Objects.equals(configurationsForCoordinator, other.configurationsForCoordinator)
+        && Objects.equals(queryRouterClusterNameTemplate, other.queryRouterClusterNameTemplate)
+        && Objects.equals(queryRouterClusters, other.queryRouterClusters)
+        && Objects.equals(queryRouterIndexOffset, other.queryRouterIndexOffset)
         && Objects.equals(replicationForCoordinator, other.replicationForCoordinator);
   }
 

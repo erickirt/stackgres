@@ -12,7 +12,7 @@ e2e_test_install() {
   E2E_POSTGRES_VERSION="${E2E_CITUS_POSTGRES_VERSION:-$E2E_POSTGRES_VERSION}"
   CLUSTER_NAME="$(get_sgshardedcluster_name "$SPEC_NAME")"
 
-  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "2" \
+  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "2" "0" \
     --set-string "configurations.postgresconfig.postgresql\.conf.citus\.desired_percent_disk_available_after_move=0"
 
   wait_pods_running "$CLUSTER_NAMESPACE" 6

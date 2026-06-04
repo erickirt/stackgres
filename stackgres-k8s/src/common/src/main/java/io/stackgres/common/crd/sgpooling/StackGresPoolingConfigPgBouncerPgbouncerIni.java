@@ -13,13 +13,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.StackGresUtil;
 import io.sundr.builder.annotations.Buildable;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresPoolingConfigPgBouncerPgbouncerIni {
@@ -27,10 +26,8 @@ public class StackGresPoolingConfigPgBouncerPgbouncerIni {
   @NotNull(message = "pgbouncer should not be null")
   private Map<String, String> pgbouncer;
 
-  @Valid
   private Map<String, Map<String, String>> databases;
 
-  @Valid
   private Map<String, Map<String, String>> users;
 
   public Map<String, String> getPgbouncer() {

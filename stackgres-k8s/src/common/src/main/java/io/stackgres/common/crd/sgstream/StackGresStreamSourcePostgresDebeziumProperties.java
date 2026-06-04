@@ -18,7 +18,7 @@ import io.sundr.builder.annotations.Buildable;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresStreamSourcePostgresDebeziumProperties {
@@ -31,6 +31,8 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
   private Boolean slotDropOnStop;
 
   private Boolean slotFailover;
+
+  private String offsetMismatchStrategy;
 
   private String publicationName;
 
@@ -160,6 +162,8 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
 
   private Boolean flushLsnSource;
 
+  private String lsnFlushMode;
+
   private Integer retriableRestartConnectorWaitMs;
 
   private List<String> skippedOperations;
@@ -193,6 +197,8 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
 
   @DebeziumMapOptions(separatorLevel0 = "=", valueFromLevel = 0)
   private Map<String, String> customMetricTags;
+
+  private String customSanitizePattern;
 
   private Integer errorsMaxRetries;
 
@@ -235,6 +241,14 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
 
   public void setSlotFailover(Boolean slotFailover) {
     this.slotFailover = slotFailover;
+  }
+
+  public String getOffsetMismatchStrategy() {
+    return offsetMismatchStrategy;
+  }
+
+  public void setOffsetMismatchStrategy(String offsetMismatchStrategy) {
+    this.offsetMismatchStrategy = offsetMismatchStrategy;
   }
 
   public String getPublicationName() {
@@ -715,6 +729,14 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
     this.flushLsnSource = flushLsnSource;
   }
 
+  public String getLsnFlushMode() {
+    return lsnFlushMode;
+  }
+
+  public void setLsnFlushMode(String lsnFlushMode) {
+    this.lsnFlushMode = lsnFlushMode;
+  }
+
   public Integer getRetriableRestartConnectorWaitMs() {
     return retriableRestartConnectorWaitMs;
   }
@@ -844,6 +866,14 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
     this.customMetricTags = customMetricTags;
   }
 
+  public String getCustomSanitizePattern() {
+    return customSanitizePattern;
+  }
+
+  public void setCustomSanitizePattern(String customSanitizePattern) {
+    this.customSanitizePattern = customSanitizePattern;
+  }
+
   public Integer getErrorsMaxRetries() {
     return errorsMaxRetries;
   }
@@ -888,23 +918,23 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
   public int hashCode() {
     return Objects.hash(binaryHandlingMode, columnMaskHash, columnMaskHashV2,
         columnMaskWithLengthChars, columnPropagateSourceType, columnTruncateToLengthChars,
-        converters, customMetricTags, databaseInitialStatements, databaseQueryTimeoutMs,
-        datatypePropagateSourceType, decimalHandlingMode, errorsMaxRetries,
+        converters, customMetricTags, customSanitizePattern, databaseInitialStatements,
+        databaseQueryTimeoutMs, datatypePropagateSourceType, decimalHandlingMode, errorsMaxRetries,
         eventProcessingFailureHandlingMode, extendedHeadersEnabled, fieldNameAdjustmentMode,
         flushLsnSource, guardrailCollectionsLimitAction, guardrailCollectionsMax,
         heartbeatActionQuery, heartbeatIntervalMs, hstoreHandlingMode, includeUnknownDatatypes,
         incrementalSnapshotChunkSize, incrementalSnapshotWatermarkingStrategy, intervalHandlingMode,
-        maxBatchSize, maxQueueSize, maxQueueSizeInBytes, messageKeyColumns,
+        lsnFlushMode, maxBatchSize, maxQueueSize, maxQueueSizeInBytes, messageKeyColumns,
         messagePrefixExcludeList, messagePrefixIncludeList, moneyFractionDigits,
-        notificationEnabledChannels, pluginName, pollIntervalMs, provideTransactionMetadata,
-        publicationAutocreateMode, publicationName, publishViaPartitionRoot, readOnly,
-        replicaIdentityAutosetValues, retriableRestartConnectorWaitMs, schemaNameAdjustmentMode,
-        schemaRefreshMode, signalDataCollection, signalEnabledChannels, skipMessagesWithoutChange,
-        skippedOperations, slotDropOnStop, slotFailover, slotMaxRetries, slotName, slotRetryDelayMs,
-        slotStreamParams, snapshotDelayMs, snapshotFetchSize, snapshotIncludeCollectionList,
-        snapshotIsolationMode, snapshotLockTimeoutMs, snapshotLockingMode,
-        snapshotLockingModeCustomName, snapshotMaxThreads, snapshotMode,
-        snapshotModeConfigurationBasedSnapshotData,
+        notificationEnabledChannels, offsetMismatchStrategy, pluginName, pollIntervalMs,
+        provideTransactionMetadata, publicationAutocreateMode, publicationName,
+        publishViaPartitionRoot, readOnly, replicaIdentityAutosetValues,
+        retriableRestartConnectorWaitMs, schemaNameAdjustmentMode, schemaRefreshMode,
+        signalDataCollection, signalEnabledChannels, skipMessagesWithoutChange, skippedOperations,
+        slotDropOnStop, slotFailover, slotMaxRetries, slotName, slotRetryDelayMs, slotStreamParams,
+        snapshotDelayMs, snapshotFetchSize, snapshotIncludeCollectionList, snapshotIsolationMode,
+        snapshotLockTimeoutMs, snapshotLockingMode, snapshotLockingModeCustomName,
+        snapshotMaxThreads, snapshotMode, snapshotModeConfigurationBasedSnapshotData,
         snapshotModeConfigurationBasedSnapshotOnDataError,
         snapshotModeConfigurationBasedSnapshotOnSchemaError,
         snapshotModeConfigurationBasedSnapshotSchema, snapshotModeConfigurationBasedStartStream,
@@ -931,6 +961,7 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
         && Objects.equals(columnTruncateToLengthChars, other.columnTruncateToLengthChars)
         && Objects.equals(converters, other.converters)
         && Objects.equals(customMetricTags, other.customMetricTags)
+        && Objects.equals(customSanitizePattern, other.customSanitizePattern)
         && Objects.equals(databaseInitialStatements, other.databaseInitialStatements)
         && Objects.equals(databaseQueryTimeoutMs, other.databaseQueryTimeoutMs)
         && Objects.equals(datatypePropagateSourceType, other.datatypePropagateSourceType)
@@ -951,6 +982,7 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
         && Objects.equals(incrementalSnapshotWatermarkingStrategy,
             other.incrementalSnapshotWatermarkingStrategy)
         && Objects.equals(intervalHandlingMode, other.intervalHandlingMode)
+        && Objects.equals(lsnFlushMode, other.lsnFlushMode)
         && Objects.equals(maxBatchSize, other.maxBatchSize)
         && Objects.equals(maxQueueSize, other.maxQueueSize)
         && Objects.equals(maxQueueSizeInBytes, other.maxQueueSizeInBytes)
@@ -959,6 +991,7 @@ public class StackGresStreamSourcePostgresDebeziumProperties {
         && Objects.equals(messagePrefixIncludeList, other.messagePrefixIncludeList)
         && Objects.equals(moneyFractionDigits, other.moneyFractionDigits)
         && Objects.equals(notificationEnabledChannels, other.notificationEnabledChannels)
+        && Objects.equals(offsetMismatchStrategy, other.offsetMismatchStrategy)
         && Objects.equals(pluginName, other.pluginName)
         && Objects.equals(pollIntervalMs, other.pollIntervalMs)
         && Objects.equals(provideTransactionMetadata, other.provideTransactionMetadata)

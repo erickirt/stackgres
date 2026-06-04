@@ -26,7 +26,7 @@ import jakarta.validation.constraints.AssertTrue;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresClusterAutoscaling {
@@ -39,11 +39,9 @@ public class StackGresClusterAutoscaling {
 
   private Integer maxInstances;
 
-  @Valid
-  private Map<String, StackGresClusterAutoscalingVerticalBound> minAllowed;
+  private Map<String, @Valid StackGresClusterAutoscalingVerticalBound> minAllowed;
 
-  @Valid
-  private Map<String, StackGresClusterAutoscalingVerticalBound> maxAllowed;
+  private Map<String, @Valid StackGresClusterAutoscalingVerticalBound> maxAllowed;
 
   private StackGresClusterAutoscalingHorizontal horizontal;
 

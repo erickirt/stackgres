@@ -15,7 +15,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.sundr.builder.annotations.Buildable;
 
 @RegisterForReflection
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class AdmissionRequest<T extends HasMetadata> {

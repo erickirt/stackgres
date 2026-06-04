@@ -36,7 +36,7 @@ EOF
   kubectl create -n "$CLUSTER_NAMESPACE" configmap sql-scripts-sakila-schema \
     --from-file=create-sakila-schema.sql="$SPEC_PATH/sql-scripts.sakila.sql"
 
-  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "2"
+  create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "2" "0"
 
   deploy_curl_pod "$CLUSTER_NAMESPACE"
 
@@ -52,6 +52,8 @@ e2e_test() {
   run_test "Check that pgbouncer database is accesible using the service" pgbouncer_database_check
 
   run_test "Checking that managed SQL is working" check_managed_sql_is_working
+
+  run_test "Checking that query routers and the routers service are functional" query_routers_check
 }
 
 service_check() {
@@ -87,14 +89,14 @@ sharded_check() {
     fail "Sharding primary coordinator service is not working"
   fi
 
-  try_function wait_until eval 'run_query -c "$CLUSTER_NAME-coord" -h "$CLUSTER_NAME-shards" -i 1 -p 5432 \
+  try_function wait_until eval 'run_query -c "$CLUSTER_NAME-coord" -h "$CLUSTER_NAME-workers" -i 1 -p 5432 \
     -d citus -q "SELECT pg_is_in_recovery()" | grep -xF f'
 
   if [ "$EXIT_CODE" = 0 ]
   then
-    success "Sharding shards service is working"
+    success "Sharding workers service is working"
   else
-    fail "Sharding shards service is not working"
+    fail "Sharding workers service is not working"
   fi
 
   try_function wait_until eval 'run_query -c "$CLUSTER_NAME-coord" -h "$CLUSTER_NAME-reads" -i 1 -p 5432 \
@@ -138,4 +140,93 @@ check_managed_sql_is_working() {
   check_user_on_sharded_primary
   check_database_on_sharded_primary
   check_schema_on_sharded_primary
+}
+
+query_routers_check() {
+  local QUERY_ROUTERS=1
+  local ROUTER_CLUSTER="$CLUSTER_NAME-router0"
+  local ROUTER_SERVICE="$CLUSTER_NAME-routers"
+  local RESULT EXIT_CODE
+
+  kubectl patch sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --type merge \
+    -p '{"spec":{"coordinator":{"queryRouterClusters":'"$QUERY_ROUTERS"'}}}'
+
+  if try_function wait_until eval '[ "$(kubectl get sgcluster -n "$CLUSTER_NAMESPACE" \
+      "$ROUTER_CLUSTER" --template "{{ .spec.instances }}" 2>/dev/null)" = 1 ]' \
+    && "$RESULT"
+  then
+    success "SGCluster $ROUTER_CLUSTER was created for the query router worker"
+  else
+    fail "SGCluster $ROUTER_CLUSTER was not created"
+  fi
+
+  if try_function wait_until eval '[ "$(kubectl get pod -n "$CLUSTER_NAMESPACE" \
+      "$ROUTER_CLUSTER-0" --template "{{ .status.phase }}" 2>/dev/null)" = Running ]' \
+    && "$RESULT"
+  then
+    success "Query router pod $ROUTER_CLUSTER-0 is Running"
+  else
+    fail "Query router pod $ROUTER_CLUSTER-0 did not reach Running phase"
+  fi
+
+  if try_function wait_until eval '[ -n "$(kubectl get service -n "$CLUSTER_NAMESPACE" \
+      "$ROUTER_SERVICE" --template "{{ .spec.clusterIP }}" 2>/dev/null)" ]' \
+    && "$RESULT"
+  then
+    success "Service $ROUTER_SERVICE is exposed by the operator"
+  else
+    fail "Service $ROUTER_SERVICE is not exposed by the operator"
+  fi
+
+  wait_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE"
+
+  try_function wait_until eval 'run_query -c "$ROUTER_CLUSTER" -h "$ROUTER_SERVICE" -i 0 -p 5432 \
+    -d citus -q "SELECT 1" | grep -xF 1'
+
+  if [ "$EXIT_CODE" = 0 ]
+  then
+    success "Connection through query router service $ROUTER_SERVICE is working"
+  else
+    fail "Cannot connect through query router service $ROUTER_SERVICE"
+  fi
+
+  try_function wait_until eval 'run_query -c "$ROUTER_CLUSTER" -h "$ROUTER_SERVICE" -i 0 -p 5432 \
+    -d citus -q "SELECT pg_is_in_recovery()" | grep -xF f'
+
+  if [ "$EXIT_CODE" = 0 ]
+  then
+    success "Query router service $ROUTER_SERVICE points to a read-write Postgres server"
+  else
+    fail "Query router service $ROUTER_SERVICE does not point to a read-write Postgres server"
+  fi
+
+  try_function wait_until eval 'run_query -c "$ROUTER_CLUSTER" -h "$ROUTER_SERVICE" -i 0 -p 5432 \
+    -d citus -q "SELECT COUNT(*) FROM pg_dist_node WHERE groupid > 1024 AND NOT shouldhaveshards" | grep -xF 1'
+
+  if [ "$EXIT_CODE" = 0 ]
+  then
+    success "Query router is a worker node that does not have shards"
+  else
+    fail "Query router is not a worker node that does not have shards"
+  fi
+
+  try_function wait_until eval 'run_query -c "$ROUTER_CLUSTER" -h "$ROUTER_SERVICE" -i 0 -p 5432 \
+    -d citus -q "INSERT INTO query_router_test VALUES (1)"'
+
+  if [ "$EXIT_CODE" = 0 ]
+  then
+    success "Query router can write to distributed tables"
+  else
+    fail "Query router can not write to distributed tables"
+  fi
+
+  try_function wait_until eval 'run_query -c "$ROUTER_CLUSTER" -h "$ROUTER_SERVICE" -i 0 -p 5432 \
+    -d citus -q "SELECT COUNT(*) FROM query_router_test" | grep -xF 1'
+
+  if [ "$EXIT_CODE" = 0 ]
+  then
+    success "Query router can read distributed tables"
+  else
+    fail "Query router can not read distributed tables"
+  fi
 }

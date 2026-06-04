@@ -41,48 +41,53 @@ public class ShardedClusterPostgresVersionContextAppender
 
   private final EventEmitter<StackGresShardedCluster> eventController;
   private final ShardedClusterCoordinatorPostgresConfigContextAppender clusterCoordinatorPostgresConfigContextAppender;
-  private final ShardedClusterShardsPostgresConfigContextAppender clusterShardsPostgresConfigContextAppender;
+  private final ShardedClusterWorkersPostgresConfigContextAppender clusterWorkersPostgresConfigContextAppender;
   private final ShardedClusterRestoreBackupContextAppender clusterRestoreBackupContextAppender;
-  private final ShardedClusterExtensionsContextAppender clusterExtensionsContextAppender;
+  private final ShardedClusterReplicateFromContextAppender shardedClusterReplicateFromContextAppender;
   private final ShardedClusterCoordinatorClusterContextAppender clusterCoordinatorContextAppender;
-  private final ShardedClusterShardsClustersContextAppender clusterShardsContextAppender;
+  private final ShardedClusterWorkersClustersContextAppender clusterWorkersContextAppender;
+  private final ShardedClusterExtensionsContextAppender clusterExtensionsContextAppender;
 
   @Inject
   public ShardedClusterPostgresVersionContextAppender(
       EventEmitter<StackGresShardedCluster> eventController,
       ShardedClusterCoordinatorPostgresConfigContextAppender clusterCoordinatorPostgresConfigContextAppender,
-      ShardedClusterShardsPostgresConfigContextAppender clusterShardsPostgresConfigContextAppender,
+      ShardedClusterWorkersPostgresConfigContextAppender clusterWorkersPostgresConfigContextAppender,
       ShardedClusterRestoreBackupContextAppender clusterRestoreBackupContextAppender,
-      ShardedClusterExtensionsContextAppender clusterExtensionsContextAppender,
+      ShardedClusterReplicateFromContextAppender shardedClusterReplicateFromContextAppender,
       ShardedClusterCoordinatorClusterContextAppender clusterCoordinatorContextAppender,
-      ShardedClusterShardsClustersContextAppender clusterShardsContextAppender) {
+      ShardedClusterWorkersClustersContextAppender clusterWorkersContextAppender,
+      ShardedClusterExtensionsContextAppender clusterExtensionsContextAppender) {
     this(
         eventController,
         clusterCoordinatorPostgresConfigContextAppender,
-        clusterShardsPostgresConfigContextAppender,
+        clusterWorkersPostgresConfigContextAppender,
         clusterRestoreBackupContextAppender,
-        clusterExtensionsContextAppender,
+        shardedClusterReplicateFromContextAppender,
         clusterCoordinatorContextAppender,
-        clusterShardsContextAppender,
+        clusterWorkersContextAppender,
+        clusterExtensionsContextAppender,
         ValidationUtil.SUPPORTED_POSTGRES_VERSIONS);
   }
 
   public ShardedClusterPostgresVersionContextAppender(
       EventEmitter<StackGresShardedCluster> eventController,
       ShardedClusterCoordinatorPostgresConfigContextAppender clusterCoordinatorPostgresConfigContextAppender,
-      ShardedClusterShardsPostgresConfigContextAppender clusterShardsPostgresConfigContextAppender,
+      ShardedClusterWorkersPostgresConfigContextAppender clusterWorkersPostgresConfigContextAppender,
       ShardedClusterRestoreBackupContextAppender clusterRestoreBackupContextAppender,
-      ShardedClusterExtensionsContextAppender clusterExtensionsContextAppender,
+      ShardedClusterReplicateFromContextAppender shardedClusterReplicateFromContextAppender,
       ShardedClusterCoordinatorClusterContextAppender clusterCoordinatorContextAppender,
-      ShardedClusterShardsClustersContextAppender clusterShardsContextAppender,
+      ShardedClusterWorkersClustersContextAppender clusterWorkersContextAppender,
+      ShardedClusterExtensionsContextAppender clusterExtensionsContextAppender,
       Map<StackGresComponent, Map<StackGresVersion, List<String>>> supportedPostgresVersions) {
     this.eventController = eventController;
     this.clusterCoordinatorPostgresConfigContextAppender = clusterCoordinatorPostgresConfigContextAppender;
-    this.clusterShardsPostgresConfigContextAppender = clusterShardsPostgresConfigContextAppender;
+    this.clusterWorkersPostgresConfigContextAppender = clusterWorkersPostgresConfigContextAppender;
     this.clusterRestoreBackupContextAppender = clusterRestoreBackupContextAppender;
-    this.clusterExtensionsContextAppender = clusterExtensionsContextAppender;
+    this.shardedClusterReplicateFromContextAppender = shardedClusterReplicateFromContextAppender;
     this.clusterCoordinatorContextAppender = clusterCoordinatorContextAppender;
-    this.clusterShardsContextAppender = clusterShardsContextAppender;
+    this.clusterWorkersContextAppender = clusterWorkersContextAppender;
+    this.clusterExtensionsContextAppender = clusterExtensionsContextAppender;
     this.supportedPostgresVersions = supportedPostgresVersions;
   }
 
@@ -166,12 +171,13 @@ public class ShardedClusterPostgresVersionContextAppender
       cluster.getStatus().setPostgresVersion(version);
       cluster.getStatus().setBuildVersion(buildVersion);
       clusterCoordinatorPostgresConfigContextAppender.appendContext(cluster, contextBuilder, version);
-      clusterShardsPostgresConfigContextAppender.appendContext(cluster, contextBuilder, version);
+      clusterWorkersPostgresConfigContextAppender.appendContext(cluster, contextBuilder, version);
       clusterRestoreBackupContextAppender.appendContext(cluster, contextBuilder, version);
+      var replicateCluster = shardedClusterReplicateFromContextAppender.appendContext(cluster, contextBuilder);
+      var coordinator = clusterCoordinatorContextAppender.appendContext(cluster, contextBuilder, replicateCluster);
+      clusterWorkersContextAppender.appendContext(cluster, contextBuilder, replicateCluster);
       clusterExtensionsContextAppender.appendContext(cluster, contextBuilder, version,
-          buildVersion, previousVersion, previousBuildVersion);
-      clusterCoordinatorContextAppender.appendContext(cluster, contextBuilder);
-      clusterShardsContextAppender.appendContext(cluster, contextBuilder);
+          buildVersion, previousVersion, previousBuildVersion, coordinator);
     }
 
     if ((version == null && previousVersion.isEmpty())

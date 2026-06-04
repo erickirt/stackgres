@@ -34,7 +34,9 @@ spec:
         type: NodePort
       any:
         type: NodePort
-    shards:
+      queryRouters:
+        type: NodePort
+    workers:
       primaries:
         type: NodePort
 ```
@@ -48,7 +50,7 @@ kubectl get services -l stackgres.io/shardedcluster-name=cluster
 NAME             TYPE       CLUSTER-IP         EXTERNAL-IP   PORT(S)             AGE
 cluster          NodePort   10.101.139.224     <none>        5432/TCP,5433/TCP   31h
 cluster-reads    NodePort   10.96.18.211       <none>        5432/TCP,5433/TCP   31h
-cluster-shards   NodePort   10.99.44.2         <none>        5432/TCP,5433/TCP   31h
+cluster-workers  NodePort   10.99.44.2         <none>        5432/TCP,5433/TCP   31h
 ```
 
 Get the node ip address (kind ip address on the example below):
@@ -95,7 +97,9 @@ spec:
         type: LoadBalancer
       any:
         type: LoadBalancer
-    shards:
+      queryRouters:
+        type: LoadBalancer
+    workers:
       primaries:
         type: loadBalancer
 ```
@@ -109,7 +113,7 @@ kubectl get services -l stackgres.io/shardedcluster=true,stackgres.io/shardedclu
 NAME             TYPE       CLUSTER-IP         EXTERNAL-IP         PORT(S)             AGE
 cluster          NodePort   10.101.139.224     172.18.0.101        5432/TCP,5433/TCP   31h
 cluster-reads    NodePort   10.96.18.211       172.18.0.102        5432/TCP,5433/TCP   31h
-cluster-shards   NodePort   10.99.44.2         172.18.0.103        5432/TCP,5433/TCP   31h
+cluster-workers  NodePort   10.99.44.2         172.18.0.103        5432/TCP,5433/TCP   31h
 ```
 
 > Please note that, since we change both services to `LoadBalancer`, two loadbalancers were created, one for each service. 

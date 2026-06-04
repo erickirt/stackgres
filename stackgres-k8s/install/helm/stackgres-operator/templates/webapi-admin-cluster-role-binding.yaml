@@ -27,6 +27,18 @@ spec:
       serviceAccountName: {{ .Release.Name }}-init
       restartPolicy: OnFailure
       terminationGracePeriodSeconds: 0
+      {{- with .Values.jobs.schedulerName }}
+      schedulerName: {{ . }}
+      {{- end }}
+      {{- with .Values.jobs.runtimeClassName }}
+      runtimeClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.jobs.preemptionPolicy }}
+      preemptionPolicy: {{ . }}
+      {{- end }}
+      {{- with .Values.jobs.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
       {{- with .Values.jobs.affinity}}
       affinity:
         {{- toYaml . | nindent 8 }}

@@ -6,6 +6,7 @@
 package io.stackgres.cluster.rest;
 
 import java.net.URI;
+import java.util.Map;
 
 import io.stackgres.cluster.controller.PatroniReconciliator;
 import io.stackgres.common.EnvoyUtil;
@@ -40,7 +41,7 @@ public class ControllerResource {
       return Response.ok().build();
     }
     final URI uri = URI.create("http://localhost:" + EnvoyUtil.PATRONI_PORT + "/liveness");
-    try (var webClient = webClientFactory.create(uri)) {
+    try (var webClient = webClientFactory.create(uri, Map.of())) {
       return Response.status(webClient.get(uri).getStatus()).build();
     } catch (Exception ex) {
       throw new RuntimeException(ex);

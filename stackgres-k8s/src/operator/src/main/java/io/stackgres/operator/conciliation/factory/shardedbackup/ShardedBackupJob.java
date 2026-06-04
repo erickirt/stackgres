@@ -6,7 +6,8 @@
 package io.stackgres.operator.conciliation.factory.shardedbackup;
 
 import static io.stackgres.common.StackGresShardedClusterUtil.getCoordinatorClusterName;
-import static io.stackgres.common.StackGresShardedClusterUtil.getShardClusterName;
+import static io.stackgres.common.StackGresShardedClusterUtil.getQueryRouterClusterName;
+import static io.stackgres.common.StackGresShardedClusterUtil.getWorkerClusterName;
 import static io.stackgres.common.StackGresUtil.getDefaultPullPolicy;
 
 import java.util.ArrayList;
@@ -48,6 +49,7 @@ import io.stackgres.common.crd.sgshardedbackup.ShardedBackupStatus;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackup;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackupSpec;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.labels.LabelFactoryForCluster;
 import io.stackgres.common.labels.LabelFactoryForShardedBackup;
@@ -264,8 +266,15 @@ public class ShardedBackupJob
                     new EnvVarBuilder()
                     .withName("CLUSTER_NAMES")
                     .withValue(Seq.of(getCoordinatorClusterName(cluster))
-                        .append(Seq.range(0, cluster.getSpec().getShards().getClusters())
-                            .map(index -> getShardClusterName(cluster, index)))
+                        .append(Seq.range(0, cluster.getSpec().getWorkers().getClusters())
+                            .map(index -> getWorkerClusterName(cluster, index)))
+                        .append(Seq.range(
+                            0,
+                            Optional.of(cluster.getSpec())
+                            .map(StackGresShardedClusterSpec::getCoordinator)
+                            .map(StackGresShardedClusterCoordinator::getQueryRouterClusters)
+                            .orElse(0))
+                            .map(index -> getQueryRouterClusterName(cluster, String.valueOf(index))))
                         .toString(" "))
                     .build(),
                     new EnvVarBuilder()

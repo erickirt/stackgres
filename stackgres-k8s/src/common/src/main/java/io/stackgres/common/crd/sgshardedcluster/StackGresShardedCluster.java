@@ -26,7 +26,7 @@ import jakarta.validation.constraints.NotNull;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder",
     refs = {
@@ -44,7 +44,7 @@ public final class StackGresShardedCluster
 
   public static final String KIND = "SGShardedCluster";
 
-  public static final String VERSION = "v1alpha1";
+  public static final String VERSION = "v1beta1";
 
   @NotNull(message = "spec is required")
   @Valid

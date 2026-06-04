@@ -1,9 +1,9 @@
 #!/bin/sh
 
 #
-# Follow those steps to install and start crc in Ubuntu 22.04:
+# Follow those steps to install and start crc in Ubuntu 25.10:
 # 
-#     sudo wget https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/crc/2.51.0/crc-linux-amd64.tar.xz -O - | sudo tar xf --strip-components=1 -C /usr/local/bin/ -f - crc
+#     wget -L https://developers.redhat.com/content-gateway/file/pub/openshift-v4/clients/crc/2.60.1/crc-linux-amd64.tar.xz -O - | sudo tar x -J --strip-components=1 -C /usr/local/bin/ -f - --wildcards '*/crc'
 #     sudo chmod a+x /usr/local/bin/crc
 #     sudo apt install qemu-kvm libvirt-daemon libvirt-daemon-system network-manager
 #     # apply patch for apparmor configuration for libvirt from https://bugs.launchpad.net/ubuntu/+source/libvirt/+bug/1962035/comments/2
@@ -22,16 +22,22 @@
 #
 # Download CRC pull secret from https://console.redhat.com/openshift/create/local to "$HOME/.crc/pull-secret"
 #
+# > In case Operators tab does not show in the OpenShift Web Console run the following and while some time:
+# > 
+# > ```
+# > ~/.crc/bin/oc/oc patch clusterversion version --type=json -p '[{"op": "add", "path": "/spec/capabilities/additionalEnabledCapabilities/-", "value": "CloudCredential"}]'
+# > ```
+#
 CRC_EXPANDABLE_STORAGE_CLASSNAME="${EXPANDABLE_STORAGE_CLASSNAME:-expandable-sc}"
-CRC_ENABLE_DAEMON="${CRC_ENABLE_DAEMON:-true}"
+CRC_ENABLE_DAEMON="${CRC_ENABLE_DAEMON:-false}"
 
-if [ "$K8S_VERSION" = "$DEFAULT_K8S_VERSION" ]
+if [ "${K8S_VERSION%.*}" = "${DEFAULT_K8S_VERSION%.}" ]
 then
-  >&2 echo "Warning: using kubernetes version 1.22.3 since e2e default $DEFAULT_K8S_VERSION is not available for crc"
-  K8S_VERSION=1.22.3
+  >&2 echo "Warning: using kubernetes version 1.34 since e2e default ${DEFAULT_K8S_VERSION%.} is not available for crc"
+  K8S_VERSION=1.34
 fi
 export K8S_CRC_CPUS="${K8S_CRC_CPUS:-4}"
-export K8S_CRC_MEMORY="${K8S_CRC_MEMORY:-9216}"
+export K8S_CRC_MEMORY="${K8S_CRC_MEMORY:-12288}"
 export K8S_CRC_DISK="${K8S_CRC_DISK:-60}"
 
 get_k8s_env_version() {
@@ -49,14 +55,15 @@ update_crc_config() {
     then
       return 1
     fi
-    wait_until -t 60 eval "crc status | grep '^OpenShift:[[:space:]]\+Running[[:space:]]'"
+    wait_until -t 180 eval "crc status | grep '^OpenShift:[[:space:]]\+Running[[:space:]]'"
     wait_until -t 60 eval "timeout -s KILL 10s $CRC_LOGIN_COMMAND > /dev/null 2>&1"
   fi
 
   ~/.crc/bin/oc/oc adm policy add-scc-to-user hostmount-anyuid -n default -z default
   kubectl patch networks.config.openshift.io cluster --type json \
     -p '[{"op":"replace","path":"/spec/externalIP/policy","value":{"allowedCIDRs":["0.0.0.0/0"]}}]'
-  kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.22/deploy/local-path-storage.yaml
+  kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.35/deploy/local-path-storage.yaml
+  kubectl patch -n local-path-storage deploy local-path-provisioner --type json -p '[{"op":"replace","path":"/spec/template/spec/containers/0/image","value":"docker.io/rancher/local-path-provisioner:v0.0.35"}]'
   ~/.crc/bin/oc/oc adm policy add-scc-to-user hostmount-anyuid -n local-path-storage -z local-path-provisioner-service-account
   kubectl get storageclass -o name | xargs -I % kubectl annotate % --overwrite storageclass.kubernetes.io/is-default-class=false
   kubectl annotate storageclass local-path --overwrite storageclass.kubernetes.io/is-default-class=true
@@ -109,9 +116,9 @@ reset_k8s() {
     exit 1
   fi
 
-  if [ "$K8S_VERSION" != 1.22.3 ]
+  if [ "${K8S_VERSION%.*}" != 1.34 ]
   then
-    echo "Only kubernetes version 1.22.3 is available for crc environment"
+    echo "Only kubernetes version 1.34.x is available for crc environment"
     return 1
   fi
 
@@ -121,7 +128,7 @@ reset_k8s() {
   then
     crc delete -f || true
     virsh destroy crc || true
-    virsh undefine crc || true
+    virsh undefine crc --nvram || true
   else
     crc stop -f || true
   fi
@@ -252,6 +259,7 @@ excluded_namespaces() {
   echo "openshift"
   echo "openshift-.*"
   echo "local-path-storage"
+  echo "hostpath-provisioner"
 }
 
 excluded_validatingwebhookconfigurations() {
@@ -276,6 +284,7 @@ excluded_customresourcedefinitions() {
 }
 
 excluded_clusterroles() {
+  echo "operator-lifecycle-manager-metrics-reader"
   echo "admin"
   echo "aggregate-olm-edit"
   echo "aggregate-olm-view"
@@ -370,6 +379,7 @@ excluded_clusterroles() {
 }
 
 excluded_clusterrolebindings() {
+  echo "operator-lifecycle-manager-metrics-reader"
   echo "console-auth-delegator"
   echo "cluster-network-operator"
   echo "control-plane-machine-set-operator"

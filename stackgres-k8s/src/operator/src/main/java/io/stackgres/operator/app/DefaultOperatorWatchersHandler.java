@@ -14,6 +14,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
+import io.fabric8.kubernetes.api.model.ConfigMapList;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.Endpoints;
 import io.fabric8.kubernetes.api.model.EndpointsList;
@@ -23,6 +26,9 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
+import io.fabric8.kubernetes.api.model.SecretList;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watcher.Action;
@@ -52,7 +58,9 @@ import io.stackgres.common.crd.sgpooling.StackGresPoolingConfigList;
 import io.stackgres.common.crd.sgprofile.StackGresProfile;
 import io.stackgres.common.crd.sgprofile.StackGresProfileList;
 import io.stackgres.common.crd.sgscript.StackGresScript;
+import io.stackgres.common.crd.sgscript.StackGresScriptFrom;
 import io.stackgres.common.crd.sgscript.StackGresScriptList;
+import io.stackgres.common.crd.sgscript.StackGresScriptSpec;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackup;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackupList;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
@@ -64,6 +72,7 @@ import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOpsList;
 import io.stackgres.common.crd.sgstream.StackGresStream;
 import io.stackgres.common.crd.sgstream.StackGresStreamList;
 import io.stackgres.operator.common.DbOpsUtil;
+import io.stackgres.operator.common.Metrics;
 import io.stackgres.operator.common.ResourceWatcherFactory;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
 import io.stackgres.operator.conciliation.backup.BackupReconciliator;
@@ -71,6 +80,7 @@ import io.stackgres.operator.conciliation.cluster.ClusterReconciliator;
 import io.stackgres.operator.conciliation.config.ConfigReconciliator;
 import io.stackgres.operator.conciliation.dbops.DbOpsReconciliator;
 import io.stackgres.operator.conciliation.distributedlogs.DistributedLogsReconciliator;
+import io.stackgres.operator.conciliation.script.ScriptReconciliator;
 import io.stackgres.operator.conciliation.shardedbackup.ShardedBackupReconciliator;
 import io.stackgres.operator.conciliation.shardedcluster.ShardedClusterReconciliator;
 import io.stackgres.operator.conciliation.shardeddbops.ShardedDbOpsReconciliator;
@@ -95,6 +105,7 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
   private final DistributedLogsReconciliator distributedLogsReconciliatorCycle;
   private final DbOpsReconciliator dbOpsReconciliatorCycle;
   private final BackupReconciliator backupReconciliatorCycle;
+  private final ScriptReconciliator scriptReconciliatorCycle;
   private final ShardedClusterReconciliator shardedClusterReconciliatorCycle;
   private final ShardedBackupReconciliator shardedBackupReconciliatorCycle;
   private final ShardedDbOpsReconciliator shardedDbOpsReconciliatorCycle;
@@ -118,7 +129,10 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
       Collections.synchronizedMap(new HashMap<>());
   private final Map<String, StackGresStream> streams =
       Collections.synchronizedMap(new HashMap<>());
+  private final Map<String, StackGresScript> scripts =
+      Collections.synchronizedMap(new HashMap<>());
   private final DeployedResourcesCache deployedResourcesCache;
+  private final Metrics metrics;
 
   @Inject
   public DefaultOperatorWatchersHandler(
@@ -128,24 +142,28 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
       DistributedLogsReconciliator distributedLogsReconciliatorCycle,
       DbOpsReconciliator dbOpsReconciliatorCycle,
       BackupReconciliator backupReconciliatorCycle,
+      ScriptReconciliator scriptReconciliatorCycle,
       ShardedClusterReconciliator shardedClusterReconciliatorCycle,
       ShardedBackupReconciliator shardedBackupReconciliatorCycle,
       ShardedDbOpsReconciliator shardedDbOpsReconciliatorCycle,
       StreamReconciliator streamReconciliatorCycle,
       ResourceWatcherFactory watcherFactory,
-      DeployedResourcesCache deployedResourcesCache) {
+      DeployedResourcesCache deployedResourcesCache,
+      Metrics metrics) {
     this.client = client;
     this.configReconciliatorCycle = configReconciliatorCycle;
     this.clusterReconciliatorCycle = clusterReconciliatorCycle;
     this.distributedLogsReconciliatorCycle = distributedLogsReconciliatorCycle;
     this.dbOpsReconciliatorCycle = dbOpsReconciliatorCycle;
     this.backupReconciliatorCycle = backupReconciliatorCycle;
+    this.scriptReconciliatorCycle = scriptReconciliatorCycle;
     this.shardedClusterReconciliatorCycle = shardedClusterReconciliatorCycle;
     this.shardedBackupReconciliatorCycle = shardedBackupReconciliatorCycle;
     this.shardedDbOpsReconciliatorCycle = shardedDbOpsReconciliatorCycle;
     this.streamReconciliatorCycle = streamReconciliatorCycle;
     this.watcherFactory = watcherFactory;
     this.deployedResourcesCache = deployedResourcesCache;
+    this.metrics = metrics;
   }
 
   @Override
@@ -167,6 +185,17 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
             .andThen(reconcileCluster()),
             invalidateCluster()
             .andThen(removeCluster()))));
+
+    monitors.addAll(createCustomResourceWatchers(
+        StackGresScript.class,
+        StackGresScriptList.class,
+        onCreateOrUpdateAndOnDelete(
+            putScript()
+            .andThen(reconcileScript())
+            .andThen(reconcileScriptClusters())
+            .andThen(reconcileScriptShardedClusters()),
+            invalidateScript()
+            .andThen(removeScript()))));
 
     monitors.addAll(createCustomResourceWatchers(
         StackGresProfile.class,
@@ -196,13 +225,6 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
         onCreateOrUpdate(
             reconcileObjectStorageClusters()
             .andThen(reconcileObjectStorageShardedClusters()))));
-
-    monitors.addAll(createCustomResourceWatchers(
-        StackGresScript.class,
-        StackGresScriptList.class,
-        onCreateOrUpdate(
-            reconcileScriptClusters()
-            .andThen(reconcileScriptShardedClusters()))));
 
     monitors.addAll(createCustomResourceWatchers(
         StackGresBackup.class,
@@ -291,6 +313,18 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
         PersistentVolumeClaimList.class,
         onCreateOrUpdateOrDelete(
             reconcilePvcClusters())));
+
+    monitors.addAll(createWatchers(
+        ConfigMap.class,
+        ConfigMapList.class,
+        onCreateOrUpdateOrDelete(
+            reconcileConfigMapScripts())));
+
+    monitors.addAll(createWatchers(
+        Secret.class,
+        SecretList.class,
+        onCreateOrUpdateOrDelete(
+            reconcileSecretScripts())));
   }
 
   private <T extends CustomResource<?, ?>,
@@ -379,77 +413,203 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
   }
 
   private BiConsumer<Action, StackGresConfig> putConfig() {
-    return (action, config) -> configs.put(resourceId(config), config);
+    return (action, config) -> putConfig(config);
+  }
+
+  private StackGresConfig putConfig(StackGresConfig config) {
+    configs.put(resourceId(config), config);
+    metrics.setWatchCacheSize(config.getClass(), configs.size());
+    return config;
   }
 
   private BiConsumer<Action, StackGresCluster> putCluster() {
-    return (action, cluster) -> clusters.put(resourceId(cluster), cluster);
+    return (action, cluster) -> putCluster(cluster);
+  }
+
+  private StackGresCluster putCluster(StackGresCluster cluster) {
+    clusters.put(resourceId(cluster), cluster);
+    metrics.setWatchCacheSize(cluster.getClass(), configs.size());
+    return cluster;
   }
 
   private BiConsumer<Action, StackGresDistributedLogs> putDistributedLogs() {
-    return (action, distributedLogs) -> this.distributedLogs
-        .put(resourceId(distributedLogs), distributedLogs);
+    return (action, distributedLogs) -> putDistributedLogs(distributedLogs);
+  }
+
+  private StackGresDistributedLogs putDistributedLogs(StackGresDistributedLogs distributedLogs) {
+    this.distributedLogs.put(resourceId(distributedLogs), distributedLogs);
+    metrics.setWatchCacheSize(distributedLogs.getClass(), this.distributedLogs.size());
+    return distributedLogs;
   }
 
   private BiConsumer<Action, StackGresBackup> putBackup() {
-    return (action, backup) -> backups.put(resourceId(backup), backup);
+    return (action, backup) -> putBackup(backup);
+  }
+
+  private StackGresBackup putBackup(StackGresBackup backup) {
+    backups.put(resourceId(backup), backup);
+    metrics.setWatchCacheSize(backup.getClass(), backups.size());
+    return backup;
   }
 
   private BiConsumer<Action, StackGresDbOps> putDbOps() {
-    return (action, dbOps) -> this.dbOps.put(resourceId(dbOps), dbOps);
+    return (action, dbOps) -> putDbOps(dbOps);
+  }
+
+  private StackGresDbOps putDbOps(StackGresDbOps dbOps) {
+    this.dbOps.put(resourceId(dbOps), dbOps);
+    metrics.setWatchCacheSize(dbOps.getClass(), this.dbOps.size());
+    return dbOps;
+  }
+
+  private BiConsumer<Action, StackGresScript> putScript() {
+    return (action, script) -> putScript(script);
+  }
+
+  private StackGresScript putScript(StackGresScript script) {
+    scripts.put(resourceId(script), script);
+    metrics.setWatchCacheSize(script.getClass(), configs.size());
+    return script;
   }
 
   private BiConsumer<Action, StackGresShardedCluster> putShardedCluster() {
-    return (action, cluster) -> shardedClusters.put(resourceId(cluster), cluster);
+    return (action, cluster) -> putShardedCluster(cluster);
+  }
+
+  private StackGresShardedCluster putShardedCluster(StackGresShardedCluster cluster) {
+    shardedClusters.put(resourceId(cluster), cluster);
+    metrics.setWatchCacheSize(cluster.getClass(), shardedClusters.size());
+    return cluster;
   }
 
   private BiConsumer<Action, StackGresShardedBackup> putShardedBackup() {
-    return (action, backup) -> shardedBackups.put(resourceId(backup), backup);
+    return (action, backup) -> putShardedBackup(backup);
+  }
+
+  private StackGresShardedBackup putShardedBackup(StackGresShardedBackup backup) {
+    shardedBackups.put(resourceId(backup), backup);
+    metrics.setWatchCacheSize(backup.getClass(), shardedBackups.size());
+    return backup;
   }
 
   private BiConsumer<Action, StackGresShardedDbOps> putShardedDbOps() {
-    return (action, dbOps) -> shardedDbOps.put(resourceId(dbOps), dbOps);
+    return (action, dbOps) -> putShardedDbOps(dbOps);
+  }
+
+  private StackGresShardedDbOps putShardedDbOps(StackGresShardedDbOps dbOps) {
+    shardedDbOps.put(resourceId(dbOps), dbOps);
+    metrics.setWatchCacheSize(dbOps.getClass(), shardedDbOps.size());
+    return dbOps;
   }
 
   private BiConsumer<Action, StackGresStream> putStream() {
-    return (action, stream) -> this.streams.put(resourceId(stream), stream);
+    return (action, stream) -> putStream(stream);
+  }
+
+  private StackGresStream putStream(StackGresStream stream) {
+    streams.put(resourceId(stream), stream);
+    metrics.setWatchCacheSize(stream.getClass(), streams.size());
+    return stream;
   }
 
   private BiConsumer<Action, StackGresConfig> removeConfig() {
-    return (action, config) -> configs.remove(resourceId(config));
+    return (action, config) -> removeConfig(config);
+  }
+
+  private StackGresConfig removeConfig(StackGresConfig config) {
+    configs.remove(resourceId(config));
+    metrics.setWatchCacheSize(config.getClass(), configs.size());
+    return config;
   }
 
   private BiConsumer<Action, StackGresCluster> removeCluster() {
-    return (action, cluster) -> clusters.remove(resourceId(cluster));
+    return (action, cluster) -> removeCluster(cluster);
+  }
+
+  private StackGresCluster removeCluster(StackGresCluster cluster) {
+    clusters.remove(resourceId(cluster));
+    metrics.setWatchCacheSize(cluster.getClass(), clusters.size());
+    return cluster;
   }
 
   private BiConsumer<Action, StackGresDistributedLogs> removeDistributedLogs() {
-    return (action, distributedLogs) -> this.distributedLogs
-        .remove(resourceId(distributedLogs));
+    return (action, distributedLogs) -> removeDistributedLogs(distributedLogs);
+  }
+
+  private StackGresDistributedLogs removeDistributedLogs(StackGresDistributedLogs distributedLogs) {
+    this.distributedLogs.remove(resourceId(distributedLogs));
+    metrics.setWatchCacheSize(distributedLogs.getClass(), this.distributedLogs.size());
+    return distributedLogs;
   }
 
   private BiConsumer<Action, StackGresBackup> removeBackup() {
-    return (action, backup) -> backups.remove(resourceId(backup));
+    return (action, backup) -> removeBackup(backup);
+  }
+
+  private StackGresBackup removeBackup(StackGresBackup backup) {
+    backups.remove(resourceId(backup));
+    metrics.setWatchCacheSize(backup.getClass(), backups.size());
+    return backup;
   }
 
   private BiConsumer<Action, StackGresDbOps> removeDbOps() {
-    return (action, dbOps) -> this.dbOps.remove(resourceId(dbOps));
+    return (action, dbOps) -> removeDbOps(dbOps);
+  }
+
+  private StackGresDbOps removeDbOps(StackGresDbOps dbOps) {
+    this.dbOps.remove(resourceId(dbOps));
+    metrics.setWatchCacheSize(dbOps.getClass(), this.dbOps.size());
+    return dbOps;
+  }
+
+  private BiConsumer<Action, StackGresScript> removeScript() {
+    return (action, script) -> removeScript(script);
+  }
+
+  private StackGresScript removeScript(StackGresScript script) {
+    scripts.remove(resourceId(script));
+    metrics.setWatchCacheSize(script.getClass(), scripts.size());
+    return script;
   }
 
   private BiConsumer<Action, StackGresShardedCluster> removeShardedCluster() {
-    return (action, cluster) -> shardedClusters.remove(resourceId(cluster));
+    return (action, cluster) -> removeShardedCluster(cluster);
+  }
+
+  private StackGresShardedCluster removeShardedCluster(StackGresShardedCluster cluster) {
+    shardedClusters.remove(resourceId(cluster));
+    metrics.setWatchCacheSize(cluster.getClass(), shardedClusters.size());
+    return cluster;
   }
 
   private BiConsumer<Action, StackGresShardedBackup> removeShardedBackup() {
-    return (action, backup) -> shardedBackups.remove(resourceId(backup));
+    return (action, backup) -> removeShardedBackup(backup);
+  }
+
+  private StackGresShardedBackup removeShardedBackup(StackGresShardedBackup backup) {
+    shardedBackups.remove(resourceId(backup));
+    metrics.setWatchCacheSize(backup.getClass(), shardedBackups.size());
+    return backup;
   }
 
   private BiConsumer<Action, StackGresShardedDbOps> removeShardedDbOps() {
-    return (action, dbOps) -> shardedDbOps.remove(resourceId(dbOps));
+    return (action, dbOps) -> removeShardedDbOps(dbOps);
+  }
+
+  private StackGresShardedDbOps removeShardedDbOps(StackGresShardedDbOps dbOps) {
+    shardedDbOps.remove(resourceId(dbOps));
+    metrics.setWatchCacheSize(dbOps.getClass(), shardedDbOps.size());
+    return dbOps;
   }
 
   private BiConsumer<Action, StackGresStream> removeStream() {
-    return (action, stream) -> this.streams.remove(resourceId(stream));
+    return (action, stream) -> removeStream(stream);
+  }
+
+  private StackGresStream removeStream(StackGresStream stream) {
+    streams.remove(resourceId(stream));
+    metrics.setWatchCacheSize(stream.getClass(), streams.size());
+    return stream;
   }
 
   private BiConsumer<Action, StackGresConfig> reconcileConfig() {
@@ -483,6 +643,10 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
 
   private BiConsumer<Action, StackGresBackup> reconcileBackup() {
     return (action, backup) -> backupReconciliatorCycle.reconcile(backup);
+  }
+
+  private BiConsumer<Action, StackGresScript> reconcileScript() {
+    return (action, script) -> scriptReconciliatorCycle.reconcile(script);
   }
 
   private BiConsumer<Action, StackGresShardedBackup> reconcileShardedBackup() {
@@ -597,10 +761,10 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
             shardedCluster.getSpec().getCoordinator().getSgInstanceProfile(),
             instanceProfile.getMetadata().getName())
             || Objects.equals(
-                shardedCluster.getSpec().getShards().getSgInstanceProfile(),
+                shardedCluster.getSpec().getWorkers().getSgInstanceProfile(),
                 instanceProfile.getMetadata().getName())
             || Optional.ofNullable(shardedCluster.getSpec()
-                .getShards().getOverrides()).orElse(List.of())
+                .getWorkers().getOverrides()).orElse(List.of())
             .stream().anyMatch(spec -> Objects
                 .equals(
                     spec.getSgInstanceProfile(),
@@ -622,14 +786,14 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
               Optional.of(postgresConfig.getMetadata().getName()))
               || Objects.equals(
                   Optional.ofNullable(
-                      shardedCluster.getSpec().getShards().getConfigurations())
+                      shardedCluster.getSpec().getWorkers().getConfigurations())
                   .map(StackGresClusterConfigurations::getSgPostgresConfig),
                   Optional.of(postgresConfig.getMetadata().getName()))
-              || Optional.ofNullable(shardedCluster.getSpec().getShards().getOverrides())
+              || Optional.ofNullable(shardedCluster.getSpec().getWorkers().getOverrides())
                   .orElse(List.of())
-                  .stream().anyMatch(spec -> spec.getConfigurationsForShards() != null
+                  .stream().anyMatch(spec -> spec.getConfigurationsForWorkers() != null
                       && Objects.equals(
-                          spec.getConfigurationsForShards().getSgPostgresConfig(),
+                          spec.getConfigurationsForWorkers().getSgPostgresConfig(),
                           postgresConfig.getMetadata().getName()));
         })
         .forEach(shardedCluster -> reconcileShardedCluster().accept(action, shardedCluster));
@@ -648,14 +812,14 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
             Optional.of(poolingConfig.getMetadata().getName()))
             || Objects.equals(
                 Optional.ofNullable(
-                    shardedCluster.getSpec().getShards().getConfigurations())
+                    shardedCluster.getSpec().getWorkers().getConfigurations())
                 .map(StackGresClusterConfigurations::getSgPoolingConfig),
                 Optional.of(poolingConfig.getMetadata().getName()))
-            || Optional.ofNullable(shardedCluster.getSpec().getShards().getOverrides())
+            || Optional.ofNullable(shardedCluster.getSpec().getWorkers().getOverrides())
                 .orElse(List.of())
-                .stream().anyMatch(spec -> spec.getConfigurationsForShards() != null
+                .stream().anyMatch(spec -> spec.getConfigurationsForWorkers() != null
                     && Objects.equals(
-                        spec.getConfigurationsForShards().getSgPoolingConfig(),
+                        spec.getConfigurationsForWorkers().getSgPoolingConfig(),
                         poolingConfig.getMetadata().getName())))
         .forEach(shardedCluster -> reconcileShardedCluster().accept(action, shardedCluster));
   }
@@ -689,13 +853,13 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
             .flatMap(List::stream)
             .map(StackGresClusterManagedScriptEntry::getSgScript)
             .anyMatch(script.getMetadata().getName()::equals)
-            || Optional.ofNullable(cluster.getSpec().getShards().getManagedSql())
+            || Optional.ofNullable(cluster.getSpec().getWorkers().getManagedSql())
             .map(StackGresClusterManagedSql::getScripts)
             .stream()
             .flatMap(List::stream)
             .map(StackGresClusterManagedScriptEntry::getSgScript)
             .anyMatch(script.getMetadata().getName()::equals)
-            || Optional.ofNullable(cluster.getSpec().getShards().getOverrides())
+            || Optional.ofNullable(cluster.getSpec().getWorkers().getOverrides())
             .stream()
             .flatMap(List::stream)
             .flatMap(override -> Optional.ofNullable(override.getManagedSql())
@@ -889,16 +1053,52 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
   private BiConsumer<Action, PersistentVolumeClaim> reconcilePvcClusters() {
     String clusterNameKey =
         StackGresContext.STACKGRES_KEY_PREFIX + StackGresContext.CLUSTER_NAME_KEY;
-    return (action, pod) -> synchronizedCopyOfValues(clusters)
+    return (action, pvc) -> synchronizedCopyOfValues(clusters)
         .stream()
         .filter(cluster -> Objects.equals(
             cluster.getMetadata().getNamespace(),
-            pod.getMetadata().getNamespace()))
-        .filter(cluster -> pod.getMetadata().getLabels() != null)
+            pvc.getMetadata().getNamespace()))
+        .filter(cluster -> pvc.getMetadata().getLabels() != null)
         .filter(cluster -> Objects.equals(
-            pod.getMetadata().getLabels().get(clusterNameKey),
+            pvc.getMetadata().getLabels().get(clusterNameKey),
             cluster.getMetadata().getName()))
         .forEach(cluster -> reconcileCluster().accept(action, cluster));
+  }
+
+  private BiConsumer<Action, ConfigMap> reconcileConfigMapScripts() {
+    return (action, configMap) -> synchronizedCopyOfValues(scripts)
+        .stream()
+        .filter(script -> Objects.equals(
+            script.getMetadata().getNamespace(),
+            configMap.getMetadata().getNamespace()))
+        .filter(script -> Optional.ofNullable(script.getSpec())
+            .map(StackGresScriptSpec::getScripts)
+            .stream()
+            .flatMap(List::stream)
+            .flatMap(scriptEntry -> Optional.ofNullable(scriptEntry.getScriptFrom())
+                .map(StackGresScriptFrom::getConfigMapKeyRef)
+                .map(ConfigMapKeySelector::getName)
+                .stream())
+            .anyMatch(configMap.getMetadata().getName()::equals))
+        .forEach(script -> reconcileScript().accept(action, script));
+  }
+
+  private BiConsumer<Action, Secret> reconcileSecretScripts() {
+    return (action, configMap) -> synchronizedCopyOfValues(scripts)
+        .stream()
+        .filter(script -> Objects.equals(
+            script.getMetadata().getNamespace(),
+            configMap.getMetadata().getNamespace()))
+        .filter(script -> Optional.ofNullable(script.getSpec())
+            .map(StackGresScriptSpec::getScripts)
+            .stream()
+            .flatMap(List::stream)
+            .flatMap(scriptEntry -> Optional.ofNullable(scriptEntry.getScriptFrom())
+                .map(StackGresScriptFrom::getSecretKeyRef)
+                .map(SecretKeySelector::getName)
+                .stream())
+            .anyMatch(configMap.getMetadata().getName()::equals))
+        .forEach(script -> reconcileScript().accept(action, script));
   }
 
   private BiConsumer<Action, StackGresConfig> invalidateConfig() {
@@ -935,6 +1135,10 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
 
   private BiConsumer<Action, StackGresStream> invalidateStream() {
     return (action, stream) -> deployedResourcesCache.removeAll(stream);
+  }
+
+  private BiConsumer<Action, StackGresScript> invalidateScript() {
+    return (action, script) -> deployedResourcesCache.removeAll(script);
   }
 
   @Override

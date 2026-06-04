@@ -22,6 +22,8 @@ public class ConfigStatus {
 
   private String version;
 
+  private String installationId;
+
   private Boolean removeOldOperatorBundleResource;
 
   private ConfigStatusGrafana grafana;
@@ -42,6 +44,14 @@ public class ConfigStatus {
 
   public void setVersion(String version) {
     this.version = version;
+  }
+
+  public String getInstallationId() {
+    return installationId;
+  }
+
+  public void setInstallationId(String installationId) {
+    this.installationId = installationId;
   }
 
   public Boolean getRemoveOldOperatorBundleResource() {

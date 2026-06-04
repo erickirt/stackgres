@@ -21,7 +21,7 @@ import jakarta.validation.Valid;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresClusterStatus {
@@ -29,6 +29,10 @@ public class StackGresClusterStatus {
   private String postgresVersion;
 
   private String buildVersion;
+
+  private String latestPostgresMinor;
+
+  private String latestPostgresMajor;
 
   private List<StackGresClusterInstalledExtension> extensions;
 
@@ -41,11 +45,9 @@ public class StackGresClusterStatus {
   private String labelSelector;
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  @Valid
-  private List<Condition> conditions = new ArrayList<>();
+  private List<@Valid Condition> conditions = new ArrayList<>();
 
-  @Valid
-  private List<StackGresClusterPodStatus> podStatuses;
+  private List<@Valid StackGresClusterPodStatus> podStatuses;
 
   @Valid
   private StackGresClusterDbOpsStatus dbOps;
@@ -79,6 +81,22 @@ public class StackGresClusterStatus {
 
   public void setBuildVersion(String buildVersion) {
     this.buildVersion = buildVersion;
+  }
+
+  public String getLatestPostgresMinor() {
+    return latestPostgresMinor;
+  }
+
+  public void setLatestPostgresMinor(String latestPostgresMinor) {
+    this.latestPostgresMinor = latestPostgresMinor;
+  }
+
+  public String getLatestPostgresMajor() {
+    return latestPostgresMajor;
+  }
+
+  public void setLatestPostgresMajor(String latestPostgresMajor) {
+    this.latestPostgresMajor = latestPostgresMajor;
   }
 
   public List<StackGresClusterInstalledExtension> getExtensions() {
@@ -196,7 +214,8 @@ public class StackGresClusterStatus {
   @Override
   public int hashCode() {
     return Objects.hash(arch, backupPaths, binding, buildVersion, conditions, dbOps, extensions,
-        instances, labelPrefix, labelSelector, managedSql, os, podStatuses, postgresVersion,
+        instances, labelPrefix, labelSelector, latestPostgresMajor, latestPostgresMinor, managedSql,
+        os, podStatuses, postgresVersion,
         replicationInitializationFailedSgBackup, sgPostgresConfig);
   }
 
@@ -217,6 +236,8 @@ public class StackGresClusterStatus {
         && Objects.equals(instances, other.instances)
         && Objects.equals(labelPrefix, other.labelPrefix)
         && Objects.equals(labelSelector, other.labelSelector)
+        && Objects.equals(latestPostgresMajor, other.latestPostgresMajor)
+        && Objects.equals(latestPostgresMinor, other.latestPostgresMinor)
         && Objects.equals(managedSql, other.managedSql) && Objects.equals(os, other.os)
         && Objects.equals(podStatuses, other.podStatuses)
         && Objects.equals(postgresVersion, other.postgresVersion)

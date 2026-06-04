@@ -20,16 +20,17 @@ import jakarta.validation.Valid;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresConfigStatus {
 
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  @Valid
-  private List<Condition> conditions = new ArrayList<>();
+  private List<@Valid Condition> conditions = new ArrayList<>();
 
   private String version;
+
+  private String installationId;
 
   private Boolean oldOperatorBundleResourcesRemoved;
 
@@ -51,6 +52,14 @@ public class StackGresConfigStatus {
 
   public void setVersion(String version) {
     this.version = version;
+  }
+
+  public String getInstallationId() {
+    return installationId;
+  }
+
+  public void setInstallationId(String installationId) {
+    this.installationId = installationId;
   }
 
   public Boolean getOldOperatorBundleResourcesRemoved() {
@@ -79,7 +88,7 @@ public class StackGresConfigStatus {
 
   @Override
   public int hashCode() {
-    return Objects.hash(conditions, existingCrUpdatedToVersion, grafana,
+    return Objects.hash(conditions, existingCrUpdatedToVersion, grafana, installationId,
         oldOperatorBundleResourcesRemoved, version);
   }
 
@@ -94,7 +103,8 @@ public class StackGresConfigStatus {
     StackGresConfigStatus other = (StackGresConfigStatus) obj;
     return Objects.equals(conditions, other.conditions)
         && Objects.equals(existingCrUpdatedToVersion, other.existingCrUpdatedToVersion)
-        && Objects.equals(grafana, other.grafana) && Objects
+        && Objects.equals(grafana, other.grafana)
+        && Objects.equals(installationId, other.installationId) && Objects
             .equals(oldOperatorBundleResourcesRemoved, other.oldOperatorBundleResourcesRemoved)
         && Objects.equals(version, other.version);
   }

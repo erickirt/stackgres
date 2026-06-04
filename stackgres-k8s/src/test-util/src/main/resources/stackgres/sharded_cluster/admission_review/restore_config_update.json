@@ -38,7 +38,7 @@
     },
     "object": {
       "kind": "SGShardedCluster",
-      "apiVersion": "stackgres.io/v1alpha1",
+      "apiVersion": "stackgres.io/v1beta1",
       "metadata": {
         "creationTimestamp": "2019-09-27T09:09:34Z",
         "generation": 1,
@@ -71,7 +71,7 @@
               "type": "ClusterIP"
             }
           },
-          "shards": {
+          "workers": {
             "primaries": {
               "enabled": true,
               "type": "ClusterIP"
@@ -95,7 +95,7 @@
             }
           }
         },
-        "shards": {
+        "workers": {
           "clusters": 2,
           "instancesPerCluster": 1,
           "sgInstanceProfile": "size-s",
@@ -116,7 +116,7 @@
     },
     "oldObject": {
       "kind": "SGShardedCluster",
-      "apiVersion": "stackgres.io/v1alpha1",
+      "apiVersion": "stackgres.io/v1beta1",
       "metadata": {
         "creationTimestamp": "2019-09-27T09:09:34Z",
         "generation": 1,
@@ -149,7 +149,7 @@
               "type": "ClusterIP"
             }
           },
-          "shards": {
+          "workers": {
             "primaries": {
               "enabled": true,
               "type": "ClusterIP"
@@ -173,7 +173,7 @@
             }
           }
         },
-        "shards": {
+        "workers": {
           "clusters": 2,
           "instancesPerCluster": 1,
           "sgInstanceProfile": "size-s",

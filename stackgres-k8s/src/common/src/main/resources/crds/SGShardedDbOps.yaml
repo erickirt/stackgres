@@ -110,8 +110,8 @@ spec:
               resharding:
                 type: object
                 description: |
-                  Configuration for resharding. Resharding a sharded cluster is the operation that moves the data among shards in order to try to
-                   balance the disk space used in each shard. See also https://docs.citusdata.com/en/stable/develop/api_udf.html#citus-rebalance-start
+                  Configuration for resharding. Resharding a sharded cluster is the operation that moves the data among workers in order to try to
+                   balance the disk space used in each worker. See also https://docs.citusdata.com/en/stable/develop/api_udf.html#citus-rebalance-start
                 properties:
                   citus:
                     type: object
@@ -255,6 +255,10 @@ spec:
                     lastTransitionTime:
                       description: Last time the condition transitioned from one status to another.
                       type: string
+                    observedGeneration:
+                      description: The .metadata.generation the condition was computed against.
+                      type: integer
+                      format: int64
                     message:
                       description: A human-readable message indicating details about the transition.
                       type: string

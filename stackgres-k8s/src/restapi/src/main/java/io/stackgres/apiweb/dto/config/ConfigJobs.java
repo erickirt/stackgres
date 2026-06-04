@@ -25,6 +25,14 @@ public class ConfigJobs {
 
   private ResourceRequirements resources;
 
+  private String schedulerName;
+
+  private String runtimeClassName;
+
+  private String preemptionPolicy;
+
+  private String priorityClassName;
+
   private Map<String, String> nodeSelector;
 
   private List<Toleration> tolerations;
@@ -55,6 +63,38 @@ public class ConfigJobs {
 
   public void setResources(ResourceRequirements resources) {
     this.resources = resources;
+  }
+
+  public String getSchedulerName() {
+    return schedulerName;
+  }
+
+  public void setSchedulerName(String schedulerName) {
+    this.schedulerName = schedulerName;
+  }
+
+  public String getRuntimeClassName() {
+    return runtimeClassName;
+  }
+
+  public void setRuntimeClassName(String runtimeClassName) {
+    this.runtimeClassName = runtimeClassName;
+  }
+
+  public String getPreemptionPolicy() {
+    return preemptionPolicy;
+  }
+
+  public void setPreemptionPolicy(String preemptionPolicy) {
+    this.preemptionPolicy = preemptionPolicy;
+  }
+
+  public String getPriorityClassName() {
+    return priorityClassName;
+  }
+
+  public void setPriorityClassName(String priorityClassName) {
+    this.priorityClassName = priorityClassName;
   }
 
   public Map<String, String> getNodeSelector() {

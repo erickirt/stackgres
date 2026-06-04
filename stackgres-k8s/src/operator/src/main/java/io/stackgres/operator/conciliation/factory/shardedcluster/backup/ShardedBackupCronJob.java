@@ -6,7 +6,7 @@
 package io.stackgres.operator.conciliation.factory.shardedcluster.backup;
 
 import static io.stackgres.common.StackGresShardedClusterUtil.getCoordinatorClusterName;
-import static io.stackgres.common.StackGresShardedClusterUtil.getShardClusterName;
+import static io.stackgres.common.StackGresShardedClusterUtil.getWorkerClusterName;
 import static io.stackgres.common.StackGresUtil.getDefaultPullPolicy;
 
 import java.util.ArrayList;
@@ -253,8 +253,8 @@ public class ShardedBackupCronJob
                         new EnvVarBuilder()
                         .withName("CLUSTER_NAMES")
                         .withValue(Seq.of(getCoordinatorClusterName(cluster))
-                            .append(Seq.range(0, cluster.getSpec().getShards().getClusters())
-                                .map(index -> getShardClusterName(cluster, index)))
+                            .append(Seq.range(0, cluster.getSpec().getWorkers().getClusters())
+                                .map(index -> getWorkerClusterName(cluster, index)))
                             .toString(" "))
                         .build(),
                         new EnvVarBuilder()

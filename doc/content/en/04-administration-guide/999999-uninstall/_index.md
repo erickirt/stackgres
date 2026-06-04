@@ -92,8 +92,8 @@ kubectl get pods -n default
 ```
 NAME                    READY   STATUS    RESTARTS   AGE
 my-db-cluster-coord-0   5/5     Running   1          2m29s
-my-db-cluster-shard0-0  5/5     Running   1          99s
-my-db-cluster-shard1-1  5/5     Running   0          74s
+my-db-cluster-worker0-0  5/5     Running   1          99s
+my-db-cluster-worker1-1  5/5     Running   0          74s
 ```
 
 > **IMPORTANT**: before deleting the cluster make sure all the PersistentVolume are going to be removed
@@ -331,6 +331,19 @@ Finally delete the SGConfig StackGres custom resource:
 ```
 kubectl delete sgconfig -n openshift-operators stackgres
 ```
+
+#### Uninstall operator using OpenShift Web Console
+
+This operation can be also performed on OpenShift 4.x using the OpenShift Web Console
+by uninstalling the StackGres operator from the "Ecosystem > Installed Operators" section
+as showed in the image below:
+
+![Uninstall operator from the OpenShift Web Console](operator-hub-openshift-uninstall-operator.jpeg)
+
+The OpenShift Web Console offers the ability to also remove all the StackGres custom resources
+by checking the "" checkbox:
+
+![Delete all operand instances](operator-hub-openshift-uninstall-delete-all-operand-instances.jpeg)
 
 ## Cleanup unnamespaced resources
 

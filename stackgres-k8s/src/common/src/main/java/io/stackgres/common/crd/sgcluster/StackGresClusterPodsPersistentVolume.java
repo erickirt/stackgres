@@ -12,13 +12,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.StackGresUtil;
 import io.sundr.builder.annotations.Buildable;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresClusterPodsPersistentVolume {
@@ -29,6 +30,11 @@ public class StackGresClusterPodsPersistentVolume {
   private String size;
 
   private String storageClass;
+
+  private String volumeAttributesClassName;
+
+  @Valid
+  private StackGresClusterPodsPersistentVolumeIoLimits ioLimits;
 
   private String fsGroupChangePolicy;
 
@@ -48,6 +54,22 @@ public class StackGresClusterPodsPersistentVolume {
     this.storageClass = storageClass;
   }
 
+  public String getVolumeAttributesClassName() {
+    return volumeAttributesClassName;
+  }
+
+  public void setVolumeAttributesClassName(String volumeAttributesClassName) {
+    this.volumeAttributesClassName = volumeAttributesClassName;
+  }
+
+  public StackGresClusterPodsPersistentVolumeIoLimits getIoLimits() {
+    return ioLimits;
+  }
+
+  public void setIoLimits(StackGresClusterPodsPersistentVolumeIoLimits ioLimits) {
+    this.ioLimits = ioLimits;
+  }
+
   public String getFsGroupChangePolicy() {
     return fsGroupChangePolicy;
   }
@@ -58,7 +80,8 @@ public class StackGresClusterPodsPersistentVolume {
 
   @Override
   public int hashCode() {
-    return Objects.hash(fsGroupChangePolicy, size, storageClass);
+    return Objects.hash(fsGroupChangePolicy, ioLimits, size, storageClass,
+        volumeAttributesClassName);
   }
 
   @Override
@@ -71,7 +94,9 @@ public class StackGresClusterPodsPersistentVolume {
     }
     StackGresClusterPodsPersistentVolume other = (StackGresClusterPodsPersistentVolume) obj;
     return Objects.equals(fsGroupChangePolicy, other.fsGroupChangePolicy)
-        && Objects.equals(size, other.size) && Objects.equals(storageClass, other.storageClass);
+        && Objects.equals(ioLimits, other.ioLimits) && Objects.equals(size, other.size)
+        && Objects.equals(storageClass, other.storageClass)
+        && Objects.equals(volumeAttributesClassName, other.volumeAttributesClassName);
   }
 
   @Override

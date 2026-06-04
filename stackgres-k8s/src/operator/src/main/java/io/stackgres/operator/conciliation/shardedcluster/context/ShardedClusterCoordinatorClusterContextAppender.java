@@ -5,6 +5,8 @@
 
 package io.stackgres.operator.conciliation.shardedcluster.context;
 
+import java.util.Optional;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
@@ -31,21 +33,27 @@ public class ShardedClusterCoordinatorClusterContextAppender {
     this.objectMapper = objectMapper;
   }
 
-  public void appendContext(StackGresShardedCluster cluster, Builder contextBuilder) {
-    StackGresCluster coordinator = getCoordinatorCluster(cluster);
+  public StackGresCluster appendContext(
+      StackGresShardedCluster cluster,
+      Builder contextBuilder,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    StackGresCluster coordinator = getCoordinatorCluster(cluster, replicateCluster);
     contextBuilder.coordinator(coordinator);
     shardedClusterCoordinatorPrimaryEndpointsContextAppender.appendContext(coordinator, contextBuilder);
+    return coordinator;
   }
 
-  private StackGresCluster getCoordinatorCluster(StackGresShardedCluster original) {
+  private StackGresCluster getCoordinatorCluster(
+      StackGresShardedCluster original,
+      Optional<StackGresShardedCluster> replicateCluster) {
     StackGresShardedCluster cluster = objectMapper.convertValue(original, StackGresShardedCluster.class);
     switch (StackGresShardingType.fromString(cluster.getSpec().getType())) {
       case CITUS:
-        return StackGresShardedClusterForCitusUtil.getCoordinatorCluster(cluster);
+        return StackGresShardedClusterForCitusUtil.getCoordinatorCluster(cluster, replicateCluster);
       case DDP:
-        return StackGresShardedClusterForDdpUtil.getCoordinatorCluster(cluster);
+        return StackGresShardedClusterForDdpUtil.getCoordinatorCluster(cluster, replicateCluster);
       case SHARDING_SPHERE:
-        return StackGresShardedClusterForShardingSphereUtil.getCoordinatorCluster(cluster);
+        return StackGresShardedClusterForShardingSphereUtil.getCoordinatorCluster(cluster, replicateCluster);
       default:
         throw new UnsupportedOperationException(
             "Sharding technology " + cluster.getSpec().getType() + " not implemented");

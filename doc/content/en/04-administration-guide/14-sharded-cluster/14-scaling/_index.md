@@ -2,11 +2,11 @@
 title: Scaling Sharded Clusters
 weight: 14
 url: /administration/sharded-cluster/scaling
-description: How to scale sharded clusters by adding shards, replicas, or changing resources.
+description: How to scale sharded clusters by adding workers, replicas, or changing resources.
 showToc: true
 ---
 
-This guide covers scaling operations for SGShardedCluster, including horizontal scaling (adding shards or replicas) and vertical scaling (changing resources).
+This guide covers scaling operations for SGShardedCluster, including horizontal scaling (adding workers or replicas) and vertical scaling (changing resources).
 
 ## Scaling Overview
 
@@ -14,22 +14,23 @@ SGShardedCluster supports multiple scaling dimensions:
 
 | Dimension | Component | Configuration |
 |-----------|-----------|---------------|
-| **Horizontal - Shards** | Number of shard clusters | `spec.shards.clusters` |
-| **Horizontal - Replicas** | Replicas per shard | `spec.shards.instancesPerCluster` |
+| **Horizontal - Workers** | Number of worker clusters | `spec.workers.clusters` |
+| **Horizontal - Replicas** | Replicas per worker | `spec.workers.instancesPerCluster` |
 | **Horizontal - Coordinators** | Coordinator instances | `spec.coordinator.instances` |
-| **Vertical** | CPU/Memory | `spec.coordinator/shards.sgInstanceProfile` |
+| **Horizontal - Query routers** (Citus only) | Number of query router clusters | `spec.coordinator.queryRouterClusters` |
+| **Vertical** | CPU/Memory | `spec.coordinator/workers.sgInstanceProfile` |
 
-## Adding Shards
+## Adding Workers
 
-To add more shard clusters, increase the `clusters` value:
+To add more worker clusters, increase the `clusters` value:
 
 ```yaml
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: my-sharded-cluster
 spec:
-  shards:
+  workers:
     clusters: 5  # Increased from 3 to 5
     instancesPerCluster: 2
     pods:
@@ -47,19 +48,19 @@ Or patch directly:
 
 ```bash
 kubectl patch sgshardedcluster my-sharded-cluster --type merge \
-  -p '{"spec":{"shards":{"clusters":5}}}'
+  -p '{"spec":{"workers":{"clusters":5}}}'
 ```
 
-### What Happens When Adding Shards
+### What Happens When Adding Workers
 
-1. New shard clusters are created with the specified configuration
-2. Each new shard gets the configured number of replicas
-3. For Citus: New shards are registered with the coordinator
-4. Data is **not** automatically rebalanced to new shards
+1. New worker clusters are created with the specified configuration
+2. Each new worker gets the configured number of replicas
+3. For Citus: New workers are registered with the coordinator
+4. Data is **not** automatically rebalanced to new workers
 
 ### Rebalancing Data (Citus)
 
-After adding shards, use SGShardedDbOps to rebalance data:
+After adding workers, use SGShardedDbOps to rebalance data:
 
 ```yaml
 apiVersion: stackgres.io/v1
@@ -76,11 +77,11 @@ spec:
 
 ## Adding Replicas
 
-To increase replicas per shard for better read scalability:
+To increase replicas per worker for better read scalability:
 
 ```yaml
 spec:
-  shards:
+  workers:
     clusters: 3
     instancesPerCluster: 3  # Increased from 2 to 3
 ```
@@ -89,7 +90,7 @@ Or patch:
 
 ```bash
 kubectl patch sgshardedcluster my-sharded-cluster --type merge \
-  -p '{"spec":{"shards":{"instancesPerCluster":3}}}'
+  -p '{"spec":{"workers":{"instancesPerCluster":3}}}'
 ```
 
 ### Replica Considerations
@@ -114,6 +115,30 @@ spec:
 - Coordinators handle metadata and query routing
 - All coordinators can handle read/write queries
 
+## Scaling Query Routers (Citus only)
+
+For Citus sharded clusters, you can horizontally scale the number of read/write entrypoints by adding query router SGClusters. Query routers do not store sharded data — they route queries to the workers — so they can be added or removed without resharding.
+
+Add or remove query routers by changing `spec.coordinator.queryRouterClusters`:
+
+```yaml
+spec:
+  coordinator:
+    instances: 2
+    queryRouterClusters: 3  # Increased from 1 to 3
+```
+
+Or patch directly:
+
+```bash
+kubectl patch sgshardedcluster my-sharded-cluster --type merge \
+  -p '{"spec":{"coordinator":{"queryRouterClusters":3}}}'
+```
+
+Each new query router is created as a single-instance SGCluster named `<cluster-name>-router<index>` (or following the configured `queryRouterClusterNameTemplate`). The operator registers it in the Citus topology with `shouldhaveshards` set to `false` so the rebalancer never assigns workers to it.
+
+For configuration details and connection guidance see [Query Routers]({{% relref "04-administration-guide/14-sharded-cluster/01-citus-sharding-technology#query-routers" %}}).
+
 ## Vertical Scaling
 
 ### Using Instance Profiles
@@ -136,18 +161,18 @@ Then reference it in the sharded cluster:
 spec:
   coordinator:
     sgInstanceProfile: large-profile
-  shards:
+  workers:
     sgInstanceProfile: large-profile
 ```
 
-### Different Profiles for Coordinators and Shards
+### Different Profiles for Coordinators and Workers
 
 ```yaml
 spec:
   coordinator:
     sgInstanceProfile: coordinator-profile  # Smaller, query routing
-  shards:
-    sgInstanceProfile: shard-profile        # Larger, data storage
+  workers:
+    sgInstanceProfile: worker-profile        # Larger, data storage
 ```
 
 ### Applying Vertical Scaling
@@ -186,7 +211,7 @@ spec:
         # Scale based on active connections
         cooldownPeriod: 300
         pollingInterval: 30
-  shards:
+  workers:
     autoscaling:
       mode: horizontal
       horizontal:
@@ -205,23 +230,23 @@ spec:
       mode: vertical
       vertical:
         # VPA will recommend resource adjustments
-  shards:
+  workers:
     autoscaling:
       mode: vertical
 ```
 
 ## Scale-Down Operations
 
-### Reducing Shards
+### Reducing Workers
 
-Reducing the number of shards requires data migration:
+Reducing the number of workers requires data migration:
 
-1. **For Citus**: Drain shards before removal:
+1. **For Citus**: Drain workers before removal:
 ```yaml
 apiVersion: stackgres.io/v1
 kind: SGShardedDbOps
 metadata:
-  name: drain-shards
+  name: drain-workers
 spec:
   sgShardedCluster: my-sharded-cluster
   op: resharding
@@ -233,7 +258,7 @@ spec:
 2. After draining, reduce the cluster count:
 ```bash
 kubectl patch sgshardedcluster my-sharded-cluster --type merge \
-  -p '{"spec":{"shards":{"clusters":3}}}'
+  -p '{"spec":{"workers":{"clusters":3}}}'
 ```
 
 ### Reducing Replicas
@@ -242,7 +267,7 @@ Reducing replicas is straightforward:
 
 ```bash
 kubectl patch sgshardedcluster my-sharded-cluster --type merge \
-  -p '{"spec":{"shards":{"instancesPerCluster":1}}}'
+  -p '{"spec":{"workers":{"instancesPerCluster":1}}}'
 ```
 
 ## Monitoring Scaling Operations
@@ -253,7 +278,7 @@ kubectl patch sgshardedcluster my-sharded-cluster --type merge \
 # View overall status
 kubectl get sgshardedcluster my-sharded-cluster
 
-# Check individual shard clusters
+# Check individual worker clusters
 kubectl get sgcluster -l stackgres.io/shardedcluster-name=my-sharded-cluster
 
 # View pods
@@ -273,4 +298,4 @@ kubectl get sgshardeddbops rebalance-after-scale -o yaml
 3. **Monitor during scaling**: Watch metrics during scale operations
 4. **Use ReducedImpact**: For vertical scaling, use reduced impact restarts
 5. **Backup before major changes**: Create a backup before significant scaling
-6. **Rebalance after adding shards**: Data doesn't automatically redistribute
+6. **Rebalance after adding workers**: Data doesn't automatically redistribute

@@ -77,7 +77,7 @@ All the required steps were performed to create our StackGres Cluster.
 Create the SGShardedCluster resource:
 
 ```yaml
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   namespace: my-cluster
@@ -99,7 +99,7 @@ spec:
     managedSql:
       scripts:
       - sgScript: cluster-scripts
-  shards:
+  workers:
     clusters: 3
     instancesPerCluster: 2
     sgInstanceProfile: 'size-small'

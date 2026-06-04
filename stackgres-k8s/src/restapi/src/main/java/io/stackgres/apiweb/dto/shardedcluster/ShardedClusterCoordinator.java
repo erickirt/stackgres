@@ -18,11 +18,51 @@ import io.stackgres.apiweb.dto.cluster.ClusterSpec;
     "prometheusAutobind", "nonProductionOptions", "postgresServices" })
 public class ShardedClusterCoordinator extends ClusterSpec {
 
+  private String clusterName;
+
+  private Integer queryRouterClusters;
+
+  private Integer queryRouterIndexOffset;
+
+  private String queryRouterClusterNameTemplate;
+
   @JsonProperty("replication")
   private ShardedClusterReplication replicationForCoordinator;
 
   @JsonProperty("configurations")
   private ShardedClusterCoordinatorConfigurations configurationsForCoordinator;
+
+  public String getClusterName() {
+    return clusterName;
+  }
+
+  public void setClusterName(String clusterName) {
+    this.clusterName = clusterName;
+  }
+
+  public Integer getQueryRouterClusters() {
+    return queryRouterClusters;
+  }
+
+  public void setQueryRouterClusters(Integer queryRouterClusters) {
+    this.queryRouterClusters = queryRouterClusters;
+  }
+
+  public Integer getQueryRouterIndexOffset() {
+    return queryRouterIndexOffset;
+  }
+
+  public void setQueryRouterIndexOffset(Integer queryRouterIndexOffset) {
+    this.queryRouterIndexOffset = queryRouterIndexOffset;
+  }
+
+  public String getQueryRouterClusterNameTemplate() {
+    return queryRouterClusterNameTemplate;
+  }
+
+  public void setQueryRouterClusterNameTemplate(String queryRouterClusterNameTemplate) {
+    this.queryRouterClusterNameTemplate = queryRouterClusterNameTemplate;
+  }
 
   public ShardedClusterReplication getReplicationForCoordinator() {
     return replicationForCoordinator;

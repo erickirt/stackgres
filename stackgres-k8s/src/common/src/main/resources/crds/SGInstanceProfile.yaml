@@ -180,8 +180,8 @@ spec:
                    
                   * `SGCluster.spec.pods.resources.disableResourcesRequestsSplitFromTotal`
                   * `SGShardedCluster.spec.coordinator.pods.resources.disableResourcesRequestsSplitFromTotal`
-                  * `SGShardedCluster.spec.shards.pods.resources.disableResourcesRequestsSplitFromTotal`
-                  * `SGShardedCluster.spec.shards.overwrites.pods.resources.disableResourcesRequestsSplitFromTotal`
+                  * `SGShardedCluster.spec.workers.pods.resources.disableResourcesRequestsSplitFromTotal`
+                  * `SGShardedCluster.spec.workers.overwrites.pods.resources.disableResourcesRequestsSplitFromTotal`
                   * `SGDistributedLogs.spec.resources.disableResourcesRequestsSplitFromTotal`
                 properties:
                   cpu:
@@ -199,8 +199,8 @@ spec:
                        
                       * `SGCluster.spec.pods.resources.disableResourcesRequestsSplitFromTotal`
                       * `SGShardedCluster.spec.coordinator.pods.resources.disableResourcesRequestsSplitFromTotal`
-                      * `SGShardedCluster.spec.shards.pods.resources.disableResourcesRequestsSplitFromTotal`
-                      * `SGShardedCluster.spec.shards.overwrites.pods.resources.disableResourcesRequestsSplitFromTotal`
+                      * `SGShardedCluster.spec.workers.pods.resources.disableResourcesRequestsSplitFromTotal`
+                      * `SGShardedCluster.spec.workers.overwrites.pods.resources.disableResourcesRequestsSplitFromTotal`
                       * `SGDistributedLogs.spec.resources.disableResourcesRequestsSplitFromTotal`
                   memory:
                     type: string
@@ -217,8 +217,8 @@ spec:
                        
                       * `SGCluster.spec.pods.resources.disableResourcesRequestsSplitFromTotal`
                       * `SGShardedCluster.spec.coordinator.pods.resources.disableResourcesRequestsSplitFromTotal`
-                      * `SGShardedCluster.spec.shards.pods.resources.disableResourcesRequestsSplitFromTotal`
-                      * `SGShardedCluster.spec.shards.overwrites.pods.resources.disableResourcesRequestsSplitFromTotal`
+                      * `SGShardedCluster.spec.workers.pods.resources.disableResourcesRequestsSplitFromTotal`
+                      * `SGShardedCluster.spec.workers.overwrites.pods.resources.disableResourcesRequestsSplitFromTotal`
                       * `SGDistributedLogs.spec.resources.disableResourcesRequestsSplitFromTotal`
                   containers:
                     type: object

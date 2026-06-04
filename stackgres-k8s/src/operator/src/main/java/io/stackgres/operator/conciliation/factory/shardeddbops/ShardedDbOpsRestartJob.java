@@ -6,7 +6,8 @@
 package io.stackgres.operator.conciliation.factory.shardeddbops;
 
 import static io.stackgres.common.StackGresShardedClusterUtil.getCoordinatorClusterName;
-import static io.stackgres.common.StackGresShardedClusterUtil.getShardClusterName;
+import static io.stackgres.common.StackGresShardedClusterUtil.getQueryRouterClusterName;
+import static io.stackgres.common.StackGresShardedClusterUtil.getWorkerClusterName;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +31,8 @@ import io.stackgres.common.crd.sgdbops.DbOpsMethodType;
 import io.stackgres.common.crd.sgdbops.DbOpsStatusCondition;
 import io.stackgres.common.crd.sgdbops.StackGresDbOps;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardingType;
 import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOps;
 import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOpsRestart;
@@ -64,6 +67,7 @@ public class ShardedDbOpsRestartJob extends AbstractShardedDbOpsJob {
     StackGresShardedDbOps dbOps = context.getSource();
     StackGresShardedDbOpsRestart restart =
         dbOps.getSpec().getRestart();
+    final StackGresShardedCluster cluster = context.getShardedCluster();
     return ImmutableList.<EnvVar>builder()
         .add(
             new EnvVarBuilder()
@@ -81,13 +85,20 @@ public class ShardedDbOpsRestartJob extends AbstractShardedDbOpsJob {
             .build(),
             new EnvVarBuilder()
             .withName("CLUSTER_NAMES")
-            .withValue(Seq.of(getCoordinatorClusterName(context.getShardedCluster()))
+            .withValue(Seq.of(getCoordinatorClusterName(cluster))
                 .filter(ignore -> !StackGresShardingType.SHARDING_SPHERE.equals(
                     StackGresShardingType.fromString(
-                        context.getShardedCluster().getSpec().getType())))
-                .append(Seq.range(0, context.getShardedCluster()
-                    .getSpec().getShards().getClusters())
-                    .map(index -> getShardClusterName(context.getShardedCluster(), index)))
+                        cluster.getSpec().getType())))
+                .append(Seq.range(0, cluster
+                    .getSpec().getWorkers().getClusters())
+                    .map(index -> getWorkerClusterName(cluster, index)))
+                .append(Seq.range(
+                    0,
+                    Optional.of(cluster.getSpec())
+                    .map(StackGresShardedClusterSpec::getCoordinator)
+                    .map(StackGresShardedClusterCoordinator::getQueryRouterClusters)
+                    .orElse(0))
+                    .map(index -> getQueryRouterClusterName(cluster, String.valueOf(index))))
                 .toString(" "))
             .build(),
             new EnvVarBuilder()

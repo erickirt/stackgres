@@ -26,7 +26,7 @@ import jakarta.validation.constraints.AssertTrue;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresClusterSpec {
@@ -66,9 +66,8 @@ public class StackGresClusterSpec {
   @Valid
   private StackGresClusterDistributedLogs distributedLogs;
 
-  @Valid
   @Deprecated(forRemoval = true)
-  private List<StackGresClusterInstalledExtension> toInstallPostgresExtensions;
+  private List<@Valid StackGresClusterInstalledExtension> toInstallPostgresExtensions;
 
   @Valid
   private StackGresClusterNonProduction nonProductionOptions;

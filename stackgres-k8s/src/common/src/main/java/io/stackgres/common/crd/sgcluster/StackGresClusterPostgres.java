@@ -20,7 +20,7 @@ import jakarta.validation.constraints.NotBlank;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresClusterPostgres {
@@ -35,8 +35,7 @@ public class StackGresClusterPostgres {
   @Valid
   private StackGresClusterSsl ssl;
 
-  @Valid
-  private List<StackGresClusterExtension> extensions;
+  private List<@Valid StackGresClusterExtension> extensions;
 
   public String getVersion() {
     return version;

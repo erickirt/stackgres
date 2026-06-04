@@ -96,8 +96,8 @@ Kubernetes: `1.18.0-0 - 1.27.x-0`
 | nonProductionOptions.disableClusterResourceRequirements | bool | `false` |  |
 | nonProductionOptions.disablePatroniResourceRequirements | bool | `false` |  |
 | shardedCluster.database | string | `"citus"` |  |
-| shardedCluster.shards.clusters | int | `2` |  |
-| shardedCluster.shards.instancesPerCluster | int | `1` |  |
+| shardedCluster.workers.clusters | int | `2` |  |
+| shardedCluster.workers.instancesPerCluster | int | `1` |  |
 | shardedCluster.type | string | `"citus"` |  |
 
 ----------------------------------------------

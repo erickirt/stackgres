@@ -37,7 +37,7 @@ public class MetadataValidator implements ShardedClusterValidator {
   private final String labelAllResourcesPath;
   private final String labelCoordinatorPrimaryServicePath;
   private final String labelCoordinatorAnyServicePath;
-  private final String labelShardsPrimariesServicePath;
+  private final String labelWorkersPrimariesServicePath;
   private final String annotationServicesPath;
   private final String annotationReplicasServicePath;
   private final String annotationPrimaryServicePath;
@@ -46,7 +46,7 @@ public class MetadataValidator implements ShardedClusterValidator {
   private final String annotationAllResourcesPath;
   private final String annotationCoordinatorPrimaryServicePath;
   private final String annotationCoordinatorAnyServicePath;
-  private final String annotationShardsPrimariesServicePath;
+  private final String annotationWorkersPrimariesServicePath;
 
   public MetadataValidator() {
     this.labelServicesPath = getFieldPath(
@@ -105,11 +105,11 @@ public class MetadataValidator implements ShardedClusterValidator {
       StackGresShardedClusterSpecLabels.class, "coordinatorAnyService"
     );
 
-    this.labelShardsPrimariesServicePath = getFieldPath(
+    this.labelWorkersPrimariesServicePath = getFieldPath(
       StackGresShardedCluster.class, "spec",
       StackGresShardedClusterSpec.class, "metadata",
       StackGresShardedClusterSpecMetadata.class, "labels",
-      StackGresShardedClusterSpecLabels.class, "shardsPrimariesService"
+      StackGresShardedClusterSpecLabels.class, "workersPrimariesService"
     );
 
     this.annotationServicesPath = getFieldPath(
@@ -168,11 +168,11 @@ public class MetadataValidator implements ShardedClusterValidator {
       StackGresShardedClusterSpecAnnotations.class, "coordinatorAnyService"
     );
 
-    this.annotationShardsPrimariesServicePath = getFieldPath(
+    this.annotationWorkersPrimariesServicePath = getFieldPath(
       StackGresShardedCluster.class, "spec",
       StackGresShardedClusterSpec.class, "metadata",
       StackGresShardedClusterSpecMetadata.class, "annotations",
-      StackGresShardedClusterSpecAnnotations.class, "shardsPrimariesService"
+      StackGresShardedClusterSpecAnnotations.class, "workersPrimariesService"
     );
   }
 
@@ -244,10 +244,10 @@ public class MetadataValidator implements ShardedClusterValidator {
             checkLabel(labelCoordinatorAnyServicePath, entry.getKey(), entry.getValue());
           }
 
-          final Map<String, String> shardsPrimariesService =
-              Objects.requireNonNullElseGet(labels.getShardsPrimariesService(), Map::of);
-          for (var entry : shardsPrimariesService.entrySet()) {
-            checkLabel(labelShardsPrimariesServicePath, entry.getKey(), entry.getValue());
+          final Map<String, String> workersPrimariesService =
+              Objects.requireNonNullElseGet(labels.getWorkersPrimariesService(), Map::of);
+          for (var entry : workersPrimariesService.entrySet()) {
+            checkLabel(labelWorkersPrimariesServicePath, entry.getKey(), entry.getValue());
           }
         }
 
@@ -302,10 +302,10 @@ public class MetadataValidator implements ShardedClusterValidator {
             checkAnnotation(annotationCoordinatorAnyServicePath, entry.getKey());
           }
 
-          final Map<String, String> shardsPrimariesService =
+          final Map<String, String> workersPrimariesService =
               Objects.requireNonNullElseGet(annotations.getAllResources(), Map::of);
-          for (var entry : shardsPrimariesService.entrySet()) {
-            checkAnnotation(annotationShardsPrimariesServicePath, entry.getKey());
+          for (var entry : workersPrimariesService.entrySet()) {
+            checkAnnotation(annotationWorkersPrimariesServicePath, entry.getKey());
           }
         }
       }

@@ -18,7 +18,26 @@ public enum ClusterStatusCondition {
   CLUSTER_REQUIRES_UPGRADE(Type.PENDING_UPGRADE, Status.TRUE, "ClusterRequiresUpgrade"),
   FALSE_PENDING_UPGRADE(Type.PENDING_UPGRADE, Status.FALSE, "FalsePendingUpgrade"),
   CLUSTER_CONFIG_ERROR(Type.FAILED, Status.TRUE, "ClusterConfigFailed"),
-  FALSE_FAILED(Type.FAILED, Status.FALSE, "FalseFailed");
+  FALSE_FAILED(Type.FAILED, Status.FALSE, "FalseFailed"),
+  // ComponentsUpdated: all the combinations of the latest minor (status), a newer major available
+  // and extension upgrades available. The latest available versions and the number of extensions to
+  // upgrade are advertised in the message. The minor in use determines the status; a newer major or
+  // extension upgrades only append a suffix to the reason.
+  COMPONENTS_UP_TO_DATE(Type.COMPONENTS_UPDATED, Status.TRUE, "UpToDate"),
+  COMPONENTS_LATEST_MINOR_NOT_LATEST_MAJOR(
+      Type.COMPONENTS_UPDATED, Status.TRUE, "NotLatestMajor"),
+  COMPONENTS_LATEST_MINOR_AVAILABLE_EXTENSIONS_UPGRADE(
+      Type.COMPONENTS_UPDATED, Status.TRUE, "AvailableExtensionsUpgrade"),
+  COMPONENTS_LATEST_MINOR_NOT_LATEST_MAJOR_AVAILABLE_EXTENSIONS_UPGRADE(
+      Type.COMPONENTS_UPDATED, Status.TRUE, "NotLatestMajorAnd-AvailableExtensionsUpgrade"),
+  COMPONENTS_NOT_LATEST_MINOR(Type.COMPONENTS_UPDATED, Status.FALSE, "NotLatestMinor"),
+  COMPONENTS_NOT_LATEST_MINOR_NOT_LATEST_MAJOR(
+      Type.COMPONENTS_UPDATED, Status.FALSE, "NotLatestMinor-NotLatestMajor"),
+  COMPONENTS_NOT_LATEST_MINOR_AVAILABLE_EXTENSIONS_UPGRADE(
+      Type.COMPONENTS_UPDATED, Status.FALSE, "NotLatestMinor-AvailableExtensionsUpgrade"),
+  COMPONENTS_NOT_LATEST_MINOR_NOT_LATEST_MAJOR_AVAILABLE_EXTENSIONS_UPGRADE(
+      Type.COMPONENTS_UPDATED, Status.FALSE,
+      "NotLatestMinor-NotLatestMajor-AvailableExtensionsUpgrade");
 
   private final String type;
   private final String status;
@@ -45,6 +64,7 @@ public enum ClusterStatusCondition {
     INITIAL_SCRIPTS_APPLIED("InitialScriptsApplied"),
     PENDING_RESTART("PendingRestart"),
     PENDING_UPGRADE("PendingUpgrade"),
+    COMPONENTS_UPDATED("ComponentsUpdated"),
     FAILED("Failed");
 
     private final String typeCondition;

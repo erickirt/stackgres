@@ -23,6 +23,8 @@ public class ShardedClusterCondition {
 
   private String type;
 
+  private Long observedGeneration;
+
   public String getLastTransitionTime() {
     return lastTransitionTime;
   }
@@ -61,6 +63,14 @@ public class ShardedClusterCondition {
 
   public void setType(String type) {
     this.type = type;
+  }
+
+  public Long getObservedGeneration() {
+    return observedGeneration;
+  }
+
+  public void setObservedGeneration(Long observedGeneration) {
+    this.observedGeneration = observedGeneration;
   }
 
   @Override

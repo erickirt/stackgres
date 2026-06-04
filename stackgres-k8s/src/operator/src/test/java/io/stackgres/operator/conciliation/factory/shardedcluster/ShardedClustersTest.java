@@ -32,8 +32,8 @@ public class ShardedClustersTest {
   private StackGresConfig config;
   private StackGresShardedCluster shardedCluster;
   private StackGresCluster coordinator;
-  private StackGresCluster shard0;
-  private StackGresCluster shard1;
+  private StackGresCluster worker0;
+  private StackGresCluster worker1;
   private ShardedClusters shardedClusters;
 
   @BeforeEach
@@ -44,14 +44,14 @@ public class ShardedClustersTest {
 
     labelFactory = new ShardedClusterLabelFactory(new ShardedClusterLabelMapper());
     coordinator = Fixtures.cluster().loadDefault().get();
-    shard0 = Fixtures.cluster().loadDefault().get();
-    shard1 = Fixtures.cluster().loadDefault().get();
+    worker0 = Fixtures.cluster().loadDefault().get();
+    worker1 = Fixtures.cluster().loadDefault().get();
     shardedClusters = new ShardedClusters(labelFactory);
     when(context.getConfig()).thenReturn(config);
     when(context.getSource()).thenReturn(shardedCluster);
     when(context.getShardedCluster()).thenReturn(shardedCluster);
     when(context.getCoordinator()).thenReturn(coordinator);
-    when(context.getShards()).thenReturn(List.of(shard0, shard1));
+    when(context.getWorkers()).thenReturn(List.of(worker0, worker1));
   }
 
   @Test
@@ -60,9 +60,31 @@ public class ShardedClustersTest {
     assertEquals(3, clusters.size());
     assertEquals(labelFactory.coordinatorLabels(shardedCluster),
         clusters.getFirst().getMetadata().getLabels());
-    assertEquals(labelFactory.shardsLabels(shardedCluster),
+    assertEquals(labelFactory.workersLabels(shardedCluster),
         clusters.get(1).getMetadata().getLabels());
-    assertEquals(labelFactory.shardsLabels(shardedCluster),
+    assertEquals(labelFactory.workersLabels(shardedCluster),
+        clusters.get(2).getMetadata().getLabels());
+  }
+
+  @Test
+  public void generateResource_whenEmptyWorkers_shouldGenerateOnlyCoordinator() {
+    when(context.getWorkers()).thenReturn(List.of());
+    var clusters = shardedClusters.generateResource(context).toList();
+    assertEquals(1, clusters.size());
+    assertEquals(labelFactory.coordinatorLabels(shardedCluster),
+        clusters.getFirst().getMetadata().getLabels());
+  }
+
+  @Test
+  public void generateResource_whenDifferentTopology_shouldReflectInClusters() {
+    shardedCluster.getSpec().setType("ddp");
+    var clusters = shardedClusters.generateResource(context).toList();
+    assertEquals(3, clusters.size());
+    assertEquals(labelFactory.coordinatorLabels(shardedCluster),
+        clusters.getFirst().getMetadata().getLabels());
+    assertEquals(labelFactory.workersLabels(shardedCluster),
+        clusters.get(1).getMetadata().getLabels());
+    assertEquals(labelFactory.workersLabels(shardedCluster),
         clusters.get(2).getMetadata().getLabels());
   }
 

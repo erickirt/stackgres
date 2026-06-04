@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.stackgres.common.CdiUtil;
 import io.stackgres.common.StackGresUtil;
@@ -41,25 +42,44 @@ public abstract class ExtensionMetadataManager {
 
   private static final String CACHE_TIMEOUT_PARAMETER = "cacheTimeout";
 
+  private static final String CACHE_REFRESH_DISABLED_PARAMETER = "cacheRefreshDisabled";
+
+  private static final Duration DEFAULT_CACHE_TIMEOUT = Duration.of(7, ChronoUnit.DAYS);
+
+  private static final Duration MINIMUM_CACHE_TIMEOUT = Duration.of(1, ChronoUnit.HOURS);
+
   private final Map<URI, ExtensionMetadataCache> uriCache =
       new HashMap<>();
 
   private final WebClientFactory webClientFactory;
-  private final List<URI> extensionsRepositoryUris;
+  private final Supplier<List<URI>> extensionsRepositoryUrisSupplier;
+  private final Supplier<Map<String, String>> headersProvider;
 
-  protected ExtensionMetadataManager(WebClientFactory webClientFactory,
-                                  List<URI> extensionsRepositoryUrls) {
+  protected ExtensionMetadataManager(
+      WebClientFactory webClientFactory,
+      List<URI> extensionsRepositoryUrls,
+      Supplier<Map<String, String>> headersProvider) {
+    this(webClientFactory, () -> extensionsRepositoryUrls, headersProvider);
+  }
+
+  protected ExtensionMetadataManager(
+      WebClientFactory webClientFactory,
+      Supplier<List<URI>> extensionsRepositoryUrisSupplier,
+      Supplier<Map<String, String>> headersProvider) {
     this.webClientFactory = webClientFactory;
-    this.extensionsRepositoryUris = extensionsRepositoryUrls;
+    this.extensionsRepositoryUrisSupplier = extensionsRepositoryUrisSupplier;
+    this.headersProvider = headersProvider;
   }
 
   public ExtensionMetadataManager() {
     CdiUtil.checkPublicNoArgsConstructorIsCalledToCreateProxy(getClass());
     this.webClientFactory = null;
-    this.extensionsRepositoryUris = null;
+    this.extensionsRepositoryUrisSupplier = null;
+    this.headersProvider = null;
   }
 
   public URI getExtensionRepositoryUri(URI extensionsRepositoryUri) {
+    final List<URI> extensionsRepositoryUris = extensionsRepositoryUrisSupplier.get();
     return Seq.seq(extensionsRepositoryUris)
         .filter(anExtensionsRepositoryUri -> anExtensionsRepositoryUri.toString()
             .startsWith(extensionsRepositoryUri.toString()))
@@ -142,6 +162,7 @@ public abstract class ExtensionMetadataManager {
   }
 
   synchronized ExtensionMetadataCache getExtensionsMetadata() {
+    final List<URI> extensionsRepositoryUris = extensionsRepositoryUrisSupplier.get();
     boolean updated = false;
     for (URI extensionsRepositoryUri : extensionsRepositoryUris) {
       try {
@@ -149,13 +170,22 @@ public abstract class ExtensionMetadataManager {
             getUriQueryParameter(
                 extensionsRepositoryUri, CACHE_TIMEOUT_PARAMETER)
                 .map(Duration::parse)
-                .orElse(Duration.of(1, ChronoUnit.HOURS));
-        if (Optional.ofNullable(uriCache.get(extensionsRepositoryUri))
+                .map(timeout -> timeout.compareTo(MINIMUM_CACHE_TIMEOUT) < 0
+                    ? MINIMUM_CACHE_TIMEOUT : timeout)
+                .orElse(DEFAULT_CACHE_TIMEOUT);
+        final boolean refreshDisabled =
+            getUriQueryParameter(
+                extensionsRepositoryUri, CACHE_REFRESH_DISABLED_PARAMETER)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+        final boolean cacheAbsent = uriCache.get(extensionsRepositoryUri) == null;
+        final boolean cacheExpired = Optional.ofNullable(uriCache.get(extensionsRepositoryUri))
             .map(ExtensionMetadataCache::getCreated)
             .orElse(Instant.MIN)
             .plus(cacheTimeout)
-            .isBefore(Instant.now())) {
-          try (WebClient client = webClientFactory.create(extensionsRepositoryUri)) {
+            .isBefore(Instant.now());
+        if (cacheAbsent || (!refreshDisabled && cacheExpired)) {
+          try (WebClient client = webClientFactory.create(extensionsRepositoryUri, headersProvider.get())) {
             LOGGER.info("Downloading extensions metadata from {}",
                 WebClientFactory.obfuscateUri(extensionsRepositoryUri));
             final URI indexUri = ExtensionUtil.getIndexUri(extensionsRepositoryUri);
@@ -163,7 +193,7 @@ public abstract class ExtensionMetadataManager {
                 indexUri, StackGresExtensions.class);
             ExtensionMetadataCache current = ExtensionMetadataCache.from(
                 extensionsRepositoryUri, repositoryExtensions);
-            uriCache.put(extensionsRepositoryUri, current);
+            putExtensionMetadataCache(extensionsRepositoryUri, current);
             updated = true;
           }
         }
@@ -184,11 +214,17 @@ public abstract class ExtensionMetadataManager {
       for (URI extensionsRepositoryUri : extensionsRepositoryUris) {
         mergedCache.merge(uriCache.get(extensionsRepositoryUri));
       }
-      uriCache.put(LATEST_MERGED_CACHE_URI, mergedCache);
+      putExtensionMetadataCache(LATEST_MERGED_CACHE_URI, mergedCache);
       return mergedCache;
     }
 
     return uriCache.get(LATEST_MERGED_CACHE_URI);
+  }
+
+  protected void putExtensionMetadataCache(
+      URI uri,
+      ExtensionMetadataCache cache) {
+    uriCache.put(uri, cache);
   }
 
   public StackGresExtensionPublisher getPublisher(String publisher) {
@@ -196,7 +232,7 @@ public abstract class ExtensionMetadataManager {
         .orElseThrow(() -> new RuntimeException("Publisher " + publisher + " was not found"));
   }
 
-  static class ExtensionMetadataCache {
+  protected static class ExtensionMetadataCache {
     final Instant created;
     final Map<StackGresExtensionIndex, StackGresExtensionMetadata> index;
     final Map<StackGresExtensionIndexSameMajorBuild, List<StackGresExtensionMetadata>>
@@ -230,6 +266,22 @@ public abstract class ExtensionMetadataManager {
 
     public Instant getCreated() {
       return created;
+    }
+
+    public Map<StackGresExtensionIndex, StackGresExtensionMetadata> getIndex() {
+      return index;
+    }
+
+    public Map<StackGresExtensionIndexSameMajorBuild, List<StackGresExtensionMetadata>> getIndexSameMajorBuilds() {
+      return indexSameMajorBuilds;
+    }
+
+    public Map<StackGresExtensionIndexAnyVersion, List<StackGresExtensionMetadata>> getIndexAnyVersions() {
+      return indexAnyVersions;
+    }
+
+    public Map<String, StackGresExtensionPublisher> getPublishers() {
+      return publishers;
     }
 
     void merge(ExtensionMetadataCache other) {

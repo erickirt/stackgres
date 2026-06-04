@@ -40,14 +40,15 @@ import io.stackgres.common.crd.sgconfig.StackGresConfigDeploy;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloper;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperContainerPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperPatches;
-import io.stackgres.common.crd.sgconfig.StackGresConfigExtensions;
 import io.stackgres.common.crd.sgconfig.StackGresConfigGrafana;
 import io.stackgres.common.crd.sgconfig.StackGresConfigImage;
 import io.stackgres.common.crd.sgconfig.StackGresConfigRestapi;
 import io.stackgres.common.crd.sgconfig.StackGresConfigSpec;
 import io.stackgres.common.crd.sgconfig.StackGresConfigStatus;
 import io.stackgres.common.crd.sgconfig.StackGresConfigStatusGrafana;
+import io.stackgres.common.extension.ExtensionsConfigUtil;
 import io.stackgres.common.labels.LabelFactoryForConfig;
+import io.stackgres.operator.app.OperatorInstallationInfoHolder;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.ResourceGenerator;
 import io.stackgres.operator.conciliation.config.StackGresConfigContext;
@@ -69,8 +70,8 @@ public class WebConsoleDeployment
   private static final String ADMINUI_NGINX_ETC = "adminui-nginx-etc";
 
   private final LabelFactoryForConfig labelFactory;
-
   private final WebConsolePodSecurityFactory webConsolePodSecurityContext;
+  private final OperatorInstallationInfoHolder installationInfoHolder;
 
   public static String name(StackGresConfig config) {
     return ResourceUtil.resourceName(
@@ -92,10 +93,12 @@ public class WebConsoleDeployment
   @Inject
   public WebConsoleDeployment(
       LabelFactoryForConfig labelFactory,
-      WebConsolePodSecurityFactory webConsolePodSecurityContext) {
+      WebConsolePodSecurityFactory webConsolePodSecurityContext,
+      OperatorInstallationInfoHolder installationInfoHolder) {
     super();
     this.labelFactory = labelFactory;
     this.webConsolePodSecurityContext = webConsolePodSecurityContext;
+    this.installationInfoHolder = installationInfoHolder;
   }
 
   /**
@@ -139,6 +142,18 @@ public class WebConsoleDeployment
         .withLabels(labelFactory.restapiLabels(config))
         .endMetadata()
         .withNewSpec()
+        .withSchedulerName(restapi
+            .map(StackGresConfigRestapi::getSchedulerName)
+            .orElse(null))
+        .withRuntimeClassName(restapi
+            .map(StackGresConfigRestapi::getRuntimeClassName)
+            .orElse(null))
+        .withPreemptionPolicy(restapi
+            .map(StackGresConfigRestapi::getPreemptionPolicy)
+            .orElse(null))
+        .withPriorityClassName(restapi
+            .map(StackGresConfigRestapi::getPriorityClassName)
+            .orElse(null))
         .withAffinity(restapi
             .map(StackGresConfigRestapi::getAffinity)
             .orElse(null))
@@ -172,6 +187,10 @@ public class WebConsoleDeployment
                         .withFieldPath("metadata.namespace")
                         .build())
                     .build())
+                .build(),
+                new EnvVarBuilder()
+                .withName("RESTAPI_INSTALATION_ID")
+                .withValue(installationInfoHolder.getInstallationId())
                 .build(),
                 new EnvVarBuilder()
                 .withName("RESTAPI_IP")
@@ -238,13 +257,11 @@ public class WebConsoleDeployment
                 .build(),
                 new EnvVarBuilder()
                 .withName("EXTENSIONS_REPOSITORY_URLS")
-                .withValue(
-                    Optional.of(context.getSource().getSpec())
-                    .map(StackGresConfigSpec::getExtensions)
-                    .map(StackGresConfigExtensions::getRepositoryUrls)
-                    .stream()
-                    .flatMap(List::stream)
-                    .collect(Collectors.joining(",")))
+                .withValue(String.join(",",
+                    ExtensionsConfigUtil.getExtensionsRepositoryUrls(
+                        Optional.of(context.getSource().getSpec())
+                        .map(StackGresConfigSpec::getExtensions)
+                        .orElse(null))))
                 .build(),
                 new EnvVarBuilder()
                 .withName("STACKGRES_AUTH_TYPE")

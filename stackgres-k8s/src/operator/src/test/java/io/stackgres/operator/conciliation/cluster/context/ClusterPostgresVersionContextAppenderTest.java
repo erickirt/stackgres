@@ -7,6 +7,7 @@ package io.stackgres.operator.conciliation.cluster.context;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -156,7 +157,8 @@ class ClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getPostgresVersion(),
         cluster.getStatus().getBuildVersion(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -183,7 +185,8 @@ class ClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getPostgresVersion(),
         cluster.getStatus().getBuildVersion(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -210,7 +213,8 @@ class ClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getPostgresVersion(),
         cluster.getStatus().getBuildVersion(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -239,7 +243,8 @@ class ClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getPostgresVersion(),
         cluster.getStatus().getBuildVersion(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -267,7 +272,8 @@ class ClusterPostgresVersionContextAppenderTest {
         randomVersion,
         cluster.getStatus().getBuildVersion(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -294,7 +300,8 @@ class ClusterPostgresVersionContextAppenderTest {
         startsWith(randomMajorPostgresVersion + "."),
         eq(cluster.getStatus().getBuildVersion()),
         eq(Optional.empty()),
-        eq(Optional.empty()));
+        eq(Optional.empty()),
+        eq(cluster));
   }
 
   @Test
@@ -322,7 +329,8 @@ class ClusterPostgresVersionContextAppenderTest {
         latestVersion,
         cluster.getStatus().getBuildVersion(),
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -346,7 +354,7 @@ class ClusterPostgresVersionContextAppenderTest {
     verify(clusterObjectStorageContextAppender, never()).appendContext(
         any(), any(), any());
     verify(clusterExtensionsContextAppender, never()).appendContext(
-        any(), any(), any(), any(), any(), any());
+        any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -398,7 +406,7 @@ class ClusterPostgresVersionContextAppenderTest {
     verify(clusterObjectStorageContextAppender, never()).appendContext(
         any(), any(), any());
     verify(clusterExtensionsContextAppender, never()).appendContext(
-        any(), any(), any(), any(), any(), any());
+        any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -427,7 +435,7 @@ class ClusterPostgresVersionContextAppenderTest {
     verify(clusterObjectStorageContextAppender, never()).appendContext(
         any(), any(), any());
     verify(clusterExtensionsContextAppender, never()).appendContext(
-        any(), any(), any(), any(), any(), any());
+        any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -462,7 +470,8 @@ class ClusterPostgresVersionContextAppenderTest {
         targetVersion,
         cluster.getStatus().getBuildVersion(),
         Optional.of(previousVersion),
-        Optional.of(buildVersion));
+        Optional.of(buildVersion),
+        cluster);
   }
 
   @Test
@@ -493,7 +502,8 @@ class ClusterPostgresVersionContextAppenderTest {
         FIRST_PG_MINOR_VERSION,
         cluster.getStatus().getBuildVersion(),
         Optional.of(SECOND_PG_MINOR_VERSION),
-        Optional.of(buildVersion));
+        Optional.of(buildVersion),
+        cluster);
   }
 
   @Test
@@ -517,7 +527,76 @@ class ClusterPostgresVersionContextAppenderTest {
     verify(clusterObjectStorageContextAppender, never()).appendContext(
         any(), any(), any());
     verify(clusterExtensionsContextAppender, never()).appendContext(
-        any(), any(), any(), any(), any(), any());
+        any(), any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  void givenLatestPostgresVersion_shouldNotSetLatestStatusFields() {
+    final String latestVersion = StackGresComponent.POSTGRESQL.getLatest().getLatestVersion();
+    cluster.getSpec().getPostgres().setVersion(latestVersion);
+
+    contextAppender.appendContext(cluster, contextBuilder);
+
+    assertEquals(latestVersion, cluster.getStatus().getPostgresVersion());
+    assertNull(cluster.getStatus().getLatestPostgresMinor());
+    assertNull(cluster.getStatus().getLatestPostgresMajor());
+  }
+
+  @Test
+  void givenNotLatestMinorOfLatestMajor_shouldSetOnlyLatestPostgresMinor() {
+    final String latestMajor =
+        StackGresComponent.POSTGRESQL.getLatest().getLatestMajorVersion();
+    final String latestMinorOfLatestMajor =
+        StackGresComponent.POSTGRESQL.getLatest().getVersion(latestMajor);
+    final String notLatestMinor =
+        StackGresComponent.POSTGRESQL.getLatest().streamOrderedVersions()
+            .filter(version -> version.startsWith(latestMajor + "."))
+            .filter(version -> !version.equals(latestMinorOfLatestMajor))
+            .findFirst().get();
+    cluster.getSpec().getPostgres().setVersion(notLatestMinor);
+
+    contextAppender.appendContext(cluster, contextBuilder);
+
+    assertEquals(notLatestMinor, cluster.getStatus().getPostgresVersion());
+    assertEquals(latestMinorOfLatestMajor, cluster.getStatus().getLatestPostgresMinor());
+    assertNull(cluster.getStatus().getLatestPostgresMajor());
+  }
+
+  @Test
+  void givenLatestMinorOfPreviousMajor_shouldSetOnlyLatestPostgresMajor() {
+    final String previousMajor = SECOND_PG_MAJOR_VERSION;
+    final String latestMinorOfPreviousMajor =
+        StackGresComponent.POSTGRESQL.getLatest().getVersion(previousMajor);
+    cluster.getSpec().getPostgres().setVersion(latestMinorOfPreviousMajor);
+
+    contextAppender.appendContext(cluster, contextBuilder);
+
+    assertEquals(latestMinorOfPreviousMajor, cluster.getStatus().getPostgresVersion());
+    assertNull(cluster.getStatus().getLatestPostgresMinor());
+    assertEquals(
+        StackGresComponent.POSTGRESQL.getLatest().getLatestVersion(),
+        cluster.getStatus().getLatestPostgresMajor());
+  }
+
+  @Test
+  void givenNotLatestMinorOfPreviousMajor_shouldSetBothLatestStatusFields() {
+    final String previousMajor = SECOND_PG_MAJOR_VERSION;
+    final String latestMinorOfPreviousMajor =
+        StackGresComponent.POSTGRESQL.getLatest().getVersion(previousMajor);
+    final String notLatestMinor =
+        StackGresComponent.POSTGRESQL.getLatest().streamOrderedVersions()
+            .filter(version -> version.startsWith(previousMajor + "."))
+            .filter(version -> !version.equals(latestMinorOfPreviousMajor))
+            .findFirst().get();
+    cluster.getSpec().getPostgres().setVersion(notLatestMinor);
+
+    contextAppender.appendContext(cluster, contextBuilder);
+
+    assertEquals(notLatestMinor, cluster.getStatus().getPostgresVersion());
+    assertEquals(latestMinorOfPreviousMajor, cluster.getStatus().getLatestPostgresMinor());
+    assertEquals(
+        StackGresComponent.POSTGRESQL.getLatest().getLatestVersion(),
+        cluster.getStatus().getLatestPostgresMajor());
   }
 
   private static String getRandomPostgresVersion() {

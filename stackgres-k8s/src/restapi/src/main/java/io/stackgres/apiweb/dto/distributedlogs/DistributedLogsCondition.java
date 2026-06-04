@@ -23,6 +23,8 @@ public class DistributedLogsCondition {
 
   private String type;
 
+  private Long observedGeneration;
+
   /**
    * Constructor of the required fields.
    *
@@ -77,6 +79,14 @@ public class DistributedLogsCondition {
 
   public void setType(String type) {
     this.type = type;
+  }
+
+  public Long getObservedGeneration() {
+    return observedGeneration;
+  }
+
+  public void setObservedGeneration(Long observedGeneration) {
+    this.observedGeneration = observedGeneration;
   }
 
   @Override

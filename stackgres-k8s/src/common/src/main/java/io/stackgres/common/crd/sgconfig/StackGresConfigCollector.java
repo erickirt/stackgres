@@ -35,6 +35,14 @@ public class StackGresConfigCollector {
 
   private ResourceRequirements resources;
 
+  private String schedulerName;
+
+  private String runtimeClassName;
+
+  private String preemptionPolicy;
+
+  private String priorityClassName;
+
   private Map<String, String> nodeSelector;
 
   private List<Toleration> tolerations;
@@ -93,6 +101,38 @@ public class StackGresConfigCollector {
 
   public void setResources(ResourceRequirements resources) {
     this.resources = resources;
+  }
+
+  public String getSchedulerName() {
+    return schedulerName;
+  }
+
+  public void setSchedulerName(String schedulerName) {
+    this.schedulerName = schedulerName;
+  }
+
+  public String getRuntimeClassName() {
+    return runtimeClassName;
+  }
+
+  public void setRuntimeClassName(String runtimeClassName) {
+    this.runtimeClassName = runtimeClassName;
+  }
+
+  public String getPreemptionPolicy() {
+    return preemptionPolicy;
+  }
+
+  public void setPreemptionPolicy(String preemptionPolicy) {
+    this.preemptionPolicy = preemptionPolicy;
+  }
+
+  public String getPriorityClassName() {
+    return priorityClassName;
+  }
+
+  public void setPriorityClassName(String priorityClassName) {
+    this.priorityClassName = priorityClassName;
   }
 
   public Map<String, String> getNodeSelector() {
@@ -178,8 +218,9 @@ public class StackGresConfigCollector {
   @Override
   public int hashCode() {
     return Objects.hash(affinity, alwaysEnabled, annotations, config, name, nodeSelector, ports,
-        prometheusOperator, receivers, resources, service, serviceAccount, tolerations,
-        volumeMounts, volumes);
+        preemptionPolicy, priorityClassName, prometheusOperator, receivers, resources,
+        runtimeClassName, schedulerName, service, serviceAccount, tolerations, volumeMounts,
+        volumes);
   }
 
   @Override
@@ -196,8 +237,12 @@ public class StackGresConfigCollector {
         && Objects.equals(annotations, other.annotations) && Objects.equals(config, other.config)
         && Objects.equals(name, other.name) && Objects.equals(nodeSelector, other.nodeSelector)
         && Objects.equals(ports, other.ports)
+        && Objects.equals(preemptionPolicy, other.preemptionPolicy)
+        && Objects.equals(priorityClassName, other.priorityClassName)
         && Objects.equals(prometheusOperator, other.prometheusOperator)
         && Objects.equals(receivers, other.receivers) && Objects.equals(resources, other.resources)
+        && Objects.equals(runtimeClassName, other.runtimeClassName)
+        && Objects.equals(schedulerName, other.schedulerName)
         && Objects.equals(service, other.service)
         && Objects.equals(serviceAccount, other.serviceAccount)
         && Objects.equals(tolerations, other.tolerations)

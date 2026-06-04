@@ -148,7 +148,7 @@ public class DefaultOperatorLockHolder implements OperatorLockHolder {
             LOGGER.warn("Lock on SGConfig was lost");
             leader.set(false);
             if (context.getBoolean(OperatorProperty.FORCE_UNLOCK_OPERATOR)) {
-              LOGGER.warn("Lock on SGConfig was lost while forcing unlock operator, exiting");
+              LOGGER.error("Lock on SGConfig was lost while forcing unlock operator, exiting");
               Quarkus.asyncExit(1);
             }
           }

@@ -231,6 +231,18 @@ public class CollectorDeployments
             .orElse(null))
         .endMetadata()
         .editSpec()
+        .withSchedulerName(collectorReceiversDeployment
+            .map(StackGresConfigCollectorReceiverDeployment::getSchedulerName)
+            .orElse(null))
+        .withRuntimeClassName(collectorReceiversDeployment
+            .map(StackGresConfigCollectorReceiverDeployment::getRuntimeClassName)
+            .orElse(null))
+        .withPreemptionPolicy(collectorReceiversDeployment
+            .map(StackGresConfigCollectorReceiverDeployment::getPreemptionPolicy)
+            .orElse(null))
+        .withPriorityClassName(collectorReceiversDeployment
+            .map(StackGresConfigCollectorReceiverDeployment::getPriorityClassName)
+            .orElse(null))
         .withAffinity(collectorReceiversDeployment
             .map(StackGresConfigCollectorReceiverDeployment::getAffinity)
             .orElse(null))
@@ -290,6 +302,18 @@ public class CollectorDeployments
         .withLabels(labelFactory.collectorLabels(config))
         .endMetadata()
         .withNewSpec()
+        .withSchedulerName(collector
+            .map(StackGresConfigCollector::getSchedulerName)
+            .orElse(null))
+        .withRuntimeClassName(collector
+            .map(StackGresConfigCollector::getRuntimeClassName)
+            .orElse(null))
+        .withPreemptionPolicy(collector
+            .map(StackGresConfigCollector::getPreemptionPolicy)
+            .orElse(null))
+        .withPriorityClassName(collector
+            .map(StackGresConfigCollector::getPriorityClassName)
+            .orElse(null))
         .withAffinity(collector
             .map(StackGresConfigCollector::getAffinity)
             .orElse(null))

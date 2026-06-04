@@ -6,6 +6,7 @@
 package io.stackgres.operator.conciliation.shardedcluster;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.quarkus.test.junit.QuarkusTest;
@@ -55,17 +56,17 @@ class ShardedClusterRequiredResourceDecoratorTest
         .source(resource)
         .coordinatorPostgresConfig(pgConfig)
         .coordinator(getCoordinator())
-        .shards(getShards())
+        .workers(getWorkers())
         .build();
   }
 
   private StackGresCluster getCoordinator() {
-    return StackGresShardedClusterForCitusUtil.getCoordinatorCluster(resource);
+    return StackGresShardedClusterForCitusUtil.getCoordinatorCluster(resource, Optional.empty());
   }
 
-  private List<StackGresCluster> getShards() {
-    return Seq.range(0, resource.getSpec().getShards().getClusters())
-        .map(index -> StackGresShardedClusterForCitusUtil.getShardsCluster(resource, index))
+  private List<StackGresCluster> getWorkers() {
+    return Seq.range(0, resource.getSpec().getWorkers().getClusters())
+        .map(index -> StackGresShardedClusterForCitusUtil.getWorkerCluster(resource, index, Optional.empty()))
         .toList();
   }
 

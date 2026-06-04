@@ -10,7 +10,6 @@ import java.util.Optional;
 
 import io.stackgres.common.ExtensionTuple;
 import io.stackgres.common.StackGresUtil;
-import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterExtension;
 import io.stackgres.common.crd.sgcluster.StackGresClusterExtensionBuilder;
 import io.stackgres.common.crd.sgcluster.StackGresClusterInstalledExtension;
@@ -20,7 +19,6 @@ import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterStatus;
 import io.stackgres.common.extension.ExtensionMetadataManager;
 import io.stackgres.operator.conciliation.AbstractExtensionsContextAppender;
-import io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForCitusUtil;
 import io.stackgres.operator.conciliation.shardedcluster.StackGresShardedClusterContext.Builder;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -40,12 +38,6 @@ public class ShardedClusterExtensionsContextAppender
   @Override
   protected ExtensionMetadataManager getExtensionMetadataManager() {
     return extensionMetadataManager;
-  }
-
-  @Override
-  protected StackGresCluster getCluster(StackGresShardedCluster inputContext) {
-    return StackGresShardedClusterForCitusUtil
-        .getCoordinatorCluster(inputContext);
   }
 
   @Override

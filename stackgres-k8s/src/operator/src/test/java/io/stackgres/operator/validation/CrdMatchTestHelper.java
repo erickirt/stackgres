@@ -47,7 +47,8 @@ public class CrdMatchTestHelper {
   }
 
   private static JsonNode extractMetadataMaxLengthResourceName(JsonNode crdTree) {
-    return crdTree.get("spec").get("versions").get(0).get("schema").get("openAPIV3Schema")
+    final JsonNode versions = crdTree.get("spec").get("versions");
+    return versions.get(versions.size() - 1).get("schema").get("openAPIV3Schema")
         .get("properties").get("metadata")
         .get("properties").get("name").get("maxLength");
   }

@@ -12,13 +12,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.StackGresUtil;
+import io.stackgres.common.crd.sgcluster.StackGresClusterReplicateFromCustomRestoreMethod;
 import io.sundr.builder.annotations.Buildable;
 import jakarta.validation.constraints.NotEmpty;
 
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresShardedClusterReplicateFromExternal {
@@ -28,6 +29,8 @@ public class StackGresShardedClusterReplicateFromExternal {
 
   @NotEmpty(message = "ports is required")
   private List<Integer> ports;
+
+  private List<StackGresClusterReplicateFromCustomRestoreMethod> customRestoreMethods;
 
   public List<String> getHosts() {
     return hosts;
@@ -45,9 +48,18 @@ public class StackGresShardedClusterReplicateFromExternal {
     this.ports = ports;
   }
 
+  public List<StackGresClusterReplicateFromCustomRestoreMethod> getCustomRestoreMethods() {
+    return customRestoreMethods;
+  }
+
+  public void setCustomRestoreMethods(
+      List<StackGresClusterReplicateFromCustomRestoreMethod> customRestoreMethods) {
+    this.customRestoreMethods = customRestoreMethods;
+  }
+
   @Override
   public int hashCode() {
-    return Objects.hash(hosts, ports);
+    return Objects.hash(customRestoreMethods, hosts, ports);
   }
 
   @Override
@@ -59,7 +71,8 @@ public class StackGresShardedClusterReplicateFromExternal {
       return false;
     }
     StackGresShardedClusterReplicateFromExternal other = (StackGresShardedClusterReplicateFromExternal) obj;
-    return Objects.equals(hosts, other.hosts) && Objects.equals(ports, other.ports);
+    return Objects.equals(customRestoreMethods, other.customRestoreMethods)
+        && Objects.equals(hosts, other.hosts) && Objects.equals(ports, other.ports);
   }
 
   @Override

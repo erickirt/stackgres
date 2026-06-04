@@ -26,7 +26,7 @@ import jakarta.validation.constraints.NotEmpty;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresDbOpsMajorVersionUpgrade {
@@ -34,8 +34,7 @@ public class StackGresDbOpsMajorVersionUpgrade {
   @NotEmpty(message = "postgresVersion must not be empty")
   private String postgresVersion;
 
-  @Valid
-  private List<StackGresClusterExtension> postgresExtensions;
+  private List<@Valid StackGresClusterExtension> postgresExtensions;
 
   @NotEmpty(message = "sgPostgresConfig must not be empty")
   private String sgPostgresConfig;
@@ -48,8 +47,7 @@ public class StackGresDbOpsMajorVersionUpgrade {
 
   private Boolean check;
 
-  @Valid
-  private List<StackGresClusterInstalledExtension> toInstallPostgresExtensions;
+  private List<@Valid StackGresClusterInstalledExtension> toInstallPostgresExtensions;
 
   private Integer maxErrorsAfterUpgrade;
 

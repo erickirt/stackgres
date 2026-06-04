@@ -23,29 +23,25 @@ import jakarta.validation.Valid;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresShardedClusterStatus {
 
   @JsonProperty("conditions")
   @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  @Valid
-  private List<Condition> conditions = new ArrayList<>();
+  private List<@Valid Condition> conditions = new ArrayList<>();
 
   private String postgresVersion;
 
   private String buildVersion;
 
-  @Valid
-  private List<StackGresClusterInstalledExtension> extensions;
+  private List<@Valid StackGresClusterInstalledExtension> extensions;
 
-  @Valid
-  private List<StackGresShardedClusterClusterStatus> clusterStatuses;
+  private List<@Valid StackGresShardedClusterClusterStatus> clusterStatuses;
 
-  @Valid
   @Deprecated(forRemoval = true)
-  private List<StackGresClusterInstalledExtension> toInstallPostgresExtensions;
+  private List<@Valid StackGresClusterInstalledExtension> toInstallPostgresExtensions;
 
   @Valid
   private StackGresClusterServiceBindingStatus binding;

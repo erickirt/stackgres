@@ -61,13 +61,13 @@ class ShardedClusterTransformerTest {
   void testShardedClusterTransformation() {
     var tuple = createShardedCluster();
 
-    tuple.source().getSpec().getShards().setClusters(3);
-    tuple.target().getSpec().getShards().setClusters(3);
+    tuple.source().getSpec().getWorkers().setClusters(3);
+    tuple.target().getSpec().getWorkers().setClusters(3);
     tuple.target().getStatus().setClusters(List.of(
         StackGresShardedClusterUtil.getCoordinatorClusterName(tuple.source()),
-        StackGresShardedClusterUtil.getShardClusterName(tuple.source(), 0),
-        StackGresShardedClusterUtil.getShardClusterName(tuple.source(), 1),
-        StackGresShardedClusterUtil.getShardClusterName(tuple.source(), 2)));
+        StackGresShardedClusterUtil.getWorkerClusterName(tuple.source(), 0),
+        StackGresShardedClusterUtil.getWorkerClusterName(tuple.source(), 1),
+        StackGresShardedClusterUtil.getWorkerClusterName(tuple.source(), 2)));
     TransformerTestUtil.assertTransformation(transformer, tuple);
   }
 

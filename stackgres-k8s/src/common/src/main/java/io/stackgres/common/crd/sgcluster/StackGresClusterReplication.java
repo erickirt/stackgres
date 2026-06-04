@@ -25,7 +25,7 @@ import jakarta.validation.constraints.Min;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresClusterReplication {
@@ -39,8 +39,7 @@ public class StackGresClusterReplication {
   @Min(value = 1)
   private Integer syncInstances;
 
-  @Valid
-  private List<StackGresClusterReplicationGroup> groups;
+  private List<@Valid StackGresClusterReplicationGroup> groups;
 
   @Valid
   private StackGresClusterReplicationInitialization initialization;

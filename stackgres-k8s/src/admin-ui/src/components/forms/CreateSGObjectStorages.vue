@@ -471,7 +471,19 @@
                         "namespace": this.namespace
                     },
                     "spec": {
+                        ...(this.hasProp(previous, 'spec') && previous.spec),
                         "type": this.type
+                    }
+                }
+
+                // Drop any inactive backend block carried over from previous when
+                // the user switched type, but preserve unknown sibling fields.
+                // Use for/of (rather than a bare array literal + forEach) to avoid
+                // ASI collapsing the previous statement's trailing `}` with the
+                // following `[` into a property access.
+                for (const backend of ['s3', 's3Compatible', 'gcs', 'azureBlob']) {
+                    if (backend !== this.type) {
+                        delete config.spec[backend];
                     }
                 }
 
@@ -479,10 +491,12 @@
                     
                     case 's3':
                         config.spec['s3'] = {
+                            ...(this.hasProp(previous, 'spec.s3') && previous.spec.s3),
                             "bucket": this.s3Bucket,
                             ...( ((typeof this.s3Region !== 'undefined') && this.s3Region.length ) && ( {"region": this.s3Region }) ),
                             ...( ((typeof this.s3StorageClass !== 'undefined') && this.s3StorageClass.length ) && ( {"storageClass": this.s3StorageClass }) ),
                             "awsCredentials": {
+                                ...(this.hasProp(previous, 'spec.s3.awsCredentials') && previous.spec.s3.awsCredentials),
                                 ...( ( (this.editMode && (this.s3AccessKeyId != '******')) || (!this.editMode) ) && ( { "accessKeyId": this.s3AccessKeyId }) ),
                                 ...( ( (this.editMode && (this.s3SecretAccessKey != '******')) || (!this.editMode) ) && ( { "secretAccessKey": this.s3SecretAccessKey}) ),
                                 ...( ( this.editMode && (this.s3AccessKeyId == '******') && (this.s3SecretAccessKey == '******') ) && ( { "secretKeySelectors": this.secretKeySelectors } ) )
@@ -492,12 +506,14 @@
                     
                     case 's3Compatible':
                         config.spec['s3Compatible'] = {
+                            ...(this.hasProp(previous, 'spec.s3Compatible') && previous.spec.s3Compatible),
                             "bucket": this.s3CompatibleBucket,
                             ...( ((typeof this.s3CompatibleEnablePathStyleAddressing !== 'undefined') && this.s3CompatibleEnablePathStyleAddressing ) && ( {"enablePathStyleAddressing": this.s3CompatibleEnablePathStyleAddressing }) ),
                             ...( ((typeof this.s3CompatibleEndpoint !== 'undefined') && this.s3CompatibleEndpoint.length ) && ( {"endpoint": this.s3CompatibleEndpoint }) ),
                             ...( ((typeof this.s3CompatibleRegion !== 'undefined') && this.s3CompatibleRegion.length ) && ( {"region": this.s3CompatibleRegion }) ),
                             ...( ((typeof this.s3CompatibleStorageClass !== 'undefined') && this.s3CompatibleStorageClass.length ) && ( {"storageClass": this.s3CompatibleStorageClass }) ),
                             "awsCredentials": {
+                                ...(this.hasProp(previous, 'spec.s3Compatible.awsCredentials') && previous.spec.s3Compatible.awsCredentials),
                                 ...( ( (this.editMode && (this.s3CompatibleAccessKeyId != '******')) || (!this.editMode)) && ( { "accessKeyId": this.s3CompatibleAccessKeyId }) ),
                                 ...( ( (this.editMode && (this.s3CompatibleSecretAccessKey != '******')) || (!this.editMode)) && ( { "secretAccessKey": this.s3CompatibleSecretAccessKey}) ),
                                 ...( (this.editMode && (this.s3CompatibleAccessKeyId == '******') && (this.s3CompatibleSecretAccessKey == '******') ) && ( { "secretKeySelectors": this.secretKeySelectors } ) )
@@ -507,8 +523,10 @@
 
                     case 'gcs':
                         config.spec['gcs'] = {
+                            ...(this.hasProp(previous, 'spec.gcs') && previous.spec.gcs),
                             "bucket": this.gcsBucket,
                             "gcpCredentials": {
+                                ...(this.hasProp(previous, 'spec.gcs.gcpCredentials') && previous.spec.gcs.gcpCredentials),
                                 ...( this.fetchGCSCredentials && {
                                     "fetchCredentialsFromMetadataService": true
                                 }),
@@ -526,8 +544,10 @@
 
                     case 'azureBlob':
                         config.spec['azureBlob'] = {
+                            ...(this.hasProp(previous, 'spec.azureBlob') && previous.spec.azureBlob),
                             "bucket": this.azureBucket,
                             "azureCredentials": {
+                                ...(this.hasProp(previous, 'spec.azureBlob.azureCredentials') && previous.spec.azureBlob.azureCredentials),
                                 ...( ( (this.editMode && (this.azureAccount != '******')) || (!this.editMode) ) && ( { "storageAccount": this.azureAccount}) ),
                                 ...( ( (this.editMode && (this.azureAccessKey != '******')) || (!this.editMode) ) && ( { "accessKey": this.azureAccessKey}) ),
                                 ...( (this.editMode && (this.azureAccessKey == '******') && (this.azureAccount == '******') ) && ( { "secretKeySelectors": this.secretKeySelectors } ) )
@@ -555,7 +575,7 @@
                             } else {
                                 vc.notify('Object storage configuration <strong>"'+config.metadata.name+'"</strong> updated successfully', 'message','sgobjectstorages');
 
-                                vc.fetchAPI('sgobjectstorage');
+                                vc.fetchAPI('sgobjectstorages');
                                 router.push('/' + config.metadata.namespace + '/sgobjectstorage/' + config.metadata.name);
                             }
                             store.commit('loading', false);
@@ -583,7 +603,7 @@
                                     vc.notify('Object storage configuration <strong>"'+config.metadata.name+'"</strong> created successfully', 'message','sgobjectstorages');
                                 }
 
-                                vc.fetchAPI('sgobjectstorage');
+                                vc.fetchAPI('sgobjectstorages');
                                 router.push('/' + config.metadata.namespace + '/sgobjectstorages');
                             }
                             store.commit('loading', false);

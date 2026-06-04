@@ -1,0 +1,26 @@
+[
+  {
+    "apiVersion": "stackgres.io/v1",
+    "kind": "SGDbOps",
+    "metadata": { "name": "uptodate-minor-upgrade", "namespace": "default", "uid": "77770000-0000-0000-0000-000000000001", "creationTimestamp": "2026-05-29T09:00:00Z" },
+    "spec": { "sgCluster": "uptodate", "op": "minorVersionUpgrade", "minorVersionUpgrade": { "postgresVersion": "16.3" } },
+    "status": {
+      "conditions": [
+        { "type": "Completed", "status": "True", "reason": "OperationCompleted", "lastTransitionTime": "2026-05-29T09:05:00Z" }
+      ],
+      "opStarted": "2026-05-29T09:00:00Z"
+    }
+  },
+  {
+    "apiVersion": "stackgres.io/v1",
+    "kind": "SGDbOps",
+    "metadata": { "name": "minor-and-major-restart", "namespace": "production", "uid": "77770000-0000-0000-0000-000000000002", "creationTimestamp": "2026-05-31T11:55:00Z" },
+    "spec": { "sgCluster": "minor-and-major", "op": "restart", "restart": { "method": "InPlace", "onlyPendingRestart": true } },
+    "status": {
+      "conditions": [
+        { "type": "Running", "status": "True", "reason": "OperationRunning", "lastTransitionTime": "2026-05-31T12:00:00Z" }
+      ],
+      "opStarted": "2026-05-31T12:00:00Z"
+    }
+  }
+]

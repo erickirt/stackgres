@@ -18,7 +18,7 @@ import jakarta.validation.Valid;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresProfileRequests {
@@ -27,11 +27,9 @@ public class StackGresProfileRequests {
 
   private String memory;
 
-  @Valid
-  private Map<String, StackGresProfileContainer> containers;
+  private Map<String, @Valid StackGresProfileContainer> containers;
 
-  @Valid
-  private Map<String, StackGresProfileContainer> initContainers;
+  private Map<String, @Valid StackGresProfileContainer> initContainers;
 
   public String getCpu() {
     return cpu;

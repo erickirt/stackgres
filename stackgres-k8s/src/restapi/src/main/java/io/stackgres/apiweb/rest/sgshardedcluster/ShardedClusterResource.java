@@ -32,9 +32,9 @@ import io.stackgres.apiweb.dto.script.ScriptSpec;
 import io.stackgres.apiweb.dto.shardedcluster.ShardedClusterCoordinator;
 import io.stackgres.apiweb.dto.shardedcluster.ShardedClusterDto;
 import io.stackgres.apiweb.dto.shardedcluster.ShardedClusterInfo;
-import io.stackgres.apiweb.dto.shardedcluster.ShardedClusterShard;
-import io.stackgres.apiweb.dto.shardedcluster.ShardedClusterShards;
 import io.stackgres.apiweb.dto.shardedcluster.ShardedClusterSpec;
+import io.stackgres.apiweb.dto.shardedcluster.ShardedClusterWorker;
+import io.stackgres.apiweb.dto.shardedcluster.ShardedClusterWorkers;
 import io.stackgres.apiweb.exception.ErrorResponse;
 import io.stackgres.apiweb.rest.AbstractCustomResourceService;
 import io.stackgres.apiweb.rest.sgscripts.ScriptResource;
@@ -215,7 +215,7 @@ public class ShardedClusterResource
         .ifPresent(service -> info.setReadsDns(StackGresUtil.getServiceDnsName(service)));
     foundCluster
         .flatMap(cluster -> serviceFinder.findByNameAndNamespace(
-            StackGresShardedClusterUtil.primariesShardsServiceName(cluster), namespace))
+            StackGresShardedClusterUtil.primariesWorkersServiceName(cluster), namespace))
         .ifPresent(service -> info.setPrimariesDns(StackGresUtil.getServiceDnsName(service)));
 
     String superuserUsername = foundCluster
@@ -242,8 +242,8 @@ public class ShardedClusterResource
     Seq
         .concat(
             getScriptEntriesForCoordinator(resource).stream(),
-            getScriptEntriesForShards(resource).stream(),
-            getScriptEntriesForShardsOverride(resource).stream().map(Tuple2::v2).flatMap(List::stream))
+            getScriptEntriesForWorkers(resource).stream(),
+            getScriptEntriesForWorkersOverride(resource).stream().map(Tuple2::v2).flatMap(List::stream))
         .forEach(managedScriptEntry -> {
           var script = scriptFinder
               .findByNameAndNamespace(managedScriptEntry.getSgScript(), namespace);
@@ -262,12 +262,12 @@ public class ShardedClusterResource
         getScriptEntriesForCoordinator(resource));
     setConfigMaps(
         resource,
-        "shards",
-        getScriptEntriesForShards(resource));
-    getScriptEntriesForShardsOverride(resource)
+        "workers",
+        getScriptEntriesForWorkers(resource));
+    getScriptEntriesForWorkersOverride(resource)
         .forEach(override -> setConfigMaps(
             resource,
-            "shard" + override.v1.intValue(),
+            "worker" + override.v1.intValue(),
             override.v2));
     return resource;
   }
@@ -318,23 +318,23 @@ public class ShardedClusterResource
         dryRun);
     createOrUpdateScripts(
         resource,
-        "shards",
-        "shards",
-        "spec.shards",
+        "workers",
+        "workers",
+        "spec.workers",
         Optional.ofNullable(resource.getSpec())
-        .map(ShardedClusterSpec::getShards)
-        .map(ShardedClusterShards::getManagedSql)
+        .map(ShardedClusterSpec::getWorkers)
+        .map(ShardedClusterWorkers::getManagedSql)
         .map(ClusterManagedSql::getScripts)
         .stream()
         .flatMap(List::stream)
         .toList(),
         dryRun);
-    getScriptEntriesForShardsOverride(resource)
+    getScriptEntriesForWorkersOverride(resource)
         .forEach(override -> createOrUpdateScripts(
             resource,
-            "shards override " + (override.v1.intValue() + 1),
+            "workers override " + (override.v1.intValue() + 1),
             "shard" + override.v1.intValue(),
-            "spec.shards.overrides[" + override.v1.intValue() + "]",
+            "spec.workers.overrides[" + override.v1.intValue() + "]",
             override.v2,
             dryRun));
   }
@@ -602,11 +602,11 @@ public class ShardedClusterResource
         .toList();
   }
 
-  List<ClusterManagedScriptEntry> getScriptEntriesForShards(ShardedClusterDto resource) {
+  List<ClusterManagedScriptEntry> getScriptEntriesForWorkers(ShardedClusterDto resource) {
     return Seq
         .of(Optional.ofNullable(resource.getSpec())
-            .map(ShardedClusterSpec::getShards)
-            .map(ShardedClusterShards::getManagedSql)
+            .map(ShardedClusterSpec::getWorkers)
+            .map(ShardedClusterWorkers::getManagedSql)
             .map(ClusterManagedSql::getScripts))
         .filter(Optional::isPresent)
         .map(Optional::get)
@@ -614,17 +614,18 @@ public class ShardedClusterResource
         .toList();
   }
 
-  List<Tuple2<Integer, List<ClusterManagedScriptEntry>>> getScriptEntriesForShardsOverride(ShardedClusterDto resource) {
+  List<Tuple2<Integer, List<ClusterManagedScriptEntry>>> getScriptEntriesForWorkersOverride(
+      ShardedClusterDto resource) {
     return Seq
         .seq(Optional.ofNullable(resource.getSpec())
-            .map(ShardedClusterSpec::getShards)
-            .map(ShardedClusterShards::getOverrides))
+            .map(ShardedClusterSpec::getWorkers)
+            .map(ShardedClusterWorkers::getOverrides))
         .flatMap(List::stream)
         .zipWithIndex()
         .map(override -> Tuple.tuple(
             override.v2.intValue(),
             Optional.of(override.v1)
-            .map(ShardedClusterShard::getManagedSql)
+            .map(ShardedClusterWorker::getManagedSql)
             .map(ClusterManagedSql::getScripts)
             .orElse(List.of())))
         .toList();

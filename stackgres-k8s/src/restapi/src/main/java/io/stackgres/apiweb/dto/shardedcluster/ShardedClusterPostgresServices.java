@@ -15,7 +15,9 @@ public class ShardedClusterPostgresServices {
 
   private ShardedClusterPostgresCoordinatorServices coordinator;
 
-  private ShardedClusterPostgresShardsServices shards;
+  private ShardedClusterPostgresWorkersServices workers;
+
+  private ShardedClusterPostgresWorkersServices shards;
 
   public ShardedClusterPostgresCoordinatorServices getCoordinator() {
     return coordinator;
@@ -25,11 +27,19 @@ public class ShardedClusterPostgresServices {
     this.coordinator = coordinator;
   }
 
-  public ShardedClusterPostgresShardsServices getShards() {
+  public ShardedClusterPostgresWorkersServices getWorkers() {
+    return workers;
+  }
+
+  public void setWorkers(ShardedClusterPostgresWorkersServices workers) {
+    this.workers = workers;
+  }
+
+  public ShardedClusterPostgresWorkersServices getShards() {
     return shards;
   }
 
-  public void setShards(ShardedClusterPostgresShardsServices shards) {
+  public void setShards(ShardedClusterPostgresWorkersServices shards) {
     this.shards = shards;
   }
 

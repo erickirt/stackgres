@@ -22,7 +22,7 @@ import jakarta.validation.constraints.Positive;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresShardedClusterBackupConfiguration {
@@ -41,6 +41,8 @@ public class StackGresShardedClusterBackupConfiguration {
   private String sgObjectStorage;
 
   private List<String> paths;
+
+  private List<String> queryRouterPaths;
 
   private Boolean useVolumeSnapshot;
 
@@ -105,6 +107,14 @@ public class StackGresShardedClusterBackupConfiguration {
     this.paths = paths;
   }
 
+  public List<String> getQueryRouterPaths() {
+    return queryRouterPaths;
+  }
+
+  public void setQueryRouterPaths(List<String> queryRouterPaths) {
+    this.queryRouterPaths = queryRouterPaths;
+  }
+
   public Boolean getUseVolumeSnapshot() {
     return useVolumeSnapshot;
   }
@@ -164,8 +174,8 @@ public class StackGresShardedClusterBackupConfiguration {
   @Override
   public int hashCode() {
     return Objects.hash(compression, cronSchedule, fastVolumeSnapshot, maxRetries, paths,
-        performance, reconciliationTimeout, retainWalsForUnmanagedLifecycle, retention,
-        sgObjectStorage, timeout, useVolumeSnapshot, volumeSnapshotClass);
+        performance, queryRouterPaths, reconciliationTimeout, retainWalsForUnmanagedLifecycle,
+        retention, sgObjectStorage, timeout, useVolumeSnapshot, volumeSnapshotClass);
   }
 
   @Override
@@ -182,6 +192,7 @@ public class StackGresShardedClusterBackupConfiguration {
         && Objects.equals(fastVolumeSnapshot, other.fastVolumeSnapshot)
         && Objects.equals(maxRetries, other.maxRetries) && Objects.equals(paths, other.paths)
         && Objects.equals(performance, other.performance)
+        && Objects.equals(queryRouterPaths, other.queryRouterPaths)
         && Objects.equals(reconciliationTimeout, other.reconciliationTimeout)
         && Objects.equals(retainWalsForUnmanagedLifecycle, other.retainWalsForUnmanagedLifecycle)
         && Objects.equals(retention, other.retention)

@@ -67,6 +67,9 @@
 										<template v-for="condition in cluster.data.status.conditions" v-if="( (condition.type == 'PendingRestart') && (condition.status == 'True') )">
 											<div class="helpTooltip alert onHover" data-tooltip="A restart operation is pending for this cluster"></div>
 										</template>
+										<template v-for="condition in cluster.data.status.conditions" v-if="( (condition.type == 'ComponentsUpdated') && ( (condition.status == 'False') || (condition.reason != 'UpToDate') ) )">
+											<div class="helpTooltip alert onHover" :data-tooltip="condition.message"></div>
+										</template>
 									</template>
 								</router-link>
 							</li>
@@ -104,6 +107,9 @@
 									<template v-if="hasProp(cluster, 'data.status.conditions')">
 										<template v-for="condition in cluster.data.status.conditions" v-if="( (condition.type == 'PendingRestart') && (condition.status == 'True') )">
 											<div class="helpTooltip alert onHover" data-tooltip="A restart operation is pending for this cluster"></div>
+										</template>
+										<template v-for="condition in cluster.data.status.conditions" v-if="( (condition.type == 'ComponentsUpdated') && ( (condition.status == 'False') || (condition.reason != 'UpToDate') ) )">
+											<div class="helpTooltip alert onHover" :data-tooltip="condition.message"></div>
 										</template>
 									</template>
 								</router-link>
@@ -618,7 +624,7 @@
 		display: block;
 		height: auto;
 		transition: max-height 0.5s ease-out;
-		max-height: calc(100vh - 725px);
+		max-height: 100vw;
 		overflow-y: auto;
 	}
 
@@ -753,11 +759,6 @@
 
 	body:not(.collapsed) .set:hover .addnew, body:not(.collapsed) .set.active .addnew {
 		display: block;
-	}
-
-	.crdSubmenu {
-		max-height: calc(100vh - 780px);
-		overflow: auto;
 	}
 
 	.item {

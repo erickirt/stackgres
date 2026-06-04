@@ -45,10 +45,16 @@ public class ShardedClusterEndpoints implements ResourceGenerator<StackGresShard
       endpoints = endpoints.append(getPrimaryEndpoints(context));
     }
 
-    if (Optional.of(context.getSource().getSpec().getPostgresServices().getShards().getPrimaries())
+    if (Optional.of(context.getSource().getSpec().getPostgresServices().getWorkers().getPrimaries())
         .map(StackGresPostgresService::getEnabled)
         .orElse(true)) {
-      endpoints = endpoints.append(getShardsEndpoints(context));
+      endpoints = endpoints.append(getWorkersEndpoints(context));
+    }
+
+    if (Optional.of(context.getSource().getSpec().getPostgresServices().getCoordinator().getQueryRouters())
+        .map(StackGresPostgresService::getEnabled)
+        .orElse(true)) {
+      endpoints = endpoints.append(getQueryRoutersEndpoints(context));
     }
 
     return endpoints;
@@ -68,15 +74,32 @@ public class ShardedClusterEndpoints implements ResourceGenerator<StackGresShard
         .build());
   }
 
-  private Stream<HasMetadata> getShardsEndpoints(StackGresShardedClusterContext context) {
+  private Stream<HasMetadata> getWorkersEndpoints(StackGresShardedClusterContext context) {
     return Stream.of(new EndpointsBuilder()
         .withNewMetadata()
         .withNamespace(context.getSource().getMetadata().getNamespace())
-        .withName(StackGresShardedClusterUtil.primariesShardsServiceName(
+        .withName(StackGresShardedClusterUtil.primariesWorkersServiceName(
             context.getSource()))
         .addToLabels(labelFactory.genericLabels(context.getSource()))
         .endMetadata()
-        .addAllToSubsets(context.getShardsPrimaryEndpoints()
+        .addAllToSubsets(context.getWorkersPrimaryEndpoints()
+            .stream()
+            .map(Endpoints::getSubsets)
+            .filter(Objects::nonNull)
+            .flatMap(List::stream)
+            .toList())
+        .build());
+  }
+
+  private Stream<HasMetadata> getQueryRoutersEndpoints(StackGresShardedClusterContext context) {
+    return Stream.of(new EndpointsBuilder()
+        .withNewMetadata()
+        .withNamespace(context.getSource().getMetadata().getNamespace())
+        .withName(StackGresShardedClusterUtil.primariesQueryRoutersServiceName(
+            context.getSource()))
+        .addToLabels(labelFactory.genericLabels(context.getSource()))
+        .endMetadata()
+        .addAllToSubsets(context.getQueryRoutersPrimaryEndpoints()
             .stream()
             .map(Endpoints::getSubsets)
             .filter(Objects::nonNull)

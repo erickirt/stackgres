@@ -6,6 +6,7 @@
 package io.stackgres.operator.mutation.shardedcluster;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.stackgres.common.StackGresShardedClusterUtil;
@@ -28,8 +29,21 @@ public class CoordinatorScriptsConfigMutator implements ShardedClusterMutator {
         && review.getRequest().getOperation() != Operation.UPDATE) {
       return resource;
     }
+    setDefaultScriptIds(resource);
     fillRequiredFields(resource);
     return resource;
+  }
+
+  private void setDefaultScriptIds(StackGresShardedCluster resource) {
+    Optional.of(resource)
+        .map(StackGresShardedCluster::getSpec)
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getManagedSql)
+        .map(StackGresClusterManagedSql::getScripts)
+        .stream()
+        .flatMap(List::stream)
+        .filter(scriptEntry -> Objects.equals(scriptEntry.getId(), -1))
+        .forEach(scriptEntry -> scriptEntry.setId(null));
   }
 
   private void fillRequiredFields(StackGresShardedCluster resource) {

@@ -314,7 +314,7 @@
                                     <button class="toggleSummary"></button>
                                     <strong class="label">Monitoring</strong>
                                     <span class="helpTooltip" data-tooltip="StackGres supports enabling automatic monitoring for your Postgres cluster, but you need to provide or install the <a href='https://stackgres.io/doc/latest/install/prerequisites/monitoring/' target='_blank'>Prometheus stack as a pre-requisite</a>. Then, check this option to configure automatically sending metrics to the Prometheus stack."></span>
-                                    <span> : {{ (!cluster.data.spec.coordinator.pods.disableMetricsExporter && !cluster.data.spec.shards.pods.disableMetricsExporter && cluster.data.spec.prometheusAutobind) ? ' Enabled' : ' Disabled' }}</span>
+                                    <span> : {{ (!cluster.data.spec.coordinator.pods.disableMetricsExporter && !cluster.data.spec.workers.pods.disableMetricsExporter && cluster.data.spec.prometheusAutobind) ? ' Enabled' : ' Disabled' }}</span>
                                     <ul>
                                         <li v-if="showDefaults || cluster.data.spec.prometheusAutobind">
                                             <strong class="label">Prometheus Autobind</strong>
@@ -1692,34 +1692,34 @@
                     
                     <ul class="section"  v-if="
                         showDefaults ||
-                        (cluster.data.spec.shards.clusters !== 1) ||
-                        (cluster.data.spec.shards.instancesPerCluster !== 1) ||
-                        hasProp(cluster, 'data.spec.shards.sgInstanceProfile') ||
-                        hasProp(cluster, 'data.spec.shards.configurations.sgPostgresConfig') || 
-                        (cluster.data.spec.shards.pods.persistentVolume.size != '1Gi') || 
-                        hasProp(cluster, 'data.spec.shards.pods.persistentVolume.storageClass')
+                        (cluster.data.spec.workers.clusters !== 1) ||
+                        (cluster.data.spec.workers.instancesPerCluster !== 1) ||
+                        hasProp(cluster, 'data.spec.workers.sgInstanceProfile') ||
+                        hasProp(cluster, 'data.spec.workers.configurations.sgPostgresConfig') || 
+                        (cluster.data.spec.workers.pods.persistentVolume.size != '1Gi') || 
+                        hasProp(cluster, 'data.spec.workers.pods.persistentVolume.storageClass')
                     ">
                         <li>
                             <button class="toggleSummary"></button>
                             <strong class="sectionTitle">Specs </strong>
                             <ul>
-                                <li v-if="(showDefaults || (cluster.data.spec.shards.clusters !== 1))">
+                                <li v-if="(showDefaults || (cluster.data.spec.workers.clusters !== 1))">
                                     <strong class="label">Clusters</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.clusters')"></span>
-                                    <span> : {{ cluster.data.spec.shards.clusters }}</span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.clusters')"></span>
+                                    <span> : {{ cluster.data.spec.workers.clusters }}</span>
                                 </li>
-                                <li v-if="(showDefaults || (cluster.data.spec.shards.instancesPerCluster !== 1))">
+                                <li v-if="(showDefaults || (cluster.data.spec.workers.instancesPerCluster !== 1))">
                                     <strong class="label">Instances per Cluster</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.instancesPerCluster')"></span>
-                                    <span> : {{ cluster.data.spec.shards.instancesPerCluster }}</span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.instancesPerCluster')"></span>
+                                    <span> : {{ cluster.data.spec.workers.instancesPerCluster }}</span>
                                 </li>
-                                <li v-if="hasProp(cluster, 'data.spec.shards.sgInstanceProfile') || showDefaults">
+                                <li v-if="hasProp(cluster, 'data.spec.workers.sgInstanceProfile') || showDefaults">
                                     <strong class="label">Instance Profile </strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.sgInstanceProfile')"></span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.sgInstanceProfile')"></span>
                                     <span class="value">
                                         : 
-                                        <template v-if="hasProp(cluster, 'data.spec.shards.sgInstanceProfile')">
-                                            <router-link :to="'/' + $route.params.namespace + '/sginstanceprofile/' + profile.name" target="_blank" v-for="profile in profiles" v-if="( (profile.name == cluster.data.spec.shards.sgInstanceProfile) && (profile.data.metadata.namespace == cluster.data.metadata.namespace) )"> 
+                                        <template v-if="hasProp(cluster, 'data.spec.workers.sgInstanceProfile')">
+                                            <router-link :to="'/' + $route.params.namespace + '/sginstanceprofile/' + profile.name" target="_blank" v-for="profile in profiles" v-if="( (profile.name == cluster.data.spec.workers.sgInstanceProfile) && (profile.data.metadata.namespace == cluster.data.metadata.namespace) )"> 
                                                 {{ profile.data.metadata.name }} (Cores: {{ profile.data.spec.cpu }}, RAM: {{ profile.data.spec.memory }})
                                                 <span class="eyeIcon"></span>
                                             </router-link>
@@ -1729,13 +1729,13 @@
                                         </template>
                                     </span>
                                 </li>
-                                <li v-if="hasProp(cluster, 'data.spec.shards.configurations.sgPostgresConfig') || showDefaults">
+                                <li v-if="hasProp(cluster, 'data.spec.workers.configurations.sgPostgresConfig') || showDefaults">
                                     <strong class="label">Postgres Configuration </strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.configurations.sgPostgresConfig')"></span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.configurations.sgPostgresConfig')"></span>
                                     <span class="value"> : 
-                                        <template v-if="hasProp(cluster, 'data.spec.shards.configurations.sgPostgresConfig')">
-                                            <router-link :to="'/' + $route.params.namespace + '/sgpgconfig/' + cluster.data.spec.shards.configurations.sgPostgresConfig" target="_blank"> 
-                                                {{ cluster.data.spec.shards.configurations.sgPostgresConfig }}
+                                        <template v-if="hasProp(cluster, 'data.spec.workers.configurations.sgPostgresConfig')">
+                                            <router-link :to="'/' + $route.params.namespace + '/sgpgconfig/' + cluster.data.spec.workers.configurations.sgPostgresConfig" target="_blank"> 
+                                                {{ cluster.data.spec.workers.configurations.sgPostgresConfig }}
                                                 <span class="eyeIcon"></span>
                                             </router-link>
                                         </template>
@@ -1744,25 +1744,25 @@
                                         </template>
                                     </span>
                                 </li>
-                                <li v-if="showDefaults || (cluster.data.spec.shards.pods.persistentVolume.size != '1Gi') || hasProp(cluster, 'data.spec.shards.pods.persistentVolume.storageClass')">
+                                <li v-if="showDefaults || (cluster.data.spec.workers.pods.persistentVolume.size != '1Gi') || hasProp(cluster, 'data.spec.workers.pods.persistentVolume.storageClass')">
                                     <button class="toggleSummary"></button>
                                     <strong class="label">Pods Storage</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods')"></span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods')"></span>
                                     <ul>
                                         <li>
                                             <button class="toggleSummary"></button>
                                             <strong class="label">Persistent Volume</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.persistentVolume')"></span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.persistentVolume')"></span>
                                             <ul>
-                                                <li v-if="showDefaults || (cluster.data.spec.shards.pods.persistentVolume.size != '1Gi')">
+                                                <li v-if="showDefaults || (cluster.data.spec.workers.pods.persistentVolume.size != '1Gi')">
                                                     <strong class="label">Volume Size</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.persistentVolume.size')"></span>
-                                                    <span class="value"> : {{ cluster.data.spec.shards.pods.persistentVolume.size }}B</span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.persistentVolume.size')"></span>
+                                                    <span class="value"> : {{ cluster.data.spec.workers.pods.persistentVolume.size }}B</span>
                                                 </li>
-                                                <li v-if="hasProp(cluster, 'data.spec.shards.pods.persistentVolume.storageClass')">
+                                                <li v-if="hasProp(cluster, 'data.spec.workers.pods.persistentVolume.storageClass')">
                                                     <strong class="label">Storage Class</strong>
-                                                     <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.persistentVolume.storageClass')"></span>
-                                                    <span class="value"> : {{ cluster.data.spec.shards.pods.persistentVolume.storageClass }}</span>
+                                                     <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.persistentVolume.storageClass')"></span>
+                                                    <span class="value"> : {{ cluster.data.spec.workers.pods.persistentVolume.storageClass }}</span>
                                                 </li>
                                             </ul>
                                         </li>
@@ -1774,31 +1774,31 @@
 
                     <ul class="section" v-if="
                         showDefaults || 
-                        hasProp(cluster, 'data.spec.shards.pods.disableConnectionPooling') || 
-                        hasProp(cluster, 'data.spec.shards.configurations.sgPoolingConfig') || 
-                        hasProp(cluster, 'data.spec.shards.pods.disablePostgresUtil') || 
-                        hasProp(cluster, 'data.spec.shards.pods.disableMetricsExporter') ||
-                        (cluster.data.spec.shards.pods.hasOwnProperty('customVolumes') && !isNull(cluster.data.spec.shards.pods.customVolumes)) || 
-                        (cluster.data.spec.shards.pods.hasOwnProperty('customInitContainers') && !isNull(cluster.data.spec.shards.pods.customInitContainers)) || 
-                        (cluster.data.spec.shards.pods.hasOwnProperty('customContainers') && !isNull(cluster.data.spec.shards.pods.customContainers))
+                        hasProp(cluster, 'data.spec.workers.pods.disableConnectionPooling') || 
+                        hasProp(cluster, 'data.spec.workers.configurations.sgPoolingConfig') || 
+                        hasProp(cluster, 'data.spec.workers.pods.disablePostgresUtil') || 
+                        hasProp(cluster, 'data.spec.workers.pods.disableMetricsExporter') ||
+                        (cluster.data.spec.workers.pods.hasOwnProperty('customVolumes') && !isNull(cluster.data.spec.workers.pods.customVolumes)) || 
+                        (cluster.data.spec.workers.pods.hasOwnProperty('customInitContainers') && !isNull(cluster.data.spec.workers.pods.customInitContainers)) || 
+                        (cluster.data.spec.workers.pods.hasOwnProperty('customContainers') && !isNull(cluster.data.spec.workers.pods.customContainers))
                     ">
                         <li>
                             <button class="toggleSummary"></button>
                             <strong class="sectionTitle">Sidecars </strong>
                             <ul>
-                                <li v-if="showDefaults || hasProp(cluster, 'data.spec.shards.pods.disableConnectionPooling') || hasProp(cluster, 'data.spec.shards.configurations.sgPoolingConfig')">
+                                <li v-if="showDefaults || hasProp(cluster, 'data.spec.workers.pods.disableConnectionPooling') || hasProp(cluster, 'data.spec.workers.configurations.sgPoolingConfig')">
                                     <button class="toggleSummary"></button>
                                     <strong class="label">Connection Pooling</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.configurations')"></span>
-                                    <span v-if="showDefaults || cluster.data.spec.shards.pods.disableConnectionPooling"> : {{ isEnabled(cluster.data.spec.shards.pods.disableConnectionPooling, true) }}</span>
-                                    <ul v-if="(showDefaults && !cluster.data.spec.shards.pods.disableConnectionPooling) || hasProp(cluster, 'data.spec.shards.configurations.sgPoolingConfig')">
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.configurations')"></span>
+                                    <span v-if="showDefaults || cluster.data.spec.workers.pods.disableConnectionPooling"> : {{ isEnabled(cluster.data.spec.workers.pods.disableConnectionPooling, true) }}</span>
+                                    <ul v-if="(showDefaults && !cluster.data.spec.workers.pods.disableConnectionPooling) || hasProp(cluster, 'data.spec.workers.configurations.sgPoolingConfig')">
                                         <li>
                                             <strong class="label">Connection Pooling Configuration</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.configurations.sgPoolingConfig')"></span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.configurations.sgPoolingConfig')"></span>
                                             <span class="value"> :
-                                                <template v-if="hasProp(cluster, 'data.spec.shards.configurations.sgPoolingConfig')">
-                                                    <router-link :to="'/' + $route.params.namespace + '/sgpoolconfig/' + cluster.data.spec.shards.configurations.sgPoolingConfig" target="_blank">
-                                                        {{ cluster.data.spec.shards.configurations.sgPoolingConfig }}
+                                                <template v-if="hasProp(cluster, 'data.spec.workers.configurations.sgPoolingConfig')">
+                                                    <router-link :to="'/' + $route.params.namespace + '/sgpoolconfig/' + cluster.data.spec.workers.configurations.sgPoolingConfig" target="_blank">
+                                                        {{ cluster.data.spec.workers.configurations.sgPoolingConfig }}
                                                         <span class="eyeIcon"></span>
                                                     </router-link>
                                                 </template>
@@ -1809,53 +1809,53 @@
                                         </li>
                                     </ul>
                                 </li>
-                                <li v-if="showDefaults || hasProp(cluster, 'data.spec.shards.pods.disablePostgresUtil')">
+                                <li v-if="showDefaults || hasProp(cluster, 'data.spec.workers.pods.disablePostgresUtil')">
                                     <strong class="label">Postgres Utils</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.disablePostgresUtil').replace('If set to `true`', 'If disabled')"></span>
-                                    <span> : {{ isEnabled(cluster.data.spec.shards.pods.disablePostgresUtil, true) }}</span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.disablePostgresUtil').replace('If set to `true`', 'If disabled')"></span>
+                                    <span> : {{ isEnabled(cluster.data.spec.workers.pods.disablePostgresUtil, true) }}</span>
                                 </li>
-                                <li v-if="showDefaults || hasProp(cluster, 'data.spec.shards.pods.disableMetricsExporter')">
+                                <li v-if="showDefaults || hasProp(cluster, 'data.spec.workers.pods.disableMetricsExporter')">
                                     <strong class="label">Metrics Exporter</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.disableMetricsExporter').replace('If set to `true`', 'If disabled').replace('Recommended', 'Recommended to be disabled')"></span>
-                                    <span> : {{ isEnabled(cluster.data.spec.shards.pods.disableMetricsExporter, true) }}</span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.disableMetricsExporter').replace('If set to `true`', 'If disabled').replace('Recommended', 'Recommended to be disabled')"></span>
+                                    <span> : {{ isEnabled(cluster.data.spec.workers.pods.disableMetricsExporter, true) }}</span>
                                 </li>
                                 <li v-if="( 
-                                    (cluster.data.spec.shards.pods.hasOwnProperty('customVolumes') && !isNull(cluster.data.spec.shards.pods.customVolumes)) || 
-                                    (cluster.data.spec.shards.pods.hasOwnProperty('customInitContainers') && !isNull(cluster.data.spec.shards.pods.customInitContainers)) || 
-                                    (cluster.data.spec.shards.pods.hasOwnProperty('customContainers') && !isNull(cluster.data.spec.shards.pods.customContainers)) )
+                                    (cluster.data.spec.workers.pods.hasOwnProperty('customVolumes') && !isNull(cluster.data.spec.workers.pods.customVolumes)) || 
+                                    (cluster.data.spec.workers.pods.hasOwnProperty('customInitContainers') && !isNull(cluster.data.spec.workers.pods.customInitContainers)) || 
+                                    (cluster.data.spec.workers.pods.hasOwnProperty('customContainers') && !isNull(cluster.data.spec.workers.pods.customContainers)) )
                                 ">
                                     <button class="toggleSummary"></button>
                                     <strong class="label">User-Supplied Pods' Sidecars </strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods')"></span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods')"></span>
                                     <ul>
-                                        <li v-if="cluster.data.spec.shards.pods.hasOwnProperty('customVolumes') && !isNull(cluster.data.spec.shards.pods.customVolumes)">
+                                        <li v-if="cluster.data.spec.workers.pods.hasOwnProperty('customVolumes') && !isNull(cluster.data.spec.workers.pods.customVolumes)">
                                             <button class="toggleSummary"></button>
                                             <strong class="label">Custom Volumes</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes')"></span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes')"></span>
                                             <ul>
-                                                <template v-for="(vol, index) in cluster.data.spec.shards.pods.customVolumes">
+                                                <template v-for="(vol, index) in cluster.data.spec.workers.pods.customVolumes">
                                                     <li :key="index">
                                                         <button class="toggleSummary"></button>
                                                         <strong class="label">Volume #{{ index + 1 }}</strong>
                                                         <ul>
                                                             <li v-if="vol.hasOwnProperty('name')">
                                                                 <strong class="label">Name</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.name')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.name')"></span>
                                                                 <span class="value"> : {{ vol.name }}</span>
                                                             </li>
                                                             <li v-if="vol.hasOwnProperty('emptyDir') && Object.keys(vol.emptyDir).length && (!isNull(vol.emptyDir.medium) || !isNull(vol.emptyDir.sizeLimit))">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Empty Directory</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.emptyDir')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.emptyDir')"></span>
                                                                 <ul>
                                                                     <li v-if="vol.emptyDir.hasOwnProperty('medium') && !isNull(vol.emptyDir.medium)">
                                                                         <strong class="label">Medium</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.emptyDir.properties.medium')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.emptyDir.properties.medium')"></span>
                                                                         <span class="value"> : {{ vol.emptyDir.medium }}</span>
                                                                     </li>
                                                                     <li v-if="vol.emptyDir.hasOwnProperty('sizeLimit') && !isNull(vol.emptyDir.sizeLimit)">
                                                                         <strong class="label">Size Limit</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.emptyDir.properties.sizeLimit')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.emptyDir.properties.sizeLimit')"></span>
                                                                         <span class="value"> : {{ vol.emptyDir.sizeLimit }}</span>
                                                                     </li>
                                                                 </ul>
@@ -1863,47 +1863,47 @@
                                                             <li v-if="vol.hasOwnProperty('configMap') && Object.keys(vol.configMap).length">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Config Map</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.configMap')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.configMap')"></span>
                                                                 <ul>
                                                                     <li v-if="vol.configMap.hasOwnProperty('name') && !isNull(vol.configMap.name)">
                                                                         <strong class="label">Name</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.configMap.properties.name')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.configMap.properties.name')"></span>
                                                                         <span class="value"> : {{ vol.configMap.name }}</span>
                                                                     </li>
                                                                     <li v-if="vol.configMap.hasOwnProperty('optional')">
                                                                         <strong class="label">Optional</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.configMap.properties.name')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.configMap.properties.name')"></span>
                                                                         <span class="value"> : {{ isEnabled(vol.configMap.optional) }}</span>
                                                                     </li>
                                                                     <li v-if="vol.configMap.hasOwnProperty('defaultMode') && !isNull(vol.configMap.defaultMode)">
                                                                         <strong class="label">Default Mode</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.configMap.properties.defaultMode')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.configMap.properties.defaultMode')"></span>
                                                                         <span class="value"> : {{ vol.configMap.defaultMode }}</span>
                                                                     </li>
                                                                     <li v-if="vol.configMap.hasOwnProperty('items') && vol.configMap.items.length">
                                                                         <button class="toggleSummary"></button>
                                                                         <strong class="label">Items</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.configMap.properties.items')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.configMap.properties.items')"></span>
                                                                         <ul>
                                                                             <template v-for="(item, index) in vol.configMap.items">
                                                                                 <li :key="index">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Item #{{ index + 1 }}</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.configMap.properties.items.items')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.configMap.properties.items.items')"></span>
                                                                                     <ul>
                                                                                         <li v-if="item.hasOwnProperty('key') && !isNull(item.key)">
                                                                                             <strong class="label">Key</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.configMap.properties.items.items.properties.key')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.configMap.properties.items.items.properties.key')"></span>
                                                                                             <span class="value"> : {{ item.key }}</span>
                                                                                         </li>
                                                                                         <li v-if="item.hasOwnProperty('mode') && !isNull(item.mode)">
                                                                                             <strong class="label">Mode</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.configMap.properties.items.items.properties.mode')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.configMap.properties.items.items.properties.mode')"></span>
                                                                                             <span class="value"> : {{ item.mode }}</span>
                                                                                         </li>
                                                                                         <li v-if="item.hasOwnProperty('path') && !isNull(item.path)">
                                                                                             <strong class="label">Path</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.configMap.properties.items.items.properties.path')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.configMap.properties.items.items.properties.path')"></span>
                                                                                             <span class="value"> : {{ item.path }}</span>
                                                                                         </li>
                                                                                     </ul>
@@ -1916,47 +1916,47 @@
                                                             <li v-if="vol.hasOwnProperty('secret') && Object.keys(vol.secret).length">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Secret</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.secret')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.secret')"></span>
                                                                 <ul>
                                                                     <li v-if="vol.secret.hasOwnProperty('secretName') && !isNull(vol.secret.secretName)">
                                                                         <strong class="label">Secret Name</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.secret.properties.secretName')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.secret.properties.secretName')"></span>
                                                                         <span class="value"> : {{ vol.secret.secretName }}</span>
                                                                     </li>
                                                                     <li v-if="vol.secret.hasOwnProperty('optional')">
                                                                         <strong class="label">Optional</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.secret.properties.optional')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.secret.properties.optional')"></span>
                                                                         <span class="value"> : {{ isEnabled(vol.secret.optional) }}</span>
                                                                     </li>
                                                                     <li v-if="vol.secret.hasOwnProperty('defaultMode') && !isNull(vol.secret.defaultMode)">
                                                                         <strong class="label">Default Mode</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.secret.properties.defaultMode')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.secret.properties.defaultMode')"></span>
                                                                         <span class="value"> : {{ vol.secret.defaultMode }}</span>
                                                                     </li>
                                                                     <li v-if="vol.secret.hasOwnProperty('items') && vol.secret.items.length">
                                                                         <button class="toggleSummary"></button>
                                                                         <strong class="label">Items</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.secret.properties.items')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.secret.properties.items')"></span>
                                                                         <ul>
                                                                             <template v-for="(item, index) in vol.secret.items">
                                                                                 <li :key="index">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Item #{{ index + 1 }}</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.secret.properties.items.items')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.secret.properties.items.items')"></span>
                                                                                     <ul>
                                                                                         <li v-if="item.hasOwnProperty('key') && !isNull(item.key)">
                                                                                             <strong class="label">Key:</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.secret.properties.items.items.properties.key')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.secret.properties.items.items.properties.key')"></span>
                                                                                             <span class="value"> : {{ item.key }}</span>
                                                                                         </li>
                                                                                         <li v-if="item.hasOwnProperty('mode') && !isNull(item.mode)">
                                                                                             <strong class="label">Mode</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.secret.properties.items.items.properties.mode')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.secret.properties.items.items.properties.mode')"></span>
                                                                                             <span class="value"> : {{ item.mode }}</span>
                                                                                         </li>
                                                                                         <li v-if="item.hasOwnProperty('path') && !isNull(item.path)">
                                                                                             <strong class="label">Path</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customVolumes.secret.properties.items.items.properties.path')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customVolumes.secret.properties.items.items.properties.path')"></span>
                                                                                             <span class="value"> : {{ item.path }}</span>
                                                                                         </li>
                                                                                     </ul>
@@ -1972,41 +1972,41 @@
                                             </ul>
                                         </li>
 
-                                        <li v-if="cluster.data.spec.shards.pods.hasOwnProperty('customInitContainers') && !isNull(cluster.data.spec.shards.pods.customInitContainers)">
+                                        <li v-if="cluster.data.spec.workers.pods.hasOwnProperty('customInitContainers') && !isNull(cluster.data.spec.workers.pods.customInitContainers)">
                                             <button class="toggleSummary"></button>
                                             <strong class="label">Custom Init Containers</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers')"></span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers')"></span>
 
                                             <ul>
-                                                <template v-for="(container, index) in cluster.data.spec.shards.pods.customInitContainers">
+                                                <template v-for="(container, index) in cluster.data.spec.workers.pods.customInitContainers">
                                                     <li :key="'container-' + index">
                                                         <button class="toggleSummary"></button>
                                                         <strong class="label">Init Container #{{ index + 1 }}</strong>
                                                         <ul>
                                                             <li v-if="container.hasOwnProperty('name') && !isNull(container.name)">
                                                                 <strong class="label">Name</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.name')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.name')"></span>
                                                                 <span class="value"> : {{ container.name }}</span>
                                                             </li>
                                                             <li v-if="container.hasOwnProperty('image') && !isNull(container.image)">
                                                                 <strong class="label">Image</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.image')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.image')"></span>
                                                                 <span class="value"> : {{ container.image }}</span>
                                                             </li>
                                                             <li v-if="container.hasOwnProperty('imagePullPolicy') && !isNull(container.imagePullPolicy)">
                                                                 <strong class="label">Image Pull Policy</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.imagePullPolicy')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.imagePullPolicy')"></span>
                                                                 <span class="value"> : {{ container.imagePullPolicy }}</span>
                                                             </li>
                                                             <li v-if="container.hasOwnProperty('workingDir') && !isNull(container.workingDir)">
                                                                 <strong class="label">Working Directory</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.workingDir')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.workingDir')"></span>
                                                                 <span class="value"> : {{ container.workingDir }}</span>
                                                             </li>
                                                             <li v-if="container.hasOwnProperty('args') && !isNull(container.args)">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Arguments</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.arguments')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.arguments')"></span>
                                                                 <ul>
                                                                     <template v-for="(arg, aIndex) in container.args">
                                                                         <li :key="'argument-' + index + '-' + aIndex">
@@ -2018,7 +2018,7 @@
                                                             <li v-if="container.hasOwnProperty('command') && !isNull(container.command)">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Command</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.command')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.command')"></span>
                                                                 <ul>
                                                                     <template v-for="(command, cIndex) in container.command">
                                                                         <li :key="'command-' + index + '-' + cIndex">
@@ -2030,7 +2030,7 @@
                                                             <li v-if="container.hasOwnProperty('env') && !isNull(container.env)">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Environment Variables</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.env')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.env')"></span>
                                                                 <ul>
                                                                     <template v-for="(envVar, vIndex) in container.env">
                                                                         <li :key="'var-' + index + '-' + vIndex">
@@ -2043,7 +2043,7 @@
                                                             <li v-if="container.hasOwnProperty('ports') && !isNull(container.ports)">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Ports</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.ports')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.ports')"></span>
                                                                 <ul>
                                                                     <template v-for="(port, pIndex) in container.ports">
                                                                         <li :key="'port-' + index + '-' + pIndex">
@@ -2052,27 +2052,27 @@
                                                                             <ul>
                                                                                 <li v-if="port.hasOwnProperty('name') && !isNull(port.name)">
                                                                                     <strong class="label">Name</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.ports.items.properties.name')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.ports.items.properties.name')"></span>
                                                                                     <span class="value"> : {{ port.name }}</span>
                                                                                 </li>
                                                                                 <li v-if="port.hasOwnProperty('hostIP') && !isNull(port.hostIP)">
                                                                                     <strong class="label">Host IP</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.ports.items.properties.hostIP')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.ports.items.properties.hostIP')"></span>
                                                                                     <span class="value"> : {{ port.hostIP }}</span>
                                                                                 </li>
                                                                                 <li v-if="port.hasOwnProperty('hostPort') && !isNull(port.hostPort)">
                                                                                     <strong class="label">Host Port</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.ports.items.properties.hostPort')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.ports.items.properties.hostPort')"></span>
                                                                                     <span class="value"> : {{ port.hostPort }}</span>
                                                                                 </li>
                                                                                 <li v-if="port.hasOwnProperty('containerPort') && !isNull(port.containerPort)">
                                                                                     <strong class="label">Container Port</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.ports.items.properties.containerPort')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.ports.items.properties.containerPort')"></span>
                                                                                     <span class="value"> : {{ port.containerPort }}</span>
                                                                                 </li>
                                                                                 <li v-if="port.hasOwnProperty('protocol') && !isNull(port.protocol)">
                                                                                     <strong class="label">Protocol</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.ports.items.properties.protocol')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.ports.items.properties.protocol')"></span>
                                                                                     <span class="value"> : {{ port.protocol }}</span>
                                                                                 </li>
                                                                             </ul>
@@ -2083,7 +2083,7 @@
                                                             <li v-if="container.hasOwnProperty('volumeMounts') && !isNull(container.volumeMounts)">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Volume Mounts</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.volumeMounts')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.volumeMounts')"></span>
                                                                 <ul>
                                                                     <template v-for="(vol, vIndex) in container.volumeMounts">
                                                                         <li :key="'vol-' + index + '-' + vIndex">
@@ -2091,32 +2091,32 @@
                                                                             <ul>
                                                                                 <li v-if="vol.hasOwnProperty('name') && !isNull(vol.name)">
                                                                                     <strong class="label">Name</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.volumeMounts.items.properties.name')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.volumeMounts.items.properties.name')"></span>
                                                                                     <span class="value"> : {{ vol.name }}</span>
                                                                                 </li>
                                                                                 <li v-if="vol.hasOwnProperty('readOnly')">
                                                                                     <strong class="label">Read Only</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.volumeMounts.items.properties.readOnly')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.volumeMounts.items.properties.readOnly')"></span>
                                                                                     <span class="value"> : {{ isEnabled(vol.readOnly) }}</span>
                                                                                 </li>
                                                                                 <li v-if="vol.hasOwnProperty('mountPath') && !isNull(vol.mountPath)">
                                                                                     <strong class="label">Mount Path</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.volumeMounts.items.properties.mountPath')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.volumeMounts.items.properties.mountPath')"></span>
                                                                                     <span class="value"> : {{ vol.mountPath }}</span>
                                                                                 </li>
                                                                                 <li v-if="vol.hasOwnProperty('mountPropagation') && !isNull(vol.mountPropagation)">
                                                                                     <strong class="label">Mount Propagation</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.volumeMounts.items.properties.mountPropagation')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.volumeMounts.items.properties.mountPropagation')"></span>
                                                                                     <span class="value"> : {{ vol.mountPropagation }}</span>
                                                                                 </li>
                                                                                 <li v-if="vol.hasOwnProperty('subPath') && !isNull(vol.subPath)">
                                                                                     <strong class="label">Sub Path</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.volumeMounts.items.properties.subPath')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.volumeMounts.items.properties.subPath')"></span>
                                                                                     <span class="value"> : {{ vol.subPath }}</span>
                                                                                 </li>
                                                                                 <li v-if="vol.hasOwnProperty('subPathExpr') && !isNull(vol.subPathExpr)">
                                                                                     <strong class="label">Sub Path Expr</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customInitContainers.volumeMounts.items.properties.subPathExpr')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customInitContainers.volumeMounts.items.properties.subPathExpr')"></span>
                                                                                     <span class="value"> : {{ vol.subPathExpr }}</span>
                                                                                 </li>
                                                                             </ul>
@@ -2130,40 +2130,40 @@
                                             </ul>
                                         </li>
 
-                                        <li v-if="cluster.data.spec.shards.pods.hasOwnProperty('customContainers') && !isNull(cluster.data.spec.shards.pods.customContainers)">
+                                        <li v-if="cluster.data.spec.workers.pods.hasOwnProperty('customContainers') && !isNull(cluster.data.spec.workers.pods.customContainers)">
                                             <button class="toggleSummary"></button>
                                             <strong class="label">Custom Containers</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers')"></span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers')"></span>
                                             <ul>
-                                                <template v-for="(container, index) in cluster.data.spec.shards.pods.customContainers">
+                                                <template v-for="(container, index) in cluster.data.spec.workers.pods.customContainers">
                                                     <li :key="'container-' + index">
                                                         <button class="toggleSummary"></button>
                                                         <strong class="label">Container #{{ index + 1 }}</strong>
                                                         <ul>
                                                             <li v-if="container.hasOwnProperty('name') && !isNull(container.name)">
                                                                 <strong class="label">Name</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.name')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.name')"></span>
                                                                 <span class="value"> : {{ container.name }}</span>
                                                             </li>
                                                             <li v-if="container.hasOwnProperty('image') && !isNull(container.image)">
                                                                 <strong class="label">Image</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.image')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.image')"></span>
                                                                 <span class="value"> : {{ container.image }}</span>
                                                             </li>
                                                             <li v-if="container.hasOwnProperty('imagePullPolicy') && !isNull(container.imagePullPolicy)">
                                                                 <strong class="label">Image Pull Policy</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.imagePullPolicy')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.imagePullPolicy')"></span>
                                                                 <span class="value"> : {{ container.imagePullPolicy }}</span>
                                                             </li>
                                                             <li v-if="container.hasOwnProperty('workingDir') && !isNull(container.workingDir)">
                                                                 <strong class="label">Working Directory</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.workingDir')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.workingDir')"></span>
                                                                 <span class="value"> : {{ container.workingDir }}</span>
                                                             </li>
                                                             <li v-if="container.hasOwnProperty('args') && !isNull(container.args)">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Arguments</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.arguments')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.arguments')"></span>
                                                                 <ul>
                                                                     <template v-for="(arg, aIndex) in container.args">
                                                                         <li :key="'argument-' + index + '-' + aIndex">
@@ -2175,7 +2175,7 @@
                                                             <li v-if="container.hasOwnProperty('command') && !isNull(container.command)">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Command</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.command')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.command')"></span>
                                                                 <ul>
                                                                     <template v-for="(command, cIndex) in container.command">
                                                                         <li :key="'command-' + index + '-' + cIndex">
@@ -2187,7 +2187,7 @@
                                                             <li v-if="container.hasOwnProperty('env') && !isNull(container.env)">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Environment Variables</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.env')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.env')"></span>
                                                                 <ul>
                                                                     <template v-for="(envVar, vIndex) in container.env">
                                                                         <li :key="'var-' + index + '-' + vIndex">
@@ -2200,7 +2200,7 @@
                                                             <li v-if="container.hasOwnProperty('ports') && !isNull(container.ports)">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Ports</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.ports')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.ports')"></span>
                                                                 <ul>
                                                                     <template v-for="(port, pIndex) in container.ports">
                                                                         <li :key="'port-' + index + '-' + pIndex">
@@ -2208,27 +2208,27 @@
                                                                             <ul>
                                                                                 <li v-if="port.hasOwnProperty('name') && !isNull(port.name)">
                                                                                     <strong class="label">Name</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.ports.items.properties.name')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.ports.items.properties.name')"></span>
                                                                                     <span class="value"> : {{ port.name }}</span>
                                                                                 </li>
                                                                                 <li v-if="port.hasOwnProperty('hostIP') && !isNull(port.hostIP)">
                                                                                     <strong class="label">Host IP</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.ports.items.properties.hostIP')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.ports.items.properties.hostIP')"></span>
                                                                                     <span class="value"> : {{ port.hostIP }}</span>
                                                                                 </li>
                                                                                 <li v-if="port.hasOwnProperty('hostPort') && !isNull(port.hostPort)">
                                                                                     <strong class="label">Host Port</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.ports.items.properties.hostPort')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.ports.items.properties.hostPort')"></span>
                                                                                     <span class="value"> : {{ port.hostPort }}</span>
                                                                                 </li>
                                                                                 <li v-if="port.hasOwnProperty('containerPort') && !isNull(port.containerPort)">
                                                                                     <strong class="label">Container Port</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.ports.items.properties.containerPort')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.ports.items.properties.containerPort')"></span>
                                                                                     <span class="value"> : {{ port.containerPort }}</span>
                                                                                 </li>
                                                                                 <li v-if="port.hasOwnProperty('protocol') && !isNull(port.protocol)">
                                                                                     <strong class="label">Protocol</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.ports.items.properties.protocol')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.ports.items.properties.protocol')"></span>
                                                                                     <span class="value"> : {{ port.protocol }}</span>
                                                                                 </li>
                                                                             </ul>
@@ -2239,7 +2239,7 @@
                                                             <li v-if="container.hasOwnProperty('volumeMounts') && !isNull(container.volumeMounts)">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Volume Mounts</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.volumeMounts')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.volumeMounts')"></span>
                                                                 <ul>
                                                                     <template v-for="(vol, vIndex) in container.volumeMounts">
                                                                         <li :key="'vol-' + index + '-' + vIndex">
@@ -2247,32 +2247,32 @@
                                                                             <ul>
                                                                                 <li v-if="vol.hasOwnProperty('name') && !isNull(vol.name)">
                                                                                     <strong class="label">Name</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.volumeMounts.items.properties.name')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.volumeMounts.items.properties.name')"></span>
                                                                                     <span class="value"> : {{ vol.name }}</span>
                                                                                 </li>
                                                                                 <li v-if="vol.hasOwnProperty('readOnly')">
                                                                                     <strong class="label">Read Only</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.volumeMounts.items.properties.readOnly')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.volumeMounts.items.properties.readOnly')"></span>
                                                                                     <span class="value"> : {{ isEnabled(vol.readOnly) }}</span>
                                                                                 </li>
                                                                                 <li v-if="vol.hasOwnProperty('mountPath') && !isNull(vol.mountPath)">
                                                                                     <strong class="label">Mount Path</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.volumeMounts.items.properties.mountPath')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.volumeMounts.items.properties.mountPath')"></span>
                                                                                     <span class="value"> : {{ vol.mountPath }}</span>
                                                                                 </li>
                                                                                 <li v-if="vol.hasOwnProperty('mountPropagation') && !isNull(vol.mountPropagation)">
                                                                                     <strong class="label">Mount Propagation</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.volumeMounts.items.properties.mountPropagation')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.volumeMounts.items.properties.mountPropagation')"></span>
                                                                                     <span class="value"> : {{ vol.mountPropagation }}</span>
                                                                                 </li>
                                                                                 <li v-if="vol.hasOwnProperty('subPath') && !isNull(vol.subPath)">
                                                                                     <strong class="label">Sub Path</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.volumeMounts.items.properties.subPath')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.volumeMounts.items.properties.subPath')"></span>
                                                                                     <span class="value"> : {{ vol.subPath }}</span>
                                                                                 </li>
                                                                                 <li v-if="vol.hasOwnProperty('subPathExpr') && !isNull(vol.subPathExpr)">
                                                                                     <strong class="label">Sub Path Expr</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.customContainers.volumeMounts.items.properties.subPathExpr')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.customContainers.volumeMounts.items.properties.subPathExpr')"></span>
                                                                                     <span class="value"> : {{ vol.subPathExpr }}</span>
                                                                                 </li>
                                                                             </ul>
@@ -2291,29 +2291,29 @@
                         </li>
                     </ul>
                     
-                    <ul class="section" v-if="hasProp(cluster, 'data.spec.shards.managedSql')">
+                    <ul class="section" v-if="hasProp(cluster, 'data.spec.workers.managedSql')">
                         <li>
                             <button class="toggleSummary"></button>
                             <strong class="sectionTitle">Managed SQL </strong>
-                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.managedSql')"></span>
+                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.managedSql')"></span>
                             <ul>
                                 <li>
                                     <button class="toggleSummary"></button>
                                     <strong class="sectionTitle">Scripts </strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.managedSql.scripts')"></span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.managedSql.scripts')"></span>
                                     <ul>
-                                        <li v-for="(baseScript, baseIndex) in cluster.data.spec.shards.managedSql.scripts">
+                                        <li v-for="(baseScript, baseIndex) in cluster.data.spec.workers.managedSql.scripts">
                                             <button class="toggleSummary"></button>
                                             <strong class="sectionTitle">SGScript #{{ baseIndex + 1 }}</strong>
                                             <ul>
                                                 <li v-if="( showDefaults || ( hasProp(baseScript, 'scriptSpec.continueOnError') && baseScript.scriptSpec.continueOnError ) )">
                                                     <strong class="label">Continue on Error</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.managedSql.scripts.continueOnError')"></span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.managedSql.scripts.continueOnError')"></span>
                                                     <span class="value"> : {{ hasProp(baseScript, 'scriptSpec.continueOnError') ? isEnabled(baseScript.continueOnError) : 'Disabled' }}</span>
                                                 </li>
                                                 <li v-if="( showDefaults || ( hasProp(baseScript, 'scriptSpec.managedVersions') && !baseScript.scriptSpec.managedVersions) )">
                                                     <strong class="label">Managed Versions:</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.managedSql.scripts')"></span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.managedSql.scripts')"></span>
                                                     <span class="value">{{ hasProp(baseScript, 'scriptSpec.managedVersions') && isEnabled(baseScript.scriptSpec.managedVersions) }}</span>
                                                 </li>
                                                 <li v-if="baseScript.hasOwnProperty('scriptSpec')">
@@ -2442,106 +2442,106 @@
                                         </li>
                                     </ul>
                                 </li>
-                                <li v-if="( showDefaults || (cluster.data.spec.shards.managedSql.hasOwnProperty('continueOnSGScriptError') && cluster.data.spec.shards.managedSql.continueOnSGScriptError) )">
+                                <li v-if="( showDefaults || (cluster.data.spec.workers.managedSql.hasOwnProperty('continueOnSGScriptError') && cluster.data.spec.workers.managedSql.continueOnSGScriptError) )">
                                     <strong class="label">Continue on SGScript Error </strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.managedSql.continueOnSGScriptError').replace(/true/g, 'Enabled').replace('false','Disabled')"></span>
-                                    <span class="value"> : {{ hasProp(cluster, 'data.spec.shards.managedSql.continueOnSGScriptError') ? isEnabled(cluster.data.spec.shards.managedSql.continueOnSGScriptError) : 'Disabled' }}</span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.managedSql.continueOnSGScriptError').replace(/true/g, 'Enabled').replace('false','Disabled')"></span>
+                                    <span class="value"> : {{ hasProp(cluster, 'data.spec.workers.managedSql.continueOnSGScriptError') ? isEnabled(cluster.data.spec.workers.managedSql.continueOnSGScriptError) : 'Disabled' }}</span>
                                 </li>
                             </ul>
                         </li>
                     </ul>
                     
-                    <ul class="section" v-if="( showDefaults || (hasProp(cluster, 'data.spec.shards.replication.mode') && (cluster.data.spec.shards.replication.mode != 'async')) )">
+                    <ul class="section" v-if="( showDefaults || (hasProp(cluster, 'data.spec.workers.replication.mode') && (cluster.data.spec.workers.replication.mode != 'async')) )">
                         <li>
                             <button class="toggleSummary"></button>
                             <strong class="sectionTitle">Pods Replication </strong>
-                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.replication')"></span>
+                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.replication')"></span>
                             <ul>
-                                <li v-if="(showDefaults || (cluster.data.spec.shards.replication.mode != 'async') )">
+                                <li v-if="(showDefaults || (cluster.data.spec.workers.replication.mode != 'async') )">
                                     <strong class="label">Mode</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.replication.mode')"></span>
-                                    <span class="value"> : {{ hasProp(cluster, 'data.spec.shards.replication.mode') ? cluster.data.spec.shards.replication.mode : 'async' }}</span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.replication.mode')"></span>
+                                    <span class="value"> : {{ hasProp(cluster, 'data.spec.workers.replication.mode') ? cluster.data.spec.workers.replication.mode : 'async' }}</span>
                                 </li>
-                                <li v-if="hasProp(cluster, 'data.spec.shards.replication.syncInstances')">
+                                <li v-if="hasProp(cluster, 'data.spec.workers.replication.syncInstances')">
                                     <strong class="label">Sync Instances</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.replication.syncInstances')"></span>
-                                    <span class="value"> : {{ cluster.data.spec.shards.replication.syncInstances }}</span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.replication.syncInstances')"></span>
+                                    <span class="value"> : {{ cluster.data.spec.workers.replication.syncInstances }}</span>
                                 </li>
                             </ul>
                         </li>
                     </ul>
 
                     <ul class="section" v-if="showDefaults || 
-                        !cluster.data.spec.postgresServices.shards.primaries.enabled || 
-                        (cluster.data.spec.postgresServices.shards.primaries.type != 'ClusterIP') || 
-                        hasProp(cluster, 'data.spec.postgresServices.shards.primaries.loadBalancerIP') ||
-                        hasProp(cluster, 'data.spec.postgresServices.shards.customPorts')
+                        !cluster.data.spec.postgresServices.workers.primaries.enabled || 
+                        (cluster.data.spec.postgresServices.workers.primaries.type != 'ClusterIP') || 
+                        hasProp(cluster, 'data.spec.postgresServices.workers.primaries.loadBalancerIP') ||
+                        hasProp(cluster, 'data.spec.postgresServices.workers.customPorts')
                     ">
                         <li>
                             <button class="toggleSummary"></button>
                             <strong class="sectionTitle">Customize generated Kubernetes service </strong>
                             <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices')"></span>
                             <ul>
-                                <li v-if="showDefaults || !cluster.data.spec.postgresServices.shards.primaries.enabled || (cluster.data.spec.postgresServices.shards.primaries.type != 'ClusterIP') || cluster.data.spec.postgresServices.shards.primaries.hasOwnProperty('loadBalancerIP')">
+                                <li v-if="showDefaults || !cluster.data.spec.postgresServices.workers.primaries.enabled || (cluster.data.spec.postgresServices.workers.primaries.type != 'ClusterIP') || cluster.data.spec.postgresServices.workers.primaries.hasOwnProperty('loadBalancerIP')">
                                     <button class="toggleSummary"></button>
                                     <strong class="label">Primary Service</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.shards.primaries')"></span>
-                                    <span class="value"> : {{ isEnabled(cluster.data.spec.postgresServices.shards.primaries.enabled) }}</span>
-                                    <ul v-if="( showDefaults || (cluster.data.spec.postgresServices.shards.primaries.type != 'ClusterIP') || cluster.data.spec.postgresServices.shards.primaries.hasOwnProperty('loadBalancerIP') || cluster.data.spec.postgresServices.shards.hasOwnProperty('customPorts'))">
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.workers.primaries')"></span>
+                                    <span class="value"> : {{ isEnabled(cluster.data.spec.postgresServices.workers.primaries.enabled) }}</span>
+                                    <ul v-if="( showDefaults || (cluster.data.spec.postgresServices.workers.primaries.type != 'ClusterIP') || cluster.data.spec.postgresServices.workers.primaries.hasOwnProperty('loadBalancerIP') || cluster.data.spec.postgresServices.workers.hasOwnProperty('customPorts'))">
                                         <li v-if="showDefaults">
                                             <strong class="label">Name</strong>
                                             <span class="helpTooltip" data-tooltip="Name of the -primaries service."></span>
                                             <span class="value"> : {{ cluster.data.metadata.name }}-primaries.{{cluster.data.metadata.namespace}}</span>	
                                         </li>
-                                        <li v-if="( showDefaults || (cluster.data.spec.postgresServices.shards.primaries.type != 'ClusterIP') )">
+                                        <li v-if="( showDefaults || (cluster.data.spec.postgresServices.workers.primaries.type != 'ClusterIP') )">
                                             <strong class="label">Type</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.shards.primaries.type')"></span>
-                                            <span class="value"> : {{ cluster.data.spec.postgresServices.shards.primaries.type }}</span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.workers.primaries.type')"></span>
+                                            <span class="value"> : {{ cluster.data.spec.postgresServices.workers.primaries.type }}</span>
                                         </li>
-                                        <li v-if="cluster.data.spec.postgresServices.shards.primaries.hasOwnProperty('loadBalancerIP')">
+                                        <li v-if="cluster.data.spec.postgresServices.workers.primaries.hasOwnProperty('loadBalancerIP')">
                                             <strong class="label">Load Balancer IP</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.shards.primaries.loadBalancerIP')"></span>
-                                            <span class="value"> : {{ cluster.data.spec.postgresServices.shards.primaries.loadBalancerIP }}</span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.workers.primaries.loadBalancerIP')"></span>
+                                            <span class="value"> : {{ cluster.data.spec.postgresServices.workers.primaries.loadBalancerIP }}</span>
                                         </li>
                                     </ul>
                                 </li>
-                                <li v-if="cluster.data.spec.postgresServices.shards.hasOwnProperty('customPorts')">
+                                <li v-if="cluster.data.spec.postgresServices.workers.hasOwnProperty('customPorts')">
                                     <button class="toggleSummary"></button>
                                     <strong class="label">Custom Ports</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.shards.customPorts')"></span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.workers.customPorts')"></span>
                                     <ul>
-                                        <li v-for="(port, index) in cluster.data.spec.postgresServices.shards.customPorts">
+                                        <li v-for="(port, index) in cluster.data.spec.postgresServices.workers.customPorts">
                                             <button class="toggleSummary"></button>
                                             <strong class="label">Port #{{ index + 1 }}</strong>
                                             <ul>
                                                 <li v-if="port.hasOwnProperty('appProtocol') && (port.appProtocol != null)">
                                                     <strong class="label">Application Protocol</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.shards.customPorts.appProtocol')"></span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.workers.customPorts.appProtocol')"></span>
                                                     <span class="value"> : {{ port.appProtocol }}</span>
                                                 </li>
                                                 <li v-if="port.hasOwnProperty('name') && (port.name != null)">
                                                     <strong class="label">Name:</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.shards.customPorts.name')"></span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.workers.customPorts.name')"></span>
                                                     <span class="value"> : {{ port.name }}</span>
                                                 </li>
                                                 <li v-if="port.hasOwnProperty('nodePort') && (port.nodePort != null)">
                                                     <strong class="label">Node Port:</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.shards.customPorts.nodePort')"></span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.workers.customPorts.nodePort')"></span>
                                                     <span class="value"> : {{ port.nodePort }}</span>
                                                 </li>
                                                 <li v-if="port.hasOwnProperty('port')">
                                                     <strong class="label">Port:</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.shards.customPorts.port')"></span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.workers.customPorts.port')"></span>
                                                     <span class="value"> : {{ port.port }}</span>
                                                 </li>
                                                 <li v-if="port.hasOwnProperty('protocol') && (port.protocol != null)">
                                                     <strong class="label">Protocol:</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.shards.customPorts.protocol')"></span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.workers.customPorts.protocol')"></span>
                                                     <span class="value"> : {{ port.protocol }}</span>
                                                 </li>
                                                 <li v-if="port.hasOwnProperty('targetPort') && (port.targetPort != null)">
                                                     <strong class="label">Target Port:</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.shards.customPorts.targetPort')"></span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.postgresServices.workers.customPorts.targetPort')"></span>
                                                     <span class="value"> : {{ port.targetPort }}</span>
                                                 </li>
                                             </ul>
@@ -2553,23 +2553,23 @@
                         </li>
                     </ul>
 
-                    <ul class="section" v-if="hasProp(cluster, 'data.spec.shards.metadata.labels.clusterPods') || hasProp(cluster, 'data.spec.shards.metadata.annotations')">
+                    <ul class="section" v-if="hasProp(cluster, 'data.spec.workers.metadata.labels.clusterPods') || hasProp(cluster, 'data.spec.workers.metadata.annotations')">
                         <li>
                             <button class="toggleSummary"></button>
                             <strong class="sectionTitle">Metadata </strong>
-                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.metadata')"></span>
+                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.metadata')"></span>
                             <ul>
-                                <li v-if="hasProp(cluster, 'data.spec.shards.metadata')">
+                                <li v-if="hasProp(cluster, 'data.spec.workers.metadata')">
                                     <button class="toggleSummary"></button>
                                     <strong class="label">Labels</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.metadata.labels')"></span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.metadata.labels')"></span>
                                     <ul>
-                                        <li v-if="hasProp(cluster, 'data.spec.shards.metadata.labels.clusterPods')">
+                                        <li v-if="hasProp(cluster, 'data.spec.workers.metadata.labels.clusterPods')">
                                             <button class="toggleSummary"></button>
                                             <strong class="label">Cluster Pods</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.metadata.labels.clusterPods')"></span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.metadata.labels.clusterPods')"></span>
                                             <ul>
-                                                <li v-for="(value, label) in cluster.data.spec.shards.metadata.labels.clusterPods">
+                                                <li v-for="(value, label) in cluster.data.spec.workers.metadata.labels.clusterPods">
                                                     <strong class="label">{{ label }}:</strong>
                                                     <span class="value">{{ value }}</span>
                                                 </li>
@@ -2577,61 +2577,61 @@
                                         </li>
                                     </ul>
                                 </li>
-                                <li v-if="hasProp(cluster, 'data.spec.shards.metadata.annotations')">
+                                <li v-if="hasProp(cluster, 'data.spec.workers.metadata.annotations')">
                                     <button class="toggleSummary"></button>
                                     <strong class="label">Annotations</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.metadata.annotations')"></span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.metadata.annotations')"></span>
                                     <ul>
-                                        <li v-if="hasProp(cluster, 'data.spec.shards.metadata.annotations.allResources')">
+                                        <li v-if="hasProp(cluster, 'data.spec.workers.metadata.annotations.allResources')">
                                             <button class="toggleSummary"></button>
                                             <strong class="label">All Resources</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.metadata.annotations.allResources')"></span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.metadata.annotations.allResources')"></span>
                                             <ul>
-                                                <li v-for="(value, label) in cluster.data.spec.shards.metadata.annotations.allResources">
+                                                <li v-for="(value, label) in cluster.data.spec.workers.metadata.annotations.allResources">
                                                     <strong class="label">{{ label }}:</strong>
                                                     <span class="value">{{ value }}</span>
                                                 </li>
                                             </ul>
                                         </li>
-                                        <li v-if="hasProp(cluster, 'data.spec.shards.metadata.annotations.clusterPods')">
+                                        <li v-if="hasProp(cluster, 'data.spec.workers.metadata.annotations.clusterPods')">
                                             <button class="toggleSummary"></button>
                                             <strong class="label">Cluster Pods</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.metadata.annotations.clusterPods')"></span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.metadata.annotations.clusterPods')"></span>
                                             <ul>
-                                                <li v-for="(value, label) in cluster.data.spec.shards.metadata.annotations.clusterPods">
+                                                <li v-for="(value, label) in cluster.data.spec.workers.metadata.annotations.clusterPods">
                                                     <strong class="label">{{ label }}:</strong>
                                                     <span class="value">{{ value }}</span>
                                                 </li>
                                             </ul>
                                         </li>
-                                        <li v-if="hasProp(cluster, 'data.spec.shards.metadata.annotations.services')">
+                                        <li v-if="hasProp(cluster, 'data.spec.workers.metadata.annotations.services')">
                                             <button class="toggleSummary"></button>
                                             <strong class="label">Services</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.metadata.annotations.services')"></span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.metadata.annotations.services')"></span>
                                             <ul>
-                                                <li v-for="(value, label) in cluster.data.spec.shards.metadata.annotations.services">
+                                                <li v-for="(value, label) in cluster.data.spec.workers.metadata.annotations.services">
                                                     <strong class="label">{{ label }}:</strong>
                                                     <span class="value">{{ value }}</span>
                                                 </li>
                                             </ul>
                                         </li>
-                                        <li v-if="hasProp(cluster, 'data.spec.shards.metadata.annotations.primaryService')">
+                                        <li v-if="hasProp(cluster, 'data.spec.workers.metadata.annotations.primaryService')">
                                             <button class="toggleSummary"></button>
                                             <strong class="label">Primary Service</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.metadata.annotations.primaryService')"></span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.metadata.annotations.primaryService')"></span>
                                             <ul>
-                                                <li v-for="(value, label) in cluster.data.spec.shards.metadata.annotations.primaryService">
+                                                <li v-for="(value, label) in cluster.data.spec.workers.metadata.annotations.primaryService">
                                                     <strong class="label">{{ label }}:</strong>
                                                     <span class="value">{{ value }}</span>
                                                 </li>
                                             </ul>
                                         </li>
-                                        <li v-if="hasProp(cluster, 'data.spec.shards.metadata.annotations.replicasService')">
+                                        <li v-if="hasProp(cluster, 'data.spec.workers.metadata.annotations.replicasService')">
                                             <button class="toggleSummary"></button>
                                             <strong class="label">Replicas Service</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.metadata.annotations.replicasService')"></span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.metadata.annotations.replicasService')"></span>
                                             <ul>
-                                                <li v-for="(value, label) in cluster.data.spec.shards.metadata.annotations.replicasService">
+                                                <li v-for="(value, label) in cluster.data.spec.workers.metadata.annotations.replicasService">
                                                     <strong class="label">{{ label }}:</strong>
                                                     <span class="value">{{ value }}</span>
                                                 </li>
@@ -2643,56 +2643,56 @@
                         </li>
                     </ul>
 
-                    <ul class="section" v-if="hasProp(cluster, 'data.spec.shards.pods.scheduling')">
+                    <ul class="section" v-if="hasProp(cluster, 'data.spec.workers.pods.scheduling')">
                         <li>
                             <button class="toggleSummary"></button>
                             <strong class="sectionTitle">Pods Scheduling </strong>
-                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling')"></span>
+                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling')"></span>
                             <ul>
-                                <li v-if="hasProp(cluster, 'data.spec.shards.pods.scheduling.nodeSelector')">
+                                <li v-if="hasProp(cluster, 'data.spec.workers.pods.scheduling.nodeSelector')">
                                     <button class="toggleSummary"></button>
                                     <strong class="label">Node Selectors</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeSelector')"></span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeSelector')"></span>
                                     <ul>
-                                        <li v-for="(value, key) in cluster.data.spec.shards.pods.scheduling.nodeSelector">
+                                        <li v-for="(value, key) in cluster.data.spec.workers.pods.scheduling.nodeSelector">
                                             <strong class="label">{{ key }}</strong>
                                             <span class="value"> : {{ value }}</span>
                                         </li>
                                     </ul>
                                 </li>
 
-                                <li v-if="hasProp(cluster, 'data.spec.shards.pods.scheduling.tolerations')">
+                                <li v-if="hasProp(cluster, 'data.spec.workers.pods.scheduling.tolerations')">
                                     <button class="toggleSummary"></button>
                                     <strong class="label">Node Tolerations</strong>                                    
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.tolerations')"></span>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.tolerations')"></span>
                                     <ul>
-                                        <li v-for="(toleration, index) in cluster.data.spec.shards.pods.scheduling.tolerations">
+                                        <li v-for="(toleration, index) in cluster.data.spec.workers.pods.scheduling.tolerations">
                                             <button class="toggleSummary"></button>
                                             <strong class="label">Toleration #{{ index+1 }}</strong>
                                             <ul>
                                                 <li>
                                                     <strong class="label">Key</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.tolerations.key')"></span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.tolerations.key')"></span>
                                                     <span class="value"> : {{ toleration.key }}</span>
                                                 </li>
                                                 <li>
                                                     <strong class="label">Operator</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.tolerations.operator')"></span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.tolerations.operator')"></span>
                                                     <span class="value"> : {{ toleration.operator }}</span>
                                                 </li>
                                                 <li v-if="toleration.hasOwnProperty('value')">
                                                     <strong class="label">Value</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.tolerations.value')"></span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.tolerations.value')"></span>
                                                     <span class="value"> : {{ toleration.value }}</span>
                                                 </li>
                                                 <li>
                                                     <strong class="label">Effect</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.tolerations.effect')"></span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.tolerations.effect')"></span>
                                                     <span class="value"> : {{ toleration.effect ? toleration.effect : 'MatchAll' }}</span>
                                                 </li>
                                                 <li v-if="( toleration.hasOwnProperty('tolerationSeconds') && (toleration.tolerationSeconds != null) )">
                                                     <strong class="label">Toleration Seconds</strong>
-                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.tolerations.tolerationSeconds')"></span>
+                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.tolerations.tolerationSeconds')"></span>
                                                     <span class="value"> : {{ toleration.tolerationSeconds }}</span>
                                                 </li>
                                             </ul>
@@ -2700,25 +2700,25 @@
                                     </ul>
                                 </li>
 
-                                <li v-if="hasProp(cluster, 'data.spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution')">
+                                <li v-if="hasProp(cluster, 'data.spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution')">
                                     <button class="toggleSummary"></button>
                                     <strong class="label">Node Affinity</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution')"></span><br/>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution')"></span><br/>
                                     <span>Required During Scheduling Ignored During Execution</span>
                                     <ul>
                                         <li>
                                             <button class="toggleSummary"></button>
                                             <strong class="label">Terms</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items')"></span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items')"></span>
                                             <ul>
-                                                <li v-for="(term, index) in cluster.data.spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms">
+                                                <li v-for="(term, index) in cluster.data.spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms">
                                                     <button class="toggleSummary"></button>
                                                     <strong class="label">Term #{{ index+1 }}</strong>
                                                     <ul>
                                                         <li v-if="term.hasOwnProperty('matchExpressions')">
                                                             <button class="toggleSummary"></button>
                                                             <strong class="label">Match Expressions</strong>
-                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions')"></span>
+                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions')"></span>
                                                             <ul>
                                                                 <li v-for="(exp, index) in term.matchExpressions">
                                                                     <button class="toggleSummary"></button>
@@ -2726,17 +2726,17 @@
                                                                     <ul>
                                                                         <li>
                                                                             <strong class="label">Key</strong>
-                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.key')"></span>
+                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.key')"></span>
                                                                             <span class="value"> : {{ exp.key }}</span>
                                                                         </li>
                                                                         <li>
                                                                             <strong class="label">Operator</strong>
-                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.operator')"></span>
+                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.operator')"></span>
                                                                             <span class="value"> : {{ exp.operator }}</span>
                                                                         </li>
                                                                         <li v-if="exp.hasOwnProperty('values')">
                                                                             <strong class="label">{{ (exp.values.length > 1) ? 'Values' : 'Value' }}</strong>
-                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.values')"></span>
+                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.values')"></span>
                                                                             <span class="value"> : {{ (exp.values.length > 1) ? exp.values.join(', ') : exp.values[0] }}</span>
                                                                         </li>
                                                                     </ul>
@@ -2746,7 +2746,7 @@
                                                         <li v-if="term.hasOwnProperty('matchFields')">
                                                             <button class="toggleSummary"></button>
                                                             <strong class="label">Match Fields</strong>
-                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields')"></span>
+                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields')"></span>
                                                             <ul>
                                                                 <li v-for="(field, index) in term.matchFields">
                                                                     <button class="toggleSummary"></button>
@@ -2754,17 +2754,17 @@
                                                                     <ul>
                                                                         <li>
                                                                             <strong class="label">Key</strong>
-                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.key')"></span>
+                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.key')"></span>
                                                                             <span class="value"> : {{ field.key }}</span>
                                                                         </li>
                                                                         <li>
                                                                             <strong class="label">Operator</strong>
-                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.operator')"></span>
+                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.operator')"></span>
                                                                             <span class="value"> : {{ field.operator }}</span>
                                                                         </li>
                                                                         <li v-if="field.hasOwnProperty('values')">
                                                                             <strong class="label">{{ (field.values.length > 1) ? 'Values' : 'Value' }}</strong>
-                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.values')"></span>
+                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.values')"></span>
                                                                             <span class="value"> : {{ (field.values.length > 1) ? field.values.join(', ') : field.values[0] }}</span>
                                                                         </li>
                                                                     </ul>
@@ -2778,25 +2778,25 @@
                                     </ul>
                                 </li>
 
-                                <li v-if="hasProp(cluster, 'data.spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution')">
+                                <li v-if="hasProp(cluster, 'data.spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution')">
                                     <button class="toggleSummary"></button>
                                     <strong class="label">Node Affinity</strong>
-                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution')"></span><br/>
+                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution')"></span><br/>
                                     <span>Preferred During Scheduling Ignored During Execution</span>
                                     <ul>
                                         <li>
                                             <button class="toggleSummary"></button>
                                             <strong class="label">Terms</strong>
-                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items')"></span>
+                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items')"></span>
                                             <ul>
-                                                <li v-for="(term, index) in cluster.data.spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution">
+                                                <li v-for="(term, index) in cluster.data.spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution">
                                                     <button class="toggleSummary"></button>
                                                     <strong class="label">Term #{{ index+1 }}</strong>
                                                     <ul>
                                                         <li v-if="term.preference.hasOwnProperty('matchExpressions')">
                                                             <button class="toggleSummary"></button>
                                                             <strong class="label">Match Expressions</strong>
-                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions')"></span>
+                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions')"></span>
                                                             <ul>
                                                                 <li v-for="(exp, index) in term.preference.matchExpressions">
                                                                     <button class="toggleSummary"></button>
@@ -2804,17 +2804,17 @@
                                                                     <ul>
                                                                         <li>
                                                                             <strong class="label">Key</strong>
-                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.key')"></span>
+                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.key')"></span>
                                                                             <span class="value"> : {{ exp.key }}</span>
                                                                         </li>
                                                                         <li>
                                                                             <strong class="label">Operator</strong>
-                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.operator')"></span>
+                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.operator')"></span>
                                                                             <span class="value"> : {{ exp.operator }}</span>
                                                                         </li>
                                                                         <li v-if="exp.hasOwnProperty('values')">
                                                                             <strong class="label">{{ (exp.values.length > 1) ? 'Values' : 'Value' }}</strong>
-                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.values')"></span>
+                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.values')"></span>
                                                                             <span class="value"> : {{ (exp.values.length > 1) ? exp.values.join(', ') : exp.values[0] }}</span>
                                                                         </li>
                                                                     </ul>
@@ -2824,7 +2824,7 @@
                                                         <li v-if="term.preference.hasOwnProperty('matchFields')">
                                                             <button class="toggleSummary"></button>
                                                             <strong class="label">Match Fields</strong>
-                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields')"></span>
+                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields')"></span>
                                                             <ul>
                                                                 <li v-for="(field, index) in term.preference.matchFields">
                                                                     <button class="toggleSummary"></button>
@@ -2832,17 +2832,17 @@
                                                                     <ul>
                                                                         <li>
                                                                             <strong class="label">Key</strong>
-                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.key')"></span>
+                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.key')"></span>
                                                                             <span class="value"> : {{ field.key }}</span>
                                                                         </li>
                                                                         <li>
                                                                             <strong class="label">Operator</strong>
-                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.operator')"></span>
+                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.operator')"></span>
                                                                             <span class="value"> : {{ field.operator }}</span>
                                                                         </li>
                                                                         <li v-if="field.hasOwnProperty('values')">
                                                                             <strong class="label">{{ (field.values.length > 1) ? 'Values' : 'Value' }}</strong>
-                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.values')"></span>
+                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.values')"></span>
                                                                             <span class="value"> : {{ (field.values.length > 1) ? field.values.join(', ') : field.values[0] }}</span>
                                                                         </li>
                                                                     </ul>
@@ -2851,7 +2851,7 @@
                                                         </li>
                                                         <li v-if="term.hasOwnProperty('weight')">
                                                             <strong class="label">Weight</strong>
-                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.weight')"></span>
+                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.weight')"></span>
                                                             <span class="value"> : {{ term.weight }}</span>
                                                         </li>
                                                     </ul>
@@ -2866,17 +2866,17 @@
 
                     <ul
                         class="section"
-                        v-if="hasProp(cluster, 'data.spec.shards.overrides') && !isNull(cluster.data.spec.shards.overrides)"
+                        v-if="hasProp(cluster, 'data.spec.workers.overrides') && !isNull(cluster.data.spec.workers.overrides)"
                     >
                         <li>
                             <button class="toggleSummary"></button>
                             <strong class="sectionTitle">
                                 Overrides
-                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides')"></span>
+                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides')"></span>
                             </strong>
 
                             <ul>
-                                <template v-for="(override, overrideIndex) in cluster.data.spec.shards.overrides">
+                                <template v-for="(override, overrideIndex) in cluster.data.spec.workers.overrides">
                                     <li :key="'override-' + override.index">
                                         <button class="toggleSummary"></button>
                                         <strong class="sectionTitle">
@@ -2890,17 +2890,17 @@
                                                 <ul>
                                                     <li>
                                                         <strong class="label">Cluster Identifier</strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.index')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.index')"></span>
                                                         <span> : {{ override.index }}</span>
                                                     </li>
                                                     <li v-if="( override.hasOwnProperty('instancesPerCluster') && (showDefaults || ![1,null,''].includes(override.instancesPerCluster) ) )">
                                                         <strong class="label">Instances per Cluster</strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.instancesPerCluster')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.instancesPerCluster')"></span>
                                                         <span> : {{ override.instancesPerCluster }}</span>
                                                     </li>
                                                     <li v-if="hasProp(override, 'sgInstanceProfile')">
                                                         <strong class="label">Instance Profile </strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.sgInstanceProfile')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.sgInstanceProfile')"></span>
                                                         <span class="value">
                                                             : 
                                                             <template v-if="hasProp(override, 'sgInstanceProfile')">
@@ -2916,7 +2916,7 @@
                                                     </li>
                                                     <li v-if="hasProp(override, 'configurations.sgPostgresConfig')">
                                                         <strong class="label">Postgres Configuration </strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.configurations.properties.sgPostgresConfig')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.configurations.properties.sgPostgresConfig')"></span>
                                                         <span class="value"> : 
                                                             <template v-if="hasProp(override, 'configurations.sgPostgresConfig')">
                                                                 <router-link :to="'/' + $route.params.namespace + '/sgpgconfig/' + override.configurations.sgPostgresConfig" target="_blank"> 
@@ -2932,21 +2932,21 @@
                                                     <li v-if="hasProp(override, 'pods.persistentVolume.size') || hasProp(override, 'pods.persistentVolume.storageClass')">
                                                         <button class="toggleSummary"></button>
                                                         <strong class="label">Pods Storage</strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods')"></span>
                                                         <ul>
                                                             <li>
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Persistent Volume</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.persistentVolume')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.persistentVolume')"></span>
                                                                 <ul>
                                                                     <li v-if="hasProp(override, 'pods.persistentVolume.size')">
                                                                         <strong class="label">Volume Size</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.persistentVolume.size')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.persistentVolume.size')"></span>
                                                                         <span class="value"> : {{ override.pods.persistentVolume.size }}B</span>
                                                                     </li>
                                                                     <li v-if="hasProp(override, 'pods.persistentVolume.storageClass')">
                                                                         <strong class="label">Storage Class</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.persistentVolume.storageClass')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.persistentVolume.storageClass')"></span>
                                                                         <span class="value"> : {{ override.pods.persistentVolume.storageClass }}</span>
                                                                     </li>
                                                                 </ul>
@@ -2972,12 +2972,12 @@
                                                     <li v-if="hasProp(override, 'pods.disableConnectionPooling') || hasProp(override, 'configurations.sgPoolingConfig')">
                                                         <button class="toggleSummary"></button>
                                                         <strong class="label">Connection Pooling</strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.configurations')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.configurations')"></span>
                                                         <span v-if="override.pods.disableConnectionPooling"> : {{ isEnabled(override.pods.disableConnectionPooling, true) }}</span>
                                                         <ul v-if="!override.pods.disableConnectionPooling || hasProp(override, 'configurations.sgPoolingConfig')">
                                                             <li>
                                                                 <strong class="label">Connection Pooling Configuration</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.configurations.sgPoolingConfig')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.configurations.sgPoolingConfig')"></span>
                                                                 <span class="value"> :
                                                                     <template v-if="hasProp(override, 'configurations.sgPoolingConfig')">
                                                                         <router-link :to="'/' + $route.params.namespace + '/sgpoolconfig/' + override.configurations.sgPoolingConfig" target="_blank">
@@ -2994,12 +2994,12 @@
                                                     </li>
                                                     <li v-if="hasProp(override, 'pods.disablePostgresUtil')">
                                                         <strong class="label">Postgres Utils</strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.disablePostgresUtil').replace('If set to `true`', 'If disabled')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.disablePostgresUtil').replace('If set to `true`', 'If disabled')"></span>
                                                         <span> : {{ isEnabled(override.pods.disablePostgresUtil, true) }}</span>
                                                     </li>
                                                     <li v-if="hasProp(override, 'pods.disableMetricsExporter')">
                                                         <strong class="label">Metrics Exporter</strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.disableMetricsExporter').replace('If set to `true`', 'If disabled').replace('Recommended', 'Recommended to be disabled')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.disableMetricsExporter').replace('If set to `true`', 'If disabled').replace('Recommended', 'Recommended to be disabled')"></span>
                                                         <span> : {{ isEnabled(override.pods.disableMetricsExporter, true) }}</span>
                                                     </li>
                                                     <li v-if="( 
@@ -3009,12 +3009,12 @@
                                                     ">
                                                         <button class="toggleSummary"></button>
                                                         <strong class="label">User-Supplied Pods' Sidecars </strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods')"></span>
                                                         <ul>
                                                             <li v-if="override.pods.hasOwnProperty('customVolumes') && !isNull(override.pods.customVolumes)">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Custom Volumes</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes')"></span>
                                                                 <ul>
                                                                     <template v-for="(vol, index) in override.pods.customVolumes">
                                                                         <li :key="index">
@@ -3023,22 +3023,22 @@
                                                                             <ul>
                                                                                 <li v-if="vol.hasOwnProperty('name')">
                                                                                     <strong class="label">Name</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.name')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.name')"></span>
                                                                                     <span class="value"> : {{ vol.name }}</span>
                                                                                 </li>
                                                                                 <li v-if="vol.hasOwnProperty('emptyDir') && Object.keys(vol.emptyDir).length && (!isNull(vol.emptyDir.medium) || !isNull(vol.emptyDir.sizeLimit))">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Empty Directory</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.emptyDir')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.emptyDir')"></span>
                                                                                     <ul>
                                                                                         <li v-if="vol.emptyDir.hasOwnProperty('medium') && !isNull(vol.emptyDir.medium)">
                                                                                             <strong class="label">Medium</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.emptyDir.properties.medium')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.emptyDir.properties.medium')"></span>
                                                                                             <span class="value"> : {{ vol.emptyDir.medium }}</span>
                                                                                         </li>
                                                                                         <li v-if="vol.emptyDir.hasOwnProperty('sizeLimit') && !isNull(vol.emptyDir.sizeLimit)">
                                                                                             <strong class="label">Size Limit</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.emptyDir.properties.sizeLimit')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.emptyDir.properties.sizeLimit')"></span>
                                                                                             <span class="value"> : {{ vol.emptyDir.sizeLimit }}</span>
                                                                                         </li>
                                                                                     </ul>
@@ -3046,47 +3046,47 @@
                                                                                 <li v-if="vol.hasOwnProperty('configMap') && Object.keys(vol.configMap).length">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Config Map</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.configMap')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.configMap')"></span>
                                                                                     <ul>
                                                                                         <li v-if="vol.configMap.hasOwnProperty('name') && !isNull(vol.configMap.name)">
                                                                                             <strong class="label">Name</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.configMap.properties.name')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.configMap.properties.name')"></span>
                                                                                             <span class="value"> : {{ vol.configMap.name }}</span>
                                                                                         </li>
                                                                                         <li v-if="vol.configMap.hasOwnProperty('optional')">
                                                                                             <strong class="label">Optional</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.configMap.properties.name')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.configMap.properties.name')"></span>
                                                                                             <span class="value"> : {{ isEnabled(vol.configMap.optional) }}</span>
                                                                                         </li>
                                                                                         <li v-if="vol.configMap.hasOwnProperty('defaultMode') && !isNull(vol.configMap.defaultMode)">
                                                                                             <strong class="label">Default Mode</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.configMap.properties.defaultMode')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.configMap.properties.defaultMode')"></span>
                                                                                             <span class="value"> : {{ vol.configMap.defaultMode }}</span>
                                                                                         </li>
                                                                                         <li v-if="vol.configMap.hasOwnProperty('items') && vol.configMap.items.length">
                                                                                             <button class="toggleSummary"></button>
                                                                                             <strong class="label">Items</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.configMap.properties.items')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.configMap.properties.items')"></span>
                                                                                             <ul>
                                                                                                 <template v-for="(item, index) in vol.configMap.items">
                                                                                                     <li :key="index">
                                                                                                         <button class="toggleSummary"></button>
                                                                                                         <strong class="label">Item #{{ index + 1 }}</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.configMap.properties.items.items')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.configMap.properties.items.items')"></span>
                                                                                                         <ul>
                                                                                                             <li v-if="item.hasOwnProperty('key') && !isNull(item.key)">
                                                                                                                 <strong class="label">Key</strong>
-                                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.configMap.properties.items.items.properties.key')"></span>
+                                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.configMap.properties.items.items.properties.key')"></span>
                                                                                                                 <span class="value"> : {{ item.key }}</span>
                                                                                                             </li>
                                                                                                             <li v-if="item.hasOwnProperty('mode') && !isNull(item.mode)">
                                                                                                                 <strong class="label">Mode</strong>
-                                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.configMap.properties.items.items.properties.mode')"></span>
+                                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.configMap.properties.items.items.properties.mode')"></span>
                                                                                                                 <span class="value"> : {{ item.mode }}</span>
                                                                                                             </li>
                                                                                                             <li v-if="item.hasOwnProperty('path') && !isNull(item.path)">
                                                                                                                 <strong class="label">Path</strong>
-                                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.configMap.properties.items.items.properties.path')"></span>
+                                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.configMap.properties.items.items.properties.path')"></span>
                                                                                                                 <span class="value"> : {{ item.path }}</span>
                                                                                                             </li>
                                                                                                         </ul>
@@ -3099,47 +3099,47 @@
                                                                                 <li v-if="vol.hasOwnProperty('secret') && Object.keys(vol.secret).length">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Secret</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.secret')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.secret')"></span>
                                                                                     <ul>
                                                                                         <li v-if="vol.secret.hasOwnProperty('secretName') && !isNull(vol.secret.secretName)">
                                                                                             <strong class="label">Secret Name</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.secret.properties.secretName')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.secret.properties.secretName')"></span>
                                                                                             <span class="value"> : {{ vol.secret.secretName }}</span>
                                                                                         </li>
                                                                                         <li v-if="vol.secret.hasOwnProperty('optional')">
                                                                                             <strong class="label">Optional</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.secret.properties.optional')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.secret.properties.optional')"></span>
                                                                                             <span class="value"> : {{ isEnabled(vol.secret.optional) }}</span>
                                                                                         </li>
                                                                                         <li v-if="vol.secret.hasOwnProperty('defaultMode') && !isNull(vol.secret.defaultMode)">
                                                                                             <strong class="label">Default Mode</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.secret.properties.defaultMode')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.secret.properties.defaultMode')"></span>
                                                                                             <span class="value"> : {{ vol.secret.defaultMode }}</span>
                                                                                         </li>
                                                                                         <li v-if="vol.secret.hasOwnProperty('items') && vol.secret.items.length">
                                                                                             <button class="toggleSummary"></button>
                                                                                             <strong class="label">Items</strong>
-                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.secret.properties.items')"></span>
+                                                                                            <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.secret.properties.items')"></span>
                                                                                             <ul>
                                                                                                 <template v-for="(item, index) in vol.secret.items">
                                                                                                     <li :key="index">
                                                                                                         <button class="toggleSummary"></button>
                                                                                                         <strong class="label">Item #{{ index + 1 }}</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.secret.properties.items.items')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.secret.properties.items.items')"></span>
                                                                                                         <ul>
                                                                                                             <li v-if="item.hasOwnProperty('key') && !isNull(item.key)">
                                                                                                                 <strong class="label">Key:</strong>
-                                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.secret.properties.items.items.properties.key')"></span>
+                                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.secret.properties.items.items.properties.key')"></span>
                                                                                                                 <span class="value"> : {{ item.key }}</span>
                                                                                                             </li>
                                                                                                             <li v-if="item.hasOwnProperty('mode') && !isNull(item.mode)">
                                                                                                                 <strong class="label">Mode</strong>
-                                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.secret.properties.items.items.properties.mode')"></span>
+                                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.secret.properties.items.items.properties.mode')"></span>
                                                                                                                 <span class="value"> : {{ item.mode }}</span>
                                                                                                             </li>
                                                                                                             <li v-if="item.hasOwnProperty('path') && !isNull(item.path)">
                                                                                                                 <strong class="label">Path</strong>
-                                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customVolumes.secret.properties.items.items.properties.path')"></span>
+                                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customVolumes.secret.properties.items.items.properties.path')"></span>
                                                                                                                 <span class="value"> : {{ item.path }}</span>
                                                                                                             </li>
                                                                                                         </ul>
@@ -3158,7 +3158,7 @@
                                                             <li v-if="override.pods.hasOwnProperty('customInitContainers') && !isNull(override.pods.customInitContainers)">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Custom Init Containers</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers')"></span>
 
                                                                 <ul>
                                                                     <template v-for="(container, index) in override.pods.customInitContainers">
@@ -3168,28 +3168,28 @@
                                                                             <ul>
                                                                                 <li v-if="container.hasOwnProperty('name') && !isNull(container.name)">
                                                                                     <strong class="label">Name</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.name')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.name')"></span>
                                                                                     <span class="value"> : {{ container.name }}</span>
                                                                                 </li>
                                                                                 <li v-if="container.hasOwnProperty('image') && !isNull(container.image)">
                                                                                     <strong class="label">Image</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.image')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.image')"></span>
                                                                                     <span class="value"> : {{ container.image }}</span>
                                                                                 </li>
                                                                                 <li v-if="container.hasOwnProperty('imagePullPolicy') && !isNull(container.imagePullPolicy)">
                                                                                     <strong class="label">Image Pull Policy</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.imagePullPolicy')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.imagePullPolicy')"></span>
                                                                                     <span class="value"> : {{ container.imagePullPolicy }}</span>
                                                                                 </li>
                                                                                 <li v-if="container.hasOwnProperty('workingDir') && !isNull(container.workingDir)">
                                                                                     <strong class="label">Working Directory</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.workingDir')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.workingDir')"></span>
                                                                                     <span class="value"> : {{ container.workingDir }}</span>
                                                                                 </li>
                                                                                 <li v-if="container.hasOwnProperty('args') && !isNull(container.args)">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Arguments</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.arguments')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.arguments')"></span>
                                                                                     <ul>
                                                                                         <template v-for="(arg, aIndex) in container.args">
                                                                                             <li :key="'argument-' + index + '-' + aIndex">
@@ -3201,7 +3201,7 @@
                                                                                 <li v-if="container.hasOwnProperty('command') && !isNull(container.command)">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Command</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.command')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.command')"></span>
                                                                                     <ul>
                                                                                         <template v-for="(command, cIndex) in container.command">
                                                                                             <li :key="'command-' + index + '-' + cIndex">
@@ -3213,7 +3213,7 @@
                                                                                 <li v-if="container.hasOwnProperty('env') && !isNull(container.env)">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Environment Variables</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.env')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.env')"></span>
                                                                                     <ul>
                                                                                         <template v-for="(envVar, vIndex) in container.env">
                                                                                             <li :key="'var-' + index + '-' + vIndex">
@@ -3226,7 +3226,7 @@
                                                                                 <li v-if="container.hasOwnProperty('ports') && !isNull(container.ports)">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Ports</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.ports')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.ports')"></span>
                                                                                     <ul>
                                                                                         <template v-for="(port, pIndex) in container.ports">
                                                                                             <li :key="'port-' + index + '-' + pIndex">
@@ -3235,27 +3235,27 @@
                                                                                                 <ul>
                                                                                                     <li v-if="port.hasOwnProperty('name') && !isNull(port.name)">
                                                                                                         <strong class="label">Name</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.ports.items.properties.name')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.ports.items.properties.name')"></span>
                                                                                                         <span class="value"> : {{ port.name }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="port.hasOwnProperty('hostIP') && !isNull(port.hostIP)">
                                                                                                         <strong class="label">Host IP</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.ports.items.properties.hostIP')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.ports.items.properties.hostIP')"></span>
                                                                                                         <span class="value"> : {{ port.hostIP }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="port.hasOwnProperty('hostPort') && !isNull(port.hostPort)">
                                                                                                         <strong class="label">Host Port</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.ports.items.properties.hostPort')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.ports.items.properties.hostPort')"></span>
                                                                                                         <span class="value"> : {{ port.hostPort }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="port.hasOwnProperty('containerPort') && !isNull(port.containerPort)">
                                                                                                         <strong class="label">Container Port</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.ports.items.properties.containerPort')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.ports.items.properties.containerPort')"></span>
                                                                                                         <span class="value"> : {{ port.containerPort }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="port.hasOwnProperty('protocol') && !isNull(port.protocol)">
                                                                                                         <strong class="label">Protocol</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.ports.items.properties.protocol')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.ports.items.properties.protocol')"></span>
                                                                                                         <span class="value"> : {{ port.protocol }}</span>
                                                                                                     </li>
                                                                                                 </ul>
@@ -3266,7 +3266,7 @@
                                                                                 <li v-if="container.hasOwnProperty('volumeMounts') && !isNull(container.volumeMounts)">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Volume Mounts</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.volumeMounts')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.volumeMounts')"></span>
                                                                                     <ul>
                                                                                         <template v-for="(vol, vIndex) in container.volumeMounts">
                                                                                             <li :key="'vol-' + index + '-' + vIndex">
@@ -3274,32 +3274,32 @@
                                                                                                 <ul>
                                                                                                     <li v-if="vol.hasOwnProperty('name') && !isNull(vol.name)">
                                                                                                         <strong class="label">Name</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.volumeMounts.items.properties.name')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.volumeMounts.items.properties.name')"></span>
                                                                                                         <span class="value"> : {{ vol.name }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="vol.hasOwnProperty('readOnly')">
                                                                                                         <strong class="label">Read Only</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.volumeMounts.items.properties.readOnly')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.volumeMounts.items.properties.readOnly')"></span>
                                                                                                         <span class="value"> : {{ isEnabled(vol.readOnly) }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="vol.hasOwnProperty('mountPath') && !isNull(vol.mountPath)">
                                                                                                         <strong class="label">Mount Path</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.volumeMounts.items.properties.mountPath')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.volumeMounts.items.properties.mountPath')"></span>
                                                                                                         <span class="value"> : {{ vol.mountPath }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="vol.hasOwnProperty('mountPropagation') && !isNull(vol.mountPropagation)">
                                                                                                         <strong class="label">Mount Propagation</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.volumeMounts.items.properties.mountPropagation')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.volumeMounts.items.properties.mountPropagation')"></span>
                                                                                                         <span class="value"> : {{ vol.mountPropagation }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="vol.hasOwnProperty('subPath') && !isNull(vol.subPath)">
                                                                                                         <strong class="label">Sub Path</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.volumeMounts.items.properties.subPath')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.volumeMounts.items.properties.subPath')"></span>
                                                                                                         <span class="value"> : {{ vol.subPath }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="vol.hasOwnProperty('subPathExpr') && !isNull(vol.subPathExpr)">
                                                                                                         <strong class="label">Sub Path Expr</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customInitContainers.volumeMounts.items.properties.subPathExpr')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customInitContainers.volumeMounts.items.properties.subPathExpr')"></span>
                                                                                                         <span class="value"> : {{ vol.subPathExpr }}</span>
                                                                                                     </li>
                                                                                                 </ul>
@@ -3316,7 +3316,7 @@
                                                             <li v-if="override.pods.hasOwnProperty('customContainers') && !isNull(override.pods.customContainers)">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Custom Containers</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers')"></span>
                                                                 <ul>
                                                                     <template v-for="(container, index) in override.pods.customContainers">
                                                                         <li :key="'container-' + index">
@@ -3325,28 +3325,28 @@
                                                                             <ul>
                                                                                 <li v-if="container.hasOwnProperty('name') && !isNull(container.name)">
                                                                                     <strong class="label">Name</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.name')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.name')"></span>
                                                                                     <span class="value"> : {{ container.name }}</span>
                                                                                 </li>
                                                                                 <li v-if="container.hasOwnProperty('image') && !isNull(container.image)">
                                                                                     <strong class="label">Image</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.image')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.image')"></span>
                                                                                     <span class="value"> : {{ container.image }}</span>
                                                                                 </li>
                                                                                 <li v-if="container.hasOwnProperty('imagePullPolicy') && !isNull(container.imagePullPolicy)">
                                                                                     <strong class="label">Image Pull Policy</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.imagePullPolicy')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.imagePullPolicy')"></span>
                                                                                     <span class="value"> : {{ container.imagePullPolicy }}</span>
                                                                                 </li>
                                                                                 <li v-if="container.hasOwnProperty('workingDir') && !isNull(container.workingDir)">
                                                                                     <strong class="label">Working Directory</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.workingDir')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.workingDir')"></span>
                                                                                     <span class="value"> : {{ container.workingDir }}</span>
                                                                                 </li>
                                                                                 <li v-if="container.hasOwnProperty('args') && !isNull(container.args)">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Arguments</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.arguments')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.arguments')"></span>
                                                                                     <ul>
                                                                                         <template v-for="(arg, aIndex) in container.args">
                                                                                             <li :key="'argument-' + index + '-' + aIndex">
@@ -3358,7 +3358,7 @@
                                                                                 <li v-if="container.hasOwnProperty('command') && !isNull(container.command)">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Command</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.command')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.command')"></span>
                                                                                     <ul>
                                                                                         <template v-for="(command, cIndex) in container.command">
                                                                                             <li :key="'command-' + index + '-' + cIndex">
@@ -3370,7 +3370,7 @@
                                                                                 <li v-if="container.hasOwnProperty('env') && !isNull(container.env)">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Environment Variables</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.env')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.env')"></span>
                                                                                     <ul>
                                                                                         <template v-for="(envVar, vIndex) in container.env">
                                                                                             <li :key="'var-' + index + '-' + vIndex">
@@ -3383,7 +3383,7 @@
                                                                                 <li v-if="container.hasOwnProperty('ports') && !isNull(container.ports)">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Ports</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.ports')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.ports')"></span>
                                                                                     <ul>
                                                                                         <template v-for="(port, pIndex) in container.ports">
                                                                                             <li :key="'port-' + index + '-' + pIndex">
@@ -3391,27 +3391,27 @@
                                                                                                 <ul>
                                                                                                     <li v-if="port.hasOwnProperty('name') && !isNull(port.name)">
                                                                                                         <strong class="label">Name</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.ports.items.properties.name')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.ports.items.properties.name')"></span>
                                                                                                         <span class="value"> : {{ port.name }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="port.hasOwnProperty('hostIP') && !isNull(port.hostIP)">
                                                                                                         <strong class="label">Host IP</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.ports.items.properties.hostIP')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.ports.items.properties.hostIP')"></span>
                                                                                                         <span class="value"> : {{ port.hostIP }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="port.hasOwnProperty('hostPort') && !isNull(port.hostPort)">
                                                                                                         <strong class="label">Host Port</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.ports.items.properties.hostPort')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.ports.items.properties.hostPort')"></span>
                                                                                                         <span class="value"> : {{ port.hostPort }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="port.hasOwnProperty('containerPort') && !isNull(port.containerPort)">
                                                                                                         <strong class="label">Container Port</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.ports.items.properties.containerPort')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.ports.items.properties.containerPort')"></span>
                                                                                                         <span class="value"> : {{ port.containerPort }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="port.hasOwnProperty('protocol') && !isNull(port.protocol)">
                                                                                                         <strong class="label">Protocol</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.ports.items.properties.protocol')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.ports.items.properties.protocol')"></span>
                                                                                                         <span class="value"> : {{ port.protocol }}</span>
                                                                                                     </li>
                                                                                                 </ul>
@@ -3422,7 +3422,7 @@
                                                                                 <li v-if="container.hasOwnProperty('volumeMounts') && !isNull(container.volumeMounts)">
                                                                                     <button class="toggleSummary"></button>
                                                                                     <strong class="label">Volume Mounts</strong>
-                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.volumeMounts')"></span>
+                                                                                    <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.volumeMounts')"></span>
                                                                                     <ul>
                                                                                         <template v-for="(vol, vIndex) in container.volumeMounts">
                                                                                             <li :key="'vol-' + index + '-' + vIndex">
@@ -3430,32 +3430,32 @@
                                                                                                 <ul>
                                                                                                     <li v-if="vol.hasOwnProperty('name') && !isNull(vol.name)">
                                                                                                         <strong class="label">Name</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.volumeMounts.items.properties.name')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.volumeMounts.items.properties.name')"></span>
                                                                                                         <span class="value"> : {{ vol.name }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="vol.hasOwnProperty('readOnly')">
                                                                                                         <strong class="label">Read Only</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.volumeMounts.items.properties.readOnly')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.volumeMounts.items.properties.readOnly')"></span>
                                                                                                         <span class="value"> : {{ isEnabled(vol.readOnly) }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="vol.hasOwnProperty('mountPath') && !isNull(vol.mountPath)">
                                                                                                         <strong class="label">Mount Path</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.volumeMounts.items.properties.mountPath')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.volumeMounts.items.properties.mountPath')"></span>
                                                                                                         <span class="value"> : {{ vol.mountPath }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="vol.hasOwnProperty('mountPropagation') && !isNull(vol.mountPropagation)">
                                                                                                         <strong class="label">Mount Propagation</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.volumeMounts.items.properties.mountPropagation')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.volumeMounts.items.properties.mountPropagation')"></span>
                                                                                                         <span class="value"> : {{ vol.mountPropagation }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="vol.hasOwnProperty('subPath') && !isNull(vol.subPath)">
                                                                                                         <strong class="label">Sub Path</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.volumeMounts.items.properties.subPath')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.volumeMounts.items.properties.subPath')"></span>
                                                                                                         <span class="value"> : {{ vol.subPath }}</span>
                                                                                                     </li>
                                                                                                     <li v-if="vol.hasOwnProperty('subPathExpr') && !isNull(vol.subPathExpr)">
                                                                                                         <strong class="label">Sub Path Expr</strong>
-                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.customContainers.volumeMounts.items.properties.subPathExpr')"></span>
+                                                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.customContainers.volumeMounts.items.properties.subPathExpr')"></span>
                                                                                                         <span class="value"> : {{ vol.subPathExpr }}</span>
                                                                                                     </li>
                                                                                                 </ul>
@@ -3478,12 +3478,12 @@
                                             <li>
                                                 <button class="toggleSummary"></button>
                                                 <strong class="sectionTitle">Managed SQL </strong>
-                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.managedSql')"></span>
+                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.managedSql')"></span>
                                                 <ul>
                                                     <li>
                                                         <button class="toggleSummary"></button>
                                                         <strong class="sectionTitle">Scripts </strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.managedSql.scripts')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.managedSql.scripts')"></span>
                                                         <ul>
                                                             <li v-for="(baseScript, baseIndex) in override.managedSql.scripts">
                                                                 <button class="toggleSummary"></button>
@@ -3491,12 +3491,12 @@
                                                                 <ul>
                                                                     <li v-if="( ( hasProp(baseScript, 'scriptSpec.continueOnError') && baseScript.scriptSpec.continueOnError ) )">
                                                                         <strong class="label">Continue on Error</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.managedSql.scripts.continueOnError')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.managedSql.scripts.continueOnError')"></span>
                                                                         <span class="value"> : {{ hasProp(baseScript, 'scriptSpec.continueOnError') ? isEnabled(baseScript.continueOnError) : 'Disabled' }}</span>
                                                                     </li>
                                                                     <li v-if="( ( hasProp(baseScript, 'scriptSpec.managedVersions') && !baseScript.scriptSpec.managedVersions) )">
                                                                         <strong class="label">Managed Versions:</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.managedSql.scripts')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.managedSql.scripts')"></span>
                                                                         <span class="value">{{ hasProp(baseScript, 'scriptSpec.managedVersions') && isEnabled(baseScript.scriptSpec.managedVersions) }}</span>
                                                                     </li>
                                                                     <li v-if="baseScript.hasOwnProperty('scriptSpec')">
@@ -3627,7 +3627,7 @@
                                                     </li>
                                                     <li v-if="( (override.managedSql.hasOwnProperty('continueOnSGScriptError') && override.managedSql.continueOnSGScriptError) )">
                                                         <strong class="label">Continue on SGScript Error </strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.managedSql.continueOnSGScriptError').replace(/true/g, 'Enabled').replace('false','Disabled')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.managedSql.continueOnSGScriptError').replace(/true/g, 'Enabled').replace('false','Disabled')"></span>
                                                         <span class="value"> : {{ hasProp(override, 'managedSql.continueOnSGScriptError') ? isEnabled(override.managedSql.continueOnSGScriptError) : 'Disabled' }}</span>
                                                     </li>
                                                 </ul>
@@ -3638,16 +3638,16 @@
                                             <li>
                                                 <button class="toggleSummary"></button>
                                                 <strong class="sectionTitle">Pods Replication </strong>
-                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.replication')"></span>
+                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.replication')"></span>
                                                 <ul>
                                                     <li v-if="((override.replication.mode != 'async') )">
                                                         <strong class="label">Mode</strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.replication.mode')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.replication.mode')"></span>
                                                         <span class="value"> : {{ hasProp(override, 'replication.mode') ? override.replication.mode : 'async' }}</span>
                                                     </li>
                                                     <li v-if="hasProp(override, 'replication.syncInstances')">
                                                         <strong class="label">Sync Instances</strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.replication.syncInstances')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.replication.syncInstances')"></span>
                                                         <span class="value"> : {{ override.replication.syncInstances }}</span>
                                                     </li>
                                                 </ul>
@@ -3658,17 +3658,17 @@
                                             <li>
                                                 <button class="toggleSummary"></button>
                                                 <strong class="sectionTitle">Metadata </strong>
-                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.metadata')"></span>
+                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.metadata')"></span>
                                                 <ul>
                                                     <li v-if="hasProp(override, 'metadata')">
                                                         <button class="toggleSummary"></button>
                                                         <strong class="label">Labels</strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.metadata.labels')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.metadata.labels')"></span>
                                                         <ul>
                                                             <li v-if="hasProp(override, 'metadata.labels.clusterPods')">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Cluster Pods</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.metadata.labels.clusterPods')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.metadata.labels.clusterPods')"></span>
                                                                 <ul>
                                                                     <li v-for="(value, label) in override.metadata.labels.clusterPods">
                                                                         <strong class="label">{{ label }}:</strong>
@@ -3681,12 +3681,12 @@
                                                     <li v-if="hasProp(override, 'metadata.annotations')">
                                                         <button class="toggleSummary"></button>
                                                         <strong class="label">Annotations</strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.metadata.annotations')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.metadata.annotations')"></span>
                                                         <ul>
                                                             <li v-if="hasProp(override, 'metadata.annotations.allResources')">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">All Resources</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.metadata.annotations.allResources')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.metadata.annotations.allResources')"></span>
                                                                 <ul>
                                                                     <li v-for="(value, label) in override.metadata.annotations.allResources">
                                                                         <strong class="label">{{ label }}:</strong>
@@ -3697,7 +3697,7 @@
                                                             <li v-if="hasProp(override, 'metadata.annotations.clusterPods')">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Cluster Pods</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.metadata.annotations.clusterPods')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.metadata.annotations.clusterPods')"></span>
                                                                 <ul>
                                                                     <li v-for="(value, label) in override.metadata.annotations.clusterPods">
                                                                         <strong class="label">{{ label }}:</strong>
@@ -3708,7 +3708,7 @@
                                                             <li v-if="hasProp(override, 'metadata.annotations.services')">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Services</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.metadata.annotations.services')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.metadata.annotations.services')"></span>
                                                                 <ul>
                                                                     <li v-for="(value, label) in override.metadata.annotations.services">
                                                                         <strong class="label">{{ label }}:</strong>
@@ -3719,7 +3719,7 @@
                                                             <li v-if="hasProp(override, 'metadata.annotations.primaryService')">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Primary Service</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.metadata.annotations.primaryService')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.metadata.annotations.primaryService')"></span>
                                                                 <ul>
                                                                     <li v-for="(value, label) in override.metadata.annotations.primaryService">
                                                                         <strong class="label">{{ label }}:</strong>
@@ -3730,7 +3730,7 @@
                                                             <li v-if="hasProp(override, 'metadata.annotations.replicasService')">
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Replicas Service</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.metadata.annotations.replicasService')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.metadata.annotations.replicasService')"></span>
                                                                 <ul>
                                                                     <li v-for="(value, label) in override.metadata.annotations.replicasService">
                                                                         <strong class="label">{{ label }}:</strong>
@@ -3748,12 +3748,12 @@
                                             <li>
                                                 <button class="toggleSummary"></button>
                                                 <strong class="sectionTitle">Pods Scheduling </strong>
-                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling')"></span>
+                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling')"></span>
                                                 <ul>
                                                     <li v-if="hasProp(override, 'pods.scheduling.nodeSelector')">
                                                         <button class="toggleSummary"></button>
                                                         <strong class="label">Node Selectors</strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeSelector')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeSelector')"></span>
                                                         <ul>
                                                             <li v-for="(value, key) in override.pods.scheduling.nodeSelector">
                                                                 <strong class="label">{{ key }}</strong>
@@ -3765,7 +3765,7 @@
                                                     <li v-if="hasProp(override, 'pods.scheduling.tolerations')">
                                                         <button class="toggleSummary"></button>
                                                         <strong class="label">Node Tolerations</strong>                                    
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.tolerations')"></span>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.tolerations')"></span>
                                                         <ul>
                                                             <li v-for="(toleration, index) in override.pods.scheduling.tolerations">
                                                                 <button class="toggleSummary"></button>
@@ -3773,27 +3773,27 @@
                                                                 <ul>
                                                                     <li>
                                                                         <strong class="label">Key</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.tolerations.key')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.tolerations.key')"></span>
                                                                         <span class="value"> : {{ toleration.key }}</span>
                                                                     </li>
                                                                     <li>
                                                                         <strong class="label">Operator</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.tolerations.operator')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.tolerations.operator')"></span>
                                                                         <span class="value"> : {{ toleration.operator }}</span>
                                                                     </li>
                                                                     <li v-if="toleration.hasOwnProperty('value')">
                                                                         <strong class="label">Value</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.tolerations.value')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.tolerations.value')"></span>
                                                                         <span class="value"> : {{ toleration.value }}</span>
                                                                     </li>
                                                                     <li>
                                                                         <strong class="label">Effect</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.tolerations.effect')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.tolerations.effect')"></span>
                                                                         <span class="value"> : {{ toleration.effect ? toleration.effect : 'MatchAll' }}</span>
                                                                     </li>
                                                                     <li v-if="( toleration.hasOwnProperty('tolerationSeconds') && (toleration.tolerationSeconds != null) )">
                                                                         <strong class="label">Toleration Seconds</strong>
-                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.tolerations.tolerationSeconds')"></span>
+                                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.tolerations.tolerationSeconds')"></span>
                                                                         <span class="value"> : {{ toleration.tolerationSeconds }}</span>
                                                                     </li>
                                                                 </ul>
@@ -3804,13 +3804,13 @@
                                                     <li v-if="hasProp(override, 'pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution')">
                                                         <button class="toggleSummary"></button>
                                                         <strong class="label">Node Affinity</strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution')"></span><br/>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution')"></span><br/>
                                                         <span>Required During Scheduling Ignored During Execution</span>
                                                         <ul>
                                                             <li>
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Terms</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items')"></span>
                                                                 <ul>
                                                                     <li v-for="(term, index) in override.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms">
                                                                         <button class="toggleSummary"></button>
@@ -3819,7 +3819,7 @@
                                                                             <li v-if="term.hasOwnProperty('matchExpressions')">
                                                                                 <button class="toggleSummary"></button>
                                                                                 <strong class="label">Match Expressions</strong>
-                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions')"></span>
+                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions')"></span>
                                                                                 <ul>
                                                                                     <li v-for="(exp, index) in term.matchExpressions">
                                                                                         <button class="toggleSummary"></button>
@@ -3827,17 +3827,17 @@
                                                                                         <ul>
                                                                                             <li>
                                                                                                 <strong class="label">Key</strong>
-                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.key')"></span>
+                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.key')"></span>
                                                                                                 <span class="value"> : {{ exp.key }}</span>
                                                                                             </li>
                                                                                             <li>
                                                                                                 <strong class="label">Operator</strong>
-                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.operator')"></span>
+                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.operator')"></span>
                                                                                                 <span class="value"> : {{ exp.operator }}</span>
                                                                                             </li>
                                                                                             <li v-if="exp.hasOwnProperty('values')">
                                                                                                 <strong class="label">{{ (exp.values.length > 1) ? 'Values' : 'Value' }}</strong>
-                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.values')"></span>
+                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchExpressions.items.properties.values')"></span>
                                                                                                 <span class="value"> : {{ (exp.values.length > 1) ? exp.values.join(', ') : exp.values[0] }}</span>
                                                                                             </li>
                                                                                         </ul>
@@ -3847,7 +3847,7 @@
                                                                             <li v-if="term.hasOwnProperty('matchFields')">
                                                                                 <button class="toggleSummary"></button>
                                                                                 <strong class="label">Match Fields</strong>
-                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields')"></span>
+                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields')"></span>
                                                                                 <ul>
                                                                                     <li v-for="(field, index) in term.matchFields">
                                                                                         <button class="toggleSummary"></button>
@@ -3855,17 +3855,17 @@
                                                                                         <ul>
                                                                                             <li>
                                                                                                 <strong class="label">Key</strong>
-                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.key')"></span>
+                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.key')"></span>
                                                                                                 <span class="value"> : {{ field.key }}</span>
                                                                                             </li>
                                                                                             <li>
                                                                                                 <strong class="label">Operator</strong>
-                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.operator')"></span>
+                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.operator')"></span>
                                                                                                 <span class="value"> : {{ field.operator }}</span>
                                                                                             </li>
                                                                                             <li v-if="field.hasOwnProperty('values')">
                                                                                                 <strong class="label">{{ (field.values.length > 1) ? 'Values' : 'Value' }}</strong>
-                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.values')"></span>
+                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.items.properties.matchFields.items.properties.values')"></span>
                                                                                                 <span class="value"> : {{ (field.values.length > 1) ? field.values.join(', ') : field.values[0] }}</span>
                                                                                             </li>
                                                                                         </ul>
@@ -3882,13 +3882,13 @@
                                                     <li v-if="hasProp(override, 'pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution')">
                                                         <button class="toggleSummary"></button>
                                                         <strong class="label">Node Affinity</strong>
-                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution')"></span><br/>
+                                                        <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution')"></span><br/>
                                                         <span>Preferred During Scheduling Ignored During Execution</span>
                                                         <ul>
                                                             <li>
                                                                 <button class="toggleSummary"></button>
                                                                 <strong class="label">Terms</strong>
-                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items')"></span>
+                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items')"></span>
                                                                 <ul>
                                                                     <li v-for="(term, index) in override.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution">
                                                                         <button class="toggleSummary"></button>
@@ -3897,7 +3897,7 @@
                                                                             <li v-if="term.preference.hasOwnProperty('matchExpressions')">
                                                                                 <button class="toggleSummary"></button>
                                                                                 <strong class="label">Match Expressions</strong>
-                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions')"></span>
+                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions')"></span>
                                                                                 <ul>
                                                                                     <li v-for="(exp, index) in term.preference.matchExpressions">
                                                                                         <button class="toggleSummary"></button>
@@ -3905,17 +3905,17 @@
                                                                                         <ul>
                                                                                             <li>
                                                                                                 <strong class="label">Key</strong>
-                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.key')"></span>
+                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.key')"></span>
                                                                                                 <span class="value"> : {{ exp.key }}</span>
                                                                                             </li>
                                                                                             <li>
                                                                                                 <strong class="label">Operator</strong>
-                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.operator')"></span>
+                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.operator')"></span>
                                                                                                 <span class="value"> : {{ exp.operator }}</span>
                                                                                             </li>
                                                                                             <li v-if="exp.hasOwnProperty('values')">
                                                                                                 <strong class="label">{{ (exp.values.length > 1) ? 'Values' : 'Value' }}</strong>
-                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.values')"></span>
+                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchExpressions.items.properties.values')"></span>
                                                                                                 <span class="value"> : {{ (exp.values.length > 1) ? exp.values.join(', ') : exp.values[0] }}</span>
                                                                                             </li>
                                                                                         </ul>
@@ -3925,7 +3925,7 @@
                                                                             <li v-if="term.preference.hasOwnProperty('matchFields')">
                                                                                 <button class="toggleSummary"></button>
                                                                                 <strong class="label">Match Fields</strong>
-                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields')"></span>
+                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields')"></span>
                                                                                 <ul>
                                                                                     <li v-for="(field, index) in term.preference.matchFields">
                                                                                         <button class="toggleSummary"></button>
@@ -3933,17 +3933,17 @@
                                                                                         <ul>
                                                                                             <li>
                                                                                                 <strong class="label">Key</strong>
-                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.key')"></span>
+                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.key')"></span>
                                                                                                 <span class="value"> : {{ field.key }}</span>
                                                                                             </li>
                                                                                             <li>
                                                                                                 <strong class="label">Operator</strong>
-                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.operator')"></span>
+                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.operator')"></span>
                                                                                                 <span class="value"> : {{ field.operator }}</span>
                                                                                             </li>
                                                                                             <li v-if="field.hasOwnProperty('values')">
                                                                                                 <strong class="label">{{ (field.values.length > 1) ? 'Values' : 'Value' }}</strong>
-                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.values')"></span>
+                                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.preference.properties.matchFields.items.properties.values')"></span>
                                                                                                 <span class="value"> : {{ (field.values.length > 1) ? field.values.join(', ') : field.values[0] }}</span>
                                                                                             </li>
                                                                                         </ul>
@@ -3952,7 +3952,7 @@
                                                                             </li>
                                                                             <li v-if="term.hasOwnProperty('weight')">
                                                                                 <strong class="label">Weight</strong>
-                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.shards.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.weight')"></span>
+                                                                                <span class="helpTooltip" :data-tooltip="getTooltip('sgshardedcluster.spec.workers.overrides.pods.scheduling.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution.items.properties.weight')"></span>
                                                                                 <span class="value"> : {{ term.weight }}</span>
                                                                             </li>
                                                                         </ul>

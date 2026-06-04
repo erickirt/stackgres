@@ -23,15 +23,14 @@ import jakarta.validation.Valid;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresClusterPodsSchedulingBackup {
 
   private Map<String, String> nodeSelector;
 
-  @Valid
-  private List<Toleration> tolerations;
+  private List<@Valid Toleration> tolerations;
 
   @Valid
   private NodeAffinity nodeAffinity;
@@ -39,7 +38,13 @@ public class StackGresClusterPodsSchedulingBackup {
   @Valid
   private PodAffinity podAffinity;
 
+  private String preemptionPolicy;
+
   private String priorityClassName;
+
+  private String runtimeClassName;
+
+  private String schedulerName;
 
   @Valid
   private PodAntiAffinity podAntiAffinity;
@@ -76,12 +81,36 @@ public class StackGresClusterPodsSchedulingBackup {
     this.podAffinity = podAffinity;
   }
 
+  public String getPreemptionPolicy() {
+    return preemptionPolicy;
+  }
+
+  public void setPreemptionPolicy(String preemptionPolicy) {
+    this.preemptionPolicy = preemptionPolicy;
+  }
+
   public String getPriorityClassName() {
     return priorityClassName;
   }
 
   public void setPriorityClassName(String priorityClassName) {
     this.priorityClassName = priorityClassName;
+  }
+
+  public String getRuntimeClassName() {
+    return runtimeClassName;
+  }
+
+  public void setRuntimeClassName(String runtimeClassName) {
+    this.runtimeClassName = runtimeClassName;
+  }
+
+  public String getSchedulerName() {
+    return schedulerName;
+  }
+
+  public void setSchedulerName(String schedulerName) {
+    this.schedulerName = schedulerName;
   }
 
   public PodAntiAffinity getPodAntiAffinity() {
@@ -105,14 +134,17 @@ public class StackGresClusterPodsSchedulingBackup {
         && Objects.equals(nodeSelector, other.nodeSelector)
         && Objects.equals(podAffinity, other.podAffinity)
         && Objects.equals(podAntiAffinity, other.podAntiAffinity)
-        && Objects.equals(tolerations, other.tolerations)
-        && Objects.equals(priorityClassName, other.priorityClassName);
+        && Objects.equals(preemptionPolicy, other.preemptionPolicy)
+        && Objects.equals(priorityClassName, other.priorityClassName)
+        && Objects.equals(runtimeClassName, other.runtimeClassName)
+        && Objects.equals(schedulerName, other.schedulerName)
+        && Objects.equals(tolerations, other.tolerations);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(nodeAffinity, nodeSelector, podAffinity, podAntiAffinity, tolerations,
-        priorityClassName);
+    return Objects.hash(nodeAffinity, nodeSelector, podAffinity, podAntiAffinity, preemptionPolicy,
+        priorityClassName, runtimeClassName, schedulerName, tolerations);
   }
 
   @Override

@@ -17,7 +17,7 @@ import jakarta.validation.constraints.NotNull;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresClusterReplicateFromExternal {
@@ -27,6 +27,8 @@ public class StackGresClusterReplicateFromExternal {
 
   @NotNull(message = "port is required")
   private Integer port;
+
+  private StackGresClusterReplicateFromCustomRestoreMethod customRestoreMethod;
 
   public String getHost() {
     return host;
@@ -44,9 +46,18 @@ public class StackGresClusterReplicateFromExternal {
     this.port = port;
   }
 
+  public StackGresClusterReplicateFromCustomRestoreMethod getCustomRestoreMethod() {
+    return customRestoreMethod;
+  }
+
+  public void setCustomRestoreMethod(
+      StackGresClusterReplicateFromCustomRestoreMethod customRestoreMethod) {
+    this.customRestoreMethod = customRestoreMethod;
+  }
+
   @Override
   public int hashCode() {
-    return Objects.hash(host, port);
+    return Objects.hash(customRestoreMethod, host, port);
   }
 
   @Override
@@ -58,7 +69,8 @@ public class StackGresClusterReplicateFromExternal {
       return false;
     }
     StackGresClusterReplicateFromExternal other = (StackGresClusterReplicateFromExternal) obj;
-    return Objects.equals(host, other.host) && Objects.equals(port, other.port);
+    return Objects.equals(customRestoreMethod, other.customRestoreMethod)
+        && Objects.equals(host, other.host) && Objects.equals(port, other.port);
   }
 
   @Override

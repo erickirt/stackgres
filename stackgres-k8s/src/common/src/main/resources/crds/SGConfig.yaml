@@ -220,6 +220,22 @@ spec:
 
                       > This value can only be set in operator helm chart.
                     x-kubernetes-preserve-unknown-fields: true
+                  schedulerName:
+                    type: string
+                    description: |
+                      Operator Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  runtimeClassName:
+                    type: string
+                    description: |
+                      Operator Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  preemptionPolicy:
+                    type: string
+                    description: |
+                      Operator Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  priorityClassName:
+                    type: string
+                    description: |
+                      Operator Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
                   nodeSelector:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
@@ -332,6 +348,22 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                     description: REST API Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                  schedulerName:
+                    type: string
+                    description: |
+                      REST API Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  runtimeClassName:
+                    type: string
+                    description: |
+                      REST API Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  preemptionPolicy:
+                    type: string
+                    description: |
+                      REST API Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  priorityClassName:
+                    type: string
+                    description: |
+                      REST API Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
                   nodeSelector:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
@@ -588,6 +620,22 @@ spec:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
                               description: OpenTelemetry Collector Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                            schedulerName:
+                              type: string
+                              description: |
+                                OpenTelemetry Collector Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                            runtimeClassName:
+                              type: string
+                              description: |
+                                OpenTelemetry Collector Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                            preemptionPolicy:
+                              type: string
+                              description: |
+                                OpenTelemetry Collector Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                            priorityClassName:
+                              type: string
+                              description: |
+                                OpenTelemetry Collector Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
                             nodeSelector:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
@@ -610,6 +658,22 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                     description: OpenTelemetry Collector Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                  schedulerName:
+                    type: string
+                    description: |
+                      OpenTelemetry Collector Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  runtimeClassName:
+                    type: string
+                    description: |
+                      OpenTelemetry Collector Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  preemptionPolicy:
+                    type: string
+                    description: |
+                      OpenTelemetry Collector Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  priorityClassName:
+                    type: string
+                    description: |
+                      OpenTelemetry Collector Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
                   nodeSelector:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
@@ -754,6 +818,22 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                     description: Operator Installation Jobs resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                  schedulerName:
+                    type: string
+                    description: |
+                      Operator Installation Job's Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  runtimeClassName:
+                    type: string
+                    description: |
+                      Operator Installation Job's Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  preemptionPolicy:
+                    type: string
+                    description: |
+                      Operator Installation Job's Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                  priorityClassName:
+                    type: string
+                    description: |
+                      Operator Installation Job's Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
                   nodeSelector:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
@@ -1109,6 +1189,7 @@ spec:
               extensions:
                 type: object
                 description: Section to configure extensions
+                default: {}
                 properties:
                   repositoryUrls:
                     type: array
@@ -1116,17 +1197,32 @@ spec:
                     - https://extensions.stackgres.io/postgres/repository
                     description: |
                       A list of extensions repository URLs used to retrieve extensions
-                      
+
+                      > This value is overridden by the environment variable `EXTENSIONS_REPOSITORY_URLS`
+                      >   when it is set (for example through the OLM bundle Subscription).
+
                       To set a proxy for extensions repository add parameter proxyUrl to the URL:
                           `https://extensions.stackgres.io/postgres/repository?proxyUrl=<proxy scheme>%3A%2F%2F<proxy host>[%3A<proxy port>]` (URL encoded)
-                      
+
                       Other URL parameters are:
-                      
+
                       * `skipHostnameVerification`: set it to `true` in order to use a server or a proxy with a self signed certificate
                       * `retry`: set it to `<max retries>[:<sleep before next retry>]` in order to retry a request on failure
                       * `setHttpScheme`: set it to `true` in order to force using HTTP scheme
                     items:
                       type: string
+                  refreshInterval:
+                    type: string
+                    description: |
+                      The interval, as an ISO-8601 duration (e.g. `P7D`, `PT1H`), between refreshes of
+                      the cached extensions metadata. When not set the default of 1 week is used. Values
+                      lower than the minimum of 1 hour are clamped up to 1 hour.
+                  refreshEnabled:
+                    type: boolean
+                    default: true
+                    description: |
+                      When set to `false` the extensions metadata is retrieved only once and never
+                      refreshed afterwards.
                   cache:
                     type: object
                     description: |
@@ -1134,6 +1230,8 @@ spec:
                       
                       This feature is in beta and may cause failures, please use with caution and report any
                        error to https://gitlab.com/ongresinc/stackgres/-/issues/new
+                      
+                      This feature can only be set in the StackGres Helm chart
                     properties:
                       enabled:
                         type: boolean
@@ -1360,6 +1458,10 @@ spec:
                     lastTransitionTime:
                       description: Last time the condition transitioned from one status to another.
                       type: string
+                    observedGeneration:
+                      description: The .metadata.generation the condition was computed against.
+                      type: integer
+                      format: int64
                     message:
                       description: A human readable message indicating details about the transition.
                       type: string
@@ -1375,6 +1477,9 @@ spec:
               version:
                 type: string
                 description: Latest version of the operator used to check for updates
+              installationId:
+                type: string
+                description: A hash that identify the installation
               grafana:
                 type: object
                 properties:

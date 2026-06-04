@@ -20,7 +20,7 @@ import jakarta.validation.constraints.NotBlank;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 @SuppressFBWarnings(value = "NM_SAME_SIMPLE_NAME_AS_INTERFACE",
@@ -38,6 +38,8 @@ public class Condition implements io.stackgres.operatorframework.resource.Condit
 
   @NotBlank(message = "The condition type is required")
   private String type;
+
+  private Long observedGeneration;
 
   /**
    * Constructor of the required fields.
@@ -115,8 +117,18 @@ public class Condition implements io.stackgres.operatorframework.resource.Condit
   }
 
   @Override
+  public Long getObservedGeneration() {
+    return observedGeneration;
+  }
+
+  @Override
+  public void setObservedGeneration(Long observedGeneration) {
+    this.observedGeneration = observedGeneration;
+  }
+
+  @Override
   public int hashCode() {
-    return Objects.hash(lastTransitionTime, message, reason, status, type);
+    return Objects.hash(lastTransitionTime, message, reason, status, type, observedGeneration);
   }
 
   @Override
@@ -130,7 +142,8 @@ public class Condition implements io.stackgres.operatorframework.resource.Condit
     Condition other = (Condition) obj;
     return Objects.equals(lastTransitionTime, other.lastTransitionTime)
         && Objects.equals(message, other.message) && Objects.equals(reason, other.reason)
-        && Objects.equals(status, other.status) && Objects.equals(type, other.type);
+        && Objects.equals(status, other.status) && Objects.equals(type, other.type)
+        && Objects.equals(observedGeneration, other.observedGeneration);
   }
 
   @Override

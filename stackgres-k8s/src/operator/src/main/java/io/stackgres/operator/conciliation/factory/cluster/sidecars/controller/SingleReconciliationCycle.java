@@ -20,7 +20,7 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.stackgres.common.ClusterControllerProperty;
 import io.stackgres.common.ClusterPath;
-import io.stackgres.common.OperatorProperty;
+import io.stackgres.common.PatroniUtil;
 import io.stackgres.common.StackGresInitContainer;
 import io.stackgres.common.StackGresModules;
 import io.stackgres.common.StackGresVolume;
@@ -28,20 +28,32 @@ import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterDbOpsMajorVersionUpgradeStatus;
 import io.stackgres.common.crd.sgcluster.StackGresClusterDbOpsStatus;
 import io.stackgres.common.crd.sgcluster.StackGresClusterStatus;
+import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloper;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperContainerPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigSpec;
+import io.stackgres.common.extension.ExtensionsConfigUtil;
+import io.stackgres.operator.app.OperatorInstallationInfoHolder;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.factory.ContainerFactory;
 import io.stackgres.operator.conciliation.factory.InitContainer;
 import io.stackgres.operator.conciliation.factory.cluster.ClusterContainerContext;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 @Singleton
 @OperatorVersionBinder
 @InitContainer(StackGresInitContainer.CLUSTER_RECONCILIATION_CYCLE)
 public class SingleReconciliationCycle implements ContainerFactory<ClusterContainerContext> {
+
+  private final OperatorInstallationInfoHolder installationInfoHolder;
+
+  @Inject
+  public SingleReconciliationCycle(
+      OperatorInstallationInfoHolder installationInfoHolder) {
+    this.installationInfoHolder = installationInfoHolder;
+  }
 
   @Override
   public boolean isActivated(ClusterContainerContext context) {
@@ -85,6 +97,12 @@ public class SingleReconciliationCycle implements ContainerFactory<ClusterContai
                 .getCluster().getMetadata().getName())
             .build(),
             new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_ENDPOINTS_NAME.getEnvironmentVariableName())
+            .withValue(PatroniUtil.readWriteName(context
+                .getClusterContext()
+                .getCluster()))
+            .build(),
+            new EnvVarBuilder()
             .withName(ClusterControllerProperty.CLUSTER_NAMESPACE.getEnvironmentVariableName())
             .withValue(context
                 .getClusterContext()
@@ -98,10 +116,40 @@ public class SingleReconciliationCycle implements ContainerFactory<ClusterContai
                 .build())
             .build(),
             new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_INSTALLATION_ID
+                .getEnvironmentVariableName())
+            .withValue(installationInfoHolder.getInstallationId())
+            .build(),
+            new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_POD_UID
+                .getEnvironmentVariableName())
+            .withValueFrom(new EnvVarSourceBuilder()
+                .withFieldRef(new ObjectFieldSelector("v1", "metadata.uid"))
+                .build())
+            .build(),
+            new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_POD_IP
+                .getEnvironmentVariableName())
+            .withValueFrom(new EnvVarSourceBuilder()
+                .withFieldRef(new ObjectFieldSelector("v1", "status.podIP"))
+                .build())
+            .build(),
+            new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_NODE_NAME
+                .getEnvironmentVariableName())
+            .withValueFrom(new EnvVarSourceBuilder()
+                .withFieldRef(new ObjectFieldSelector("v1", "spec.nodeName"))
+                .build())
+            .build(),
+            new EnvVarBuilder()
             .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_EXTENSIONS_REPOSITORY_URLS
                 .getEnvironmentVariableName())
-            .withValue(OperatorProperty.EXTENSIONS_REPOSITORY_URLS
-                .getString())
+            .withValue(String.join(",",
+                ExtensionsConfigUtil.getExtensionsRepositoryUrls(
+                    Optional.of(context.getClusterContext().getConfig())
+                    .map(StackGresConfig::getSpec)
+                    .map(StackGresConfigSpec::getExtensions)
+                    .orElse(null))))
             .build(),
             new EnvVarBuilder()
             .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_SKIP_OVERWRITE_SHARED_LIBRARIES

@@ -9,18 +9,18 @@ StackGres supports creating sharded PostgreSQL clusters using the SGShardedClust
 
 ## What is Sharding?
 
-Sharding is a database architecture pattern that partitions data horizontally across multiple database instances (shards). Each shard contains a subset of the total data, allowing:
+Sharding is a database architecture pattern that partitions data horizontally across multiple database instances (workers). Each worker contains a subset of the total data, allowing:
 
-- **Horizontal scalability**: Add more shards to handle increased load
-- **Improved performance**: Queries can be parallelized across shards
+- **Horizontal scalability**: Add more workers to handle increased load
+- **Improved performance**: Queries can be parallelized across workers
 - **Larger datasets**: Store more data than a single instance can handle
 
 ## StackGres Sharding Architecture
 
 A StackGres sharded cluster consists of:
 
-- **Coordinator**: Routes queries to appropriate shards
-- **Shards**: Individual PostgreSQL clusters holding data partitions
+- **Coordinator**: Routes queries to appropriate workers
+- **Workers**: Individual PostgreSQL clusters holding data partitions
 
 ![SG Sharded Architecture](SG_StackGres_ShardedCluster_Architecture.png "StackGres-Sharded_Architecture")
 
@@ -37,10 +37,10 @@ StackGres supports multiple sharding technologies:
 ## Key Features
 
 - **Single configuration**: Define an entire sharded cluster in one SGShardedCluster resource
-- **Automatic management**: StackGres handles shard creation and coordination
-- **High availability**: Each shard is a fully HA PostgreSQL cluster
-- **Unified monitoring**: Monitor all shards from a single dashboard
-- **Day-2 operations**: Perform operations across all shards simultaneously
+- **Automatic management**: StackGres handles worker creation and coordination
+- **High availability**: Each worker is a fully HA PostgreSQL cluster
+- **Unified monitoring**: Monitor all workers from a single dashboard
+- **Day-2 operations**: Perform operations across all workers simultaneously
 
 ## Getting Started
 

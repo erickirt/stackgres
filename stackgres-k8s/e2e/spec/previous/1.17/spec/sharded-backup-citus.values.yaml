@@ -15,7 +15,7 @@ cluster:
       cronSchedule: '0 5 31 2 *'
       sgObjectStorage: backupconf
 shardedCluster:
-  shards:
+  workers:
     pods:
       persistentVolume:
         size: 128Mi

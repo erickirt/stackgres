@@ -6,7 +6,9 @@
 package io.stackgres.apiweb.rest;
 
 import java.net.URI;
+import java.util.Map;
 
+import io.stackgres.apiweb.app.WebApiInstallationInfoHolder;
 import io.stackgres.apiweb.configuration.WebApiProperty;
 import io.stackgres.apiweb.configuration.WebApiPropertyContext;
 import io.stackgres.common.WebClientFactory;
@@ -19,14 +21,17 @@ import org.jooq.lambda.Seq;
 public class RestApiExtensionMetadataManager extends ExtensionMetadataManager {
 
   @Inject
-  public RestApiExtensionMetadataManager(WebApiPropertyContext propertyContext,
-      WebClientFactory webClientFactory) {
+  public RestApiExtensionMetadataManager(
+      WebApiPropertyContext propertyContext,
+      WebClientFactory webClientFactory,
+      WebApiInstallationInfoHolder installationInfoHolder) {
     super(
         webClientFactory,
         Seq.of(propertyContext.getStringArray(
             WebApiProperty.EXTENSIONS_REPOSITORY_URLS))
-            .map(URI::create)
-            .toList());
+        .map(URI::create)
+        .toList(),
+        () -> Map.ofEntries(installationInfoHolder.getUserAgentHeaderEntry()));
   }
 
 }

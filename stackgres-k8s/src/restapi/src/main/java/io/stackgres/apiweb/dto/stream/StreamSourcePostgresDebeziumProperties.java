@@ -24,6 +24,8 @@ public class StreamSourcePostgresDebeziumProperties {
 
   private Boolean slotFailover;
 
+  private String offsetMismatchStrategy;
+
   private String publicationName;
 
   private Boolean skipMessagesWithoutChange;
@@ -142,6 +144,8 @@ public class StreamSourcePostgresDebeziumProperties {
 
   private Boolean flushLsnSource;
 
+  private String lsnFlushMode;
+
   private Integer retriableRestartConnectorWaitMs;
 
   private List<String> skippedOperations;
@@ -173,6 +177,8 @@ public class StreamSourcePostgresDebeziumProperties {
   private Integer snapshotMaxThreads;
 
   private Map<String, String> customMetricTags;
+
+  private String customSanitizePattern;
 
   private Integer errorsMaxRetries;
 
@@ -214,6 +220,14 @@ public class StreamSourcePostgresDebeziumProperties {
 
   public void setSlotFailover(Boolean slotFailover) {
     this.slotFailover = slotFailover;
+  }
+
+  public String getOffsetMismatchStrategy() {
+    return offsetMismatchStrategy;
+  }
+
+  public void setOffsetMismatchStrategy(String offsetMismatchStrategy) {
+    this.offsetMismatchStrategy = offsetMismatchStrategy;
   }
 
   public String getPublicationName() {
@@ -694,6 +708,14 @@ public class StreamSourcePostgresDebeziumProperties {
     this.flushLsnSource = flushLsnSource;
   }
 
+  public String getLsnFlushMode() {
+    return lsnFlushMode;
+  }
+
+  public void setLsnFlushMode(String lsnFlushMode) {
+    this.lsnFlushMode = lsnFlushMode;
+  }
+
   public Integer getRetriableRestartConnectorWaitMs() {
     return retriableRestartConnectorWaitMs;
   }
@@ -821,6 +843,14 @@ public class StreamSourcePostgresDebeziumProperties {
 
   public void setCustomMetricTags(Map<String, String> customMetricTags) {
     this.customMetricTags = customMetricTags;
+  }
+
+  public String getCustomSanitizePattern() {
+    return customSanitizePattern;
+  }
+
+  public void setCustomSanitizePattern(String customSanitizePattern) {
+    this.customSanitizePattern = customSanitizePattern;
   }
 
   public Integer getErrorsMaxRetries() {

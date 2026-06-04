@@ -6,7 +6,6 @@
 package io.stackgres.operator.conciliation.factory.stream;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -64,9 +63,6 @@ public class StreamPersistentVolumeClaim
 
     final StorageConfig dataStorageConfig = ImmutableStorageConfig.builder()
         .size(persistentVolume.getSize())
-        .storageClass(Optional.ofNullable(
-            persistentVolume.getStorageClass())
-            .orElse(null))
         .build();
 
     String namespace = stream.getMetadata().getNamespace();
@@ -80,7 +76,7 @@ public class StreamPersistentVolumeClaim
         .withNewSpec()
         .withAccessModes("ReadWriteOnce")
         .withResources(dataStorageConfig.getVolumeResourceRequirements())
-        .withStorageClassName(dataStorageConfig.getStorageClass())
+        .withStorageClassName(persistentVolume.getStorageClass())
         .endSpec()
         .build();
   }

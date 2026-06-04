@@ -21,7 +21,7 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.stackgres.common.ClusterControllerProperty;
 import io.stackgres.common.ClusterPath;
-import io.stackgres.common.OperatorProperty;
+import io.stackgres.common.PatroniUtil;
 import io.stackgres.common.StackGresContainer;
 import io.stackgres.common.StackGresContext;
 import io.stackgres.common.StackGresModules;
@@ -31,13 +31,18 @@ import io.stackgres.common.crd.sgcluster.StackGresClusterConfigurations;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPatroni;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPatroniConfig;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPods;
+import io.stackgres.common.crd.sgcluster.StackGresClusterPodsPersistentVolume;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
+import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloper;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperContainerPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigDeveloperPatches;
 import io.stackgres.common.crd.sgconfig.StackGresConfigSpec;
+import io.stackgres.common.extension.ExtensionsConfigUtil;
+import io.stackgres.operator.app.OperatorInstallationInfoHolder;
 import io.stackgres.operator.common.Sidecar;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
+import io.stackgres.operator.conciliation.factory.CgroupMounts;
 import io.stackgres.operator.conciliation.factory.ContainerFactory;
 import io.stackgres.operator.conciliation.factory.PostgresDataMounts;
 import io.stackgres.operator.conciliation.factory.PostgresSocketMounts;
@@ -56,19 +61,35 @@ public class ClusterController implements ContainerFactory<ClusterContainerConte
   private final PostgresDataMounts postgresDataMounts;
   private final UserOverrideMounts userOverrideMounts;
   private final PostgresSocketMounts postgresSocketMounts;
+  private final CgroupMounts cgroupMounts;
+  private final OperatorInstallationInfoHolder installationInfoHolder;
 
   @Inject
   public ClusterController(
       PostgresDataMounts postgresDataMounts,
       UserOverrideMounts userOverrideMounts,
-      PostgresSocketMounts postgresSocketMounts) {
+      PostgresSocketMounts postgresSocketMounts,
+      CgroupMounts cgroupMounts,
+      OperatorInstallationInfoHolder installationInfoHolder) {
     this.postgresDataMounts = postgresDataMounts;
     this.userOverrideMounts = userOverrideMounts;
     this.postgresSocketMounts = postgresSocketMounts;
+    this.cgroupMounts = cgroupMounts;
+    this.installationInfoHolder = installationInfoHolder;
   }
 
   @Override
   public Container getContainer(ClusterContainerContext context) {
+    final boolean isIoLimitsSet = Optional.of(context.getClusterContext().getCluster())
+        .map(StackGresCluster::getSpec)
+        .map(StackGresClusterSpec::getPods)
+        .map(StackGresClusterPods::getPersistentVolume)
+        .map(StackGresClusterPodsPersistentVolume::getIoLimits)
+        .map(ioLimits -> ioLimits.getReadIops() != null
+            || ioLimits.getWriteIops() != null
+            || ioLimits.getReadMiBps() != null
+            || ioLimits.getWriteMiBps() != null)
+        .orElse(false);
     return new ContainerBuilder()
         .withName(StackGresContainer.CLUSTER_CONTROLLER.getName())
         .withImage(StackGresModules.CLUSTER_CONTROLLER.getImageName())
@@ -81,6 +102,12 @@ public class ClusterController implements ContainerFactory<ClusterContainerConte
                 .getCluster().getMetadata().getName())
             .build(),
             new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_ENDPOINTS_NAME.getEnvironmentVariableName())
+            .withValue(PatroniUtil.readWriteName(context
+                .getClusterContext()
+                .getCluster()))
+            .build(),
+            new EnvVarBuilder()
             .withName(ClusterControllerProperty.CLUSTER_NAMESPACE.getEnvironmentVariableName())
             .withValue(context
                 .getClusterContext()
@@ -91,6 +118,18 @@ public class ClusterController implements ContainerFactory<ClusterContainerConte
                 .getEnvironmentVariableName())
             .withValueFrom(new EnvVarSourceBuilder()
                 .withFieldRef(new ObjectFieldSelector("v1", "metadata.name"))
+                .build())
+            .build(),
+            new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_INSTALLATION_ID
+                .getEnvironmentVariableName())
+            .withValue(installationInfoHolder.getInstallationId())
+            .build(),
+            new EnvVarBuilder()
+            .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_POD_UID
+                .getEnvironmentVariableName())
+            .withValueFrom(new EnvVarSourceBuilder()
+                .withFieldRef(new ObjectFieldSelector("v1", "metadata.uid"))
                 .build())
             .build(),
             new EnvVarBuilder()
@@ -110,8 +149,12 @@ public class ClusterController implements ContainerFactory<ClusterContainerConte
             new EnvVarBuilder()
             .withName(ClusterControllerProperty.CLUSTER_CONTROLLER_EXTENSIONS_REPOSITORY_URLS
                 .getEnvironmentVariableName())
-            .withValue(OperatorProperty.EXTENSIONS_REPOSITORY_URLS
-                .getString())
+            .withValue(String.join(",",
+                ExtensionsConfigUtil.getExtensionsRepositoryUrls(
+                    Optional.of(context.getClusterContext().getConfig())
+                    .map(StackGresConfig::getSpec)
+                    .map(StackGresConfigSpec::getExtensions)
+                    .orElse(null))))
             .build(),
             new EnvVarBuilder()
             .withName(ClusterControllerProperty
@@ -136,6 +179,22 @@ public class ClusterController implements ContainerFactory<ClusterContainerConte
                 .CLUSTER_CONTROLLER_RECONCILE_PATRONI
                 .getEnvironmentVariableName())
             .withValue(Boolean.TRUE.toString())
+            .build(),
+            new EnvVarBuilder()
+            .withName(ClusterControllerProperty
+                .CLUSTER_CONTROLLER_APPLY_IO_LIMITS
+                .getEnvironmentVariableName())
+            .withValue(Optional.of(context.getClusterContext().getCluster())
+                .map(StackGresCluster::getSpec)
+                .map(StackGresClusterSpec::getPods)
+                .map(StackGresClusterPods::getPersistentVolume)
+                .map(StackGresClusterPodsPersistentVolume::getIoLimits)
+                .map(ioLimits -> ioLimits.getReadIops() != null
+                    || ioLimits.getWriteIops() != null
+                    || ioLimits.getReadMiBps() != null
+                    || ioLimits.getWriteMiBps() != null)
+                .orElse(Boolean.FALSE)
+                .toString())
             .build(),
             new EnvVarBuilder()
             .withName(ClusterControllerProperty
@@ -234,6 +293,7 @@ public class ClusterController implements ContainerFactory<ClusterContainerConte
             .flatMap(List::stream)
             .map(VolumeMount.class::cast)
             .toList())
+        .addAllToVolumeMounts(isIoLimitsSet ? cgroupMounts.getVolumeMounts(context) : List.of())
         .build();
   }
 

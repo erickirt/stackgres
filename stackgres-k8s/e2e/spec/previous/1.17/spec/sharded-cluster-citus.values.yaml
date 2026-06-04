@@ -22,7 +22,7 @@ cluster:
       size: 128Mi
     managementPolicy: Parallel
 shardedCluster:
-  shards:
+  workers:
     pods:
       persistentVolume:
         size: 128Mi

@@ -11,15 +11,11 @@ import com.google.common.collect.ImmutableMap;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.VolumeResourceRequirements;
 import org.immutables.value.Value;
-import org.jetbrains.annotations.Nullable;
 
 @Value.Immutable
 public abstract class StorageConfig {
 
   public abstract String getSize();
-
-  @Nullable
-  public abstract String getStorageClass();
 
   /**
    * The request definition for StorageConfig.

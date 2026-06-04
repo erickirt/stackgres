@@ -196,6 +196,7 @@ public class CrdInstaller {
       CustomResourceDefinition currentCrd,
       CustomResourceDefinition installedCrd) {
     disableStorageVersions(installedCrd);
+    setDeprecatedVersions(installedCrd);
     addNewSchemaVersions(currentCrd, installedCrd);
     crdResourceWriter.update(installedCrd, foundCrd -> {
       foundCrd.setSpec(installedCrd.getSpec());
@@ -216,7 +217,18 @@ public class CrdInstaller {
 
   private void disableStorageVersions(CustomResourceDefinition installedCrd) {
     installedCrd.getSpec().getVersions()
-        .forEach(versionDefinition -> versionDefinition.setStorage(false));
+        .forEach(version -> version.setStorage(false));
+  }
+
+  private void setDeprecatedVersions(
+      CustomResourceDefinition installedCrd) {
+    installedCrd.getSpec().getVersions().stream()
+        .forEach(version -> {
+          version.setAdditionalPrinterColumns(null);
+          var openApiV3Schema = version.getSchema().getOpenAPIV3Schema();
+          openApiV3Schema.setProperties(null);
+          openApiV3Schema.setXKubernetesPreserveUnknownFields(true);
+        });
   }
 
   private void addNewSchemaVersions(

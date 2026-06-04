@@ -10,11 +10,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import com.google.common.io.Resources;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.stackgres.common.ClusterPath;
 import io.stackgres.common.StackGresShardedClusterUtil;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterConfigurations;
@@ -32,10 +35,11 @@ import io.stackgres.common.crd.sgscript.StackGresScriptBuilder;
 import io.stackgres.common.crd.sgscript.StackGresScriptEntry;
 import io.stackgres.common.crd.sgscript.StackGresScriptEntryBuilder;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterShard;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpecLabels;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpecMetadata;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorker;
 import io.stackgres.operator.conciliation.shardedcluster.StackGresShardedClusterContext;
 import io.stackgres.operatorframework.resource.ResourceUtil;
 import org.jooq.impl.DSL;
@@ -79,7 +83,7 @@ public interface StackGresShardedClusterForCitusUtil extends StackGresShardedClu
     }
 
     @Override
-    void updateShardsClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
+    void updateWorkerClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
       setConfigurationsPatroniInitialConfig(cluster, spec, index + 1);
     }
 
@@ -93,6 +97,7 @@ public interface StackGresShardedClusterForCitusUtil extends StackGresShardedClu
       if (patroni == null) {
         patroni = new StackGresClusterPatroni();
       }
+      spec.getConfigurations().getPatroni().setConnectUsingFqdn(patroni.getConnectUsingFqdn());
       spec.getConfigurations().getPatroni().setDynamicConfig(patroni.getDynamicConfig());
       if (patroni.getInitialConfig() == null) {
         spec.getConfigurations().getPatroni()
@@ -140,7 +145,7 @@ public interface StackGresShardedClusterForCitusUtil extends StackGresShardedClu
     }
 
     @Override
-    void setOverridesLabels(StackGresShardedClusterShard specOverride, StackGresClusterSpec spec, int index) {
+    void setOverridesLabels(StackGresShardedClusterWorker specOverride, StackGresClusterSpec spec, int index) {
       if (specOverride.getMetadata().getLabels() != null) {
         if (spec.getMetadata().getLabels() == null) {
           spec.getMetadata().setLabels(new StackGresClusterSpecLabels());
@@ -163,26 +168,58 @@ public interface StackGresShardedClusterForCitusUtil extends StackGresShardedClu
     }
   }
 
-  static StackGresCluster getCoordinatorCluster(StackGresShardedCluster cluster) {
-    return UTIL.getCoordinatorCluster(cluster);
+  static StackGresCluster getCoordinatorCluster(
+      StackGresShardedCluster cluster,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    return UTIL.getCoordinatorCluster(cluster, replicateCluster);
   }
 
-  static StackGresCluster getShardsCluster(StackGresShardedCluster cluster, int index) {
-    return UTIL.getShardsCluster(cluster, index);
+  static StackGresCluster getWorkerCluster(
+      StackGresShardedCluster cluster,
+      int index,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    return UTIL.getWorkerCluster(cluster, index, replicateCluster);
+  }
+
+  static StackGresCluster getQueryRouterCluster(
+      StackGresShardedCluster cluster,
+      int index,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    return UTIL.getQueryRouterCluster(cluster, index, replicateCluster);
   }
 
   static StackGresPostgresConfig getCoordinatorPostgresConfig(
       StackGresShardedCluster cluster, StackGresPostgresConfig coordinatorPostgresConfig) {
     Map<String, String> postgresqlConf =
         coordinatorPostgresConfig.getSpec().getPostgresqlConf();
-    Integer maxConnections = Optional.ofNullable(postgresqlConf.get("max_connections"))
+    final int maxConnections =
+        Optional.ofNullable(postgresqlConf.get("max_connections"))
         .map(Integer::parseInt)
         .orElse(100);
-    int workers = cluster.getSpec().getShards().getClusters();
-    Map<String, String> computedParameters = Map.of("citus.max_client_connections",
+    final int workers = cluster.getSpec().getWorkers().getClusters();
+    final String sharedPreloadLibraries =
+        Optional.ofNullable(postgresqlConf.get("shared_preload_libraries"))
+        .orElse("");
+    final String spaceSeparatedSharedPreloadLibraries =
+        sharedPreloadLibraries
+        .replace(',', ' ');
+    Map<String, String> computedParameters = Map.of(
+        "citus.max_client_connections",
         String.valueOf(
             maxConnections * 90 / (100 * (1 + workers))
             ));
+    Map<String, String> overwrittenParameters = Map.of(
+        "cron.database_name",
+        "postgres",
+        "cron.host",
+        ClusterPath.PG_RUN_PATH.path(),
+        "shared_preload_libraries",
+        Seq.of("pg_cron")
+        .append(Seq.of(spaceSeparatedSharedPreloadLibraries.split(" +"))
+            .filter(Predicate.not(String::isEmpty))
+            .filter(Predicate.not(String::isBlank))
+            .filter(Predicate.not("pg_cron"::equals)))
+        .collect(Collectors.joining(", ")));
     return
         new StackGresPostgresConfigBuilder(coordinatorPostgresConfig)
         .withMetadata(new ObjectMetaBuilder()
@@ -193,6 +230,8 @@ public interface StackGresShardedClusterForCitusUtil extends StackGresShardedClu
         .withPostgresqlConf(Seq.seq(postgresqlConf)
             .append(Seq.seq(computedParameters)
                 .filter(t -> !postgresqlConf.containsKey(t.v1)))
+            .filter(t -> !overwrittenParameters.containsKey(t.v1))
+            .append(Seq.seq(overwrittenParameters))
             .toMap(Tuple2::v1, Tuple2::v2))
         .endSpec()
         .withStatus(null)
@@ -209,42 +248,43 @@ public interface StackGresShardedClusterForCitusUtil extends StackGresShardedClu
             .build())
         .editSpec()
         .withScripts(
-            getCitusUpdateShardsScript(context, 0))
+            getCitusUpdateWorkersScript(context, 0),
+            getCitusUpdateQueryRoutersScript(context, 1))
         .endSpec()
         .build();
   }
 
-  private static StackGresScriptEntry getCitusUpdateShardsScript(
+  private static StackGresScriptEntry getCitusUpdateWorkersScript(
       StackGresShardedClusterContext context, int id) {
     StackGresShardedCluster cluster = context.getShardedCluster();
     final StackGresScriptEntry script = new StackGresScriptEntryBuilder()
         .withId(id)
-        .withName("citus-update-shards")
+        .withName("citus-update-workers")
         .withRetryOnError(true)
         .withDatabase(cluster.getSpec().getDatabase())
         .withNewScriptFrom()
         .withNewSecretKeyRef()
-        .withName(getUpdateShardsSecretName(cluster))
-        .withKey("citus-update-shards.sql")
+        .withName(getUpdateWorkersSecretName(cluster))
+        .withKey("citus-update-workers.sql")
         .endSecretKeyRef()
         .endScriptFrom()
         .build();
     return script;
   }
 
-  static Secret getUpdateShardsSecret(
+  static Secret getUpdateWorkersSecret(
       StackGresShardedClusterContext context) {
     StackGresShardedCluster cluster = context.getShardedCluster();
     var superuserCredentials = ShardedClusterSecret.getSuperuserCredentials(context);
     final Secret secret = new SecretBuilder()
         .withNewMetadata()
         .withNamespace(cluster.getMetadata().getNamespace())
-        .withName(getUpdateShardsSecretName(cluster))
+        .withName(getUpdateWorkersSecretName(cluster))
         .endMetadata()
-        .withData(ResourceUtil.encodeSecret(Map.of("citus-update-shards.sql",
+        .withData(ResourceUtil.encodeSecret(Map.of("citus-update-workers.sql",
             Unchecked.supplier(() -> Resources
                 .asCharSource(StackGresShardedClusterForCitusUtil.class.getResource(
-                    "/citus/citus-update-shards.sql"),
+                    "/citus/citus-update-workers.sql"),
                     StandardCharsets.UTF_8)
                 .read()).get().formatted(
                     DSL.inline(superuserCredentials.v1),
@@ -253,8 +293,38 @@ public interface StackGresShardedClusterForCitusUtil extends StackGresShardedClu
     return secret;
   }
 
-  static String getUpdateShardsSecretName(StackGresShardedCluster cluster) {
-    return StackGresShardedClusterUtil.coordinatorScriptName(cluster) + "-update-shards";
+  private static StackGresScriptEntry getCitusUpdateQueryRoutersScript(
+      StackGresShardedClusterContext context, int id) {
+    StackGresShardedCluster cluster = context.getShardedCluster();
+    final int queryRoutersStartIndex = Optional.of(cluster)
+        .map(StackGresShardedCluster::getSpec)
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getQueryRouterIndexOffset)
+        .orElse(1024);
+    final int queryRoutersEndIndex = queryRoutersStartIndex
+        + Optional.of(cluster)
+        .map(StackGresShardedCluster::getSpec)
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getQueryRouterClusters)
+        .orElse(0);
+    final StackGresScriptEntry script = new StackGresScriptEntryBuilder()
+        .withId(id)
+        .withName("citus-update-query-routers")
+        .withRetryOnError(true)
+        .withScript(Unchecked.supplier(() -> Resources
+            .asCharSource(StackGresShardedClusterForCitusUtil.class.getResource(
+                "/citus/citus-update-query-routers.sql"),
+                StandardCharsets.UTF_8)
+            .read()).get().formatted(
+                String.valueOf(queryRoutersStartIndex),
+                String.valueOf(queryRoutersEndIndex),
+                DSL.inline(cluster.getSpec().getDatabase())))
+        .build();
+    return script;
+  }
+
+  static String getUpdateWorkersSecretName(StackGresShardedCluster cluster) {
+    return StackGresShardedClusterUtil.coordinatorScriptName(cluster) + "-update-workers";
   }
 
 }

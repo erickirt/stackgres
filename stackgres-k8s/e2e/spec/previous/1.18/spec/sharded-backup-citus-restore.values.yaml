@@ -14,7 +14,7 @@ cluster:
       sgObjectStorage: backupconf
   disableBackups: true
 shardedCluster:
-  shards:
+  workers:
     pods:
       persistentVolume:
         size: 128Mi

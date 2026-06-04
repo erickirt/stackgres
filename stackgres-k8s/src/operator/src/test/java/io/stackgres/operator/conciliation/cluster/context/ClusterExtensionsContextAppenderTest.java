@@ -7,6 +7,7 @@ package io.stackgres.operator.conciliation.cluster.context;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -128,7 +129,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(expected, cluster);
   }
@@ -143,7 +145,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(toInstallExtensions, cluster.getStatus().getExtensions());
   }
@@ -171,7 +174,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         expectedExtensions,
@@ -210,7 +214,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(expected, cluster);
   }
@@ -254,7 +259,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions)
@@ -287,7 +293,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     cluster.getSpec().getPostgres().getExtensions()
         .forEach(anExtension -> assertNotNull(anExtension.getVersion()));
@@ -326,7 +333,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions).append(getInstalledExtensionWithoutBuild()).toList(),
@@ -370,7 +378,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions).append(getInstalledExtensionWithoutBuild()).toList(),
@@ -409,7 +418,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions)
@@ -452,7 +462,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions).append(getInstalledExtensionWithoutBuild()).toList(),
@@ -492,7 +503,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions)
@@ -535,7 +547,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions).append(getInstalledExtensionWithoutBuild()).toList(),
@@ -574,7 +587,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     assertEquals(
         Seq.seq(toInstallExtensions).append(getInstalledExtensionWithoutBuild()).toList(),
@@ -612,7 +626,8 @@ class ClusterExtensionsContextAppenderTest {
             POSTGRES_VERSION,
             BUILD_VERSION,
             Optional.empty(),
-            Optional.empty()));
+            Optional.empty(),
+            cluster));
     assertEquals(
         "Extension was not found: test 1.7.1",
         exception.getMessage());
@@ -649,7 +664,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
 
     cluster.getSpec().getPostgres().getExtensions()
         .forEach(anExtension -> assertNotNull(anExtension.getVersion()));
@@ -670,7 +686,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.empty(),
-        Optional.empty());
+        Optional.empty(),
+        cluster);
   }
 
   @Test
@@ -687,7 +704,8 @@ class ClusterExtensionsContextAppenderTest {
         POSTGRES_VERSION,
         BUILD_VERSION,
         Optional.of(POSTGRES_VERSION),
-        Optional.of(BUILD_VERSION));
+        Optional.of(BUILD_VERSION),
+        cluster);
   }
 
   @Test
@@ -713,10 +731,130 @@ class ClusterExtensionsContextAppenderTest {
             POSTGRES_VERSION,
             BUILD_VERSION,
             Optional.empty(),
-            Optional.empty()));
+            Optional.empty(),
+            cluster));
     assertEquals(
         "Some extensions were not found: dblink 1.0.0, pg_stat_statements 1.0.0, plpgsql 1.0.0, plpython3u 1.0.0",
         exception.getMessage());
+  }
+
+  @Test
+  void givenLatestExtensionMatchesSpecVersion_shouldNotSetLatest() throws Exception {
+    final StackGresClusterInstalledExtension installedExtension =
+        getInstalledExtensionWithoutBuild();
+    final StackGresClusterExtension extension = getExtension();
+    extension.setVersion(installedExtension.getVersion());
+    cluster.getSpec().getPostgres().setExtensions(
+        ImmutableList.<StackGresClusterExtension>builder()
+        .addAll(extensions).add(extension).build());
+    cluster.setStatus(new StackGresClusterStatus());
+    cluster.getStatus().setExtensions(new ArrayList<>());
+    cluster.getStatus().getExtensions().addAll(toInstallExtensions);
+
+    when(extensionMetadataManager.findExtensionCandidateSameMajorBuild(
+        any(),
+        argThat(anExtension -> extension.getName().equals(anExtension.getName())),
+        anyBoolean()))
+        .thenReturn(Optional.of(getExtensionMetadata()));
+
+    contextAppender.appendContext(
+        cluster,
+        contextBuilder,
+        POSTGRES_VERSION,
+        BUILD_VERSION,
+        Optional.empty(),
+        Optional.empty(),
+        cluster);
+
+    final StackGresClusterInstalledExtension timescaledb = cluster.getStatus().getExtensions()
+        .stream()
+        .filter(installed -> "timescaledb".equals(installed.getName()))
+        .findFirst().get();
+    assertNull(timescaledb.getLatest());
+  }
+
+  @Test
+  void givenLatestExtensionDiffersFromSpecVersion_shouldSetLatest() throws Exception {
+    final StackGresClusterInstalledExtension installedExtension =
+        getInstalledExtensionWithoutBuild();
+    final StackGresClusterExtension extension = getExtension();
+    extension.setVersion(installedExtension.getVersion());
+    cluster.getSpec().getPostgres().setExtensions(
+        ImmutableList.<StackGresClusterExtension>builder()
+        .addAll(extensions).add(extension).build());
+    cluster.setStatus(new StackGresClusterStatus());
+    cluster.getStatus().setExtensions(new ArrayList<>());
+    cluster.getStatus().getExtensions().addAll(toInstallExtensions);
+
+    // The spec-version-driven query resolves the installed version (1.7.1),
+    // the no-version query returns a newer candidate (1.8.0) to advertise as `latest`.
+    final StackGresExtensionMetadata pinnedMetadata = getExtensionMetadata();
+    final StackGresExtensionMetadata latestMetadata = getExtensionMetadata();
+    latestMetadata.getVersion().setVersion("1.8.0");
+    when(extensionMetadataManager.findExtensionCandidateSameMajorBuild(
+        any(),
+        argThat(anExtension -> anExtension != null
+            && extension.getName().equals(anExtension.getName())
+            && anExtension.getVersion() != null),
+        anyBoolean()))
+        .thenReturn(Optional.of(pinnedMetadata));
+    when(extensionMetadataManager.findExtensionCandidateSameMajorBuild(
+        any(),
+        argThat(anExtension -> anExtension != null
+            && extension.getName().equals(anExtension.getName())
+            && anExtension.getVersion() == null),
+        anyBoolean()))
+        .thenReturn(Optional.of(latestMetadata));
+
+    contextAppender.appendContext(
+        cluster,
+        contextBuilder,
+        POSTGRES_VERSION,
+        BUILD_VERSION,
+        Optional.empty(),
+        Optional.empty(),
+        cluster);
+
+    final StackGresClusterInstalledExtension timescaledb = cluster.getStatus().getExtensions()
+        .stream()
+        .filter(installed -> "timescaledb".equals(installed.getName()))
+        .findFirst().get();
+    assertEquals("1.8.0", timescaledb.getLatest());
+  }
+
+  @Test
+  void givenSpecExtensionWithoutVersion_shouldNotSetLatest() throws Exception {
+    final StackGresClusterExtension extension = getExtension();
+    // no version set => uses the default channel; latest must not be advertised.
+    cluster.getSpec().getPostgres().setExtensions(
+        ImmutableList.<StackGresClusterExtension>builder()
+        .addAll(extensions).add(extension).build());
+    cluster.setStatus(new StackGresClusterStatus());
+    cluster.getStatus().setExtensions(new ArrayList<>());
+    cluster.getStatus().getExtensions().addAll(toInstallExtensions);
+
+    final StackGresExtensionMetadata latestMetadata = getExtensionMetadata();
+    latestMetadata.getVersion().setVersion("1.8.0");
+    when(extensionMetadataManager.findExtensionCandidateSameMajorBuild(
+        any(),
+        argThat(anExtension -> extension.getName().equals(anExtension.getName())),
+        anyBoolean()))
+        .thenReturn(Optional.of(latestMetadata));
+
+    contextAppender.appendContext(
+        cluster,
+        contextBuilder,
+        POSTGRES_VERSION,
+        BUILD_VERSION,
+        Optional.empty(),
+        Optional.empty(),
+        cluster);
+
+    final StackGresClusterInstalledExtension timescaledb = cluster.getStatus().getExtensions()
+        .stream()
+        .filter(installed -> "timescaledb".equals(installed.getName()))
+        .findFirst().get();
+    assertNull(timescaledb.getLatest());
   }
 
   private StackGresClusterExtension getExtension() {

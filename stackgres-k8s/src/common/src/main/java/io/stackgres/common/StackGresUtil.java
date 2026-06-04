@@ -426,7 +426,8 @@ public interface StackGresUtil {
             ? new ExtensionTuple("citus_columnar", "12.1.6")
                 : pgMajorVersionIndex <= pg13Index
                 ? new ExtensionTuple("citus_columnar", "11.3-1")
-                    : new ExtensionTuple("citus_columnar", "10.2-5"));
+                    : new ExtensionTuple("citus_columnar", "10.2-5"),
+        new ExtensionTuple("pg_cron"));
   }
 
   static List<ExtensionTuple> getDdpShardedClusterExtensions(StackGresShardedCluster cluster) {

@@ -843,6 +843,10 @@ after_operator_install_or_upgrade() {
 }
 
 update_ui_clear_password() {
+  if kubectl get secrets --namespace "$OPERATOR_NAMESPACE" stackgres-restapi-admin -o 'jsonpath={.data.clearPassword}' | grep -q .
+  then
+    return
+  fi
   local PASSWORD
   PASSWORD="$(helm get values -n "$OPERATOR_NAMESPACE" stackgres-operator -o json \
     | jq -r '.authentication.password | select(. != null)' | tr -d '\n')"

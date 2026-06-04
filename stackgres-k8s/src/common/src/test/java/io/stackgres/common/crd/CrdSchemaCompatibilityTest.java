@@ -5,13 +5,13 @@
 
 package io.stackgres.common.crd;
 
-import java.io.InputStream;
 import java.util.Iterator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.stackgres.common.CrdLoader;
 import io.stackgres.common.JsonMapperCustomizer;
 import io.stackgres.common.crd.sgbackup.StackGresBackup;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
@@ -57,11 +57,10 @@ class CrdSchemaCompatibilityTest {
     String kind = (String) crdClass.getField("KIND").get(null);
 
     // 2. Load CRD YAML directly as JsonNode
-    JsonNode schema;
-    try (InputStream is = crdClass.getResourceAsStream("/crds/" + kind + ".yaml")) {
-      JsonNode crdTree = JsonUtil.yamlMapper().readTree(is);
-      schema = crdTree.at("/spec/versions/0/schema/openAPIV3Schema");
-    }
+    CrdLoader crdLoader = new CrdLoader(JsonUtil.yamlMapper());
+    JsonNode crdTree = JsonUtil.jsonMapper().valueToTree(crdLoader.getCrd(kind));
+    JsonNode versions = crdTree.at("/spec/versions");
+    JsonNode schema = crdTree.at("/spec/versions/" + (versions.size() - 1) + "/schema/openAPIV3Schema");
 
     // 3. Generate random spec and status from schema
     JsonNode specSchema = schema.at("/properties/spec");
@@ -84,7 +83,7 @@ class CrdSchemaCompatibilityTest {
     fullJson.put("kind", kind);
     fullJson.putObject("metadata").put("name", "test").put("namespace", "test");
 
-    Object pojo = objectMapper.readValue(fullJson.toString(), crdClass);
+    Object pojo = objectMapper.treeToValue(fullJson, crdClass);
 
     // 5. Serialize POJO back to JsonNode
     JsonNode reserialized = objectMapper.valueToTree(pojo);
@@ -192,6 +191,10 @@ class CrdSchemaCompatibilityTest {
   }
 
   private void overrideForStackGresShardedCluster(ObjectNode actual, ObjectNode expected) {
+    removeProperty((ObjectNode) actual
+        .get("spec"), "shards");
+    removeProperty((ObjectNode) expected
+        .get("spec"), "shards");
     removeServiceIgnoredProperties((ObjectNode) expected
         .get("spec")
         .get("postgresServices")
@@ -205,8 +208,22 @@ class CrdSchemaCompatibilityTest {
     removeServiceIgnoredProperties((ObjectNode) expected
         .get("spec")
         .get("postgresServices")
+        .get("coordinator")
+        .get("queryRouters"));
+    removeServiceIgnoredProperties((ObjectNode) expected
+        .get("spec")
+        .get("postgresServices")
+        .get("workers")
+        .get("primaries"));
+    removeServiceIgnoredProperties((ObjectNode) expected
+        .get("spec")
+        .get("postgresServices")
         .get("shards")
         .get("primaries"));
+  }
+
+  public void removeProperty(ObjectNode object, String key) {
+    object.remove(key);
   }
 
   public void removeServiceIgnoredProperties(ObjectNode service) {

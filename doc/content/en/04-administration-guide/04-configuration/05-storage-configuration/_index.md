@@ -231,7 +231,7 @@ spec:
 
 ### Sharded Cluster Storage
 
-Configure storage per shard type:
+Configure storage per cluster type (cooridnator and worker):
 
 ```yaml
 apiVersion: stackgres.io/v1
@@ -243,10 +243,10 @@ spec:
     pods:
       persistentVolume:
         size: '50Gi'
-  shards:
+  workers:
     pods:
       persistentVolume:
-        size: '100Gi'  # Each shard gets this size
+        size: '100Gi'  # Each worker gets this size
 ```
 
 ## Example Configurations

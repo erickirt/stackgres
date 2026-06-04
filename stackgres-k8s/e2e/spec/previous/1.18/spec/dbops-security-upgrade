@@ -173,7 +173,7 @@ e2e_test_install() {
       --set configurations.poolingconfig.create=false \
       --set-string cluster.sgInstanceProfile=size-s \
       --set-string cluster.configurations.sgPostgresConfig=postgresconf-sharded-"${PREVIOUS_SHARDED_PATRONI_IMAGE_POSTGRES_VERSION%.*}" \
-      --set-string shardedCluster.shards.configurations.sgPostgresConfig=postgresconf-sharded-"${PREVIOUS_SHARDED_PATRONI_IMAGE_POSTGRES_VERSION%.*}" \
+      --set-string shardedCluster.workers.configurations.sgPostgresConfig=postgresconf-sharded-"${PREVIOUS_SHARDED_PATRONI_IMAGE_POSTGRES_VERSION%.*}" \
       --set-string cluster.postgres.version="$PREVIOUS_SHARDED_PATRONI_IMAGE_POSTGRES_VERSION" \
       --set cluster.configurations.observability.prometheusAutobind=true \
       --set configurations.objectstorage.create=false \
@@ -419,8 +419,8 @@ check_before_operator_upgrade() {
     then
       echo "sgcluster/$CLUSTER_2_NAME"
       echo "sgcluster/$CLUSTER_3_NAME-coord"
-      echo "sgcluster/$CLUSTER_3_NAME-shard0"
-      echo "sgcluster/$CLUSTER_3_NAME-shard1"
+      echo "sgcluster/$CLUSTER_3_NAME-worker0"
+      echo "sgcluster/$CLUSTER_3_NAME-worker1"
     fi
     if [ "$PREVIOUS_VERSION_AS_NUMBER" -ge "$VERSION_AS_NUMBER_1_15_0" ]
     then
@@ -911,8 +911,8 @@ check_sharded_cluster_security_upgrade() {
   assert_sharded_dbops_completion "$DBOPS_NAME" "$CLUSTER_NAMESPACE" "$((E2E_TIMEOUT * 2))"
 
   for CLUSTER_NAME in "$SHARDED_CLUSTER_NAME-coord" \
-    "$SHARDED_CLUSTER_NAME-shard0" \
-    "$SHARDED_CLUSTER_NAME-shard1"
+    "$SHARDED_CLUSTER_NAME-worker0" \
+    "$SHARDED_CLUSTER_NAME-worker1"
   do
     check_cluster_after_security_upgrade
   done

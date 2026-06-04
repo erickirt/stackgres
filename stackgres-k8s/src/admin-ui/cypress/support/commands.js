@@ -160,19 +160,19 @@ Cypress.Commands.add('deleteShardedCluster', (namespace, clusterName) => {
                 });
                 cy.deleteCRD('sginstanceprofiles', {
                     metadata: {
-                        name: cluster.spec.shards.sgInstanceProfile,
+                        name: cluster.spec.workers.sgInstanceProfile,
                         namespace: cluster.metadata.namespace
                     }
                 });
                 cy.deleteCRD('sgpgconfigs', {
                     metadata: {
-                        name: cluster.spec.shards.configurations.sgPostgresConfig,
+                        name: cluster.spec.workers.configurations.sgPostgresConfig,
                         namespace: cluster.metadata.namespace
                     }
                 });
                 cy.deleteCRD('sgpoolconfigs', {
                     metadata: {
-                        name: cluster.spec.shards.configurations.sgPoolingConfig,
+                        name: cluster.spec.workers.configurations.sgPoolingConfig,
                         namespace: cluster.metadata.namespace
                     }
                 });

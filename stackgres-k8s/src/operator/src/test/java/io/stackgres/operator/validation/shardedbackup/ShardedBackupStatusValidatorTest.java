@@ -52,7 +52,7 @@ class ShardedBackupStatusValidatorTest {
     StackGresShardedBackupReview backupReview = AdmissionReviewFixtures.shardedBackup().loadUpdate().get();
     backupReview.getRequest().getOldObject().getStatus().setSgBackups(null);
     backupReview.getRequest().getObject().getStatus().setSgBackups(
-        List.of("coord", "shard1", "shard2"));
+        List.of("coord", "worker1", "worker2"));
 
     validator.validate(backupReview);
   }
@@ -61,7 +61,7 @@ class ShardedBackupStatusValidatorTest {
   void updateBackupNameToNull_shouldFail() {
     StackGresShardedBackupReview backupReview = AdmissionReviewFixtures.shardedBackup().loadUpdate().get();
     backupReview.getRequest().getOldObject().getStatus().setSgBackups(
-        List.of("coord", "shard1", "shard2"));
+        List.of("coord", "worker1", "worker2"));
     backupReview.getRequest().getObject().getStatus().setSgBackups(null);
 
     ValidationFailed ex = assertThrows(ValidationFailed.class,

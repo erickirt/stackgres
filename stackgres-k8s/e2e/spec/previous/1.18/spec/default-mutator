@@ -842,7 +842,7 @@ update_empty_distributedlogs() {
 
 create_empty_sharded_cluster() {
   cat << EOF > "$LOG_PATH/create-empty-sharded-cluster.yaml"
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: $CLUSTER_NAME
@@ -860,7 +860,7 @@ spec:
       scheduling:
         nodeSelector:
           $NODE_LABEL_KEY: $NODE_LABEL_VALUE"
-  shards:
+  workers:
     clusters: 1
     instancesPerCluster: 1
     pods:
@@ -955,10 +955,10 @@ EOF
   assert_string_contains "pgbouncer" "$INSTALLED_CONTAINERS"
   assert_string_contains "postgres-util" "$INSTALLED_CONTAINERS"
 
-  INSTALLED_CONTAINERS="$(wait_until kubectl get sts -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME"-shard0 -o=jsonpath='{.spec.template.spec.containers[*].name}')"
+  INSTALLED_CONTAINERS="$(wait_until kubectl get sts -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME"-worker0 -o=jsonpath='{.spec.template.spec.containers[*].name}')"
 
   assert_string_contains "prometheus-postgres-exporter" "$INSTALLED_CONTAINERS"
-  if ! kubectl get sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --template '{{ .spec.shards.pods.disableEnvoy }}' | grep -qxF true
+  if ! kubectl get sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --template '{{ .spec.workers.pods.disableEnvoy }}' | grep -qxF true
   then
     assert_string_contains "envoy" "$INSTALLED_CONTAINERS"
   fi
@@ -970,7 +970,7 @@ EOF
 
 update_empty_sharded_cluster() {
   cat << EOF > "$LOG_PATH/update-empty-sharded-cluster.yaml"
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: $CLUSTER_NAME
@@ -988,7 +988,7 @@ spec:
       scheduling:
         nodeSelector:
           $NODE_LABEL_KEY: $NODE_LABEL_VALUE"
-  shards:
+  workers:
     clusters: 1
     instancesPerCluster: 1
     pods:
@@ -1030,10 +1030,10 @@ EOF
   assert_string_contains "pgbouncer" "$INSTALLED_CONTAINERS"
   assert_string_contains "postgres-util" "$INSTALLED_CONTAINERS"
 
-  INSTALLED_CONTAINERS="$(wait_until kubectl get sts -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME"-shard0 -o=jsonpath='{.spec.template.spec.containers[*].name}')"
+  INSTALLED_CONTAINERS="$(wait_until kubectl get sts -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME"-worker0 -o=jsonpath='{.spec.template.spec.containers[*].name}')"
 
   assert_string_contains "prometheus-postgres-exporter" "$INSTALLED_CONTAINERS"
-  if ! kubectl get sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --template '{{ .spec.shards.pods.disableEnvoy }}' | grep -qxF true
+  if ! kubectl get sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --template '{{ .spec.workers.pods.disableEnvoy }}' | grep -qxF true
   then
     assert_string_contains "envoy" "$INSTALLED_CONTAINERS"
   fi
@@ -1045,7 +1045,7 @@ EOF
 
 create_sharded_cluster_with_previous_postgres_version() {
   cat << EOF > "$LOG_PATH/create-sharded-cluster-with-previous-postgres-version.yaml"
-apiVersion: stackgres.io/v1alpha1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: $CLUSTER_NAME
@@ -1068,7 +1068,7 @@ spec:
       scheduling:
         nodeSelector:
           $NODE_LABEL_KEY: $NODE_LABEL_VALUE"
-  shards:
+  workers:
     clusters: 1
     instancesPerCluster: 1
     pods:

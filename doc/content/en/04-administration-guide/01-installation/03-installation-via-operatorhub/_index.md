@@ -46,13 +46,10 @@ The field `installPlanApproval` is set to `Manual` to prevent automatic upgrades
 
 To proceed with the installation you will have to patch the `InstallPlan` that has been created by the OLM operator:
 
-```
-kubectl get -n stackgres installplan -o name \
-  | while read RESOURCE
-    do
-      kubectl patch -n stackgres "$RESOURCE" --type merge -p 'spec: { approved: true }'
-      kubectl wait -n stackgres "$RESOURCE" --for condition=Installed
-    done
+```shell
+INSTALL_PLAN="$(kubectl get -n stackgres installplan -o name)"
+kubectl patch -n stackgres "$INSTALL_PLAN" --type merge -p 'spec: { approved: true }'
+kubectl wait -n stackgres "$INSTALL_PLAN" --for condition=Installed
 ```
 
 The installation may take a few minutes.
@@ -66,8 +63,8 @@ installplan.operators.coreos.com/install-66964 condition met
 
 Modify the configuration by patching the StackGres SGConfig
 
-```
-cat << EOF | kubectl patch -n stackgres sgconfig stackgres --type merge -p "$(cat)"
+```shell
+cat << EOF | kubectl patch -n stackgres sgconfig stackgres-operator --type merge -p "$(cat)"
 spec:
   grafana:
     autoEmbed: true
@@ -82,6 +79,32 @@ spec:
 EOF
 ```
 
+Or modify the configuration by patching the StackGres subscription and adding or modifying the environment variable `SGCONFIG`:
+
+```shell
+cat << EOF | kubectl patch -n stackgres subscription stackgres --type merge -p "$(cat)"
+spec:
+  config:
+    env:
+    - name: SGCONFIG
+      value: |
+        spec:
+          grafana:
+            autoEmbed: true
+            secretName: prometheus-operator-grafana
+            secretNamespace: monitoring
+            secretPasswordKey: admin-password
+            secretUserKey: admin-user
+            webHost: prometheus-operator-grafana.monitoring
+          adminui:
+            service:
+              type: LoadBalancer
+EOF
+```
+
+You may also set other environment variables that control the operator behavior and that can not
+ be set by modifying the SGConfig resource. See also the [SGConfig reference documentation]({{% relref "06-crd-reference/12-sgconfig" %}}).
+
 > In some managed Kubernetes clusters and Kubernetes distributions a LoadBalancer may not be available, in such case replace `LoadBalancer` with `NodePort` and
 >  you will be able to connect directly to the node port that will be assigned to the service. To retrieve such port use the following command:
 
@@ -95,7 +118,7 @@ On OpenShift 4.x, the operator will be installed in the `openshift-operators` na
 
 Since in OpenShift the namespace `openshift-operators` is already created you only need to create the Subscription:
 
-```
+```shell
 cat << EOF | kubectl create -f -
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
@@ -111,29 +134,12 @@ spec:
 EOF
 ```
 
-> Alternatively you may install the StackGres Operator from the OpenShift Web Console by following these steps:
->
-> 1. Search the StackGres Operator from the OperatorHub tab
-     >     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-install.jpeg)
-> 2. After selecting it click on the "Install" button
-     >     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-install-2.jpeg)
-> 3. Then use the default setting and click on the "Install" button
-     >     ![Search the StackGres Operator from the OperatorHub tab](operator-hub-openshift-install-3.jpeg)
-
 To proceed with the installation follow the same steps as already explained in the [Installation via OperatorHub](#installation-via-operatorhub) but replacing the namespace with `openshift-operators`:
 
-```
-kubectl get -n openshift-operators installplan -o name \
-  | xargs -I @RESOURCE kubectl patch -n openshift-operators @RESOURCE --type merge -p 'spec: { approved: true }'
-```
-
-The installation may take a few minutes.
-
-To wait for the installation to complete use the command:
-
-```
-kubectl get -n openshift-operators installplan -o name \
-  | xargs -I @RESOURCE kubectl wait -n openshift-operators @RESOURCE --for condition=Installed
+```shell
+INSTALL_PLAN="$(kubectl get -n openshift-operators installplan -o name)"
+kubectl patch -n openshift-operators "$INSTALL_PLAN" --type merge -p 'spec: { approved: true }'
+kubectl wait -n openshift-operators "$INSTALL_PLAN" --for condition=Installed
 ```
 
 Finally, the output will be similar to:
@@ -144,8 +150,8 @@ installplan.operators.coreos.com/install-66964 condition met
 
 Modify the configuration by patching the StackGres SGConfig
 
-```
-cat << EOF | kubectl patch -n openshift-operators sgconfig stackgres --type merge -p "$(cat)"
+```shell
+cat << EOF | kubectl patch -n openshift-operators sgconfig stackgres-operator --type merge -p "$(cat)"
 spec:
   grafana:
     autoEmbed: true
@@ -160,11 +166,27 @@ spec:
 EOF
 ```
 
-> In some managed Kubernetes clusters and Kubernetes distributions a LoadBalancer may not be available, in such case replace `LoadBalancer` with `NodePort` and
->  you will be able to connect directly to the node port that will be assigned to the service. To retrieve such port use the following command:
+Or modify the configuration by patching the StackGres subscription and adding or modifying the environment variable `SGCONFIG`:
 
-```
-kubectl get service -n openshift-operators stackgres-restapi --template '{{ (index .spec.ports 0).nodePort }}{{ printf "\n" }}'
+```shell
+cat << EOF | kubectl patch -n openshift-operators subscription stackgres --type merge -p "$(cat)"
+spec:
+  config:
+    env:
+    - name: SGCONFIG
+      value: |
+        spec:
+          grafana:
+            autoEmbed: true
+            secretName: prometheus-operator-grafana
+            secretNamespace: monitoring
+            secretPasswordKey: admin-password
+            secretUserKey: admin-user
+            webHost: prometheus-operator-grafana.monitoring
+          adminui:
+            service:
+              type: LoadBalancer
+EOF
 ```
 
 #### Installation via OpenShift Web Console
@@ -210,4 +232,3 @@ Follow the same steps as explained in the [Migrate from global to scoped install
 >     ![Do NOT select "Delete all operand instances for this operator"](operator-hub-openshift-migration-global-scoped-uninstall-detail.jpeg)
 
 > **IMPORTANT** If the namespace of the scoped operator installation changed you MUST also remove the `SGConfig` resource present in the namespace of the global operator before the uninstallation of the global operator.
-

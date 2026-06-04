@@ -18,7 +18,7 @@ import jakarta.validation.constraints.NotNull;
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
 public class StackGresClusterInstalledExtension {
@@ -41,6 +41,8 @@ public class StackGresClusterInstalledExtension {
   private String build;
 
   private List<String> extraMounts;
+
+  private String latest;
 
   public String getName() {
     return name;
@@ -96,6 +98,14 @@ public class StackGresClusterInstalledExtension {
 
   public void setExtraMounts(List<String> extraMounts) {
     this.extraMounts = extraMounts;
+  }
+
+  public String getLatest() {
+    return latest;
+  }
+
+  public void setLatest(String latest) {
+    this.latest = latest;
   }
 
   @Override

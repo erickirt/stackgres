@@ -21,7 +21,7 @@ import io.sundr.builder.annotations.BuildableReference;
 @JsonIgnoreProperties(ignoreUnknown = true,
     value = {"clusterIP", "clusterIPs", "externalName",
         "ports", "publishNotReadyAddresses", "selector"})
-@Buildable(editableEnabled = false, validationEnabled = false, generateBuilderPackage = false,
+@Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder",
     refs = {

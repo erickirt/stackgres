@@ -106,7 +106,7 @@ class ShardedDbOpsMajorVersionUpgradeMutatorTest {
         .get(cluster)
         .getMajorVersion(postgresVersion);
     assertEquals(
-        Seq.range(0, cluster.getSpec().getShards().getClusters() + 1)
+        Seq.range(0, cluster.getSpec().getWorkers().getClusters() + 1)
             .map(index -> BackupStorageUtil.getPath(
                 cluster.getMetadata().getNamespace(),
                 StackGresShardedClusterUtil.getClusterName(cluster, index),
@@ -144,7 +144,7 @@ class ShardedDbOpsMajorVersionUpgradeMutatorTest {
         .getMajorVersion(postgresVersion);
     assertEquals(
         Seq.of("test", "test0")
-        .append(Seq.range(2, cluster.getSpec().getShards().getClusters() + 1)
+        .append(Seq.range(2, cluster.getSpec().getWorkers().getClusters() + 1)
             .map(index -> BackupStorageUtil.getPath(
                 cluster.getMetadata().getNamespace(),
                 StackGresShardedClusterUtil.getClusterName(cluster, index),

@@ -54,7 +54,7 @@ class ObservabilityMutatorTest {
     review.getRequest().getObject().getSpec().getConfigurations()
         .setObservability(new StackGresClusterObservability());
     review.getRequest().getObject().getSpec().getConfigurations().getObservability().setDisableMetrics(true);
-    review.getRequest().getObject().getSpec().getShards().getPods().setDisableMetricsExporter(true);
+    review.getRequest().getObject().getSpec().getWorkers().getPods().setDisableMetricsExporter(true);
     JsonNode expectedCluster = JsonUtil.toJson(review.getRequest().getObject());
 
     JsonUtil.assertJsonEquals(
@@ -76,7 +76,7 @@ class ObservabilityMutatorTest {
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     review.getRequest().getObject().getSpec().getCoordinator().getPods().setDisableMetricsExporter(true);
-    review.getRequest().getObject().getSpec().getShards().getPods().setDisableMetricsExporter(true);
+    review.getRequest().getObject().getSpec().getWorkers().getPods().setDisableMetricsExporter(true);
     JsonNode expectedCluster = JsonUtil.toJson(review.getRequest().getObject());
 
     JsonUtil.assertJsonEquals(
@@ -85,7 +85,7 @@ class ObservabilityMutatorTest {
   }
 
   @Test
-  void updateAlreadyValid_shouldChangeShardsOldFields() {
+  void updateAlreadyValid_shouldChangeWorkersOldFields() {
     StackGresShardedClusterReview review = AdmissionReviewFixtures.shardedCluster()
         .loadUpdate().get();
 
@@ -111,7 +111,7 @@ class ObservabilityMutatorTest {
     review.getRequest().getObject().getSpec().getConfigurations()
         .setObservability(new StackGresClusterObservability());
     review.getRequest().getObject().getSpec().getConfigurations().getObservability().setDisableMetrics(true);
-    review.getRequest().getObject().getSpec().getShards().getPods().setDisableMetricsExporter(true);
+    review.getRequest().getObject().getSpec().getWorkers().getPods().setDisableMetricsExporter(true);
     JsonNode expectedCluster = JsonUtil.toJson(review.getRequest().getObject());
 
     JsonUtil.assertJsonEquals(
@@ -130,7 +130,7 @@ class ObservabilityMutatorTest {
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     review.getRequest().getObject().getSpec().getCoordinator().getPods().setDisableMetricsExporter(true);
-    review.getRequest().getObject().getSpec().getShards().getPods().setDisableMetricsExporter(true);
+    review.getRequest().getObject().getSpec().getWorkers().getPods().setDisableMetricsExporter(true);
     JsonNode expectedCluster = JsonUtil.toJson(review.getRequest().getObject());
 
     JsonUtil.assertJsonEquals(
@@ -150,7 +150,7 @@ class ObservabilityMutatorTest {
         review, JsonUtil.copy(review.getRequest().getObject()));
 
     review.getRequest().getObject().getSpec().getCoordinator().getPods().setDisableMetricsExporter(true);
-    review.getRequest().getObject().getSpec().getShards().getPods().setDisableMetricsExporter(true);
+    review.getRequest().getObject().getSpec().getWorkers().getPods().setDisableMetricsExporter(true);
     JsonNode expectedCluster = JsonUtil.toJson(review.getRequest().getObject());
 
     JsonUtil.assertJsonEquals(

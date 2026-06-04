@@ -50,8 +50,8 @@
       "status": {
         "sgBackups": [
           "backup-with-default-storage-backup-coord",
-          "backup-with-default-storage-backup-shard0",
-          "backup-with-default-storage-backup-shard1"
+          "backup-with-default-storage-backup-worker0",
+          "backup-with-default-storage-backup-worker1"
         ],
         "process": {
           "status": "Running",
@@ -81,8 +81,8 @@
       "status": {
         "sgBackups": [
           "backup-with-default-storage-backup-coord",
-          "backup-with-default-storage-backup-shard0",
-          "backup-with-default-storage-backup-shard1"
+          "backup-with-default-storage-backup-worker0",
+          "backup-with-default-storage-backup-worker1"
         ],
         "process": {
           "status": "Running",
