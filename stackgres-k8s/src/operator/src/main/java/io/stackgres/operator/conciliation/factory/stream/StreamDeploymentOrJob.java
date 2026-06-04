@@ -28,7 +28,6 @@ import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.stackgres.common.OperatorProperty;
-import io.stackgres.common.StackGresContext;
 import io.stackgres.common.StackGresModules;
 import io.stackgres.common.StackGresProperty;
 import io.stackgres.common.StreamPath;
