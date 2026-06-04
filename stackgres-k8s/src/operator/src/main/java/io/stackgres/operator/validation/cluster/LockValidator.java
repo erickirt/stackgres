@@ -81,8 +81,8 @@ public class LockValidator implements ClusterValidator {
                     && Objects.equals(
                         ownerReference.getKind(),
                         HasMetadata.getKind(StackGresDistributedLogs.class)))
-            )
-            ) {
+                  )
+              ) {
             fail("SGCluster update is forbidden. It is locked by some SGBackup or SGDbOps"
                 + " that is currently running. Please, wait for the operation to finish,"
                 + " stop the operation by deleting it or wait for the lock duration of "
