@@ -231,7 +231,12 @@ public class PatroniEnvironmentVariables implements EnvVarProvider<StackGresClus
         .map(StackGresClusterConfigurations::getPatroni)
         .map(StackGresClusterPatroni::getConnectUsingFqdn)
         .orElse(false)) {
-      return "${POD_NAME}." + cluster.getMetadata().getName() + ".${POD_NAMESPACE}";
+      final String statefulSetServiceName =
+          Optional.ofNullable(cluster.getSpec())
+          .map(StackGresClusterSpec::getPods)
+          .map(StackGresClusterPods::getStatefulSetServiceName)
+          .orElse(cluster.getMetadata().getName());
+      return "${POD_NAME}." + statefulSetServiceName + ".${POD_NAMESPACE}";
     }
     return "${POD_IP}";
   }
