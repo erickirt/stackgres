@@ -157,3 +157,82 @@ helmfile -e training -f helmfile.yaml apply
 Helm chart values are (mostly) mapped to the SGConfig custom resource that is stored during the installation/upgrade of the Helm chart. For detailed configuration options, see the [SGConfig reference]({{% relref "06-crd-reference/12-sgconfig" %}}).
 
 > **Tip:** Users of the operator should not create an SGConfig directly. Instead, modify it to change some of the configuration (configuration that cannot be changed by editing the SGConfig is specified in the documentation). In general, it is better to always use the Helm chart `values.yaml` to configure the operator in order for the changes to not be overwritten during upgrades.
+
+## Scheduling of Control-Plane Pods
+
+StackGres lets you control how the scheduler places its own control-plane Pods (the operator, the Web Console / REST API, and the OpenTelemetry collector) as well as the extensions cache StatefulSet.
+
+Each of these components supports the **complete** set of scheduling fields below, configured under its corresponding section of the [SGConfig spec]({{% relref "06-crd-reference/12-sgconfig#sgconfigspec" %}}) (mapped from the Helm chart `values.yaml`): `operator`, `restapi`, `collector` and `extensions.cache`.
+
+| Field | Description |
+|-------|-------------|
+| `nodeSelector` | Map of node labels a node must have for the Pod to be scheduled on it. |
+| `tolerations` | List of [tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) allowing the Pod to be scheduled on nodes with matching taints. |
+| `affinity` | [Affinity/anti-affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) rules (`nodeAffinity`, `podAffinity`, `podAntiAffinity`). |
+| `schedulerName` | Name of the scheduler used to schedule the Pod. If empty, the default Kubernetes scheduler is used. |
+| `runtimeClassName` | The [RuntimeClass](https://kubernetes.io/docs/concepts/containers/runtime-class/) used to run the Pod's containers. |
+| `preemptionPolicy` | The [preemption policy](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/) of the Pod. Either `PreemptLowerPriority` (the default) or `Never`. |
+| `priorityClassName` | The [PriorityClass](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/) name used to set the priority of the Pod. Useful to ensure StackGres control-plane Pods are not evicted before less critical workloads. |
+
+In other words, the following fields are available on each component:
+
+- `operator.{nodeSelector, tolerations, affinity, schedulerName, runtimeClassName, preemptionPolicy, priorityClassName}`
+- `restapi.{nodeSelector, tolerations, affinity, schedulerName, runtimeClassName, preemptionPolicy, priorityClassName}`
+- `collector.{nodeSelector, tolerations, affinity, schedulerName, runtimeClassName, preemptionPolicy, priorityClassName}`
+- `extensions.cache.{nodeSelector, tolerations, affinity, schedulerName, runtimeClassName, preemptionPolicy, priorityClassName}`
+
+Example `values.yaml` setting placement, a priority class and a dedicated scheduler for the control-plane Pods and the extensions cache:
+
+```yaml
+operator:
+  priorityClassName: system-cluster-critical
+  schedulerName: my-scheduler
+  runtimeClassName: my-runtime
+  preemptionPolicy: PreemptLowerPriority
+  nodeSelector:
+    node-role: control-plane
+  tolerations:
+  - key: dedicated
+    operator: Equal
+    value: stackgres
+    effect: NoSchedule
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values: ["linux"]
+
+restapi:
+  priorityClassName: system-cluster-critical
+  schedulerName: my-scheduler
+  nodeSelector:
+    node-role: control-plane
+
+collector:
+  priorityClassName: system-cluster-critical
+  schedulerName: my-scheduler
+  tolerations:
+  - key: dedicated
+    operator: Equal
+    value: stackgres
+    effect: NoSchedule
+
+extensions:
+  cache:
+    enabled: true
+    priorityClassName: system-cluster-critical
+    schedulerName: my-scheduler
+    runtimeClassName: my-runtime
+    preemptionPolicy: PreemptLowerPriority
+    nodeSelector:
+      disktype: ssd
+    tolerations:
+    - key: dedicated
+      operator: Equal
+      value: stackgres
+      effect: NoSchedule
+    affinity: {}
+```
