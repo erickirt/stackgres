@@ -36,6 +36,7 @@ spec:
 |---------|-------------|---------|
 | `storageClass` | Kubernetes StorageClass name | Cluster default |
 | `fsGroupChangePolicy` | Volume permission policy | `OnRootMismatch` |
+| `volumeAttributesClassName` | Kubernetes VolumeAttributesClass applied to the PVCs | None |
 
 ## Storage Size
 
@@ -172,6 +173,40 @@ Use when:
 | 1Ti | ~1 second | 1-10 minutes |
 
 The difference becomes significant with large volumes or many small files.
+
+## Volume Attributes Class
+
+The `volumeAttributesClassName` setting references a Kubernetes [VolumeAttributesClass](https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/) that is applied to the PVCs created for the cluster. This lets you tune mutable volume attributes (for example IOPS or throughput on supporting CSI drivers) without recreating the volume:
+
+```yaml
+spec:
+  pods:
+    persistentVolume:
+      size: '100Gi'
+      volumeAttributesClassName: 'high-iops'
+```
+
+> **Note**: This requires the Kubernetes VolumeAttributesClass feature to be available in the cluster and a CSI driver that supports the referenced attributes.
+
+On an SGShardedCluster, configure it per cluster type:
+
+```yaml
+apiVersion: stackgres.io/v1beta1
+kind: SGShardedCluster
+metadata:
+  name: sharded-cluster
+spec:
+  coordinator:
+    pods:
+      persistentVolume:
+        size: '50Gi'
+        volumeAttributesClassName: 'high-iops'
+  workers:
+    pods:
+      persistentVolume:
+        size: '100Gi'
+        volumeAttributesClassName: 'high-iops'
+```
 
 ## Volume Expansion
 
