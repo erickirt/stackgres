@@ -338,6 +338,31 @@ globalDefault: false
 description: "Priority class for PostgreSQL databases"
 ```
 
+## Advanced Scheduling Options
+
+Additional fields give finer control over how the scheduler places and runs pods:
+
+```yaml
+spec:
+  pods:
+    scheduling:
+      schedulerName: my-scheduler
+      preemptionPolicy: Never
+      runtimeClassName: gvisor
+```
+
+### Configuration Options
+
+| Field | Description |
+|-------|-------------|
+| `schedulerName` | Name of the scheduler used to dispatch the pods. Defaults to the cluster's default scheduler. |
+| `preemptionPolicy` | Preemption behavior of the pods. `PreemptLowerPriority` (default) or `Never`. |
+| `runtimeClassName` | `RuntimeClass` used to run the pods (for example a sandboxed runtime). |
+
+> **Note**: `tolerations`, `preemptionPolicy`, `runtimeClassName` and `schedulerName` are also available under `spec.pods.scheduling.backup` to apply to backup pods. `topologySpreadConstraints` applies only to the cluster pods (`spec.pods.scheduling`).
+
+On [SGShardedCluster]({{% relref "06-crd-reference/11-sgshardedcluster" %}}) these same scheduling fields are configured separately for the coordinator and the workers.
+
 ## Backup Pod Scheduling
 
 Configure separate scheduling for backup pods:
@@ -353,9 +378,12 @@ spec:
           - key: "backup-only"
             operator: "Exists"
             effect: "NoSchedule"
+        schedulerName: my-scheduler
+        preemptionPolicy: Never
+        runtimeClassName: gvisor
 ```
 
-This allows running backups on different nodes than the database.
+This allows running backups on different nodes than the database. Backup pods support the same scheduling fields as the cluster pods except `topologySpreadConstraints`.
 
 ## Complete Examples
 
@@ -502,6 +530,47 @@ spec:
             operator: "Exists"
             effect: "NoSchedule"
 ```
+
+## Pod Networking and FQDN
+
+Control the network configuration of the pods and how Patroni connects between instances:
+
+```yaml
+apiVersion: stackgres.io/v1
+kind: SGCluster
+metadata:
+  name: my-cluster
+spec:
+  configurations:
+    patroni:
+      connectUsingFqdn: true
+  pods:
+    statefulSetServiceName: my-cluster-headless
+    setHostnameAsFQDN: true
+    hostNetwork: false
+    dnsPolicy: ClusterFirst
+    dnsConfig:
+      nameservers:
+        - 10.0.0.10
+      searches:
+        - my-namespace.svc.cluster.local
+      options:
+        - name: ndots
+          value: "5"
+```
+
+### Configuration Options
+
+| Field | Description |
+|-------|-------------|
+| `spec.configurations.patroni.connectUsingFqdn` | When `true`, configure Patroni to connect between instances using the Pod FQDN instead of the Pod's assigned IP. Useful where Pod IPs are unstable or where FQDN-based connectivity is required. |
+| `spec.pods.statefulSetServiceName` | Name of the headless service used by the StatefulSet. |
+| `spec.pods.setHostnameAsFQDN` | If `true`, set the pod hostname to its FQDN. Defaults to `false`. |
+| `spec.pods.hostNetwork` | If `true`, run the pods using the host network. Defaults to `false`. |
+| `spec.pods.dnsPolicy` | DNS policy of the pods (for example `ClusterFirst` or `None`). |
+| `spec.pods.dnsConfig` | Kubernetes `PodDNSConfig` for the pods (`nameservers`, `searches` and `options`). |
+
+> **Note**: Setting `connectUsingFqdn` to `true` typically requires a headless service, so it is commonly used together with `statefulSetServiceName` and `setHostnameAsFQDN`.
 
 ## Related Documentation
 
