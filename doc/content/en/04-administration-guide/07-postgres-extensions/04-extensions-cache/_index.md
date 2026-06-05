@@ -225,6 +225,24 @@ The cache works with any configured repository.
 
 5. **Use fast storage**: SSD-backed storage improves performance
 
+## Extensions Metadata Refresh
+
+> **Note**: This setting controls the cached extensions *metadata*, not the on-cluster extensions binary cache described above.
+
+Separately from the binary cache, StackGres periodically polls the extensions repository to refresh the extensions metadata (the catalog of available extensions and versions). The refresh frequency is configurable under `spec.extensions` in the SGConfig resource:
+
+```yaml
+spec:
+  extensions:
+    refreshInterval: P7D
+    refreshEnabled: true
+```
+
+- `refreshInterval` (string, default `P7D`): how often the cached extensions metadata is refreshed from the extensions repository, expressed as an ISO-8601 duration (for example `P7D` for 7 days or `PT1H` for 1 hour). The default is 1 week. Any configured value is clamped up to a minimum of 1 hour, so values below 1 hour are treated as 1 hour.
+- `refreshEnabled` (boolean, default `true`): when set to `false`, the extensions metadata is fetched once and never refreshed afterwards.
+
+Disabling the refresh, or using a long interval, reduces the number of outbound requests StackGres makes to the extensions repository. This is useful in air-gapped or rate-limited environments where polling the repository is undesirable.
+
 ## Related Documentation
 
 - [PostgreSQL Extensions Guide]({{% relref "04-administration-guide/07-postgres-extensions" %}})
