@@ -181,3 +181,76 @@ $ kubectl -n my-namespace exec -it my-db-0 -c patroni -- patronictl list
 +--------------+-----------------+----------------+-----------+----+-----------+
 ```
 
+## Using a custom restore method
+
+By default, when bootstrapping a replica from an external instance StackGres relies on a standard Postgres base backup to fetch the initial copy of the data. In some scenarios this is not desirable, for example when the source data is very large, when a faster snapshot-based transfer is available, or when a custom restore tool must be used to seed the replica data directory.
+
+For these cases the optional `spec.replicateFrom.instance.external.customRestoreMethod` object lets you define a Patroni [custom replica creation method](https://patroni.readthedocs.io/en/latest/replica_bootstrap.html#building-replicas), which is added to Patroni's `create_replica_methods`. It controls how the replica data is fetched from the external source instead of performing a standard base backup, allowing you to invoke a custom command or script (e.g. a snapshot restore or a third-party restore tool).
+
+The same object is also available on `SGShardedCluster` under `spec.replicateFrom.external.customRestoreMethod` and is applied to every cluster of the sharded cluster.
+
+The object supports the following fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `command` | string | The command to run in order to fetch the replica data. Mutually exclusive with `script`. |
+| `script` | string | A script to run in order to fetch the replica data. Mutually exclusive with `command`. |
+| `no_leader` | boolean | When `true`, the method is allowed to run without a leader being present. |
+| `keep_data` | boolean | When `true`, the existing data directory is kept instead of being removed before the method runs. |
+| `no_params` | boolean | When `true`, the standard Patroni parameters are not passed to the method. |
+| `parameters` | map<string,string> | Extra parameters passed to the method. |
+| `keep_existing_recovery_conf` | boolean | When `true`, an existing `recovery.conf` is preserved. |
+| `recovery_conf` | map<string,string> | The `recovery.conf` settings to apply after the method has run. |
+
+The following example replicates from an external instance using a custom restore method that runs a script to seed the replica data directory:
+
+```yaml
+apiVersion: stackgres.io/v1
+kind: SGCluster
+metadata:
+  name: my-db
+  namespace: my-namespace
+spec:
+  instances: 2
+  replicateFrom:
+    instance:
+      external:
+        host: 1.2.3.4
+        port: 30001
+        customRestoreMethod:
+          script: /path/to/my-restore-tool.sh
+          no_leader: true
+          keep_data: false
+          no_params: false
+          parameters:
+            source: s3://my-bucket/my-db
+            threads: "4"
+          keep_existing_recovery_conf: false
+          recovery_conf:
+            restore_command: my-restore-tool fetch-wal %f %p
+    users:
+      superuser:
+        username:
+          name: mysecrets-db
+          key: superuser-username
+        password:
+          name: mysecrets-db
+          key: superuser-password
+      replication:
+        username:
+          name: mysecrets-db
+          key: replication-username
+        password:
+          name: mysecrets-db
+          key: replication-password
+      authenticator:
+        username:
+          name: mysecrets-db
+          key: authenticator-username
+        password:
+          name: mysecrets-db
+          key: authenticator-password
+```
+
+> Note: `command` and `script` are mutually exclusive, set only one of them.
+
