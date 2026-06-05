@@ -301,7 +301,7 @@ spec:
 Configure storage per cluster type (cooridnator and worker):
 
 ```yaml
-apiVersion: stackgres.io/v1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: sharded-cluster
