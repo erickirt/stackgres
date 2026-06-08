@@ -130,6 +130,12 @@ public class BackupCronRole implements ResourceGenerator<StackGresClusterContext
             .withResources(VolumeSnapshotUtil.VOLUME_SNAPSHOT_CRD_PLURAL)
             .withVerbs("create", "get", "list", "watch")
             .build())
+        .addToRules(
+            new PolicyRuleBuilder()
+            .withApiGroups("coordination.k8s.io")
+            .withResources("leases")
+            .withVerbs("get", "list", "watch", "update", "patch")
+            .build())
         .build();
   }
 

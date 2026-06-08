@@ -7,7 +7,7 @@ package io.stackgres.operator.validation.profile;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import io.stackgres.common.crd.sgprofile.StackGresProfileHugePagesBuilder;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileHugePagesBuilder;
 import io.stackgres.operator.common.StackGresInstanceProfileReview;
 import io.stackgres.operator.common.fixture.AdmissionReviewFixtures;
 import io.stackgres.operatorframework.admissionwebhook.validating.ValidationFailed;
@@ -54,7 +54,7 @@ class ProfileResourcesValidatorTest {
   @Test
   void givenNegativeHugePages2Mi_shouldFail() {
     review.getRequest().getObject().getSpec().setHugePages(
-        new StackGresProfileHugePagesBuilder()
+        new StackGresInstanceProfileHugePagesBuilder()
         .withHugepages2Mi("-1")
         .build());
 
@@ -66,7 +66,7 @@ class ProfileResourcesValidatorTest {
   @Test
   void givenNegativeHugePages1Gi_shouldFail() {
     review.getRequest().getObject().getSpec().setHugePages(
-        new StackGresProfileHugePagesBuilder()
+        new StackGresInstanceProfileHugePagesBuilder()
         .withHugepages1Gi("-1")
         .build());
 
@@ -99,7 +99,7 @@ class ProfileResourcesValidatorTest {
   void givenNegativeContainerHugePages2Mi_shouldFail() {
     review.getRequest().getObject().getSpec().getContainers()
         .get("pgbouncer").setHugePages(
-            new StackGresProfileHugePagesBuilder()
+            new StackGresInstanceProfileHugePagesBuilder()
             .withHugepages2Mi("-1")
             .build());
 
@@ -112,7 +112,7 @@ class ProfileResourcesValidatorTest {
   void givenNegativeContainerHugePages1Gi_shouldFail() {
     review.getRequest().getObject().getSpec().getContainers()
         .get("pgbouncer").setHugePages(
-            new StackGresProfileHugePagesBuilder()
+            new StackGresInstanceProfileHugePagesBuilder()
             .withHugepages1Gi("-1")
             .build());
 
@@ -145,7 +145,7 @@ class ProfileResourcesValidatorTest {
   void givenNegativeInitContainerHugePages2Mi_shouldFail() {
     review.getRequest().getObject().getSpec().getInitContainers()
         .get("cluster-reconciliation-cycle").setHugePages(
-            new StackGresProfileHugePagesBuilder()
+            new StackGresInstanceProfileHugePagesBuilder()
             .withHugepages2Mi("-1")
             .build());
 
@@ -158,7 +158,7 @@ class ProfileResourcesValidatorTest {
   void givenNegativeInitContainerHugePages1Gi_shouldFail() {
     review.getRequest().getObject().getSpec().getInitContainers()
         .get("cluster-reconciliation-cycle").setHugePages(
-            new StackGresProfileHugePagesBuilder()
+            new StackGresInstanceProfileHugePagesBuilder()
             .withHugepages1Gi("-1")
             .build());
 
@@ -209,7 +209,7 @@ class ProfileResourcesValidatorTest {
   void givenNegativeRequestsContainerHugePages2Mi_shouldFail() {
     review.getRequest().getObject().getSpec().getRequests().getContainers()
         .get("pgbouncer").setHugePages(
-            new StackGresProfileHugePagesBuilder()
+            new StackGresInstanceProfileHugePagesBuilder()
             .withHugepages2Mi("-1")
             .build());
 
@@ -222,7 +222,7 @@ class ProfileResourcesValidatorTest {
   void givenNegativeRequestsContainerHugePages1Gi_shouldFail() {
     review.getRequest().getObject().getSpec().getRequests().getContainers()
         .get("pgbouncer").setHugePages(
-            new StackGresProfileHugePagesBuilder()
+            new StackGresInstanceProfileHugePagesBuilder()
             .withHugepages1Gi("-1")
             .build());
 
@@ -255,7 +255,7 @@ class ProfileResourcesValidatorTest {
   void givenNegativeRequestsInitContainerHugePages2Mi_shouldFail() {
     review.getRequest().getObject().getSpec().getRequests().getInitContainers()
         .get("cluster-reconciliation-cycle").setHugePages(
-            new StackGresProfileHugePagesBuilder()
+            new StackGresInstanceProfileHugePagesBuilder()
             .withHugepages2Mi("-1")
             .build());
 
@@ -268,7 +268,7 @@ class ProfileResourcesValidatorTest {
   void givenNegativeRequestsInitContainerHugePages1Gi_shouldFail() {
     review.getRequest().getObject().getSpec().getRequests().getInitContainers()
         .get("cluster-reconciliation-cycle").setHugePages(
-            new StackGresProfileHugePagesBuilder()
+            new StackGresInstanceProfileHugePagesBuilder()
             .withHugepages1Gi("-1")
             .build());
 

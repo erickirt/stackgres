@@ -20,7 +20,7 @@ import io.stackgres.common.StackGresComponent;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgdbops.StackGresDbOps;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.patroni.PatroniCtl;
 import io.stackgres.common.patroni.PatroniCtlInstance;
@@ -60,7 +60,7 @@ class DbOpsRequiredResourcesGeneratorTest {
   private StackGresConfig config;
   private StackGresDbOps dbOps;
   private StackGresCluster cluster;
-  private StackGresProfile profile;
+  private StackGresInstanceProfile profile;
 
   @BeforeEach
   void setUp() {

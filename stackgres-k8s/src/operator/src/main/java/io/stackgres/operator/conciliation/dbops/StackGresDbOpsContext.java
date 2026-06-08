@@ -17,7 +17,7 @@ import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgdbops.StackGresDbOps;
 import io.stackgres.common.crd.sgdbops.StackGresDbOpsSamplingStatus;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.patroni.PatroniMember;
 import io.stackgres.operator.conciliation.GenerationContext;
 import org.immutables.value.Value;
@@ -29,7 +29,7 @@ public interface StackGresDbOpsContext extends GenerationContext<StackGresDbOps>
 
   Optional<StackGresCluster> getFoundCluster();
 
-  Optional<StackGresProfile> getFoundProfile();
+  Optional<StackGresInstanceProfile> getFoundProfile();
 
   Optional<StackGresDbOpsSamplingStatus> getSamplingStatus();
 
@@ -69,7 +69,7 @@ public interface StackGresDbOpsContext extends GenerationContext<StackGresDbOps>
   }
 
   @Value.Lazy
-  default StackGresProfile getProfile() {
+  default StackGresInstanceProfile getProfile() {
     return getFoundProfile()
         .orElseThrow(() -> new IllegalArgumentException(
             "SGDbOps " + getSource().getMetadata().getNamespace() + "."

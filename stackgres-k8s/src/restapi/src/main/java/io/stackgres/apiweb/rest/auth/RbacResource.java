@@ -47,7 +47,7 @@ import io.stackgres.common.crd.sgdistributedlogs.StackGresDistributedLogs;
 import io.stackgres.common.crd.sgobjectstorage.StackGresObjectStorage;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgscript.StackGresScript;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackup;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
@@ -268,7 +268,7 @@ public class RbacResource {
         HasMetadata.getFullResourceName(StackGresBackup.class),
         HasMetadata.getFullResourceName(StackGresCluster.class),
         HasMetadata.getFullResourceName(StackGresDistributedLogs.class),
-        HasMetadata.getFullResourceName(StackGresProfile.class),
+        HasMetadata.getFullResourceName(StackGresInstanceProfile.class),
         HasMetadata.getFullResourceName(StackGresDbOps.class),
         HasMetadata.getFullResourceName(StackGresPostgresConfig.class),
         HasMetadata.getFullResourceName(StackGresPoolingConfig.class),

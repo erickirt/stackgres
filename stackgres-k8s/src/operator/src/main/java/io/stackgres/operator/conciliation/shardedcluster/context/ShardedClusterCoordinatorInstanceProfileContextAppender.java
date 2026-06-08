@@ -7,7 +7,7 @@ package io.stackgres.operator.conciliation.shardedcluster.context;
 
 import java.util.Optional;
 
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.operator.conciliation.ContextAppender;
@@ -19,11 +19,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class ShardedClusterCoordinatorInstanceProfileContextAppender
     extends ContextAppender<StackGresShardedCluster, Builder> {
 
-  private final CustomResourceFinder<StackGresProfile> profileFinder;
+  private final CustomResourceFinder<StackGresInstanceProfile> profileFinder;
   private final DefaultProfileFactory defaultProfileFactory;
 
   public ShardedClusterCoordinatorInstanceProfileContextAppender(
-      CustomResourceFinder<StackGresProfile> profileFinder,
+      CustomResourceFinder<StackGresInstanceProfile> profileFinder,
       DefaultProfileFactory defaultProfileFactory) {
     this.profileFinder = profileFinder;
     this.defaultProfileFactory = defaultProfileFactory;
@@ -31,7 +31,7 @@ public class ShardedClusterCoordinatorInstanceProfileContextAppender
 
   @Override
   public void appendContext(StackGresShardedCluster cluster, Builder contextBuilder) {
-    final Optional<StackGresProfile> coordinatorProfile = profileFinder
+    final Optional<StackGresInstanceProfile> coordinatorProfile = profileFinder
         .findByNameAndNamespace(
             cluster.getSpec().getCoordinator().getSgInstanceProfile(),
             cluster.getMetadata().getNamespace());
@@ -39,7 +39,8 @@ public class ShardedClusterCoordinatorInstanceProfileContextAppender
         .equals(defaultProfileFactory.getDefaultResourceName(cluster))
         && coordinatorProfile.isEmpty()) {
       throw new IllegalArgumentException(
-          StackGresProfile.KIND + " " + cluster.getSpec().getCoordinator().getSgInstanceProfile() + " was not found");
+          StackGresInstanceProfile.KIND + " "
+              + cluster.getSpec().getCoordinator().getSgInstanceProfile() + " was not found");
     }
     contextBuilder.coordinatorProfile(coordinatorProfile);
   }

@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.quarkus.runtime.ShutdownEvent;
@@ -30,9 +31,10 @@ import io.stackgres.common.event.EventEmitter;
 import io.stackgres.common.labels.LabelFactoryForDistributedLogs;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.app.OperatorLockHolder;
 import io.stackgres.operator.common.Metrics;
+import io.stackgres.operator.common.StackGresDistributedLogsReview;
 import io.stackgres.operator.conciliation.AbstractConciliator;
 import io.stackgres.operator.conciliation.AbstractReconciliator;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
@@ -40,6 +42,9 @@ import io.stackgres.operator.conciliation.HandlerDelegator;
 import io.stackgres.operator.conciliation.ReconciliationResult;
 import io.stackgres.operator.conciliation.ReconciliatorWorkerThreadPool;
 import io.stackgres.operator.conciliation.StatusManager;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.event.Observes;
@@ -49,17 +54,23 @@ import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.helpers.MessageFormatter;
 
 @ApplicationScoped
-public class DistributedLogsReconciliator extends AbstractReconciliator<StackGresDistributedLogs> {
+public class DistributedLogsReconciliator
+    extends AbstractReconciliator<StackGresDistributedLogs, StackGresDistributedLogsReview> {
 
   @Dependent
   static class Parameters {
+    @Inject OperatorPropertyContext operatorPropertyContext;
     @Inject CustomResourceScanner<StackGresDistributedLogs> scanner;
     @Inject CustomResourceFinder<StackGresDistributedLogs> finder;
+    @Inject MutationPipeline<StackGresDistributedLogs, StackGresDistributedLogsReview> mutationPipeline;
+    @Inject ValidationPipeline<StackGresDistributedLogsReview> validationPipeline;
+    @Inject CustomResourceWriter<StackGresDistributedLogs> writer;
+    @Inject ObjectMapper objectMapper;
     @Inject AbstractConciliator<StackGresDistributedLogs> conciliator;
     @Inject DeployedResourcesCache deployedResourcesCache;
     @Inject HandlerDelegator<StackGresDistributedLogs> handlerDelegator;
     @Inject KubernetesClient client;
-    @Inject CustomResourceScheduler<StackGresDistributedLogs> distributedLogsScheduler;
+    @Inject CustomResourceWriter<StackGresDistributedLogs> distributedLogsWriter;
     @Inject StatusManager<StackGresDistributedLogs, Condition> statusManager;
     @Inject EventEmitter<StackGresDistributedLogs> eventController;
     @Inject OperatorLockHolder operatorLockReconciliator;
@@ -70,7 +81,7 @@ public class DistributedLogsReconciliator extends AbstractReconciliator<StackGre
     @Inject Metrics metrics;
   }
 
-  private final CustomResourceScheduler<StackGresDistributedLogs> distributedLogsScheduler;
+  private final CustomResourceWriter<StackGresDistributedLogs> distributedLogsWriter;
   private final StatusManager<StackGresDistributedLogs, Condition> statusManager;
   private final EventEmitter<StackGresDistributedLogs> eventController;
   private final LabelFactoryForDistributedLogs labelFactory;
@@ -79,19 +90,45 @@ public class DistributedLogsReconciliator extends AbstractReconciliator<StackGre
 
   @Inject
   public DistributedLogsReconciliator(Parameters parameters) {
-    super(parameters.scanner, parameters.finder,
-        parameters.conciliator, parameters.deployedResourcesCache,
-        parameters.handlerDelegator, parameters.client,
+    super(
+        parameters.operatorPropertyContext,
+        parameters.scanner,
+        parameters.finder,
+        parameters.objectMapper,
+        parameters.mutationPipeline,
+        parameters.validationPipeline,
+        parameters.writer,
+        parameters.conciliator,
+        parameters.deployedResourcesCache,
+        parameters.handlerDelegator,
+        parameters.client,
         parameters.operatorLockReconciliator,
         parameters.reconciliatorWorkerThreadPool,
         parameters.metrics,
         StackGresDistributedLogs.KIND);
-    this.distributedLogsScheduler = parameters.distributedLogsScheduler;
+    this.distributedLogsWriter = parameters.distributedLogsWriter;
     this.statusManager = parameters.statusManager;
     this.eventController = parameters.eventController;
     this.labelFactory = parameters.labelFactory;
     this.clusterScanner = parameters.clusterScanner;
     this.postgresConfigFinder = parameters.postgresConfigFinder;
+  }
+
+  @Override
+  protected void setSpecAndStatus(StackGresDistributedLogs currentConfig,
+      StackGresDistributedLogs mutatedAndValidatedConfig) {
+    currentConfig.setSpec(mutatedAndValidatedConfig.getSpec());
+    currentConfig.setStatus(mutatedAndValidatedConfig.getStatus());
+  }
+
+  @Override
+  protected StackGresDistributedLogsReview createAdmissionReview() {
+    return new StackGresDistributedLogsReview();
+  }
+
+  @Override
+  protected Class<StackGresDistributedLogs> getResourceClass() {
+    return StackGresDistributedLogs.class;
   }
 
   void onStart(@Observes StartupEvent ev) {
@@ -132,14 +169,14 @@ public class DistributedLogsReconciliator extends AbstractReconciliator<StackGre
         StackGresPostgresConfig.KIND,
         config.getSpec().getConfigurations().getSgPostgresConfig(),
         foundPostgresConfig.isPresent() ? "found" : "not found");
-    foundCluster.ifPresent(cluster -> distributedLogsScheduler
+    foundCluster.ifPresent(cluster -> distributedLogsWriter
         .update(config, foundConfig -> {
           setVersionFromCluster(cluster, foundConfig);
           setClusterConfigurationIfMajorVersionMismatch(foundPostgresConfig, cluster, foundConfig);
         }));
 
     statusManager.refreshCondition(config);
-    distributedLogsScheduler.update(config,
+    distributedLogsWriter.update(config,
         (currentDistributedLogs) -> currentDistributedLogs.setStatus(config.getStatus()));
   }
 

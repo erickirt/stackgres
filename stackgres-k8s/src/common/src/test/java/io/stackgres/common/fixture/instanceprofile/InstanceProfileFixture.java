@@ -5,11 +5,11 @@
 
 package io.stackgres.common.fixture.instanceprofile;
 
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileBuilder;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileBuilder;
 import io.stackgres.common.fixture.VersionedFixture;
 
-public class InstanceProfileFixture extends VersionedFixture<StackGresProfile> {
+public class InstanceProfileFixture extends VersionedFixture<StackGresInstanceProfile> {
 
   public InstanceProfileFixture loadSizeS() {
     fixture = readFromJson(STACKGRES_INSTANCE_PROFILE_SIZE_S_JSON);
@@ -21,8 +21,8 @@ public class InstanceProfileFixture extends VersionedFixture<StackGresProfile> {
     return this;
   }
 
-  public StackGresProfileBuilder getBuilder() {
-    return new StackGresProfileBuilder(fixture);
+  public StackGresInstanceProfileBuilder getBuilder() {
+    return new StackGresInstanceProfileBuilder(fixture);
   }
 
 }

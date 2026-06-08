@@ -10,10 +10,10 @@ import io.stackgres.common.crd.sgdbops.StackGresDbOpsList;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class DbOpsScheduler
-    extends AbstractCustomResourceScheduler<StackGresDbOps, StackGresDbOpsList> {
+public class DbOpsWriter
+    extends AbstractCustomResourceWriter<StackGresDbOps, StackGresDbOpsList> {
 
-  public DbOpsScheduler() {
+  public DbOpsWriter() {
     super(StackGresDbOps.class, StackGresDbOpsList.class);
   }
 

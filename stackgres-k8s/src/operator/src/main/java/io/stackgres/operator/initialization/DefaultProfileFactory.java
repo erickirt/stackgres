@@ -17,15 +17,15 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.stackgres.common.StackGresContainer;
 import io.stackgres.common.StackGresContainerProfile;
 import io.stackgres.common.StackGresInitContainer;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileContainer;
-import io.stackgres.common.crd.sgprofile.StackGresProfileRequests;
-import io.stackgres.common.crd.sgprofile.StackGresProfileSpec;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileContainer;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileRequests;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileSpec;
 import io.stackgres.common.resource.ResourceUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class DefaultProfileFactory extends DefaultCustomResourceFactory<StackGresProfile, HasMetadata> {
+public class DefaultProfileFactory extends DefaultCustomResourceFactory<StackGresInstanceProfile, HasMetadata> {
 
   @Override
   protected String getDefaultPropertyResourceName(HasMetadata source) {
@@ -33,12 +33,12 @@ public class DefaultProfileFactory extends DefaultCustomResourceFactory<StackGre
   }
 
   @Override
-  public StackGresProfile buildResource(HasMetadata resource) {
-    StackGresProfile profile = new StackGresProfile();
+  public StackGresInstanceProfile buildResource(HasMetadata resource) {
+    StackGresInstanceProfile profile = new StackGresInstanceProfile();
     profile.getMetadata().setName(getDefaultResourceName(resource));
     profile.getMetadata().setNamespace(resource.getMetadata().getNamespace());
 
-    StackGresProfileSpec spec = buildFromDefaults(resource, StackGresProfileSpec.class);
+    StackGresInstanceProfileSpec spec = buildFromDefaults(resource, StackGresInstanceProfileSpec.class);
 
     profile.setSpec(spec);
 
@@ -47,21 +47,21 @@ public class DefaultProfileFactory extends DefaultCustomResourceFactory<StackGre
     return profile;
   }
 
-  public void setDefaults(StackGresProfile resource) {
+  public void setDefaults(StackGresInstanceProfile resource) {
     final Optional<BigDecimal> cpuLimits = Optional.of(resource.getSpec())
-        .map(StackGresProfileSpec::getCpu)
+        .map(StackGresInstanceProfileSpec::getCpu)
         .flatMap(this::tryParseQuantity)
         .map(Quantity::getAmountInBytes);
     final Optional<BigDecimal> memoryLimits = Optional.of(resource.getSpec())
-        .map(StackGresProfileSpec::getMemory)
+        .map(StackGresInstanceProfileSpec::getMemory)
         .flatMap(this::tryParseQuantity)
         .map(Quantity::getAmountInBytes);
 
     final var containersLimits = Optional.of(resource.getSpec())
-        .map(StackGresProfileSpec::getContainers)
+        .map(StackGresInstanceProfileSpec::getContainers)
         .orElseGet(HashMap::new);
     final var initContainersLimits = Optional.of(resource.getSpec())
-        .map(StackGresProfileSpec::getInitContainers)
+        .map(StackGresInstanceProfileSpec::getInitContainers)
         .orElseGet(HashMap::new);
 
     setContainersCpuAndMemory(cpuLimits, memoryLimits, containersLimits);
@@ -70,29 +70,29 @@ public class DefaultProfileFactory extends DefaultCustomResourceFactory<StackGre
     resource.getSpec().setInitContainers(initContainersLimits);
 
     if (resource.getSpec().getRequests() == null) {
-      resource.getSpec().setRequests(new StackGresProfileRequests());
+      resource.getSpec().setRequests(new StackGresInstanceProfileRequests());
       resource.getSpec().getRequests().setCpu(resource.getSpec().getCpu());
       resource.getSpec().getRequests().setMemory(resource.getSpec().getMemory());
     }
 
     final Optional<BigDecimal> cpuRequests = Optional.of(resource.getSpec())
-        .map(StackGresProfileSpec::getRequests)
-        .map(StackGresProfileRequests::getCpu)
+        .map(StackGresInstanceProfileSpec::getRequests)
+        .map(StackGresInstanceProfileRequests::getCpu)
         .flatMap(this::tryParseQuantity)
         .map(Quantity::getAmountInBytes);
     final Optional<BigDecimal> memoryRequests = Optional.of(resource.getSpec())
-        .map(StackGresProfileSpec::getRequests)
-        .map(StackGresProfileRequests::getMemory)
+        .map(StackGresInstanceProfileSpec::getRequests)
+        .map(StackGresInstanceProfileRequests::getMemory)
         .flatMap(this::tryParseQuantity)
         .map(Quantity::getAmountInBytes);
 
     final var containersRequests = Optional.of(resource.getSpec())
-        .map(StackGresProfileSpec::getRequests)
-        .map(StackGresProfileRequests::getContainers)
+        .map(StackGresInstanceProfileSpec::getRequests)
+        .map(StackGresInstanceProfileRequests::getContainers)
         .orElseGet(HashMap::new);
     final var initContainersRequests = Optional.of(resource.getSpec())
-        .map(StackGresProfileSpec::getRequests)
-        .map(StackGresProfileRequests::getInitContainers)
+        .map(StackGresInstanceProfileSpec::getRequests)
+        .map(StackGresInstanceProfileRequests::getInitContainers)
         .orElseGet(HashMap::new);
 
     setContainersCpuAndMemory(cpuRequests, memoryRequests, containersRequests);
@@ -103,14 +103,14 @@ public class DefaultProfileFactory extends DefaultCustomResourceFactory<StackGre
 
   private void setContainersCpuAndMemory(
       Optional<BigDecimal> cpu, Optional<BigDecimal> memory,
-      Map<String, StackGresProfileContainer> containers) {
+      Map<String, StackGresInstanceProfileContainer> containers) {
     for (var container : Stream.of(StackGresContainer.values())
         .filter(Predicates.not(StackGresContainer.PATRONI::equals))
         .filter(Predicates.not(StackGresContainer.STREAM_CONTROLLER::equals))
         .toList()) {
       var containerProfile = containers.get(container.getNameWithPrefix());
       if (containerProfile == null) {
-        containerProfile = new StackGresProfileContainer();
+        containerProfile = new StackGresInstanceProfileContainer();
         setContainerCpu(cpu, container, containerProfile);
         setContainerMemory(memory, container, containerProfile);
         containers.put(container.getNameWithPrefix(), containerProfile);
@@ -120,12 +120,12 @@ public class DefaultProfileFactory extends DefaultCustomResourceFactory<StackGre
 
   private void setInitContainersCpuAndMemory(
       Optional<BigDecimal> cpu, Optional<BigDecimal> memory,
-      Map<String, StackGresProfileContainer> initContainers) {
+      Map<String, StackGresInstanceProfileContainer> initContainers) {
     for (var container : Stream.of(StackGresInitContainer.values())
         .toList()) {
       var containerProfile = initContainers.get(container.getNameWithPrefix());
       if (containerProfile == null) {
-        containerProfile = new StackGresProfileContainer();
+        containerProfile = new StackGresInstanceProfileContainer();
         setContainerCpu(cpu, container, containerProfile);
         setContainerMemory(memory, container, containerProfile);
         initContainers.put(container.getNameWithPrefix(), containerProfile);
@@ -136,7 +136,7 @@ public class DefaultProfileFactory extends DefaultCustomResourceFactory<StackGre
   private void setContainerCpu(
       Optional<BigDecimal> cpu,
       StackGresContainerProfile container,
-      StackGresProfileContainer containerProfile) {
+      StackGresInstanceProfileContainer containerProfile) {
     containerProfile.setCpu(cpu
         .map(container.getCpuFormula())
         .map(ResourceUtil::toCpuValue)
@@ -146,7 +146,7 @@ public class DefaultProfileFactory extends DefaultCustomResourceFactory<StackGre
   private void setContainerMemory(
       Optional<BigDecimal> memory,
       StackGresContainerProfile container,
-      StackGresProfileContainer containerProfile) {
+      StackGresInstanceProfileContainer containerProfile) {
     containerProfile.setMemory(memory
         .map(container.getMemoryFormula())
         .map(ResourceUtil::toMemoryValue)

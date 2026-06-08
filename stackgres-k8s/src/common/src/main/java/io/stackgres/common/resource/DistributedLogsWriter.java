@@ -10,11 +10,11 @@ import io.stackgres.common.crd.sgdistributedlogs.StackGresDistributedLogsList;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class DistributedLogsScheduler
+public class DistributedLogsWriter
     extends
-    AbstractCustomResourceScheduler<StackGresDistributedLogs, StackGresDistributedLogsList> {
+    AbstractCustomResourceWriter<StackGresDistributedLogs, StackGresDistributedLogsList> {
 
-  public DistributedLogsScheduler() {
+  public DistributedLogsWriter() {
     super(StackGresDistributedLogs.class, StackGresDistributedLogsList.class);
   }
 

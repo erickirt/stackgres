@@ -20,12 +20,17 @@ import io.stackgres.common.event.EventEmitter;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.operator.common.Metrics;
+import io.stackgres.operator.common.StackGresConfigReview;
 import io.stackgres.operator.conciliation.AbstractConciliator;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
 import io.stackgres.operator.conciliation.HandlerDelegator;
 import io.stackgres.operator.conciliation.ReconciliationResult;
 import io.stackgres.operator.conciliation.StatusManager;
 import io.stackgres.operator.conciliation.factory.cluster.KubernetessMockResourceGenerationUtil;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
+import io.stackgres.testutil.JsonUtil;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,6 +58,12 @@ class ConfigReconciliatorTest {
   EventEmitter<StackGresConfig> eventController;
   @Mock
   Metrics metrics;
+  @Mock
+  OperatorPropertyContext operatorPropertyContext;
+  @Mock
+  MutationPipeline<StackGresConfig, StackGresConfigReview> mutationPipeline;
+  @Mock
+  ValidationPipeline<StackGresConfigReview> validationPipeline;
 
   private ConfigReconciliator reconciliator;
 
@@ -60,12 +71,16 @@ class ConfigReconciliatorTest {
   void setUp() {
     final ConfigReconciliator.Parameters parameters =
         new ConfigReconciliator.Parameters();
+    parameters.operatorPropertyContext = operatorPropertyContext;
+    parameters.mutationPipeline = mutationPipeline;
+    parameters.validationPipeline = validationPipeline;
     parameters.finder = finder;
     parameters.conciliator = conciliator;
     parameters.deployedResourcesCache = deployedResourcesCache;
     parameters.handlerDelegator = handlerDelegator;
     parameters.eventController = eventController;
     parameters.statusManager = statusManager;
+    parameters.objectMapper = JsonUtil.jsonMapper();
     parameters.metrics = metrics;
     reconciliator = new ConfigReconciliator(parameters);
   }

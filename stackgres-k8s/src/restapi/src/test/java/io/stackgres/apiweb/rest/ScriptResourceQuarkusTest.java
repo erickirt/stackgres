@@ -37,7 +37,7 @@ import io.stackgres.common.crd.SecretKeySelector;
 import io.stackgres.common.crd.sgscript.StackGresScript;
 import io.stackgres.common.crd.sgscript.StackGresScriptList;
 import io.stackgres.common.fixture.Fixtures;
-import io.stackgres.common.resource.ScriptScheduler;
+import io.stackgres.common.resource.ScriptWriter;
 import io.stackgres.testutil.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +51,7 @@ class ScriptResourceQuarkusTest implements AuthenticatedResourceTest {
   KubernetesServer mockServer;
 
   @InjectMock
-  ScriptScheduler scriptScheduler;
+  ScriptWriter scriptWriter;
 
   private final StackGresScript script = getScript();
 
@@ -95,7 +95,7 @@ class ScriptResourceQuarkusTest implements AuthenticatedResourceTest {
     final Metadata metadata = script.getMetadata();
     metadata.setNamespace("test");
 
-    when(scriptScheduler.create(any(), anyBoolean())).thenReturn(this.script);
+    when(scriptWriter.create(any(), anyBoolean())).thenReturn(this.script);
 
     given()
         .header(AUTHENTICATION_HEADER)
@@ -143,7 +143,7 @@ class ScriptResourceQuarkusTest implements AuthenticatedResourceTest {
     final Metadata metadata = script.getMetadata();
     metadata.setNamespace("test");
 
-    when(scriptScheduler.create(any(), anyBoolean())).thenReturn(this.script);
+    when(scriptWriter.create(any(), anyBoolean())).thenReturn(this.script);
 
     given()
         .header(AUTHENTICATION_HEADER)
@@ -172,7 +172,7 @@ class ScriptResourceQuarkusTest implements AuthenticatedResourceTest {
     final Metadata metadata = script.getMetadata();
     metadata.setNamespace("test");
 
-    when(scriptScheduler.create(any(), anyBoolean())).thenReturn(this.script);
+    when(scriptWriter.create(any(), anyBoolean())).thenReturn(this.script);
 
     given()
         .header(AUTHENTICATION_HEADER)
@@ -205,7 +205,7 @@ class ScriptResourceQuarkusTest implements AuthenticatedResourceTest {
     final Metadata metadata = script.getMetadata();
     metadata.setNamespace("test");
 
-    when(scriptScheduler.create(any(), anyBoolean())).thenReturn(this.script);
+    when(scriptWriter.create(any(), anyBoolean())).thenReturn(this.script);
 
     given()
         .header(AUTHENTICATION_HEADER)

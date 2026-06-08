@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.runtime.StartupEvent;
 import io.stackgres.common.CdiUtil;
 import io.stackgres.common.OperatorProperty;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.operator.common.StackGresInstanceProfileReview;
 import io.stackgres.operatorframework.admissionwebhook.AdmissionReviewResponse;
 import io.stackgres.operatorframework.admissionwebhook.mutating.AbstractMutationResource;
@@ -26,12 +26,12 @@ import jakarta.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class SgProfileMutationResource
-    extends AbstractMutationResource<StackGresProfile, StackGresInstanceProfileReview> {
+    extends AbstractMutationResource<StackGresInstanceProfile, StackGresInstanceProfileReview> {
 
   @Inject
   public SgProfileMutationResource(
       ObjectMapper objectMapper,
-      MutationPipeline<StackGresProfile, StackGresInstanceProfileReview> pipeline) {
+      MutationPipeline<StackGresInstanceProfile, StackGresInstanceProfileReview> pipeline) {
     super(OperatorProperty.getAllowedNamespaces(), objectMapper, pipeline);
   }
 
@@ -51,7 +51,7 @@ public class SgProfileMutationResource
   }
 
   @Override
-  protected Class<StackGresProfile> getResourceClass() {
-    return StackGresProfile.class;
+  protected Class<StackGresInstanceProfile> getResourceClass() {
+    return StackGresInstanceProfile.class;
   }
 }

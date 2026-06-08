@@ -13,7 +13,7 @@ import io.stackgres.common.StackGresVersion;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOps;
@@ -30,7 +30,7 @@ public interface StackGresShardedDbOpsContext
 
   Optional<StackGresCluster> getFoundCoordinator();
 
-  Optional<StackGresProfile> getFoundProfile();
+  Optional<StackGresInstanceProfile> getFoundProfile();
 
   @Override
   @Value.Lazy
@@ -44,7 +44,7 @@ public interface StackGresShardedDbOpsContext
   }
 
   @Value.Lazy
-  default StackGresProfile getProfile() {
+  default StackGresInstanceProfile getProfile() {
     return getFoundProfile()
         .orElseThrow(() -> new IllegalArgumentException(
             "SGShardedDbOps " + getSource().getMetadata().getNamespace() + "."

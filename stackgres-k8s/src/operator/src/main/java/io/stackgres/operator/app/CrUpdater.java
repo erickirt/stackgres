@@ -24,7 +24,7 @@ import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgconfig.StackGresConfigStatus;
 import io.stackgres.common.kubernetesclient.KubernetesClientUtil;
 import io.stackgres.common.resource.CustomResourceFinder;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jetbrains.annotations.NotNull;
@@ -44,18 +44,18 @@ public class CrUpdater {
       .orElseGet(OperatorProperty.OPERATOR_NAMESPACE::getString);
 
   private final CustomResourceFinder<StackGresConfig> configFinder;
-  private final CustomResourceScheduler<StackGresConfig> configScheduler;
+  private final CustomResourceWriter<StackGresConfig> configWriter;
   private final KubernetesClient client;
   private final CrdLoader crdLoader;
 
   @Inject
   public CrUpdater(
       CustomResourceFinder<StackGresConfig> configFinder,
-      CustomResourceScheduler<StackGresConfig> configScheduler,
+      CustomResourceWriter<StackGresConfig> configWriter,
       KubernetesClient client,
       YamlMapperProvider yamlMapperProvider) {
     this.configFinder = configFinder;
-    this.configScheduler = configScheduler;
+    this.configWriter = configWriter;
     this.client = client;
     this.crdLoader = new CrdLoader(yamlMapperProvider.get());
   }
@@ -81,7 +81,7 @@ public class CrUpdater {
           LOGGER.info("Existing custom resources for CRD {}. Patched",
               installedCrd.getSpec().getNames().getKind());
         });
-    configScheduler.updateStatus(config, foundConfig -> {
+    configWriter.updateStatus(config, foundConfig -> {
       if (foundConfig.getStatus() == null) {
         foundConfig.setStatus(new StackGresConfigStatus());
       }

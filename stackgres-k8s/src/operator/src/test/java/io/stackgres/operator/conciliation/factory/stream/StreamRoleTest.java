@@ -67,7 +67,7 @@ class StreamRoleTest {
     final List<HasMetadata> resources = streamRole.generateResource(context).toList();
     Role role = findResource(resources, Role.class);
     List<PolicyRule> rules = role.getRules();
-    assertEquals(5, rules.size());
+    assertEquals(6, rules.size());
   }
 
   @Test

@@ -42,6 +42,7 @@ public enum OperatorProperty implements StackGresPropertyReader {
   INSTALL_CRDS("stackgres.installCrds"),
   WAIT_CRDS_UPGRADE("stackgres.waitCrdsUpgrade"),
   INSTALL_WEBHOOKS("stackgres.installWebhooks"),
+  ENABLE_RECONCILIATION_WEBHOOKS("stackgres.enableReconciliationWebhooks"),
   INSTALL_CONVERSION_WEBHOOKS("stackgres.installConversionWebhooks"),
   CERTIFICATE_TIMEOUT("stackgres.certificateTimeout"),
   OPERATOR_CERT_SECRET_NAME("stackgres.operatorCertSecretName"),

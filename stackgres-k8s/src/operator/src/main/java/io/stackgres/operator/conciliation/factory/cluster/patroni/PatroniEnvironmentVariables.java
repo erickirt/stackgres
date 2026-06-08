@@ -28,6 +28,7 @@ import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterConfigurations;
 import io.stackgres.common.crd.sgcluster.StackGresClusterInitialData;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPatroni;
+import io.stackgres.common.crd.sgcluster.StackGresClusterPods;
 import io.stackgres.common.crd.sgcluster.StackGresClusterReplicateFrom;
 import io.stackgres.common.crd.sgcluster.StackGresClusterReplication;
 import io.stackgres.common.crd.sgcluster.StackGresClusterRestore;
@@ -231,7 +232,12 @@ public class PatroniEnvironmentVariables implements EnvVarProvider<StackGresClus
         .map(StackGresClusterConfigurations::getPatroni)
         .map(StackGresClusterPatroni::getConnectUsingFqdn)
         .orElse(false)) {
-      return "${POD_NAME}." + cluster.getMetadata().getName() + ".${POD_NAMESPACE}";
+      final String statefulSetServiceName =
+          Optional.ofNullable(cluster.getSpec())
+          .map(StackGresClusterSpec::getPods)
+          .map(StackGresClusterPods::getStatefulSetServiceName)
+          .orElse(cluster.getMetadata().getName());
+      return "${POD_NAME}." + statefulSetServiceName + ".${POD_NAMESPACE}";
     }
     return "${POD_IP}";
   }

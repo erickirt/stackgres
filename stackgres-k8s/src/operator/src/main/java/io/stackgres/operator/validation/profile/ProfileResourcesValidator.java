@@ -13,9 +13,9 @@ import java.util.Set;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.stackgres.common.ErrorType;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileHugePages;
-import io.stackgres.common.crd.sgprofile.StackGresProfileRequests;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileHugePages;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileRequests;
 import io.stackgres.operator.common.StackGresInstanceProfileReview;
 import io.stackgres.operator.validation.ValidationType;
 import io.stackgres.operatorframework.admissionwebhook.Operation;
@@ -30,18 +30,18 @@ public class ProfileResourcesValidator implements SgProfileValidator {
   public void validate(StackGresInstanceProfileReview review) throws ValidationFailed {
     Operation operation = review.getRequest().getOperation();
     if (operation == Operation.CREATE || operation == Operation.UPDATE) {
-      final StackGresProfile profile = review.getRequest().getObject();
+      final StackGresInstanceProfile profile = review.getRequest().getObject();
 
       checkQuantity(profile.getSpec().getCpu(),
           "spec.cpu");
       checkQuantity(profile.getSpec().getMemory(),
           "spec.memory");
       checkQuantity(Optional.ofNullable(profile.getSpec().getHugePages())
-          .map(StackGresProfileHugePages::getHugepages2Mi)
+          .map(StackGresInstanceProfileHugePages::getHugepages2Mi)
           .orElse(null),
           "spec.hugePages.hugepages-2Mi");
       checkQuantity(Optional.ofNullable(profile.getSpec().getHugePages())
-          .map(StackGresProfileHugePages::getHugepages1Gi)
+          .map(StackGresInstanceProfileHugePages::getHugepages1Gi)
           .orElse(null),
           "spec.hugePages.hugepages-1Gi");
       for (var container : Optional
@@ -55,11 +55,11 @@ public class ProfileResourcesValidator implements SgProfileValidator {
         checkQuantity(container.getValue().getMemory(),
             "spec.containers." + container.getKey() + ".memory");
         checkQuantity(Optional.ofNullable(container.getValue().getHugePages())
-            .map(StackGresProfileHugePages::getHugepages2Mi)
+            .map(StackGresInstanceProfileHugePages::getHugepages2Mi)
             .orElse(null),
             "spec.containers." + container.getKey() + ".hugePages.hugepages-2Mi");
         checkQuantity(Optional.ofNullable(container.getValue().getHugePages())
-            .map(StackGresProfileHugePages::getHugepages1Gi)
+            .map(StackGresInstanceProfileHugePages::getHugepages1Gi)
             .orElse(null),
             "spec.containers." + container.getKey() + ".hugePages.hugepages-1Gi");
       }
@@ -74,25 +74,25 @@ public class ProfileResourcesValidator implements SgProfileValidator {
         checkQuantity(container.getValue().getMemory(),
             "spec.initContainers." + container.getKey() + ".memory");
         checkQuantity(Optional.ofNullable(container.getValue().getHugePages())
-            .map(StackGresProfileHugePages::getHugepages2Mi)
+            .map(StackGresInstanceProfileHugePages::getHugepages2Mi)
             .orElse(null),
             "spec.initContainers." + container.getKey() + ".hugePages.hugepages-2Mi");
         checkQuantity(Optional.ofNullable(container.getValue().getHugePages())
-            .map(StackGresProfileHugePages::getHugepages1Gi)
+            .map(StackGresInstanceProfileHugePages::getHugepages1Gi)
             .orElse(null),
             "spec.initContainers." + container.getKey() + ".hugePages.hugepages-1Gi");
       }
       checkQuantity(Optional.ofNullable(profile.getSpec().getRequests())
-          .map(StackGresProfileRequests::getCpu)
+          .map(StackGresInstanceProfileRequests::getCpu)
           .orElse(null),
           "spec.requests.cpu");
       checkQuantity(Optional.ofNullable(profile.getSpec().getRequests())
-          .map(StackGresProfileRequests::getMemory)
+          .map(StackGresInstanceProfileRequests::getMemory)
           .orElse(null),
           "spec.requests.memory");
       for (var container : Optional
           .ofNullable(profile.getSpec().getRequests())
-          .map(StackGresProfileRequests::getContainers)
+          .map(StackGresInstanceProfileRequests::getContainers)
           .stream()
           .map(Map::entrySet)
           .flatMap(Set::stream)
@@ -102,17 +102,17 @@ public class ProfileResourcesValidator implements SgProfileValidator {
         checkQuantity(container.getValue().getMemory(),
             "spec.requests.containers." + container.getKey() + ".memory");
         checkQuantity(Optional.ofNullable(container.getValue().getHugePages())
-            .map(StackGresProfileHugePages::getHugepages2Mi)
+            .map(StackGresInstanceProfileHugePages::getHugepages2Mi)
             .orElse(null),
             "spec.requests.containers." + container.getKey() + ".hugePages.hugepages-2Mi");
         checkQuantity(Optional.ofNullable(container.getValue().getHugePages())
-            .map(StackGresProfileHugePages::getHugepages1Gi)
+            .map(StackGresInstanceProfileHugePages::getHugepages1Gi)
             .orElse(null),
             "spec.requests.containers." + container.getKey() + ".hugePages.hugepages-1Gi");
       }
       for (var container : Optional
           .ofNullable(profile.getSpec().getRequests())
-          .map(StackGresProfileRequests::getInitContainers)
+          .map(StackGresInstanceProfileRequests::getInitContainers)
           .stream()
           .map(Map::entrySet)
           .flatMap(Set::stream)
@@ -122,11 +122,11 @@ public class ProfileResourcesValidator implements SgProfileValidator {
         checkQuantity(container.getValue().getMemory(),
             "spec.requests.initContainers." + container.getKey() + ".memory");
         checkQuantity(Optional.ofNullable(container.getValue().getHugePages())
-            .map(StackGresProfileHugePages::getHugepages2Mi)
+            .map(StackGresInstanceProfileHugePages::getHugepages2Mi)
             .orElse(null),
             "spec.requests.initContainers." + container.getKey() + ".hugePages.hugepages-2Mi");
         checkQuantity(Optional.ofNullable(container.getValue().getHugePages())
-            .map(StackGresProfileHugePages::getHugepages1Gi)
+            .map(StackGresInstanceProfileHugePages::getHugepages1Gi)
             .orElse(null),
             "spec.requests.initContainers." + container.getKey() + ".hugePages.hugepages-1Gi");
       }
@@ -141,7 +141,7 @@ public class ProfileResourcesValidator implements SgProfileValidator {
         .map(signum -> signum == -1)
         .orElse(false)) {
       failWithMessageAndFields(
-          HasMetadata.getKind(StackGresProfile.class),
+          HasMetadata.getKind(StackGresInstanceProfile.class),
           ErrorType.getErrorTypeUri(ErrorType.CONSTRAINT_VIOLATION),
           "Quantity can not be negative, but was " + value,
           field);

@@ -17,7 +17,7 @@ import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
@@ -41,7 +41,7 @@ public abstract class AbstractCustomResourceServiceDependency
   protected CustomResourceFinder<R> finder;
 
   @Inject
-  protected CustomResourceScheduler<R> scheduler;
+  protected CustomResourceWriter<R> scheduler;
 
   @Inject
   protected CustomResourceScanner<StackGresCluster> clusterScanner;

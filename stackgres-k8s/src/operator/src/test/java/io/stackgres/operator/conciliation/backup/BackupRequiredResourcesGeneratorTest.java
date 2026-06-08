@@ -18,7 +18,7 @@ import io.stackgres.common.StackGresComponent;
 import io.stackgres.common.crd.sgbackup.StackGresBackup;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgobjectstorage.StackGresObjectStorage;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.resource.ClusterFinder;
 import io.stackgres.common.resource.ObjectStorageFinder;
@@ -46,7 +46,7 @@ class BackupRequiredResourcesGeneratorTest {
   private StackGresBackup backup;
   private StackGresObjectStorage objectStorage;
   private StackGresCluster cluster;
-  private StackGresProfile profile;
+  private StackGresInstanceProfile profile;
 
   @BeforeEach
   void setUp() {

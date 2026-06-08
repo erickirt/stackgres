@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 import io.fabric8.kubernetes.client.CustomResource;
 import org.jetbrains.annotations.NotNull;
 
-public interface CustomResourceScheduler<T extends CustomResource<?, ?>> {
+public interface CustomResourceWriter<T extends CustomResource<?, ?>> {
 
   default T create(@NotNull T resource) {
     return create(resource, false);

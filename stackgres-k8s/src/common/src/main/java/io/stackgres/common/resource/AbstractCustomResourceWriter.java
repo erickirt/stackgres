@@ -17,9 +17,9 @@ import io.stackgres.common.kubernetesclient.KubernetesClientUtil;
 import jakarta.inject.Inject;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class AbstractCustomResourceScheduler<T extends CustomResource<?, ?>,
+public abstract class AbstractCustomResourceWriter<T extends CustomResource<?, ?>,
         L extends DefaultKubernetesResourceList<T>>
-    implements CustomResourceScheduler<T> {
+    implements CustomResourceWriter<T> {
 
   @NotNull
   private final Class<T> customResourceClass;
@@ -29,7 +29,7 @@ public abstract class AbstractCustomResourceScheduler<T extends CustomResource<?
   @Inject
   KubernetesClient client;
 
-  protected AbstractCustomResourceScheduler(
+  protected AbstractCustomResourceWriter(
       @NotNull Class<T> customResourceClass,
       @NotNull Class<L> customResourceListClass) {
     this.customResourceClass = customResourceClass;

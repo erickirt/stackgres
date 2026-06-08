@@ -84,6 +84,11 @@ public class BackupRole implements ResourceGenerator<StackGresBackupContext> {
             .withVerbs("get", "patch", "update", "delete")
             .withResourceNames(backup.getMetadata().getName())
             .build())
+        .addToRules(new PolicyRuleBuilder()
+            .withApiGroups("coordination.k8s.io")
+            .withResources("leases")
+            .withVerbs("get", "list", "watch", "update", "patch")
+            .build())
         .build();
   }
 

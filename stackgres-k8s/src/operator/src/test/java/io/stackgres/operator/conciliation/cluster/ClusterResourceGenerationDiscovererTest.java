@@ -20,7 +20,7 @@ import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgobjectstorage.StackGresObjectStorage;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.operator.conciliation.AbstractRequiredResourceGeneratorTest;
 import io.stackgres.operator.conciliation.ResourceGenerationDiscoverer;
@@ -38,7 +38,7 @@ class ClusterResourceGenerationDiscovererTest
   private StackGresConfig config;
   private StackGresCluster resource;
   private StackGresPostgresConfig pgConfig;
-  private StackGresProfile profile;
+  private StackGresInstanceProfile profile;
   private Optional<StackGresObjectStorage> objectStorage;
   private Optional<StackGresPoolingConfig> pooling;
   private Optional<Secret> secret;

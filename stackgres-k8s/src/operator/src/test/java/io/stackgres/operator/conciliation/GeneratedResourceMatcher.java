@@ -24,8 +24,8 @@ import io.stackgres.common.crd.sgcluster.StackGresClusterPodsPersistentVolume;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpecAnnotations;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpecMetadata;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileSpec;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileSpec;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
 import io.stackgres.testutil.GeneratorTestUtil;
 import org.opentest4j.AssertionFailedError;
@@ -37,7 +37,7 @@ public class GeneratedResourceMatcher {
   private final String clusterNamespace;
 
   private StackGresPostgresConfig stackGresPostgresConfig;
-  private StackGresProfile stackGresProfile;
+  private StackGresInstanceProfile stackGresInstanceProfile;
   private Secret databaseSecret;
 
   private GeneratedResourceMatcher(
@@ -67,7 +67,7 @@ public class GeneratedResourceMatcher {
   private StackGresClusterContext buildContext() {
     return StackGresClusterContext.builder()
         .source(cluster)
-        .profile(stackGresProfile)
+        .profile(stackGresInstanceProfile)
         .postgresConfig(stackGresPostgresConfig)
         .databaseSecret(Optional.ofNullable(databaseSecret))
         .build();
@@ -131,20 +131,20 @@ public class GeneratedResourceMatcher {
   }
 
   public GeneratedResourceMatcher andInstanceProfile(String cpu, String memory) {
-    var instanceProfile = new StackGresProfile();
+    var instanceProfile = new StackGresInstanceProfile();
     instanceProfile.setMetadata(new ObjectMeta());
     instanceProfile.getMetadata().setName(clusterName);
     instanceProfile.getMetadata().setNamespace(clusterNamespace);
-    instanceProfile.setSpec(new StackGresProfileSpec());
+    instanceProfile.setSpec(new StackGresInstanceProfileSpec());
     instanceProfile.getSpec().setCpu(cpu);
     instanceProfile.getSpec().setMemory(memory);
     cluster.getSpec().setSgInstanceProfile(clusterNamespace);
-    stackGresProfile = instanceProfile;
+    stackGresInstanceProfile = instanceProfile;
     return this;
   }
 
-  public GeneratedResourceMatcher andInstanceProfile(StackGresProfile profile) {
-    this.stackGresProfile = profile;
+  public GeneratedResourceMatcher andInstanceProfile(StackGresInstanceProfile profile) {
+    this.stackGresInstanceProfile = profile;
     cluster.getSpec().setSgInstanceProfile(profile.getMetadata().getName());
     return this;
   }

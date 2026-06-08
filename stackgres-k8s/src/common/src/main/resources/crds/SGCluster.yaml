@@ -886,6 +886,8 @@ spec:
                         type: object
                         description: |
                           This section allows to define per-volume I/O limits for nodes using [cgroup v2 `io.max` features](https://docs.kernel.org/admin-guide/cgroup-v2.html).
+
+                          > **NOTE**: This is an **alpha** feature.
                           
                           When multiple PostgreSQL clusters share the same local storage device on a Kubernetes node, a single cluster running a heavy workload
                            (for example large COPY, aggressive VACUUM, or an unoptimized query) can saturate the device's I/O bandwidth and degrade performance

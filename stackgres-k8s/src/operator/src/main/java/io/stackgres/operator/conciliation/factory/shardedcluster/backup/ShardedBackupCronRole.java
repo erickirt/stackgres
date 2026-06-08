@@ -122,6 +122,11 @@ public class ShardedBackupCronRole implements ResourceGenerator<StackGresSharded
             .withResources(HasMetadata.getPlural(StackGresObjectStorage.class))
             .withVerbs("get")
             .build())
+        .addToRules(new PolicyRuleBuilder()
+            .withApiGroups("coordination.k8s.io")
+            .withResources("leases")
+            .withVerbs("get", "list", "watch", "update", "patch")
+            .build())
         .build();
   }
 

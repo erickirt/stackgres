@@ -27,7 +27,7 @@ import io.stackgres.common.KubernetesTestServerSetup;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.resource.ConfigFinder;
 import io.stackgres.common.resource.ConfigScanner;
-import io.stackgres.common.resource.ConfigScheduler;
+import io.stackgres.common.resource.ConfigWriter;
 import io.stackgres.testutil.JsonUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,7 +38,7 @@ import org.mockito.stubbing.Answer;
 class ConfigResourceTest implements AuthenticatedResourceTest {
 
   @InjectMock
-  ConfigScheduler scheduler;
+  ConfigWriter scheduler;
 
   @InjectMock
   ConfigFinder finder;

@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOps;
 import io.stackgres.common.fixture.Fixtures;
@@ -37,7 +37,7 @@ abstract class ShardedDbOpsJobTestCase {
 
   StackGresShardedDbOps dbOps;
 
-  StackGresProfile clusterProfile;
+  StackGresInstanceProfile clusterProfile;
 
   @BeforeEach
   void setUp() {

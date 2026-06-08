@@ -32,10 +32,10 @@ import io.stackgres.common.StringUtil;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterNonProduction;
 import io.stackgres.common.crd.sgcluster.StackGresClusterResources;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileContainer;
-import io.stackgres.common.crd.sgprofile.StackGresProfileContainerBuilder;
-import io.stackgres.common.crd.sgprofile.StackGresProfileRequests;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileContainer;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileContainerBuilder;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileRequests;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.resource.ResourceUtil;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
@@ -60,7 +60,7 @@ class ClusterStatefulSetContainerProfileDecoratorTest extends AbstractProfileDec
 
   private StackGresCluster cluster;
 
-  private StackGresProfile profile;
+  private StackGresInstanceProfile profile;
 
   private StatefulSet statefulSet;
 
@@ -88,7 +88,7 @@ class ClusterStatefulSetContainerProfileDecoratorTest extends AbstractProfileDec
     profile.getSpec().setInitContainers(new HashMap<>());
     Seq.seq(statefulSet.getSpec().getTemplate().getSpec().getContainers())
         .forEach(container -> {
-          StackGresProfileContainer containerProfile = new StackGresProfileContainer();
+          StackGresInstanceProfileContainer containerProfile = new StackGresInstanceProfileContainer();
           containerProfile.setCpu(new Random().nextInt(32000) + "m");
           containerProfile.setMemory(new Random().nextInt(32) + "Gi");
           profile.getSpec().getContainers().put(
@@ -96,20 +96,20 @@ class ClusterStatefulSetContainerProfileDecoratorTest extends AbstractProfileDec
         });
     Seq.seq(statefulSet.getSpec().getTemplate().getSpec().getInitContainers())
         .forEach(container -> {
-          StackGresProfileContainer containerProfile = new StackGresProfileContainer();
+          StackGresInstanceProfileContainer containerProfile = new StackGresInstanceProfileContainer();
           containerProfile.setCpu(new Random().nextInt(32000) + "m");
           containerProfile.setMemory(new Random().nextInt(32) + "Gi");
           profile.getSpec().getInitContainers().put(
               KIND.getContainerPrefix() + container.getName(), containerProfile);
         });
-    profile.getSpec().setRequests(new StackGresProfileRequests());
+    profile.getSpec().setRequests(new StackGresInstanceProfileRequests());
     profile.getSpec().getRequests().setCpu(new Random().nextInt(32000) + "m");
     profile.getSpec().getRequests().setMemory(new Random().nextInt(32) + "Gi");
     profile.getSpec().getRequests().setContainers(new HashMap<>());
     profile.getSpec().getRequests().setInitContainers(new HashMap<>());
     Seq.seq(statefulSet.getSpec().getTemplate().getSpec().getContainers())
         .forEach(container -> {
-          StackGresProfileContainer containerProfile = new StackGresProfileContainer();
+          StackGresInstanceProfileContainer containerProfile = new StackGresInstanceProfileContainer();
           containerProfile.setCpu(new Random().nextInt(32000) + "m");
           containerProfile.setMemory(new Random().nextInt(32) + "Gi");
           profile.getSpec().getRequests().getContainers().put(
@@ -117,13 +117,13 @@ class ClusterStatefulSetContainerProfileDecoratorTest extends AbstractProfileDec
         });
     Seq.seq(statefulSet.getSpec().getTemplate().getSpec().getInitContainers())
         .forEach(container -> {
-          StackGresProfileContainer containerProfile = new StackGresProfileContainer();
+          StackGresInstanceProfileContainer containerProfile = new StackGresInstanceProfileContainer();
           containerProfile.setCpu(new Random().nextInt(32000) + "m");
           containerProfile.setMemory(new Random().nextInt(32) + "Gi");
           profile.getSpec().getRequests().getInitContainers().put(
               KIND.getContainerPrefix() + container.getName(), containerProfile);
         });
-    StackGresProfileContainer containerProfile = new StackGresProfileContainer();
+    StackGresInstanceProfileContainer containerProfile = new StackGresInstanceProfileContainer();
     containerProfile.setCpu(new Random().nextInt(32000) + "m");
     containerProfile.setMemory(new Random().nextInt(32) + "Gi");
     profile.getSpec().getContainers().put(
@@ -143,10 +143,10 @@ class ClusterStatefulSetContainerProfileDecoratorTest extends AbstractProfileDec
   }
 
   @Override
-  protected Map<String, StackGresProfileContainer> getFilteredContainerResource() {
+  protected Map<String, StackGresInstanceProfileContainer> getFilteredContainerResource() {
     return Map.of(
         StackGresContainer.PATRONI.getNameWithPrefix(),
-        new StackGresProfileContainerBuilder()
+        new StackGresInstanceProfileContainerBuilder()
         .withCpu(getProfile().getSpec().getCpu())
         .withMemory(getProfile().getSpec().getMemory())
         .withHugePages(getProfile().getSpec().getHugePages())
@@ -154,10 +154,10 @@ class ClusterStatefulSetContainerProfileDecoratorTest extends AbstractProfileDec
   }
 
   @Override
-  protected Map<String, StackGresProfileContainer> getFilteredContainerResourceRequests() {
+  protected Map<String, StackGresInstanceProfileContainer> getFilteredContainerResourceRequests() {
     return Map.of(
         StackGresContainer.PATRONI.getNameWithPrefix(),
-        new StackGresProfileContainerBuilder()
+        new StackGresInstanceProfileContainerBuilder()
         .withCpu(Optional.of(getProfile().getSpec().getRequests().getCpu())
             .map(Quantity::new)
             .map(Quantity::getNumericalAmount)
@@ -198,7 +198,7 @@ class ClusterStatefulSetContainerProfileDecoratorTest extends AbstractProfileDec
   }
 
   @Override
-  protected StackGresProfile getProfile() {
+  protected StackGresInstanceProfile getProfile() {
     return profile;
   }
 

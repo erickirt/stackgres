@@ -20,14 +20,14 @@ import jakarta.validation.Valid;
 @Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
-public class StackGresProfileContainer {
+public class StackGresInstanceProfileContainer {
 
   private String cpu;
 
   private String memory;
 
   @Valid
-  private StackGresProfileHugePages hugePages;
+  private StackGresInstanceProfileHugePages hugePages;
 
   public String getCpu() {
     return cpu;
@@ -45,11 +45,11 @@ public class StackGresProfileContainer {
     this.memory = memory;
   }
 
-  public StackGresProfileHugePages getHugePages() {
+  public StackGresInstanceProfileHugePages getHugePages() {
     return hugePages;
   }
 
-  public void setHugePages(StackGresProfileHugePages hugePages) {
+  public void setHugePages(StackGresInstanceProfileHugePages hugePages) {
     this.hugePages = hugePages;
   }
 
@@ -63,10 +63,10 @@ public class StackGresProfileContainer {
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof StackGresProfileContainer)) {
+    if (!(obj instanceof StackGresInstanceProfileContainer)) {
       return false;
     }
-    StackGresProfileContainer other = (StackGresProfileContainer) obj;
+    StackGresInstanceProfileContainer other = (StackGresInstanceProfileContainer) obj;
     return Objects.equals(cpu, other.cpu) && Objects.equals(hugePages, other.hugePages)
         && Objects.equals(memory, other.memory);
   }

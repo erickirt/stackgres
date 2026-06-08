@@ -18,13 +18,17 @@ import io.stackgres.common.crd.sgstream.StackGresStream;
 import io.stackgres.common.event.EventEmitter;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.resource.CustomResourceFinder;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.common.Metrics;
+import io.stackgres.operator.common.StackGresStreamReview;
 import io.stackgres.operator.conciliation.AbstractConciliator;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
 import io.stackgres.operator.conciliation.HandlerDelegator;
 import io.stackgres.operator.conciliation.ReconciliationResult;
 import io.stackgres.operator.conciliation.factory.cluster.KubernetessMockResourceGenerationUtil;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
 import io.stackgres.testutil.JsonUtil;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
@@ -51,22 +55,31 @@ class StreamReconciliatorTest {
   @Mock
   EventEmitter<StackGresStream> eventController;
   @Mock
-  CustomResourceScheduler<StackGresStream> streamScheduler;
+  CustomResourceWriter<StackGresStream> streamWriter;
   @Mock
   Metrics metrics;
+  @Mock
+  OperatorPropertyContext operatorPropertyContext;
+  @Mock
+  MutationPipeline<StackGresStream, StackGresStreamReview> mutationPipeline;
+  @Mock
+  ValidationPipeline<StackGresStreamReview> validationPipeline;
 
   private StreamReconciliator reconciliator;
 
   @BeforeEach
   void setUp() {
     StreamReconciliator.Parameters parameters = new StreamReconciliator.Parameters();
+    parameters.operatorPropertyContext = operatorPropertyContext;
+    parameters.mutationPipeline = mutationPipeline;
+    parameters.validationPipeline = validationPipeline;
     parameters.finder = finder;
     parameters.conciliator = conciliator;
     parameters.deployedResourcesCache = deployedResourcesCache;
     parameters.handlerDelegator = handlerDelegator;
     parameters.eventController = eventController;
     parameters.statusManager = statusManager;
-    parameters.streamScheduler = streamScheduler;
+    parameters.streamWriter = streamWriter;
     parameters.objectMapper = JsonUtil.jsonMapper();
     parameters.metrics = metrics;
     reconciliator = new StreamReconciliator(parameters);

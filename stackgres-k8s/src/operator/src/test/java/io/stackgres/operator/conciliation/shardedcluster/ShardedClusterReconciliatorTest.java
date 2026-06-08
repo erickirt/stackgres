@@ -18,14 +18,18 @@ import io.stackgres.common.crd.Condition;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.event.EventEmitter;
 import io.stackgres.common.fixture.Fixtures;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.common.Metrics;
+import io.stackgres.operator.common.StackGresShardedClusterReview;
 import io.stackgres.operator.conciliation.AbstractConciliator;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
 import io.stackgres.operator.conciliation.HandlerDelegator;
 import io.stackgres.operator.conciliation.ReconciliationResult;
 import io.stackgres.operator.conciliation.StatusManager;
 import io.stackgres.operator.conciliation.factory.cluster.KubernetessMockResourceGenerationUtil;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
 import io.stackgres.testutil.JsonUtil;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
@@ -50,9 +54,15 @@ class ShardedClusterReconciliatorTest {
   @Mock
   EventEmitter<StackGresShardedCluster> eventController;
   @Mock
-  CustomResourceScheduler<StackGresShardedCluster> clusterScheduler;
+  CustomResourceWriter<StackGresShardedCluster> clusterWriter;
   @Mock
   Metrics metrics;
+  @Mock
+  OperatorPropertyContext operatorPropertyContext;
+  @Mock
+  MutationPipeline<StackGresShardedCluster, StackGresShardedClusterReview> mutationPipeline;
+  @Mock
+  ValidationPipeline<StackGresShardedClusterReview> validationPipeline;
 
   private ShardedClusterReconciliator reconciliator;
 
@@ -60,12 +70,15 @@ class ShardedClusterReconciliatorTest {
   void setUp() {
     ShardedClusterReconciliator.Parameters parameters =
         new ShardedClusterReconciliator.Parameters();
+    parameters.operatorPropertyContext = operatorPropertyContext;
+    parameters.mutationPipeline = mutationPipeline;
+    parameters.validationPipeline = validationPipeline;
     parameters.conciliator = conciliator;
     parameters.deployedResourcesCache = deployedResourcesCache;
     parameters.handlerDelegator = handlerDelegator;
     parameters.eventController = eventController;
     parameters.statusManager = statusManager;
-    parameters.clusterScheduler = clusterScheduler;
+    parameters.clusterWriter = clusterWriter;
     parameters.objectMapper = JsonUtil.jsonMapper();
     parameters.metrics = metrics;
     reconciliator = spy(new ShardedClusterReconciliator(parameters));

@@ -154,6 +154,11 @@ public class ShardedDbOpsRole implements ResourceGenerator<StackGresShardedDbOps
                 HasMetadata.getPlural(StackGresCluster.class) + "/status")
             .withVerbs("update")
             .build())
+        .addToRules(new PolicyRuleBuilder()
+            .withApiGroups("coordination.k8s.io")
+            .withResources("leases")
+            .withVerbs("get", "list", "watch", "update", "patch")
+            .build())
         .build();
   }
 

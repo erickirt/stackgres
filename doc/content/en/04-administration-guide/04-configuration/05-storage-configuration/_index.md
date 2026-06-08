@@ -36,6 +36,8 @@ spec:
 |---------|-------------|---------|
 | `storageClass` | Kubernetes StorageClass name | Cluster default |
 | `fsGroupChangePolicy` | Volume permission policy | `OnRootMismatch` |
+| `volumeAttributesClassName` | Kubernetes VolumeAttributesClass applied to the PVCs | None |
+| `ioLimits` | Per-volume cgroup v2 `io.max` I/O throttling | None |
 
 ## Storage Size
 
@@ -173,6 +175,71 @@ Use when:
 
 The difference becomes significant with large volumes or many small files.
 
+## Volume Attributes Class
+
+The `volumeAttributesClassName` setting references a Kubernetes [VolumeAttributesClass](https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/) that is applied to the PVCs created for the cluster. This lets you tune mutable volume attributes (for example IOPS or throughput on supporting CSI drivers) without recreating the volume:
+
+```yaml
+spec:
+  pods:
+    persistentVolume:
+      size: '100Gi'
+      volumeAttributesClassName: 'high-iops'
+```
+
+> **Note**: This requires the Kubernetes VolumeAttributesClass feature to be available in the cluster and a CSI driver that supports the referenced attributes.
+
+On an SGShardedCluster, configure it per cluster type:
+
+```yaml
+apiVersion: stackgres.io/v1beta1
+kind: SGShardedCluster
+metadata:
+  name: sharded-cluster
+spec:
+  coordinator:
+    pods:
+      persistentVolume:
+        size: '50Gi'
+        volumeAttributesClassName: 'high-iops'
+  workers:
+    pods:
+      persistentVolume:
+        size: '100Gi'
+        volumeAttributesClassName: 'high-iops'
+```
+
+## I/O Limits
+
+The `ioLimits` object sets per-volume cgroup v2 `io.max` I/O throttling on the data persistent volume. Each field is an optional integer; leave a field empty to remove that particular limit.
+
+> **Warning**: This is an **alpha** feature.
+
+> **Warning**: Enabling I/O limits requires **root permissions** on the node. When any `ioLimits` value is set, StackGres adds an init container named `setup-io-limits` to each Pod that runs **as root** (with only the `CHOWN` capability), and both that init container and the `cluster-controller` container mount the host path `/sys/fs/cgroup` in order to write the `io.max` file. The nodes must use cgroup v2. On clusters that forbid root containers (for example a restrictive OpenShift SCC) this feature cannot be used.
+
+```yaml
+spec:
+  pods:
+    persistentVolume:
+      size: '100Gi'
+      ioLimits:
+        readIops: 10000
+        writeIops: 8000
+        readMiBps: 500
+        writeMiBps: 400
+```
+
+### I/O Limit Fields
+
+| Field | Description |
+|-------|-------------|
+| `readIops` | Maximum read operations per second |
+| `writeIops` | Maximum write operations per second |
+| `readMiBps` | Maximum read throughput in MiB per second |
+| `writeMiBps` | Maximum write throughput in MiB per second |
+
+The same `ioLimits` object is available on `SGShardedCluster.spec.coordinator.pods.persistentVolume` and `SGShardedCluster.spec.workers.pods.persistentVolume`.
+
 ## Volume Expansion
 
 If your storage class supports expansion, you can increase volume size:
@@ -234,7 +301,7 @@ spec:
 Configure storage per cluster type (cooridnator and worker):
 
 ```yaml
-apiVersion: stackgres.io/v1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: sharded-cluster

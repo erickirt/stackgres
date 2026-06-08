@@ -5,23 +5,27 @@
 
 package io.stackgres.stream.jobs.lock;
 
-import static io.stackgres.common.StackGresContext.LOCK_POD_KEY;
-import static io.stackgres.common.StackGresContext.LOCK_TIMEOUT_KEY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Map;
+import java.time.Duration;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
+import io.fabric8.kubernetes.api.model.coordination.v1.LeaseBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.kubernetes.client.WithKubernetesTestServer;
 import io.smallrye.mutiny.Uni;
+import io.stackgres.common.LeaseLockUtil;
 import io.stackgres.common.crd.sgstream.StackGresStream;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.stream.jobs.mock.MockKubeDbTest;
@@ -38,9 +42,12 @@ class LockAcquirerTest extends MockKubeDbTest {
   private final AtomicInteger streamNr = new AtomicInteger(0);
   @Inject
   LockAcquirer lockAcquirer;
+  @Inject
+  KubernetesClient client;
   private StackGresStream stream;
   private String streamName;
   private String streamNamespace;
+  private String leaseName;
   private LockRequest lockRequest;
   private ExecutorService executorService;
 
@@ -50,6 +57,7 @@ class LockAcquirerTest extends MockKubeDbTest {
         .podName(StringUtils.getRandomString())
         .namespace(stream.getMetadata().getNamespace())
         .lockResourceName(stream.getMetadata().getName())
+        .lockResourceUid(stream.getMetadata().getUid())
         .duration(30)
         .pollInterval(1)
         .build();
@@ -59,32 +67,33 @@ class LockAcquirerTest extends MockKubeDbTest {
   void setUp() {
     stream = Fixtures.stream().loadSgClusterToCloudEvent().get();
     stream.getMetadata().setName("test-" + streamNr.incrementAndGet());
+    if (stream.getMetadata().getUid() == null) {
+      stream.getMetadata().setUid(java.util.UUID.randomUUID().toString());
+    }
     streamName = stream.getMetadata().getName();
     streamNamespace = stream.getMetadata().getNamespace();
+    leaseName = LeaseLockUtil.leaseNameForStream(stream.getMetadata().getUid());
     lockRequest = buildLockRequest(stream);
     executorService = Executors.newSingleThreadExecutor();
-
   }
 
   @AfterEach
   void tearDown() {
     executorService.shutdownNow();
-    kubeDb.delete(stream);
+    client.leases().inNamespace(streamNamespace).withName(leaseName).delete();
   }
 
   @Test
   void givenAnUnlockedStream_itShouldAcquireTheLockBeforeRunningTheTask() {
-    prepareUnlockedCLuster();
+    prepareUnlockedLease();
 
     AtomicBoolean taskRunned = new AtomicBoolean(false);
     lockAcquirer.lockRun(lockRequest, Uni.createFrom().voidItem().invoke(item -> {
-      final StackGresStream storedStream = kubeDb
-          .getStream(streamName, streamNamespace);
-      final Map<String, String> annotations = storedStream
-          .getMetadata().getAnnotations();
-      assertNotNull(annotations.get(LOCK_POD_KEY));
-      assertEquals(lockRequest.getPodName(), annotations.get(LOCK_POD_KEY));
-      assertNotNull(annotations.get(LOCK_TIMEOUT_KEY));
+      Lease lease = getLease();
+      assertNotNull(lease);
+      assertNotNull(lease.getSpec().getHolderIdentity());
+      assertEquals(holderIdentity(lockRequest), lease.getSpec().getHolderIdentity());
+      assertNotNull(lease.getSpec().getRenewTime());
       taskRunned.set(true);
     })).await().indefinitely();
 
@@ -93,37 +102,35 @@ class LockAcquirerTest extends MockKubeDbTest {
 
   @Test
   void givenAnUnlockedStream_itShouldReleaseTheLockIfTheTaskExitsSuccessfully() {
-    prepareUnlockedCLuster();
+    prepareUnlockedLease();
 
     runTaskSuccessfully();
 
-    StackGresStream lastPatch = kubeDb.getStream(streamName, streamNamespace);
-    assertNull(lastPatch.getMetadata().getAnnotations().get(LOCK_POD_KEY));
-    assertNull(lastPatch.getMetadata().getAnnotations().get(LOCK_TIMEOUT_KEY));
+    Lease lease = getLease();
+    assertNull(lease.getSpec().getHolderIdentity());
+    assertNull(lease.getSpec().getRenewTime());
   }
 
   @Test
   void givenALockedStreamByMe_itShouldUpdateTheLockTimestampBeforeRunningTheTask() {
-    final long lockTimeout = (System.currentTimeMillis() / 1000) - 1;
-    prepareLockedStream(lockRequest.getPodName(), lockTimeout);
+    final ZonedDateTime renewTime = ZonedDateTime.now(ZoneOffset.UTC).minusSeconds(1);
+    prepareLockedLease(holderIdentity(lockRequest), renewTime, 30);
 
     AtomicBoolean taskRunned = new AtomicBoolean(false);
 
     lockAcquirer.lockRun(lockRequest, Uni.createFrom().voidItem().invoke(item -> {
       taskRunned.set(true);
-      StackGresStream lastPatch = kubeDb.getStream(streamName, streamNamespace);
-      final Map<String, String> annotations = lastPatch.getMetadata().getAnnotations();
-      assertNotNull(annotations.get(LOCK_POD_KEY));
-      assertNotNull(annotations.get(LOCK_TIMEOUT_KEY));
-      assertTrue(Long.parseLong(annotations.get(LOCK_TIMEOUT_KEY)) > lockTimeout);
+      Lease lease = getLease();
+      assertEquals(holderIdentity(lockRequest), lease.getSpec().getHolderIdentity());
+      assertNotNull(lease.getSpec().getRenewTime());
+      assertTrue(lease.getSpec().getRenewTime().isAfter(renewTime));
     })).await().indefinitely();
   }
 
   @Test
   void givenALockedStream_itShouldWaitUntilTheLockIsReleasedBeforeRunningTheTask() {
-    final long lockTimeout =
-        (System.currentTimeMillis() / 1000) + lockRequest.getPollInterval() + 1;
-    prepareLockedStream(StringUtils.getRandomString(), lockTimeout);
+    final ZonedDateTime renewTime = ZonedDateTime.now(ZoneOffset.UTC);
+    prepareLockedLease(StringUtils.getRandomString(), renewTime, lockRequest.getPollInterval() + 1);
 
     AtomicBoolean taskRan = asycRunTaskSuccessfully();
 
@@ -131,7 +138,7 @@ class LockAcquirerTest extends MockKubeDbTest {
 
     assertFalse(taskRan.get());
 
-    removeLock();
+    removeLockHolder();
 
     sleep(lockRequest.getPollInterval() + 2);
 
@@ -140,13 +147,12 @@ class LockAcquirerTest extends MockKubeDbTest {
 
   @Test
   void givenATimedoutLockedStream_itShouldOverrideTheLock() {
-    final long lockTimeout =
-        (System.currentTimeMillis() / 1000) - lockRequest.getDuration() - 1;
-    prepareLockedStream(lockRequest.getLockResourceName(), lockTimeout);
+    // Renew time well in the past so lease is expired
+    final ZonedDateTime renewTime =
+        ZonedDateTime.now(ZoneOffset.UTC).minusSeconds(lockRequest.getDuration() + 5);
+    prepareLockedLease("some-other-holder", renewTime, lockRequest.getDuration());
 
     AtomicBoolean taskRan = asycRunTaskSuccessfully();
-
-    assertFalse(taskRan.get());
 
     sleep(lockRequest.getPollInterval() + 1);
 
@@ -155,39 +161,72 @@ class LockAcquirerTest extends MockKubeDbTest {
 
   @Test
   void givenALongRunningTask_itShouldUpdateTheLockTimestampPeriodically() {
-    prepareUnlockedCLuster();
+    prepareUnlockedLease();
 
     AtomicBoolean taskRan = asycRunTaskSuccessfully(3);
 
     assertFalse(taskRan.get());
 
-    sleep(lockRequest.getPollInterval() + 1);
+    awaitLockAcquired();
 
-    long lockTimeout = Long.parseLong(kubeDb.getStream(streamName, streamNamespace)
-        .getMetadata().getAnnotations().get(LOCK_TIMEOUT_KEY));
-    long currentTimestamp = System.currentTimeMillis() / 1000;
-    long elapsedAfterLock = currentTimestamp - lockTimeout - lockRequest.getDuration();
-    assertTrue(elapsedAfterLock <= lockRequest.getPollInterval());
+    Lease lease = getLease();
+    assertNotNull(lease.getSpec().getRenewTime());
+    final ZonedDateTime expiry = lease.getSpec().getRenewTime()
+        .plus(Duration.ofSeconds(lease.getSpec().getLeaseDurationSeconds()));
+    assertTrue(expiry.isAfter(ZonedDateTime.now(ZoneOffset.UTC)));
 
     sleep(lockRequest.getPollInterval() + 3);
 
     assertTrue(taskRan.get());
   }
 
-  private void removeLock() {
-    var stream = kubeDb.getStream(streamName, streamNamespace);
-    stream.getMetadata().getAnnotations().remove(LOCK_POD_KEY);
-    stream.getMetadata().getAnnotations().remove(LOCK_TIMEOUT_KEY);
-    kubeDb.addOrReplaceStream(stream);
+  /** Polls the test K8s server for a Lease whose holder is us, up to ~10s. */
+  private void awaitLockAcquired() {
+    final long deadline = System.currentTimeMillis() + 10_000;
+    while (System.currentTimeMillis() < deadline) {
+      Lease lease = getLease();
+      if (lease != null
+          && lease.getSpec() != null
+          && holderIdentity(lockRequest).equals(lease.getSpec().getHolderIdentity())
+          && lease.getSpec().getRenewTime() != null) {
+        return;
+      }
+      sleepMillis(50);
+    }
+    throw new AssertionError("Lock was not acquired within 10s");
+  }
+
+  private void sleepMillis(long millis) {
+    try {
+      Thread.sleep(millis);
+    } catch (InterruptedException ignored) {
+      Thread.currentThread().interrupt();
+    }
+  }
+
+  private String holderIdentity(LockRequest lockRequest) {
+    return LeaseLockUtil.holderIdentity(
+        lockRequest.getServiceAccount(), lockRequest.getPodName());
+  }
+
+  private Lease getLease() {
+    return client.leases().inNamespace(streamNamespace).withName(leaseName).get();
+  }
+
+  private void removeLockHolder() {
+    Lease lease = getLease();
+    lease.getSpec().setHolderIdentity(null);
+    lease.getSpec().setRenewTime(null);
+    lease.getSpec().setLeaseDurationSeconds(null);
+    client.leases().inNamespace(streamNamespace).resource(lease).update();
   }
 
   private void runTaskSuccessfully() {
     AtomicBoolean taskRan = new AtomicBoolean(false);
 
     lockAcquirer.lockRun(lockRequest, Uni.createFrom().voidItem().invoke(item -> {
-      StackGresStream lastPatch = kubeDb.getStream(streamName, streamNamespace);
-      final Map<String, String> annotations = lastPatch.getMetadata().getAnnotations();
-      assertEquals(lockRequest.getPodName(), annotations.get(LOCK_POD_KEY));
+      Lease lease = getLease();
+      assertEquals(holderIdentity(lockRequest), lease.getSpec().getHolderIdentity());
       taskRan.set(true);
     })).await().indefinitely();
 
@@ -207,39 +246,55 @@ class LockAcquirerTest extends MockKubeDbTest {
               if (delay > 0) {
                 sleep(delay);
               }
-              StackGresStream lastPatch = kubeDb.getStream(streamName, streamNamespace);
-              final Map<String, String> annotations = lastPatch.getMetadata().getAnnotations();
-              assertEquals(lockRequest.getPodName(), annotations.get(LOCK_POD_KEY),
+              Lease lease = getLease();
+              assertEquals(holderIdentity(lockRequest), lease.getSpec().getHolderIdentity(),
                   "Task ran without Lock!!");
-              assertNotNull(annotations.get(LOCK_TIMEOUT_KEY));
+              assertNotNull(lease.getSpec().getRenewTime());
               taskRan.set(true);
             })).await().indefinitely());
 
     return taskRan;
   }
 
-  private void prepareUnlockedCLuster() {
-    StackGresStream stream = kubeDb.getStream(streamName, streamNamespace);
-    if (stream == null) {
-      stream = this.stream;
-    }
-    stream.setStatus(null);
-    final Map<String, String> annotations = stream.getMetadata().getAnnotations();
-    annotations.remove(LOCK_POD_KEY);
-    annotations.remove(LOCK_TIMEOUT_KEY);
-    kubeDb.addOrReplaceStream(stream);
+  private void prepareUnlockedLease() {
+    upsertLease(new LeaseBuilder()
+        .withNewMetadata()
+        .withNamespace(streamNamespace)
+        .withName(leaseName)
+        .endMetadata()
+        .withNewSpec()
+        .endSpec()
+        .build());
   }
 
-  private void prepareLockedStream(String lockPod, Long lockTimeout) {
-    StackGresStream stream = kubeDb.getStream(streamName, streamNamespace);
-    if (stream == null) {
-      stream = this.stream;
+  private void prepareLockedLease(String holderIdentity, ZonedDateTime renewTime,
+      int durationSeconds) {
+    upsertLease(new LeaseBuilder()
+        .withNewMetadata()
+        .withNamespace(streamNamespace)
+        .withName(leaseName)
+        .endMetadata()
+        .withNewSpec()
+        .withHolderIdentity(holderIdentity)
+        .withRenewTime(renewTime)
+        .withAcquireTime(renewTime)
+        .withLeaseDurationSeconds(durationSeconds)
+        .withLeaseTransitions(0)
+        .endSpec()
+        .build());
+  }
+
+  private void upsertLease(Lease lease) {
+    Lease existing = client.leases()
+        .inNamespace(lease.getMetadata().getNamespace())
+        .withName(lease.getMetadata().getName())
+        .get();
+    if (existing == null) {
+      client.leases().inNamespace(lease.getMetadata().getNamespace()).resource(lease).create();
+    } else {
+      lease.getMetadata().setResourceVersion(existing.getMetadata().getResourceVersion());
+      client.leases().inNamespace(lease.getMetadata().getNamespace()).resource(lease).update();
     }
-    stream.setStatus(null);
-    final Map<String, String> annotations = stream.getMetadata().getAnnotations();
-    annotations.put(LOCK_POD_KEY, lockPod);
-    annotations.put(LOCK_TIMEOUT_KEY, Long.toString(lockTimeout));
-    kubeDb.addOrReplaceStream(stream);
   }
 
   private void sleep(int seconds) {

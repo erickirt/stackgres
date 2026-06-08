@@ -26,7 +26,7 @@ import jakarta.validation.constraints.AssertTrue;
 @Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
-public class StackGresProfileHugePages {
+public class StackGresInstanceProfileHugePages {
 
   @JsonProperty("hugepages-2Mi")
   private String hugepages2Mi;
@@ -96,10 +96,10 @@ public class StackGresProfileHugePages {
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof StackGresProfileHugePages)) {
+    if (!(obj instanceof StackGresInstanceProfileHugePages)) {
       return false;
     }
-    StackGresProfileHugePages other = (StackGresProfileHugePages) obj;
+    StackGresInstanceProfileHugePages other = (StackGresInstanceProfileHugePages) obj;
     return Objects.equals(hugepages1Gi, other.hugepages1Gi)
         && Objects.equals(hugepages2Mi, other.hugepages2Mi);
   }

@@ -55,8 +55,8 @@ import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfigList;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfig;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfigList;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileList;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileList;
 import io.stackgres.common.crd.sgscript.StackGresScript;
 import io.stackgres.common.crd.sgscript.StackGresScriptFrom;
 import io.stackgres.common.crd.sgscript.StackGresScriptList;
@@ -198,8 +198,8 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
             .andThen(removeScript()))));
 
     monitors.addAll(createCustomResourceWatchers(
-        StackGresProfile.class,
-        StackGresProfileList.class,
+        StackGresInstanceProfile.class,
+        StackGresInstanceProfileList.class,
         onCreateOrUpdate(
             reconcileInstanceProfileClusters()
             .andThen(reconcileInstanceProfileDistributedLogs())
@@ -613,15 +613,7 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
   }
 
   private BiConsumer<Action, StackGresConfig> reconcileConfig() {
-    return (action, config) -> Optional
-        .ofNullable(configs.get(resourceId(config)))
-        .filter(oldConfig -> config.getMetadata().getAnnotations() == null
-            || oldConfig == null
-            || oldConfig.getMetadata().getAnnotations() == null
-            || Objects.equals(
-                config.getMetadata().getAnnotations().get(StackGresContext.LOCK_TIMEOUT_KEY),
-                oldConfig.getMetadata().getAnnotations().get(StackGresContext.LOCK_TIMEOUT_KEY)))
-        .ifPresent(ignore -> configReconciliatorCycle.reconcile(config));
+    return (action, config) -> configReconciliatorCycle.reconcile(config);
   }
 
   private BiConsumer<Action, StackGresCluster> reconcileCluster() {
@@ -661,7 +653,7 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
     return (action, stream) -> streamReconciliatorCycle.reconcile(stream);
   }
 
-  private BiConsumer<Action, StackGresProfile> reconcileInstanceProfileClusters() {
+  private BiConsumer<Action, StackGresInstanceProfile> reconcileInstanceProfileClusters() {
     return (action, instanceProfile) -> synchronizedCopyOfValues(clusters)
         .stream()
         .filter(cluster -> Objects.equals(
@@ -727,7 +719,7 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
         .forEach(cluster -> reconcileCluster().accept(action, cluster));
   }
 
-  private BiConsumer<Action, StackGresProfile> reconcileInstanceProfileDistributedLogs() {
+  private BiConsumer<Action, StackGresInstanceProfile> reconcileInstanceProfileDistributedLogs() {
     return (action, instanceProfile) -> synchronizedCopyOfValues(distributedLogs)
         .stream()
         .filter(cluster -> Objects.equals(
@@ -751,7 +743,7 @@ public class DefaultOperatorWatchersHandler implements OperatorWatchersHandler {
         .forEach(distributedLogs -> reconcileDistributedLogs().accept(action, distributedLogs));
   }
 
-  private BiConsumer<Action, StackGresProfile> reconcileInstanceProfileShardedClusters() {
+  private BiConsumer<Action, StackGresInstanceProfile> reconcileInstanceProfileShardedClusters() {
     return (action, instanceProfile) -> synchronizedCopyOfValues(shardedClusters)
         .stream()
         .filter(cluster -> Objects.equals(

@@ -12,10 +12,16 @@ mock kubectl kubectl_mock_overwrite
 kubectl_mock_overwrite() {
   mokked
   case "$*" in
-    ("get sgclusters.stackgres.io "*)
+    ("get lease -n $LOCK_LEASE_NAMESPACE $LOCK_LEASE_NAME --template="*)
+    # Renew time set to a stamp in the past with a 0-second lease duration so
+    # maintain_lock observes the lease expired.
+    local PAST_TIME
+    PAST_TIME="$(date -u -d "@$(cat "$TEST_TARGET_PATH/lock_timestamp")" +%Y-%m-%dT%H:%M:%S.%6NZ)"
     echo '
-      LOCK_POD=test
-      LOCK_TIMEOUT='"$(cat "$TEST_TARGET_PATH/lock_timestamp")"'
+      HOLDER_IDENTITY=test/test
+      RENEW_TIME='"$PAST_TIME"'
+      LEASE_DURATION_SECONDS=0
+      LEASE_TRANSITIONS=0
       RESOURCE_VERSION=test
       '
     echo 0 > "$TEST_TARGET_PATH/lock_timestamp"

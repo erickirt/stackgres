@@ -18,6 +18,8 @@ public interface LockRequest {
 
   String getLockResourceName();
 
+  String getLockResourceUid();
+
   int getDuration();
 
   int getPollInterval();

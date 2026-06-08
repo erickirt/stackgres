@@ -72,7 +72,7 @@ class ShardedDbOpsRoleTest {
     List<HasMetadata> resources = shardedDbOpsRole.generateResource(context).toList();
     Role role = findResource(resources, Role.class);
 
-    assertEquals(11, role.getRules().size());
+    assertEquals(12, role.getRules().size());
   }
 
   @Test

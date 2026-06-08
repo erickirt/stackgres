@@ -11,9 +11,9 @@ import io.quarkus.test.InjectMock;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgstream.StackGresStream;
 import io.stackgres.common.resource.ClusterFinder;
-import io.stackgres.common.resource.ClusterScheduler;
+import io.stackgres.common.resource.ClusterWriter;
 import io.stackgres.common.resource.StreamFinder;
-import io.stackgres.common.resource.StreamScheduler;
+import io.stackgres.common.resource.StreamWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mockito;
 
@@ -24,11 +24,11 @@ public abstract class MockKubeDbTest {
   @InjectMock
   protected ClusterFinder clusterFinder;
   @InjectMock
-  protected ClusterScheduler clusterScheduler;
+  protected ClusterWriter clusterWriter;
   @InjectMock
   protected StreamFinder streamFinder;
   @InjectMock
-  protected StreamScheduler streamScheduler;
+  protected StreamWriter streamWriter;
 
   @BeforeEach
   public void steupKubeDbMocks() {
@@ -39,35 +39,35 @@ public abstract class MockKubeDbTest {
         .then(invocation -> mockClusterFinder.findByNameAndNamespace(
             invocation.getArgument(0),
             invocation.getArgument(1)));
-    var mockClusterScheduler = new MockClusterScheduler(kubeDb);
+    var mockClusterWriter = new MockClusterWriter(kubeDb);
     Mockito.lenient()
-        .when(clusterScheduler.create(Mockito.any(), Mockito.anyBoolean()))
-        .then(invocation -> mockClusterScheduler.create(
+        .when(clusterWriter.create(Mockito.any(), Mockito.anyBoolean()))
+        .then(invocation -> mockClusterWriter.create(
             invocation.getArgument(0),
             invocation.getArgument(1)));
     Mockito
         .doAnswer(invocation -> {
-          mockClusterScheduler.delete(invocation.getArgument(0));
+          mockClusterWriter.delete(invocation.getArgument(0));
           return null;
         })
-        .when(clusterScheduler).delete(Mockito.any());
+        .when(clusterWriter).delete(Mockito.any());
     Mockito.lenient()
-        .when(clusterScheduler.update(Mockito.any()))
-        .then(invocation -> mockClusterScheduler.update(
+        .when(clusterWriter.update(Mockito.any()))
+        .then(invocation -> mockClusterWriter.update(
             invocation.getArgument(0)));
     Mockito.lenient()
-        .when(clusterScheduler.update(Mockito.any(), Mockito.anyBoolean()))
-        .then(invocation -> mockClusterScheduler.update(
+        .when(clusterWriter.update(Mockito.any(), Mockito.anyBoolean()))
+        .then(invocation -> mockClusterWriter.update(
             invocation.getArgument(0),
             invocation.<Boolean>getArgument(1)));
     Mockito.lenient()
-        .when(clusterScheduler.update(Mockito.any(), Mockito.<Consumer<StackGresCluster>>any()))
-        .then(invocation -> mockClusterScheduler.update(
+        .when(clusterWriter.update(Mockito.any(), Mockito.<Consumer<StackGresCluster>>any()))
+        .then(invocation -> mockClusterWriter.update(
             invocation.getArgument(0),
             invocation.<Consumer<StackGresCluster>>getArgument(1)));
     Mockito.lenient()
-        .when(clusterScheduler.updateStatus(Mockito.any(), Mockito.<Consumer<StackGresCluster>>any()))
-        .then(invocation -> mockClusterScheduler.updateStatus(
+        .when(clusterWriter.updateStatus(Mockito.any(), Mockito.<Consumer<StackGresCluster>>any()))
+        .then(invocation -> mockClusterWriter.updateStatus(
             invocation.getArgument(0),
             invocation.<Consumer<StackGresCluster>>getArgument(1)));
     var mockStreamFinder = new MockStreamFinder(kubeDb);
@@ -76,35 +76,35 @@ public abstract class MockKubeDbTest {
         .then(invocation -> mockStreamFinder.findByNameAndNamespace(
             invocation.getArgument(0),
             invocation.getArgument(1)));
-    var mockStreamScheduler = new MockStreamScheduler(kubeDb);
+    var mockStreamWriter = new MockStreamWriter(kubeDb);
     Mockito.lenient()
-        .when(streamScheduler.create(Mockito.any(), Mockito.anyBoolean()))
-        .then(invocation -> mockStreamScheduler.create(
+        .when(streamWriter.create(Mockito.any(), Mockito.anyBoolean()))
+        .then(invocation -> mockStreamWriter.create(
             invocation.getArgument(0),
             invocation.getArgument(1)));
     Mockito
         .doAnswer(invocation -> {
-          mockStreamScheduler.delete(invocation.getArgument(0));
+          mockStreamWriter.delete(invocation.getArgument(0));
           return null;
         })
-        .when(streamScheduler).delete(Mockito.any());
+        .when(streamWriter).delete(Mockito.any());
     Mockito.lenient()
-        .when(streamScheduler.update(Mockito.any()))
-        .then(invocation -> mockStreamScheduler.update(
+        .when(streamWriter.update(Mockito.any()))
+        .then(invocation -> mockStreamWriter.update(
             invocation.getArgument(0)));
     Mockito.lenient()
-        .when(streamScheduler.update(Mockito.any(), Mockito.anyBoolean()))
-        .then(invocation -> mockStreamScheduler.update(
+        .when(streamWriter.update(Mockito.any(), Mockito.anyBoolean()))
+        .then(invocation -> mockStreamWriter.update(
             invocation.getArgument(0),
             invocation.<Boolean>getArgument(1)));
     Mockito.lenient()
-        .when(streamScheduler.update(Mockito.any(), Mockito.<Consumer<StackGresStream>>any()))
-        .then(invocation -> mockStreamScheduler.update(
+        .when(streamWriter.update(Mockito.any(), Mockito.<Consumer<StackGresStream>>any()))
+        .then(invocation -> mockStreamWriter.update(
             invocation.getArgument(0),
             invocation.<Consumer<StackGresStream>>getArgument(1)));
     Mockito.lenient()
-        .when(streamScheduler.updateStatus(Mockito.any(), Mockito.<Consumer<StackGresStream>>any()))
-        .then(invocation -> mockStreamScheduler.updateStatus(
+        .when(streamWriter.updateStatus(Mockito.any(), Mockito.<Consumer<StackGresStream>>any()))
+        .then(invocation -> mockStreamWriter.updateStatus(
             invocation.getArgument(0),
             invocation.<Consumer<StackGresStream>>getArgument(1)));
   }

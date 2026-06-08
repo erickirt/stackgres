@@ -32,7 +32,7 @@ import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.StackGresVolume;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterStatus;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.common.resource.ResourceFinder;
 import io.stackgres.common.resource.ResourceWriter;
 import io.stackgres.operatorframework.reconciliation.ReconciliationResult;
@@ -49,7 +49,7 @@ public class PatroniBackupFailoverRestartReconciliator {
       LoggerFactory.getLogger(PatroniBackupFailoverRestartReconciliator.class);
 
   private final EventController eventController;
-  private final CustomResourceScheduler<StackGresCluster> clusterScheduler;
+  private final CustomResourceWriter<StackGresCluster> clusterWriter;
   private final ResourceFinder<ConfigMap> configMapFinder;
   private final ResourceWriter<PersistentVolumeClaim> pvcWriter;
   private final ResourceWriter<Pod> podWriter;
@@ -59,7 +59,7 @@ public class PatroniBackupFailoverRestartReconciliator {
   @Dependent
   public static class Parameters {
     @Inject EventController eventController;
-    @Inject CustomResourceScheduler<StackGresCluster> clusterScheduler;
+    @Inject CustomResourceWriter<StackGresCluster> clusterWriter;
     @Inject ResourceFinder<ConfigMap> configMapFinder;
     @Inject ResourceWriter<PersistentVolumeClaim> pvcWriter;
     @Inject ResourceWriter<Pod> podWriter;
@@ -69,7 +69,7 @@ public class PatroniBackupFailoverRestartReconciliator {
   @Inject
   public PatroniBackupFailoverRestartReconciliator(Parameters parameters) {
     this.eventController = parameters.eventController;
-    this.clusterScheduler = parameters.clusterScheduler;
+    this.clusterWriter = parameters.clusterWriter;
     this.configMapFinder = parameters.configMapFinder;
     this.pvcWriter = parameters.pvcWriter;
     this.podWriter = parameters.podWriter;
@@ -109,7 +109,7 @@ public class PatroniBackupFailoverRestartReconciliator {
       }
       LOGGER.info("Replica initialization backup failover detected while trying to restore using SGBackup {}"
           + ", proceed to restart the Pod", replicaInitializationBackupName);
-      clusterScheduler.update(context.getCluster(), currentCluster -> {
+      clusterWriter.update(context.getCluster(), currentCluster -> {
         if (currentCluster.getStatus() == null) {
           currentCluster.setStatus(new StackGresClusterStatus());
         }

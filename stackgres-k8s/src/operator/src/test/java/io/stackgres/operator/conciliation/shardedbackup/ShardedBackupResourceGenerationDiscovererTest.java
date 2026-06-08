@@ -16,7 +16,7 @@ import io.quarkus.test.kubernetes.client.WithKubernetesTestServer;
 import io.stackgres.common.KubernetesTestServerSetup;
 import io.stackgres.common.crd.sgbackup.StackGresBackup;
 import io.stackgres.common.crd.sgbackup.StackGresBackupBuilder;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackup;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.fixture.Fixtures;
@@ -39,7 +39,7 @@ public class ShardedBackupResourceGenerationDiscovererTest
 
   private StackGresShardedCluster cluster;
 
-  private StackGresProfile profile;
+  private StackGresInstanceProfile profile;
 
   @BeforeEach
   public void setup() {

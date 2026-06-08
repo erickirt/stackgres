@@ -17,8 +17,8 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.stackgres.common.crd.sgdistributedlogs.StackGresDistributedLogs;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileBuilder;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileBuilder;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.labels.DistributedLogsLabelFactory;
 import io.stackgres.common.labels.DistributedLogsLabelMapper;
@@ -56,7 +56,7 @@ class DistributedLogsDefaultInstanceProfileTest {
     when(context.getSource()).thenReturn(distributedLogs);
 
     lenient().when(defaultProfileFactory.buildResource(any())).thenReturn(
-        new StackGresProfileBuilder().withNewSpec().endSpec().build());
+        new StackGresInstanceProfileBuilder().withNewSpec().endSpec().build());
   }
 
   @Test
@@ -67,14 +67,14 @@ class DistributedLogsDefaultInstanceProfileTest {
         distributedLogsDefaultInstanceProfile.generateResource(context).toList();
 
     assertEquals(1, resources.size());
-    StackGresProfile profile = (StackGresProfile) resources.getFirst();
+    StackGresInstanceProfile profile = (StackGresInstanceProfile) resources.getFirst();
     assertEquals(distributedLogs.getSpec().getSgInstanceProfile(),
         profile.getMetadata().getName());
   }
 
   @Test
   void generateResource_whenProfileExistsWithDefaultLabelsAndOwner_shouldGenerate() {
-    StackGresProfile existingProfile = new StackGresProfileBuilder()
+    StackGresInstanceProfile existingProfile = new StackGresInstanceProfileBuilder()
         .withNewMetadata()
         .withLabels(Map.copyOf(labelFactory.defaultConfigLabels(distributedLogs)))
         .withOwnerReferences(
@@ -87,14 +87,14 @@ class DistributedLogsDefaultInstanceProfileTest {
         distributedLogsDefaultInstanceProfile.generateResource(context).toList();
 
     assertEquals(1, resources.size());
-    StackGresProfile profile = (StackGresProfile) resources.getFirst();
+    StackGresInstanceProfile profile = (StackGresInstanceProfile) resources.getFirst();
     assertEquals(distributedLogs.getSpec().getSgInstanceProfile(),
         profile.getMetadata().getName());
   }
 
   @Test
   void generateResource_whenProfileExistsWithoutMatchingLabels_shouldNotGenerate() {
-    StackGresProfile existingProfile = new StackGresProfileBuilder()
+    StackGresInstanceProfile existingProfile = new StackGresInstanceProfileBuilder()
         .withNewMetadata()
         .withLabels(Map.of("other-label", "other-value"))
         .withOwnerReferences(
@@ -117,7 +117,7 @@ class DistributedLogsDefaultInstanceProfileTest {
         distributedLogsDefaultInstanceProfile.generateResource(context).toList();
 
     assertEquals(1, resources.size());
-    StackGresProfile profile = (StackGresProfile) resources.getFirst();
+    StackGresInstanceProfile profile = (StackGresInstanceProfile) resources.getFirst();
     assertEquals("size-s", profile.getMetadata().getName());
     assertEquals("distributed-logs", profile.getMetadata().getNamespace());
   }

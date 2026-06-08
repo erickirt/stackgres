@@ -14,8 +14,8 @@ import io.stackgres.apiweb.dto.profile.ProfileDto;
 import io.stackgres.apiweb.dto.profile.ProfileSpec;
 import io.stackgres.apiweb.dto.profile.ProfileStatus;
 import io.stackgres.common.KubernetesTestServerSetup;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileSpec;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileSpec;
 import io.stackgres.testutil.StringUtils;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
@@ -27,9 +27,9 @@ class ProfileTransformerTest {
   @Inject
   ProfileTransformer transformer;
 
-  public static TransformerTuple<ProfileDto, StackGresProfile> createProfile() {
+  public static TransformerTuple<ProfileDto, StackGresInstanceProfile> createProfile() {
 
-    StackGresProfile source = new StackGresProfile();
+    StackGresInstanceProfile source = new StackGresInstanceProfile();
     ProfileDto target = new ProfileDto();
 
     var metadata = TransformerTestUtil.createMetadataTuple();
@@ -46,11 +46,11 @@ class ProfileTransformerTest {
     return new TransformerTuple<>(target, source);
   }
 
-  private static TransformerTuple<ProfileSpec, StackGresProfileSpec> createSpec() {
-    TransformerTuple<ProfileSpec, StackGresProfileSpec> tuple = TransformerTestUtil
+  private static TransformerTuple<ProfileSpec, StackGresInstanceProfileSpec> createSpec() {
+    TransformerTuple<ProfileSpec, StackGresInstanceProfileSpec> tuple = TransformerTestUtil
         .fillTupleWithRandomData(
             ProfileSpec.class,
-            StackGresProfileSpec.class
+            StackGresInstanceProfileSpec.class
         );
 
     return tuple;

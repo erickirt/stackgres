@@ -9,8 +9,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -20,8 +23,12 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.GroupVersionKindBuilder;
+import io.fabric8.kubernetes.api.model.GroupVersionResourceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.api.model.authentication.UserInfoBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -33,8 +40,17 @@ import io.stackgres.common.RetryUtil;
 import io.stackgres.common.StackGresContext;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.app.OperatorLockHolder;
 import io.stackgres.operator.common.Metrics;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.AdmissionRequest;
+import io.stackgres.operatorframework.admissionwebhook.AdmissionReview;
+import io.stackgres.operatorframework.admissionwebhook.Operation;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationFailed;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
+import io.stackgres.operatorframework.resource.ResourceUtil;
 import org.jooq.lambda.Seq;
 import org.jooq.lambda.tuple.Tuple;
 import org.jooq.lambda.tuple.Tuple2;
@@ -42,7 +58,7 @@ import org.jooq.lambda.tuple.Tuple5;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
+public abstract class AbstractReconciliator<T extends CustomResource<?, ?>, R extends AdmissionReview<T>> {
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(
       AbstractReconciliator.class.getPackage().getName());
@@ -50,8 +66,14 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
   private static final String STACKGRES_IO_RECONCILIATION = StackGresContext
       .RECONCILIATION_PAUSE_KEY;
 
+  private final String operatorServiceAccountName;
   private final CustomResourceScanner<T> scanner;
   private final CustomResourceFinder<T> finder;
+  private final boolean enableReconciliationWebhooks;
+  private final ObjectMapper objectMapper;
+  private final MutationPipeline<T, R> mutationPipeline;
+  private final ValidationPipeline<R> validationPipeline;
+  private final CustomResourceWriter<T> writer;
   private final AbstractConciliator<T> conciliator;
   private final DeployedResourcesCache deployedResourcesCache;
   private final HandlerDelegator<T> handlerDelegator;
@@ -76,8 +98,13 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
   private boolean close = false;
 
   protected AbstractReconciliator(
+      OperatorPropertyContext operatorPropertyContext,
       CustomResourceScanner<T> scanner,
       CustomResourceFinder<T> finder,
+      ObjectMapper objectMapper,
+      MutationPipeline<T, R> mutationPipeline,
+      ValidationPipeline<R> validationPipeline,
+      CustomResourceWriter<T> writer,
       AbstractConciliator<T> conciliator,
       DeployedResourcesCache deployedResourcesCache,
       HandlerDelegator<T> handlerDelegator,
@@ -86,8 +113,16 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
       ReconciliatorWorkerThreadPool reconciliatorWorkerThreadPool,
       Metrics metrics,
       String reconciliationName) {
+    this.operatorServiceAccountName =
+        operatorPropertyContext.getString(OperatorProperty.OPERATOR_NAME);
     this.scanner = scanner;
     this.finder = finder;
+    this.enableReconciliationWebhooks =
+        operatorPropertyContext.getBoolean(OperatorProperty.ENABLE_RECONCILIATION_WEBHOOKS);
+    this.objectMapper = objectMapper;
+    this.mutationPipeline = mutationPipeline;
+    this.validationPipeline = validationPipeline;
+    this.writer = writer;
     this.conciliator = conciliator;
     this.deployedResourcesCache = deployedResourcesCache;
     this.handlerDelegator = handlerDelegator;
@@ -123,8 +158,14 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
 
   public AbstractReconciliator() {
     CdiUtil.checkPublicNoArgsConstructorIsCalledToCreateProxy(getClass());
+    this.operatorServiceAccountName = null;
     this.scanner = null;
     this.finder = null;
+    this.enableReconciliationWebhooks = false;
+    this.objectMapper = null;
+    this.mutationPipeline = null;
+    this.validationPipeline = null;
+    this.writer = null;
     this.conciliator = null;
     this.deployedResourcesCache = null;
     this.handlerDelegator = null;
@@ -280,7 +321,7 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
 
     List<Exception> exceptions = new ArrayList<>();
     try {
-      final T config;
+      final T configUnmutated;
       if (load) {
         var configFound = finder.findByNameAndNamespace(
             metadata.getName(), metadata.getNamespace());
@@ -288,9 +329,43 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
           LOGGER.debug("{} not found, skipping reconciliation", configId);
           return;
         }
-        config = configFound.get();
+        configUnmutated = configFound.get();
       } else {
-        config = configKey;
+        configUnmutated = configKey;
+      }
+      final T config;
+      if (this.enableReconciliationWebhooks) {
+        final T mutatedAndValidatedConfig = mutateAndValidate(configUnmutated);
+        if (Objects.equals(
+            configUnmutated,
+            mutatedAndValidatedConfig)
+            && Optional.of(configUnmutated.getMetadata())
+            .map(ObjectMeta::getAnnotations)
+            .map(annotations -> annotations.containsKey(StackGresContext.PREVIOUS_KEY))
+            .orElse(false)) {
+          config = mutatedAndValidatedConfig;
+        } else {
+          config = writer.update(
+              configUnmutated,
+              currentConfig -> {
+                String previous = fromResource(currentConfig);
+                if (Objects.equals(
+                    currentConfig.getMetadata().getResourceVersion(),
+                    mutatedAndValidatedConfig.getMetadata().getResourceVersion())) {
+                  currentConfig.setMetadata(mutatedAndValidatedConfig.getMetadata());
+                  setSpecAndStatus(currentConfig, mutatedAndValidatedConfig);
+                } else {
+                  mutateAndValidate(currentConfig);
+                }
+                if (currentConfig.getMetadata().getAnnotations() == null) {
+                  currentConfig.getMetadata().setAnnotations(new HashMap<>());
+                }
+                currentConfig.getMetadata().getAnnotations()
+                    .put(StackGresContext.PREVIOUS_KEY, previous);
+              });
+        }
+      } else {
+        config = configUnmutated;
       }
       onPreReconciliation(config);
       LOGGER.debug("Checking reconciliation status of {}", configId);
@@ -364,7 +439,7 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
       }
 
       onPostReconciliation(config);
-    } catch (Exception ex) {
+    } catch (RuntimeException ex) {
       exceptions.add(ex);
     }
     if (!exceptions.isEmpty()) {
@@ -389,6 +464,74 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
     metrics.setReconciliationLastDuration(configKey.getClass(), System.currentTimeMillis() - startTimestamp);
   }
 
+  private T mutateAndValidate(final T configUnmutated) {
+    AdmissionRequest<T> admissionRequest =
+        new AdmissionRequest<T>();
+    admissionRequest.setDryRun(false);
+    admissionRequest.setKind(
+        new GroupVersionKindBuilder()
+        .withGroup(configUnmutated.getGroup())
+        .withKind(configUnmutated.getKind())
+        .withVersion(configUnmutated.getVersion())
+        .build());
+    admissionRequest.setName(configUnmutated.getMetadata().getName());
+    admissionRequest.setNamespace(configUnmutated.getMetadata().getNamespace());
+    admissionRequest.setObject(configUnmutated);
+    final T oldConfig = Optional.of(configUnmutated.getMetadata())
+        .map(ObjectMeta::getAnnotations)
+        .map(annotations -> annotations.get(StackGresContext.PREVIOUS_KEY))
+        .map(this::toResource)
+        .orElse(null);
+    admissionRequest.setOldObject(oldConfig);
+    admissionRequest.setOperation(oldConfig == null ? Operation.CREATE : Operation.UPDATE);
+    admissionRequest.setOptions(
+        new GroupVersionKindBuilder()
+        .withGroup(configUnmutated.getGroup())
+        .withKind(configUnmutated.getKind())
+        .withVersion(configUnmutated.getVersion())
+        .build());
+    admissionRequest.setRequestKind(
+        new GroupVersionKindBuilder()
+        .withGroup(configUnmutated.getGroup())
+        .withKind(configUnmutated.getKind())
+        .withVersion(configUnmutated.getVersion())
+        .build());
+    admissionRequest.setRequestResource(
+        new GroupVersionResourceBuilder()
+        .withGroup(configUnmutated.getGroup())
+        .withResource(configUnmutated.getFullResourceName())
+        .withVersion(configUnmutated.getVersion())
+        .build());
+    admissionRequest.setRequestSubResource(null);
+    admissionRequest.setResource(
+        new GroupVersionResourceBuilder()
+        .withGroup(configUnmutated.getGroup())
+        .withResource(configUnmutated.getFullResourceName())
+        .withVersion(configUnmutated.getVersion())
+        .build());
+    admissionRequest.setSubResource(null);
+    admissionRequest.setUid(UUID.fromString(configUnmutated.getMetadata().getUid()));
+    admissionRequest.setUserInfo(
+        new UserInfoBuilder()
+        .withUsername(ResourceUtil.getServiceAccountUsername(operatorServiceAccountName))
+        .build());
+    R admissionReview = createAdmissionReview();
+    admissionReview.setRequest(admissionRequest);
+    final T config = copyResource(configUnmutated);
+    mutationPipeline.mutate(admissionReview, config);
+    admissionRequest.setObject(config);
+    try {
+      validationPipeline.validate(admissionReview);
+    } catch (ValidationFailed ex) {
+      throw new RuntimeException(ex);
+    }
+    return config;
+  }
+
+  protected abstract R createAdmissionReview();
+
+  protected abstract void setSpecAndStatus(T currentConfig, T mutatedAndValidatedConfig);
+
   protected abstract void onPreReconciliation(T config);
 
   protected abstract void onPostReconciliation(T config);
@@ -398,6 +541,32 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>> {
   protected abstract void onConfigUpdated(T context, ReconciliationResult result);
 
   protected abstract void onError(Exception e, T context);
+
+  private T toResource(String resource) {
+    try {
+      return objectMapper.readValue(resource, getResourceClass());
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+
+  private T copyResource(T resource) {
+    try {
+      return objectMapper.treeToValue(objectMapper.valueToTree(resource), getResourceClass());
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+
+  private String fromResource(T resource) {
+    try {
+      return objectMapper.valueToTree(resource).toString();
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+
+  protected abstract Class<T> getResourceClass();
 
   public KubernetesClient getClient() {
     return client;

@@ -10,10 +10,10 @@ import io.stackgres.common.crd.sgpooling.StackGresPoolingConfigList;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class PgPoolingConfigScheduler
-    extends AbstractCustomResourceScheduler<StackGresPoolingConfig, StackGresPoolingConfigList> {
+public class PgPoolingConfigWriter
+    extends AbstractCustomResourceWriter<StackGresPoolingConfig, StackGresPoolingConfigList> {
 
-  public PgPoolingConfigScheduler() {
+  public PgPoolingConfigWriter() {
     super(StackGresPoolingConfig.class, StackGresPoolingConfigList.class);
   }
 

@@ -24,10 +24,10 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.stackgres.common.StackGresContainer;
 import io.stackgres.common.StackGresGroupKind;
 import io.stackgres.common.crd.sgcluster.StackGresClusterResources;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileHugePages;
-import io.stackgres.common.crd.sgprofile.StackGresProfileRequests;
-import io.stackgres.common.crd.sgprofile.StackGresProfileSpec;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileHugePages;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileRequests;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileSpec;
 import io.stackgres.common.resource.ResourceUtil;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
@@ -59,7 +59,7 @@ public class ClusterStatefulSetContainerProfileDecorator extends AbstractContain
       return resource;
     }
 
-    final StackGresProfile profile = context.getProfile()
+    final StackGresInstanceProfile profile = context.getProfile()
         .orElseGet(() -> defaultProfileFactory.buildResource(context.getSource()));
 
     if (resource instanceof StatefulSet statefulSet) {
@@ -84,7 +84,7 @@ public class ClusterStatefulSetContainerProfileDecorator extends AbstractContain
   }
 
   private void setPatroniContainerResources(
-      StackGresProfile profile,
+      StackGresInstanceProfile profile,
       Optional<StackGresClusterResources> resources,
       StatefulSet statefulSet) {
     final Optional<ResourceRequirements> containerRequestRequirements =
@@ -131,8 +131,8 @@ public class ClusterStatefulSetContainerProfileDecorator extends AbstractContain
         .map(StackGresClusterResources::getFailWhenTotalIsHigher)
         .orElse(false);
     final Quantity cpuRequest = Optional.of(profile.getSpec())
-        .map(StackGresProfileSpec::getRequests)
-        .map(StackGresProfileRequests::getCpu)
+        .map(StackGresInstanceProfileSpec::getRequests)
+        .map(StackGresInstanceProfileRequests::getCpu)
         .map(Quantity::new)
         .map(Quantity::getNumericalAmount)
         .map(amount -> Optional.of(statefulSet)
@@ -157,8 +157,8 @@ public class ClusterStatefulSetContainerProfileDecorator extends AbstractContain
         .map(Quantity::new)
         .orElse(null);
     final Quantity memoryRequest = Optional.of(profile.getSpec())
-        .map(StackGresProfileSpec::getRequests)
-        .map(StackGresProfileRequests::getMemory)
+        .map(StackGresInstanceProfileSpec::getRequests)
+        .map(StackGresInstanceProfileRequests::getMemory)
         .map(Quantity::new)
         .map(Quantity::getNumericalAmount)
         .map(amount -> Optional.of(statefulSet)
@@ -233,12 +233,12 @@ public class ClusterStatefulSetContainerProfileDecorator extends AbstractContain
   }
 
   private void setHugePages2Mi(
-      StackGresProfile profile,
+      StackGresInstanceProfile profile,
       final HashMap<String, Quantity> requests,
       final HashMap<String, Quantity> limits) {
     Optional.of(profile.getSpec())
-        .map(StackGresProfileSpec::getHugePages)
-        .map(StackGresProfileHugePages::getHugepages2Mi)
+        .map(StackGresInstanceProfileSpec::getHugePages)
+        .map(StackGresInstanceProfileHugePages::getHugepages2Mi)
         .map(Quantity::new)
         .ifPresent(quantity -> {
           if (!requests.containsKey("hugepages-2Mi")) {
@@ -251,12 +251,12 @@ public class ClusterStatefulSetContainerProfileDecorator extends AbstractContain
   }
 
   private void setHugePages1Gi(
-      StackGresProfile profile,
+      StackGresInstanceProfile profile,
       final HashMap<String, Quantity> requests,
       final HashMap<String, Quantity> limits) {
     Optional.of(profile.getSpec())
-        .map(StackGresProfileSpec::getHugePages)
-        .map(StackGresProfileHugePages::getHugepages1Gi)
+        .map(StackGresInstanceProfileSpec::getHugePages)
+        .map(StackGresInstanceProfileHugePages::getHugepages1Gi)
         .map(Quantity::new)
         .ifPresent(quantity -> {
           if (!requests.containsKey("hugepages-1Gi")) {
@@ -270,7 +270,7 @@ public class ClusterStatefulSetContainerProfileDecorator extends AbstractContain
 
   @Override
   protected void setProfileContainers(
-      StackGresProfile profile,
+      StackGresInstanceProfile profile,
       Optional<StackGresClusterResources> resources,
       Optional<PodSpec> podSpec) {
     podSpec

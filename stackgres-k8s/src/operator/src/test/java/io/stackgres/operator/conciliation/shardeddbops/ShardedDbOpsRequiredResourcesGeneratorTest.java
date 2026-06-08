@@ -18,7 +18,7 @@ import io.stackgres.common.KubernetesTestServerSetup;
 import io.stackgres.common.StackGresComponent;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOps;
 import io.stackgres.common.fixture.Fixtures;
@@ -53,7 +53,7 @@ class ShardedDbOpsRequiredResourcesGeneratorTest {
   private StackGresShardedDbOps dbOps;
   private StackGresShardedCluster cluster;
   private StackGresCluster coordinator;
-  private StackGresProfile profile;
+  private StackGresInstanceProfile profile;
 
   @BeforeEach
   void setUp() {

@@ -26,11 +26,11 @@ import io.stackgres.common.ClusterPath;
 import io.stackgres.common.StackGresGroupKind;
 import io.stackgres.common.StackGresVolume;
 import io.stackgres.common.crd.sgcluster.StackGresClusterResources;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileContainer;
-import io.stackgres.common.crd.sgprofile.StackGresProfileHugePages;
-import io.stackgres.common.crd.sgprofile.StackGresProfileRequests;
-import io.stackgres.common.crd.sgprofile.StackGresProfileSpec;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileContainer;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileHugePages;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileRequests;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileSpec;
 import org.jooq.lambda.Seq;
 
 public abstract class AbstractContainerProfileDecorator {
@@ -38,7 +38,7 @@ public abstract class AbstractContainerProfileDecorator {
   protected abstract StackGresGroupKind getKind();
 
   protected void setProfileContainers(
-      StackGresProfile profile,
+      StackGresInstanceProfile profile,
       Optional<StackGresClusterResources> resources,
       Optional<PodSpec> podSpec) {
     podSpec
@@ -56,7 +56,7 @@ public abstract class AbstractContainerProfileDecorator {
   }
 
   protected void setProfileForContainer(
-      StackGresProfile profile,
+      StackGresInstanceProfile profile,
       Optional<StackGresClusterResources> resources,
       Optional<PodSpec> podSpec,
       Container container) {
@@ -66,10 +66,10 @@ public abstract class AbstractContainerProfileDecorator {
     var requestRequirements = resources
         .map(StackGresClusterResources::getContainers);
     var requests = Optional.of(profile.getSpec())
-        .map(StackGresProfileSpec::getRequests)
-        .map(StackGresProfileRequests::getContainers);
+        .map(StackGresInstanceProfileSpec::getRequests)
+        .map(StackGresInstanceProfileRequests::getContainers);
     Optional.of(profile.getSpec())
-        .map(StackGresProfileSpec::getContainers)
+        .map(StackGresInstanceProfileSpec::getContainers)
         .map(Map::entrySet)
         .stream()
         .flatMap(Collection::stream)
@@ -87,7 +87,7 @@ public abstract class AbstractContainerProfileDecorator {
   }
 
   protected void setProfileForInitContainer(
-      StackGresProfile profile,
+      StackGresInstanceProfile profile,
       Optional<StackGresClusterResources> resources,
       Optional<PodSpec> podSpec,
       Container container) {
@@ -97,10 +97,10 @@ public abstract class AbstractContainerProfileDecorator {
     var containerRequestRequirements = resources
         .map(StackGresClusterResources::getInitContainers);
     var containerRequests = Optional.of(profile.getSpec())
-        .map(StackGresProfileSpec::getRequests)
-        .map(StackGresProfileRequests::getInitContainers);
+        .map(StackGresInstanceProfileSpec::getRequests)
+        .map(StackGresInstanceProfileRequests::getInitContainers);
     Optional.of(profile.getSpec())
-        .map(StackGresProfileSpec::getInitContainers)
+        .map(StackGresInstanceProfileSpec::getInitContainers)
         .map(Map::entrySet)
         .stream()
         .flatMap(Collection::stream)
@@ -121,8 +121,8 @@ public abstract class AbstractContainerProfileDecorator {
       Optional<PodSpec> podSpec,
       Container container,
       Optional<Map<String, ResourceRequirements>> requestRequirements,
-      Optional<Map<String, StackGresProfileContainer>> profileRequests,
-      Entry<String, StackGresProfileContainer> entry,
+      Optional<Map<String, StackGresInstanceProfileContainer>> profileRequests,
+      Entry<String, StackGresInstanceProfileContainer> entry,
       boolean enableCpuAndMemoryLimits) {
     final Optional<ResourceRequirements> containerRequestRequirements =
         requestRequirements
@@ -137,7 +137,7 @@ public abstract class AbstractContainerProfileDecorator {
     final ResourceRequirements containerResources =
         containerRequestRequirements
         .orElseGet(ResourceRequirements::new);
-    Optional<StackGresProfileContainer> containerRequests = profileRequests
+    Optional<StackGresInstanceProfileContainer> containerRequests = profileRequests
         .stream()
         .map(Map::entrySet)
         .flatMap(Set::stream)
@@ -149,23 +149,23 @@ public abstract class AbstractContainerProfileDecorator {
     final Quantity cpuLimit =
         Optional.of(entry)
         .map(Map.Entry::getValue)
-        .map(StackGresProfileContainer::getCpu)
+        .map(StackGresInstanceProfileContainer::getCpu)
         .map(Quantity::new)
         .orElse(null);
     final Quantity memoryLimit =
         Optional.of(entry)
         .map(Map.Entry::getValue)
-        .map(StackGresProfileContainer::getMemory)
+        .map(StackGresInstanceProfileContainer::getMemory)
         .map(Quantity::new)
         .orElse(null);
     final Quantity cpuRequest =
         containerRequests
-        .map(StackGresProfileContainer::getCpu)
+        .map(StackGresInstanceProfileContainer::getCpu)
         .map(Quantity::new)
         .orElse(null);
     final Quantity memoryRequest =
         containerRequests
-        .map(StackGresProfileContainer::getMemory)
+        .map(StackGresInstanceProfileContainer::getMemory)
         .map(Quantity::new)
         .orElse(null);
     final HashMap<String, Quantity> requests =
@@ -197,14 +197,14 @@ public abstract class AbstractContainerProfileDecorator {
         limits.put("memory", memoryLimit);
       }
       Optional.of(entry.getValue())
-          .map(StackGresProfileContainer::getHugePages)
-          .map(StackGresProfileHugePages::getHugepages2Mi)
+          .map(StackGresInstanceProfileContainer::getHugePages)
+          .map(StackGresInstanceProfileHugePages::getHugepages2Mi)
           .map(Quantity::new)
           .ifPresent(quantity -> setHugePages2Mi(
               podSpec, entry, container, requests, limits, quantity));
       Optional.of(entry.getValue())
-          .map(StackGresProfileContainer::getHugePages)
-          .map(StackGresProfileHugePages::getHugepages1Gi)
+          .map(StackGresInstanceProfileContainer::getHugePages)
+          .map(StackGresInstanceProfileHugePages::getHugepages1Gi)
           .map(Quantity::new)
           .ifPresent(quantity -> setHugePages1Gi(
               podSpec, entry, container, requests, limits, quantity));
@@ -218,7 +218,7 @@ public abstract class AbstractContainerProfileDecorator {
 
   private void setHugePages2Mi(
       Optional<PodSpec> podSpec,
-      Entry<String, StackGresProfileContainer> entry,
+      Entry<String, StackGresInstanceProfileContainer> entry,
       Container container,
       final HashMap<String, Quantity> requests,
       final HashMap<String, Quantity> limits,
@@ -245,7 +245,7 @@ public abstract class AbstractContainerProfileDecorator {
   }
 
   private List<Volume> getVolumesWithHugePages2Mi(
-      Entry<String, StackGresProfileContainer> entry,
+      Entry<String, StackGresInstanceProfileContainer> entry,
       PodSpec spec) {
     return Seq.seq(Optional.ofNullable(spec.getVolumes())
         .stream()
@@ -262,7 +262,7 @@ public abstract class AbstractContainerProfileDecorator {
 
   private void setHugePages1Gi(
       Optional<PodSpec> podSpec,
-      Entry<String, StackGresProfileContainer> entry,
+      Entry<String, StackGresInstanceProfileContainer> entry,
       Container container,
       final HashMap<String, Quantity> requests,
       final HashMap<String, Quantity> limits,
@@ -288,7 +288,7 @@ public abstract class AbstractContainerProfileDecorator {
   }
 
   private List<Volume> getVolumesWithHugePages1Gi(
-      Entry<String, StackGresProfileContainer> entry,
+      Entry<String, StackGresInstanceProfileContainer> entry,
       PodSpec spec) {
     return Seq.seq(Optional.ofNullable(spec.getVolumes())
         .stream()

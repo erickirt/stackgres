@@ -14,16 +14,20 @@ import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackup;
 import io.stackgres.common.event.EventEmitter;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.app.OperatorLockHolder;
 import io.stackgres.operator.common.Metrics;
 import io.stackgres.operator.common.PatchResumer;
+import io.stackgres.operator.common.StackGresShardedBackupReview;
 import io.stackgres.operator.conciliation.AbstractConciliator;
 import io.stackgres.operator.conciliation.AbstractReconciliator;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
 import io.stackgres.operator.conciliation.HandlerDelegator;
 import io.stackgres.operator.conciliation.ReconciliationResult;
 import io.stackgres.operator.conciliation.ReconciliatorWorkerThreadPool;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.event.Observes;
@@ -32,18 +36,22 @@ import org.slf4j.helpers.MessageFormatter;
 
 @ApplicationScoped
 public class ShardedBackupReconciliator
-    extends AbstractReconciliator<StackGresShardedBackup> {
+    extends AbstractReconciliator<StackGresShardedBackup, StackGresShardedBackupReview> {
 
   @Dependent
   static class Parameters {
+    @Inject OperatorPropertyContext operatorPropertyContext;
     @Inject CustomResourceScanner<StackGresShardedBackup> scanner;
     @Inject CustomResourceFinder<StackGresShardedBackup> finder;
+    @Inject MutationPipeline<StackGresShardedBackup, StackGresShardedBackupReview> mutationPipeline;
+    @Inject ValidationPipeline<StackGresShardedBackupReview> validationPipeline;
+    @Inject CustomResourceWriter<StackGresShardedBackup> writer;
     @Inject AbstractConciliator<StackGresShardedBackup> conciliator;
     @Inject DeployedResourcesCache deployedResourcesCache;
     @Inject HandlerDelegator<StackGresShardedBackup> handlerDelegator;
     @Inject KubernetesClient client;
     @Inject EventEmitter<StackGresShardedBackup> eventController;
-    @Inject CustomResourceScheduler<StackGresShardedBackup> backupScheduler;
+    @Inject CustomResourceWriter<StackGresShardedBackup> backupWriter;
     @Inject ShardedBackupStatusManager statusManager;
     @Inject ObjectMapper objectMapper;
     @Inject OperatorLockHolder operatorLockReconciliator;
@@ -52,23 +60,49 @@ public class ShardedBackupReconciliator
   }
 
   private final EventEmitter<StackGresShardedBackup> eventController;
-  private final CustomResourceScheduler<StackGresShardedBackup> backupScheduler;
+  private final CustomResourceWriter<StackGresShardedBackup> backupWriter;
   private final ShardedBackupStatusManager statusManager;
   private final PatchResumer<StackGresShardedBackup> patchResumer;
 
   @Inject
   public ShardedBackupReconciliator(Parameters parameters) {
-    super(parameters.scanner, parameters.finder,
-        parameters.conciliator, parameters.deployedResourcesCache,
-        parameters.handlerDelegator, parameters.client,
+    super(
+        parameters.operatorPropertyContext,
+        parameters.scanner,
+        parameters.finder,
+        parameters.objectMapper,
+        parameters.mutationPipeline,
+        parameters.validationPipeline,
+        parameters.writer,
+        parameters.conciliator,
+        parameters.deployedResourcesCache,
+        parameters.handlerDelegator,
+        parameters.client,
         parameters.operatorLockReconciliator,
         parameters.reconciliatorWorkerThreadPool,
         parameters.metrics,
         StackGresShardedBackup.KIND);
     this.eventController = parameters.eventController;
-    this.backupScheduler = parameters.backupScheduler;
+    this.backupWriter = parameters.backupWriter;
     this.statusManager = parameters.statusManager;
     this.patchResumer = new PatchResumer<>(parameters.objectMapper);
+  }
+
+  @Override
+  protected void setSpecAndStatus(StackGresShardedBackup currentConfig,
+      StackGresShardedBackup mutatedAndValidatedConfig) {
+    currentConfig.setSpec(mutatedAndValidatedConfig.getSpec());
+    currentConfig.setStatus(mutatedAndValidatedConfig.getStatus());
+  }
+
+  @Override
+  protected StackGresShardedBackupReview createAdmissionReview() {
+    return new StackGresShardedBackupReview();
+  }
+
+  @Override
+  protected Class<StackGresShardedBackup> getResourceClass() {
+    return StackGresShardedBackup.class;
   }
 
   void onStart(@Observes StartupEvent ev) {
@@ -86,7 +120,7 @@ public class ShardedBackupReconciliator
 
   @Override
   protected void onPreReconciliation(StackGresShardedBackup config) {
-    backupScheduler.update(config, statusManager::refreshCondition);
+    backupWriter.update(config, statusManager::refreshCondition);
   }
 
   @Override

@@ -22,11 +22,14 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
+import io.fabric8.kubernetes.api.model.coordination.v1.LeaseBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectSpy;
 import io.quarkus.test.kubernetes.client.WithKubernetesTestServer;
 import io.smallrye.mutiny.Uni;
+import io.stackgres.common.LeaseLockUtil;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgstream.StackGresStream;
 import io.stackgres.common.crd.sgstream.StackGresStreamStatus;
@@ -67,6 +70,9 @@ class StreamLauncherTest extends MockKubeDbTest {
   @InjectMock
   StreamEventEmitter streamEventEmitter;
 
+  @Inject
+  KubernetesClient client;
+
   StackGresStream stream;
 
   StackGresCluster cluster;
@@ -94,6 +100,16 @@ class StreamLauncherTest extends MockKubeDbTest {
     cluster.getMetadata().setNamespace(namespace);
     cluster.getMetadata().setName(randomClusterName);
     cluster = kubeDb.addOrReplaceCluster(cluster);
+
+    // The operator pre-creates the lock Lease for each SGStream; seed it here.
+    client.leases().inNamespace(namespace).resource(new LeaseBuilder()
+        .withNewMetadata()
+        .withNamespace(namespace)
+        .withName(LeaseLockUtil.leaseNameForStream(stream.getMetadata().getUid()))
+        .endMetadata()
+        .withNewSpec()
+        .endSpec()
+        .build()).create();
 
     doNothing().when(streamEventEmitter).streamStarted(randomStreamName, namespace);
     doNothing().when(streamEventEmitter).streamFailed(randomStreamName, namespace);

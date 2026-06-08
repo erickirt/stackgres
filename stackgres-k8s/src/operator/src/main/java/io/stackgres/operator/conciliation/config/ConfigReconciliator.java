@@ -25,10 +25,11 @@ import io.stackgres.common.crd.sgconfig.StackGresConfigStatus;
 import io.stackgres.common.event.EventEmitter;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.app.OperatorLockHolder;
 import io.stackgres.operator.common.Metrics;
 import io.stackgres.operator.common.PatchResumer;
+import io.stackgres.operator.common.StackGresConfigReview;
 import io.stackgres.operator.conciliation.AbstractConciliator;
 import io.stackgres.operator.conciliation.AbstractReconciliator;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
@@ -36,6 +37,9 @@ import io.stackgres.operator.conciliation.HandlerDelegator;
 import io.stackgres.operator.conciliation.ReconciliationResult;
 import io.stackgres.operator.conciliation.ReconciliatorWorkerThreadPool;
 import io.stackgres.operator.conciliation.StatusManager;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.event.Observes;
@@ -47,19 +51,23 @@ import org.slf4j.helpers.MessageFormatter;
 
 @ApplicationScoped
 public class ConfigReconciliator
-    extends AbstractReconciliator<StackGresConfig> {
+    extends AbstractReconciliator<StackGresConfig, StackGresConfigReview> {
 
   @Dependent
   static class Parameters {
+    @Inject OperatorPropertyContext operatorPropertyContext;
     @Inject CustomResourceScanner<StackGresConfig> scanner;
     @Inject CustomResourceFinder<StackGresConfig> finder;
+    @Inject MutationPipeline<StackGresConfig, StackGresConfigReview> mutationPipeline;
+    @Inject ValidationPipeline<StackGresConfigReview> validationPipeline;
+    @Inject CustomResourceWriter<StackGresConfig> writer;
     @Inject AbstractConciliator<StackGresConfig> conciliator;
     @Inject DeployedResourcesCache deployedResourcesCache;
     @Inject HandlerDelegator<StackGresConfig> handlerDelegator;
     @Inject KubernetesClient client;
     @Inject StatusManager<StackGresConfig, Condition> statusManager;
     @Inject EventEmitter<StackGresConfig> eventController;
-    @Inject CustomResourceScheduler<StackGresConfig> configScheduler;
+    @Inject CustomResourceWriter<StackGresConfig> configWriter;
     @Inject ObjectMapper objectMapper;
     @Inject OperatorLockHolder operatorLockReconciliator;
     @Inject ReconciliatorWorkerThreadPool reconciliatorWorkerThreadPool;
@@ -68,7 +76,7 @@ public class ConfigReconciliator
 
   private final StatusManager<StackGresConfig, Condition> statusManager;
   private final EventEmitter<StackGresConfig> eventController;
-  private final CustomResourceScheduler<StackGresConfig> configScheduler;
+  private final CustomResourceWriter<StackGresConfig> configWriter;
   private final PatchResumer<StackGresConfig> patchResumer;
   private final AtomicReference<Tuple2<String, String>> lastCertificateTuple =
       new AtomicReference<>();
@@ -77,21 +85,46 @@ public class ConfigReconciliator
 
   @Inject
   public ConfigReconciliator(Parameters parameters) {
-    super(parameters.scanner, parameters.finder,
-        parameters.conciliator, parameters.deployedResourcesCache,
-        parameters.handlerDelegator, parameters.client,
+    super(
+        parameters.operatorPropertyContext,
+        parameters.scanner,
+        parameters.finder,
+        parameters.objectMapper,
+        parameters.mutationPipeline,
+        parameters.validationPipeline,
+        parameters.writer,
+        parameters.conciliator,
+        parameters.deployedResourcesCache,
+        parameters.handlerDelegator,
+        parameters.client,
         parameters.operatorLockReconciliator,
         parameters.reconciliatorWorkerThreadPool,
         parameters.metrics,
         StackGresConfig.KIND);
     this.statusManager = parameters.statusManager;
     this.eventController = parameters.eventController;
-    this.configScheduler = parameters.configScheduler;
+    this.configWriter = parameters.configWriter;
     this.patchResumer = new PatchResumer<>(parameters.objectMapper);
     this.operatorCertPath = ConfigProvider.getConfig().getValue(
         "quarkus.http.ssl.certificate.files", String.class);
     this.operatorCertKeyPath = ConfigProvider.getConfig().getValue(
         "quarkus.http.ssl.certificate.key-files", String.class);
+  }
+
+  @Override
+  protected void setSpecAndStatus(StackGresConfig currentConfig, StackGresConfig mutatedAndValidatedConfig) {
+    currentConfig.setSpec(mutatedAndValidatedConfig.getSpec());
+    currentConfig.setStatus(mutatedAndValidatedConfig.getStatus());
+  }
+
+  @Override
+  protected StackGresConfigReview createAdmissionReview() {
+    return new StackGresConfigReview();
+  }
+
+  @Override
+  protected Class<StackGresConfig> getResourceClass() {
+    return StackGresConfig.class;
   }
 
   void onStart(@Observes StartupEvent ev) {
@@ -135,7 +168,7 @@ public class ConfigReconciliator
   protected void onPostReconciliation(StackGresConfig config) {
     statusManager.refreshCondition(config);
 
-    configScheduler.updateStatus(config,
+    configWriter.updateStatus(config,
         (currentConfig) -> {
           if (config.getStatus() != null) {
             if (currentConfig.getStatus() == null) {

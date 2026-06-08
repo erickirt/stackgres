@@ -5,16 +5,16 @@
 
 package io.stackgres.operator.conversion;
 
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.fixture.Fixtures;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class SgInstanceProfileConversionResourceTest extends ConversionResourceTest<StackGresProfile> {
+class SgInstanceProfileConversionResourceTest extends ConversionResourceTest<StackGresInstanceProfile> {
 
   @Override
-  protected StackGresProfile getCustomResource() {
+  protected StackGresInstanceProfile getCustomResource() {
     return Fixtures.instanceProfile().loadSizeM().get();
   }
 

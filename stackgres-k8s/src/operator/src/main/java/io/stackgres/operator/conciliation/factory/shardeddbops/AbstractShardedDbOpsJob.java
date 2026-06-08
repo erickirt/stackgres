@@ -30,10 +30,9 @@ import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.stackgres.common.CdiUtil;
 import io.stackgres.common.KubectlUtil;
-import io.stackgres.common.OperatorProperty;
+import io.stackgres.common.LeaseLockUtil;
 import io.stackgres.common.ShardedClusterPath;
 import io.stackgres.common.ShardedDbOpsUtil;
-import io.stackgres.common.StackGresContext;
 import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.StackGresVolume;
 import io.stackgres.common.crd.sgshardeddbops.ShardedDbOpsStatusCondition;
@@ -240,26 +239,6 @@ public abstract class AbstractShardedDbOpsJob implements ShardedDbOpsJobFactory 
                     new EnvVarBuilder()
                         .withName("HOME")
                         .withValue("/tmp")
-                        .build(),
-                    new EnvVarBuilder()
-                        .withName("LOCK_DURATION")
-                        .withValue(OperatorProperty.LOCK_DURATION.getString())
-                        .build(),
-                    new EnvVarBuilder()
-                        .withName("LOCK_POLL_INTERVAL")
-                        .withValue(OperatorProperty.LOCK_POLL_INTERVAL.getString())
-                        .build(),
-                    new EnvVarBuilder()
-                        .withName("LOCK_SERVICE_ACCOUNT_KEY")
-                        .withValue(StackGresContext.LOCK_SERVICE_ACCOUNT_KEY)
-                        .build(),
-                    new EnvVarBuilder()
-                        .withName("LOCK_POD_KEY")
-                        .withValue(StackGresContext.LOCK_POD_KEY)
-                        .build(),
-                    new EnvVarBuilder()
-                        .withName("LOCK_TIMEOUT_KEY")
-                        .withValue(StackGresContext.LOCK_TIMEOUT_KEY)
                         .build())
                 .addAll(Seq.of(ShardedDbOpsStatusCondition.values())
                     .map(c -> new EnvVarBuilder()
@@ -316,6 +295,15 @@ public abstract class AbstractShardedDbOpsJob implements ShardedDbOpsJobFactory 
                         new EnvVarBuilder()
                             .withName("HOME")
                             .withValue("/tmp")
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("LOCK_LEASE_NAMESPACE")
+                            .withValue(context.getShardedCluster().getMetadata().getNamespace())
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("LOCK_LEASE_NAME")
+                            .withValue(LeaseLockUtil.leaseNameForShardedCluster(
+                                context.getShardedCluster().getMetadata().getUid()))
                             .build())
                     .addAll(runEnvVars)
                     .build())

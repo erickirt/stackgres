@@ -13,8 +13,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileBuilder;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileBuilder;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.resource.CustomResourceFinder;
@@ -40,7 +40,7 @@ class ShardedClusterWorkersInstanceProfileContextAppenderTest {
   private StackGresShardedClusterContext.Builder contextBuilder;
 
   @Mock
-  private CustomResourceFinder<StackGresProfile> profileFinder;
+  private CustomResourceFinder<StackGresInstanceProfile> profileFinder;
 
   @BeforeEach
   void setUp() {
@@ -53,7 +53,7 @@ class ShardedClusterWorkersInstanceProfileContextAppenderTest {
   @Test
   void givenClusterWithProfile_shouldPass() {
     final var profile = Optional.of(
-        new StackGresProfileBuilder()
+        new StackGresInstanceProfileBuilder()
         .withNewSpec()
         .endSpec()
         .build());

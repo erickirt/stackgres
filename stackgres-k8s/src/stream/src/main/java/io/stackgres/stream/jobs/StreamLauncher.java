@@ -23,7 +23,7 @@ import io.stackgres.common.crd.sgstream.StreamSourceType;
 import io.stackgres.common.crd.sgstream.StreamStatusCondition;
 import io.stackgres.common.crd.sgstream.StreamTargetType;
 import io.stackgres.common.resource.CustomResourceFinder;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.stream.app.StreamProperty;
 import io.stackgres.stream.jobs.lock.LockAcquirer;
 import io.stackgres.stream.jobs.lock.LockRequest;
@@ -47,7 +47,7 @@ public class StreamLauncher {
   CustomResourceFinder<StackGresCluster> clusterFinder;
 
   @Inject
-  CustomResourceScheduler<StackGresStream> streamScheduler;
+  CustomResourceWriter<StackGresStream> streamWriter;
 
   @Inject
   LockAcquirer lockAcquirer;
@@ -86,7 +86,7 @@ public class StreamLauncher {
       }
     }
     LOGGER.info("Initializing conditions for SGStream {}", stream.getMetadata().getName());
-    final StackGresStream initializedStream = streamScheduler.update(stream,
+    final StackGresStream initializedStream = streamWriter.update(stream,
         (currentStream) -> {
           var status = Optional.ofNullable(currentStream.getStatus())
               .or(() -> Optional.of(new StackGresStreamStatus()))
@@ -135,6 +135,7 @@ public class StreamLauncher {
           .pollInterval(lockPollInterval)
           .duration(duration)
           .lockResourceName(initializedStream.getMetadata().getName())
+          .lockResourceUid(initializedStream.getMetadata().getUid())
           .build();
 
       Infrastructure.setDroppedExceptionHandler(err -> LOGGER.error("Dropped exception ", err));
@@ -180,7 +181,7 @@ public class StreamLauncher {
         .item(() -> streamFinder.findByNameAndNamespace(streamName, namespace)
             .orElseThrow())
         .invoke(currentStream -> currentStream.getStatus().setConditions(conditions))
-        .invoke(streamScheduler::update)
+        .invoke(streamWriter::update)
         .onFailure()
         .transform(MutinyUtil.logOnFailureToRetry("updating conditions for SGStream"))
         .onFailure()

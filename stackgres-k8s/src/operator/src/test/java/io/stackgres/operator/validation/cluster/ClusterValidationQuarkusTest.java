@@ -29,8 +29,8 @@ import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfigList;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfig;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfigList;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileList;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileList;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.operator.common.StackGresClusterReview;
 import io.stackgres.operator.common.fixture.AdmissionReviewFixtures;
@@ -139,13 +139,13 @@ class ClusterValidationQuarkusTest {
         .resource(pgConfig)
         .createOrReplace();
 
-    StackGresProfileList instanceList =
-        client.resources(StackGresProfile.class, StackGresProfileList.class)
+    StackGresInstanceProfileList instanceList =
+        client.resources(StackGresInstanceProfile.class, StackGresInstanceProfileList.class)
             .list();
     client.resourceList(instanceList).delete();
     var instanceConfig = Fixtures.instanceProfile().loadSizeS().get();
     instanceConfig.getMetadata().setNamespace("test");
-    client.resources(StackGresProfile.class, StackGresProfileList.class)
+    client.resources(StackGresInstanceProfile.class, StackGresInstanceProfileList.class)
         .inNamespace(instanceConfig.getMetadata().getNamespace())
         .resource(instanceConfig)
         .createOrReplace();
@@ -173,8 +173,8 @@ class ClusterValidationQuarkusTest {
         .list();
     client.resourceList(pgconfList).delete();
 
-    StackGresProfileList instanceList = client
-        .resources(StackGresProfile.class, StackGresProfileList.class)
+    StackGresInstanceProfileList instanceList = client
+        .resources(StackGresInstanceProfile.class, StackGresInstanceProfileList.class)
         .list();
     client.resourceList(instanceList).delete();
 

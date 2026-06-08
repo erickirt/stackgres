@@ -5,7 +5,7 @@
 
 package io.stackgres.operator.mutation.profile;
 
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.operator.common.StackGresInstanceProfileReview;
 import io.stackgres.operator.mutation.AbstractMutationPipeline;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -15,7 +15,7 @@ import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class ProfilePipeline
-    extends AbstractMutationPipeline<StackGresProfile, StackGresInstanceProfileReview> {
+    extends AbstractMutationPipeline<StackGresInstanceProfile, StackGresInstanceProfileReview> {
 
   @Inject
   public ProfilePipeline(

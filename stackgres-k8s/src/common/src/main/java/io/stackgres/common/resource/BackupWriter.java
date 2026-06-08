@@ -10,10 +10,10 @@ import io.stackgres.common.crd.sgbackup.StackGresBackupList;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class BackupScheduler
-    extends AbstractCustomResourceScheduler<StackGresBackup, StackGresBackupList> {
+public class BackupWriter
+    extends AbstractCustomResourceWriter<StackGresBackup, StackGresBackupList> {
 
-  public BackupScheduler() {
+  public BackupWriter() {
     super(StackGresBackup.class, StackGresBackupList.class);
   }
 

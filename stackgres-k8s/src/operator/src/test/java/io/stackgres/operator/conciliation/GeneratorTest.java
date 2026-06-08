@@ -23,7 +23,7 @@ import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
 import io.stackgres.common.crd.sgcluster.StackGresReplicationMode;
 import io.stackgres.common.crd.sgcluster.StackGresReplicationRole;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.operator.conciliation.cluster.ClusterResourceGenerationDiscoverer;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
@@ -37,7 +37,7 @@ public abstract class GeneratorTest {
   protected static final String CLUSTER_NAMESPACE = StringUtils.getRandomResourceName(10);
   protected static final String CLUSTER_UID = UUID.randomUUID().toString();
   protected StackGresCluster cluster;
-  protected StackGresProfile stackGresProfile;
+  protected StackGresInstanceProfile stackGresInstanceProfile;
   protected StackGresPostgresConfig stackGresPostgresConfig;
 
   @Inject
@@ -63,7 +63,7 @@ public abstract class GeneratorTest {
     cluster.getSpec().getPods().getPersistentVolume().setSize("500Mi");
 
     return GeneratedResourceMatcher.givenACluster(cluster, resourceGenerationDiscoverer)
-        .andInstanceProfile(stackGresProfile)
+        .andInstanceProfile(stackGresInstanceProfile)
         .andPostgresConfig(stackGresPostgresConfig);
   }
 
@@ -79,15 +79,15 @@ public abstract class GeneratorTest {
   private StackGresClusterContext buildContext() {
     return StackGresClusterContext.builder()
         .source(cluster)
-        .profile(stackGresProfile)
+        .profile(stackGresInstanceProfile)
         .postgresConfig(stackGresPostgresConfig)
         .build();
   }
 
   @BeforeEach
   void setUp() {
-    stackGresProfile = Fixtures.instanceProfile().loadSizeS().get();
-    stackGresProfile.getMetadata().setNamespace(CLUSTER_NAMESPACE);
+    stackGresInstanceProfile = Fixtures.instanceProfile().loadSizeS().get();
+    stackGresInstanceProfile.getMetadata().setNamespace(CLUSTER_NAMESPACE);
 
     stackGresPostgresConfig = Fixtures.postgresConfig().loadDefault().get();
 
@@ -99,7 +99,7 @@ public abstract class GeneratorTest {
     cluster.getSpec().setConfigurations(new StackGresClusterConfigurations());
     cluster.getSpec().getConfigurations().setSgPostgresConfig(stackGresPostgresConfig.getMetadata()
         .getName());
-    cluster.getSpec().setSgInstanceProfile(stackGresProfile.getMetadata().getName());
+    cluster.getSpec().setSgInstanceProfile(stackGresInstanceProfile.getMetadata().getName());
   }
 
 }

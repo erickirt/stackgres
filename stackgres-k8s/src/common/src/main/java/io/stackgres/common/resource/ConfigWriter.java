@@ -10,10 +10,10 @@ import io.stackgres.common.crd.sgconfig.StackGresConfigList;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class ConfigScheduler extends
-    AbstractCustomResourceScheduler<StackGresConfig, StackGresConfigList> {
+public class ConfigWriter extends
+    AbstractCustomResourceWriter<StackGresConfig, StackGresConfigList> {
 
-  public ConfigScheduler() {
+  public ConfigWriter() {
     super(StackGresConfig.class, StackGresConfigList.class);
   }
 

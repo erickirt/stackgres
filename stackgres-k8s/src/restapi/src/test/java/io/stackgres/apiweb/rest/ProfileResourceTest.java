@@ -16,17 +16,17 @@ import io.stackgres.apiweb.rest.sginstanceprofile.NamespacedProfileResource;
 import io.stackgres.apiweb.rest.sginstanceprofile.ProfileResource;
 import io.stackgres.apiweb.transformer.AbstractDependencyResourceTransformer;
 import io.stackgres.apiweb.transformer.ProfileTransformer;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.fixture.Fixtures;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class ProfileResourceTest extends AbstractDependencyCustomResourceTest
-      <ProfileDto, StackGresProfile, ProfileResource, NamespacedProfileResource> {
+      <ProfileDto, StackGresInstanceProfile, ProfileResource, NamespacedProfileResource> {
 
   @Override
-  protected DefaultKubernetesResourceList<StackGresProfile> getCustomResourceList() {
+  protected DefaultKubernetesResourceList<StackGresInstanceProfile> getCustomResourceList() {
     return Fixtures.instanceProfileList().loadDefault().get();
   }
 
@@ -36,7 +36,7 @@ class ProfileResourceTest extends AbstractDependencyCustomResourceTest
   }
 
   @Override
-  protected AbstractDependencyResourceTransformer<ProfileDto, StackGresProfile> getTransformer() {
+  protected AbstractDependencyResourceTransformer<ProfileDto, StackGresInstanceProfile> getTransformer() {
     return new ProfileTransformer(
         JsonMapper.builder().build()
     );
@@ -78,7 +78,7 @@ class ProfileResourceTest extends AbstractDependencyCustomResourceTest
   }
 
   @Override
-  protected void checkCustomResource(StackGresProfile resource, Operation operation) {
+  protected void checkCustomResource(StackGresInstanceProfile resource, Operation operation) {
     assertNotNull(resource.getMetadata());
     assertEquals("stackgres", resource.getMetadata().getNamespace());
     assertEquals("size-s", resource.getMetadata().getName());

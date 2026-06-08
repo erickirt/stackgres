@@ -30,21 +30,21 @@ import jakarta.validation.constraints.AssertTrue;
 @Buildable(editableEnabled = false, generateBuilderPackage = false,
     lazyCollectionInitEnabled = false, lazyMapInitEnabled = false,
     builderPackage = "io.fabric8.kubernetes.api.builder")
-public class StackGresProfileSpec {
+public class StackGresInstanceProfileSpec {
 
   private String cpu;
 
   private String memory;
 
   @Valid
-  private StackGresProfileHugePages hugePages;
+  private StackGresInstanceProfileHugePages hugePages;
 
-  private Map<String, @Valid StackGresProfileContainer> containers;
+  private Map<String, @Valid StackGresInstanceProfileContainer> containers;
 
-  private Map<String, @Valid StackGresProfileContainer> initContainers;
+  private Map<String, @Valid StackGresInstanceProfileContainer> initContainers;
 
   @Valid
-  private StackGresProfileRequests requests;
+  private StackGresInstanceProfileRequests requests;
 
   @ReferencedField("memory")
   interface Memory extends FieldReference {
@@ -101,35 +101,35 @@ public class StackGresProfileSpec {
     this.memory = memory;
   }
 
-  public StackGresProfileHugePages getHugePages() {
+  public StackGresInstanceProfileHugePages getHugePages() {
     return hugePages;
   }
 
-  public void setHugePages(StackGresProfileHugePages hugePages) {
+  public void setHugePages(StackGresInstanceProfileHugePages hugePages) {
     this.hugePages = hugePages;
   }
 
-  public Map<String, StackGresProfileContainer> getContainers() {
+  public Map<String, StackGresInstanceProfileContainer> getContainers() {
     return containers;
   }
 
-  public void setContainers(Map<String, StackGresProfileContainer> containers) {
+  public void setContainers(Map<String, StackGresInstanceProfileContainer> containers) {
     this.containers = containers;
   }
 
-  public Map<String, StackGresProfileContainer> getInitContainers() {
+  public Map<String, StackGresInstanceProfileContainer> getInitContainers() {
     return initContainers;
   }
 
-  public void setInitContainers(Map<String, StackGresProfileContainer> initContainers) {
+  public void setInitContainers(Map<String, StackGresInstanceProfileContainer> initContainers) {
     this.initContainers = initContainers;
   }
 
-  public StackGresProfileRequests getRequests() {
+  public StackGresInstanceProfileRequests getRequests() {
     return requests;
   }
 
-  public void setRequests(StackGresProfileRequests requests) {
+  public void setRequests(StackGresInstanceProfileRequests requests) {
     this.requests = requests;
   }
 
@@ -143,10 +143,10 @@ public class StackGresProfileSpec {
     if (this == obj) {
       return true;
     }
-    if (!(obj instanceof StackGresProfileSpec)) {
+    if (!(obj instanceof StackGresInstanceProfileSpec)) {
       return false;
     }
-    StackGresProfileSpec other = (StackGresProfileSpec) obj;
+    StackGresInstanceProfileSpec other = (StackGresInstanceProfileSpec) obj;
     return Objects.equals(containers, other.containers) && Objects.equals(cpu, other.cpu)
         && Objects.equals(hugePages, other.hugePages)
         && Objects.equals(initContainers, other.initContainers)

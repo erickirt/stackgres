@@ -242,18 +242,6 @@ public class DbOpsMajorVersionUpgradeJob extends AbstractDbOpsJob {
             new EnvVarBuilder()
             .withName("LOCK_SLEEP")
             .withValue(OperatorProperty.LOCK_POLL_INTERVAL.getString())
-            .build(),
-            new EnvVarBuilder()
-            .withName("LOCK_SERVICE_ACCOUNT_KEY")
-            .withValue(StackGresContext.LOCK_SERVICE_ACCOUNT_KEY)
-            .build(),
-            new EnvVarBuilder()
-            .withName("LOCK_POD_KEY")
-            .withValue(StackGresContext.LOCK_POD_KEY)
-            .build(),
-            new EnvVarBuilder()
-            .withName("LOCK_TIMEOUT_KEY")
-            .withValue(StackGresContext.LOCK_TIMEOUT_KEY)
             .build())
         .build();
   }

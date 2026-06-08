@@ -307,4 +307,8 @@ public interface ResourceUtil {
     return username.split(":")[3];
   }
 
+  static String getServiceAccountUsername(String serviceAccont) {
+    return "system:serviceaccount:" + serviceAccont + ":";
+  }
+
 }

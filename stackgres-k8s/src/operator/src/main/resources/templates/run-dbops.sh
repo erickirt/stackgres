@@ -1,7 +1,7 @@
 #!/bin/sh
 
-LOCK_RESOURCE="$CLUSTER_CRD_NAME"
-LOCK_RESOURCE_NAME="$CLUSTER_NAME"
+# LOCK_LEASE_NAMESPACE and LOCK_LEASE_NAME are injected by the operator via env vars
+# (computed from the SGCluster UID through LeaseLockUtil.leaseNameForCluster).
 
 RESOURCE_CRD_NAME="$DBOPS_CRD_NAME"
 RESOURCE_NAME="$DBOPS_NAME"

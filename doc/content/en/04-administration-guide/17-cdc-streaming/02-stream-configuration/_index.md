@@ -82,6 +82,13 @@ debeziumProperties:
   # filtered: Create only for filtered tables
   # no_tables: Create empty publication
   publicationAutocreateMode: all_tables
+
+  # Strategy when the stored offset does not match (default: no_validation)
+  # Replaces the deprecated boolean internalSlotSeekToKnownOffsetOnStart
+  offsetMismatchStrategy: no_validation
+
+  # Controls how the LSN is flushed (default: connector)
+  lsnFlushMode: connector
 ```
 
 ### Snapshot Configuration
@@ -203,6 +210,11 @@ debeziumProperties:
   # Propagate source column types
   columnPropagateSourceType:
     - ".*"  # All columns
+
+  # Regex of property keys to sanitize/redact in logs and status
+  # Default pattern redacts keys ending in secret/password/sasl.jaas.config/
+  # basic.auth.user.info/registry.auth.client-secret
+  customSanitizePattern: ".*(secret|password)$"
 ```
 
 ### Performance Tuning
@@ -518,6 +530,23 @@ spec:
     annotations:
       pods:
         prometheus.io/scrape: "true"
+```
+
+## Status Fields
+
+The SGStream status reports progress and health:
+
+```yaml
+status:
+  conditions:
+    - type: Completed
+      status: "False"
+      observedGeneration: 3            # Generation observed when condition was set
+  snapshot:
+    numberOfErroneousEvents: 0         # Events that failed processing during snapshot
+    snapshotSkipped: false             # Whether the snapshot was skipped
+  streaming:
+    numberOfErroneousEvents: 0         # Events that failed processing while streaming
 ```
 
 ## Next Steps

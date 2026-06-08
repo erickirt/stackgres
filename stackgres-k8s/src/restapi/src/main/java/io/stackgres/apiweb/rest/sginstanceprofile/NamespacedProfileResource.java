@@ -12,7 +12,7 @@ import io.stackgres.apiweb.dto.profile.ProfileDto;
 import io.stackgres.apiweb.exception.ErrorResponse;
 import io.stackgres.apiweb.rest.AbstractNamespacedRestServiceDependency;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.Path;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -42,10 +42,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
             mediaType = "application/json",
             schema = @Schema(implementation = ErrorResponse.class))})
 public class NamespacedProfileResource
-    extends AbstractNamespacedRestServiceDependency<ProfileDto, StackGresProfile> {
+    extends AbstractNamespacedRestServiceDependency<ProfileDto, StackGresInstanceProfile> {
 
   @Override
-  public boolean belongsToCluster(StackGresProfile resource, StackGresCluster cluster) {
+  public boolean belongsToCluster(StackGresInstanceProfile resource, StackGresCluster cluster) {
     return cluster.getMetadata().getNamespace().equals(
         resource.getMetadata().getNamespace())
         && Objects.equals(cluster.getSpec().getSgInstanceProfile(),

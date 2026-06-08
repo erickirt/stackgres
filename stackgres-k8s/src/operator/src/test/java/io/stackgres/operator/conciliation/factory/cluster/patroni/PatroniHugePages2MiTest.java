@@ -14,9 +14,9 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.Volume;
 import io.stackgres.common.StackGresVolume;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileHugePages;
-import io.stackgres.common.crd.sgprofile.StackGresProfileSpec;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileHugePages;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileSpec;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
 import io.stackgres.operator.conciliation.factory.VolumePair;
 import io.stackgres.operator.initialization.DefaultProfileFactory;
@@ -44,9 +44,9 @@ class PatroniHugePages2MiTest {
 
   @Test
   void buildVolumes_whenProfileHasHugepages2Mi_shouldReturnVolume() {
-    StackGresProfile profile = new StackGresProfile();
-    StackGresProfileSpec spec = new StackGresProfileSpec();
-    StackGresProfileHugePages hugePages = new StackGresProfileHugePages();
+    StackGresInstanceProfile profile = new StackGresInstanceProfile();
+    StackGresInstanceProfileSpec spec = new StackGresInstanceProfileSpec();
+    StackGresInstanceProfileHugePages hugePages = new StackGresInstanceProfileHugePages();
     hugePages.setHugepages2Mi("2Mi");
     spec.setHugePages(hugePages);
     profile.setSpec(spec);
@@ -62,8 +62,8 @@ class PatroniHugePages2MiTest {
 
   @Test
   void buildVolumes_whenProfileDoesNotHaveHugepages2Mi_shouldReturnEmpty() {
-    StackGresProfile profile = new StackGresProfile();
-    StackGresProfileSpec spec = new StackGresProfileSpec();
+    StackGresInstanceProfile profile = new StackGresInstanceProfile();
+    StackGresInstanceProfileSpec spec = new StackGresInstanceProfileSpec();
     profile.setSpec(spec);
     when(context.getProfile()).thenReturn(Optional.of(profile));
 
@@ -74,9 +74,9 @@ class PatroniHugePages2MiTest {
 
   @Test
   void buildVolumes_whenProfileHasOnlyHugepages1Gi_shouldReturnEmpty() {
-    StackGresProfile profile = new StackGresProfile();
-    StackGresProfileSpec spec = new StackGresProfileSpec();
-    StackGresProfileHugePages hugePages = new StackGresProfileHugePages();
+    StackGresInstanceProfile profile = new StackGresInstanceProfile();
+    StackGresInstanceProfileSpec spec = new StackGresInstanceProfileSpec();
+    StackGresInstanceProfileHugePages hugePages = new StackGresInstanceProfileHugePages();
     hugePages.setHugepages1Gi("1Gi");
     spec.setHugePages(hugePages);
     profile.setSpec(spec);

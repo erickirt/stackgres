@@ -13,7 +13,7 @@ import io.stackgres.apiweb.dto.profile.ProfileDto;
 import io.stackgres.apiweb.exception.ErrorResponse;
 import io.stackgres.apiweb.rest.AbstractCustomResourceServiceDependency;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.Path;
@@ -45,10 +45,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
             mediaType = "application/json",
             schema = @Schema(implementation = ErrorResponse.class))})
 public class ProfileResource
-    extends AbstractCustomResourceServiceDependency<ProfileDto, StackGresProfile> {
+    extends AbstractCustomResourceServiceDependency<ProfileDto, StackGresInstanceProfile> {
 
   @Override
-  public boolean belongsToCluster(StackGresProfile resource, StackGresCluster cluster) {
+  public boolean belongsToCluster(StackGresInstanceProfile resource, StackGresCluster cluster) {
     return cluster.getMetadata().getNamespace().equals(
         resource.getMetadata().getNamespace())
         && Objects.equals(cluster.getSpec().getSgInstanceProfile(),
@@ -117,7 +117,7 @@ public class ProfileResource
   }
 
   @Override
-  protected void updateSpec(StackGresProfile resourceToUpdate, StackGresProfile resource) {
+  protected void updateSpec(StackGresInstanceProfile resourceToUpdate, StackGresInstanceProfile resource) {
     resourceToUpdate.setSpec(resource.getSpec());
   }
 

@@ -5,6 +5,7 @@
 
 package io.stackgres.operator.conciliation.script;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
@@ -13,15 +14,19 @@ import io.stackgres.common.crd.sgscript.StackGresScript;
 import io.stackgres.common.event.EventEmitter;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.common.resource.CustomResourceScanner;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operator.app.OperatorLockHolder;
 import io.stackgres.operator.common.Metrics;
+import io.stackgres.operator.common.StackGresScriptReview;
 import io.stackgres.operator.conciliation.AbstractConciliator;
 import io.stackgres.operator.conciliation.AbstractReconciliator;
 import io.stackgres.operator.conciliation.DeployedResourcesCache;
 import io.stackgres.operator.conciliation.HandlerDelegator;
 import io.stackgres.operator.conciliation.ReconciliationResult;
 import io.stackgres.operator.conciliation.ReconciliatorWorkerThreadPool;
+import io.stackgres.operator.configuration.OperatorPropertyContext;
+import io.stackgres.operatorframework.admissionwebhook.mutating.MutationPipeline;
+import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipeline;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.event.Observes;
@@ -30,18 +35,23 @@ import org.slf4j.helpers.MessageFormatter;
 
 @ApplicationScoped
 public class ScriptReconciliator
-    extends AbstractReconciliator<StackGresScript> {
+    extends AbstractReconciliator<StackGresScript, StackGresScriptReview> {
 
   @Dependent
   public static class Parameters {
+    @Inject OperatorPropertyContext operatorPropertyContext;
     @Inject CustomResourceScanner<StackGresScript> scanner;
     @Inject CustomResourceFinder<StackGresScript> finder;
+    @Inject MutationPipeline<StackGresScript, StackGresScriptReview> mutationPipeline;
+    @Inject ValidationPipeline<StackGresScriptReview> validationPipeline;
+    @Inject CustomResourceWriter<StackGresScript> writer;
     @Inject AbstractConciliator<StackGresScript> conciliator;
     @Inject DeployedResourcesCache deployedResourcesCache;
     @Inject HandlerDelegator<StackGresScript> handlerDelegator;
     @Inject KubernetesClient client;
     @Inject EventEmitter<StackGresScript> eventController;
-    @Inject CustomResourceScheduler<StackGresScript> scriptScheduler;
+    @Inject CustomResourceWriter<StackGresScript> scriptWriter;
+    @Inject ObjectMapper objectMapper;
     @Inject ScriptStatusManager statusManager;
     @Inject OperatorLockHolder operatorLockReconciliator;
     @Inject ReconciliatorWorkerThreadPool reconciliatorWorkerThreadPool;
@@ -49,21 +59,46 @@ public class ScriptReconciliator
   }
 
   private final EventEmitter<StackGresScript> eventController;
-  private final CustomResourceScheduler<StackGresScript> scriptScheduler;
+  private final CustomResourceWriter<StackGresScript> scriptWriter;
   private final ScriptStatusManager statusManager;
 
   @Inject
   public ScriptReconciliator(Parameters parameters) {
-    super(parameters.scanner, parameters.finder,
-        parameters.conciliator, parameters.deployedResourcesCache,
-        parameters.handlerDelegator, parameters.client,
+    super(
+        parameters.operatorPropertyContext,
+        parameters.scanner,
+        parameters.finder,
+        parameters.objectMapper,
+        parameters.mutationPipeline,
+        parameters.validationPipeline,
+        parameters.writer,
+        parameters.conciliator,
+        parameters.deployedResourcesCache,
+        parameters.handlerDelegator,
+        parameters.client,
         parameters.operatorLockReconciliator,
         parameters.reconciliatorWorkerThreadPool,
         parameters.metrics,
         StackGresScript.KIND);
     this.eventController = parameters.eventController;
-    this.scriptScheduler = parameters.scriptScheduler;
+    this.scriptWriter = parameters.scriptWriter;
     this.statusManager = parameters.statusManager;
+  }
+
+  @Override
+  protected void setSpecAndStatus(StackGresScript currentConfig, StackGresScript mutatedAndValidatedConfig) {
+    currentConfig.setSpec(mutatedAndValidatedConfig.getSpec());
+    currentConfig.setStatus(mutatedAndValidatedConfig.getStatus());
+  }
+
+  @Override
+  protected StackGresScriptReview createAdmissionReview() {
+    return new StackGresScriptReview();
+  }
+
+  @Override
+  protected Class<StackGresScript> getResourceClass() {
+    return StackGresScript.class;
   }
 
   void onStart(@Observes StartupEvent ev) {
@@ -81,7 +116,7 @@ public class ScriptReconciliator
 
   @Override
   protected void onPreReconciliation(StackGresScript config) {
-    scriptScheduler.update(config, statusManager::refreshCondition);
+    scriptWriter.update(config, statusManager::refreshCondition);
   }
 
   @Override

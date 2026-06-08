@@ -7,20 +7,20 @@ package io.stackgres.operator.conversion;
 
 import java.util.List;
 
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
-@Conversion(StackGresProfile.KIND)
+@Conversion(StackGresInstanceProfile.KIND)
 public class SgInstanceProfileConversionPipeline implements ConversionPipeline {
 
   private final List<Converter> converters;
 
   @Inject
   public SgInstanceProfileConversionPipeline(
-      @Conversion(StackGresProfile.KIND) Instance<Converter> converters) {
+      @Conversion(StackGresInstanceProfile.KIND) Instance<Converter> converters) {
     this.converters = converters.stream().toList();
   }
 

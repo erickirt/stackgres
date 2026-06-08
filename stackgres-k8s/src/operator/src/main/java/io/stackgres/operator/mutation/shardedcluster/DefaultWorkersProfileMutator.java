@@ -6,7 +6,7 @@
 package io.stackgres.operator.mutation.shardedcluster;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorkers;
 import io.stackgres.operator.common.StackGresShardedClusterReview;
@@ -18,12 +18,12 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class DefaultWorkersProfileMutator
     extends AbstractDefaultResourceMutator<
-        StackGresProfile, HasMetadata, StackGresShardedCluster, StackGresShardedClusterReview>
+        StackGresInstanceProfile, HasMetadata, StackGresShardedCluster, StackGresShardedClusterReview>
     implements ShardedClusterMutator {
 
   @Inject
   public DefaultWorkersProfileMutator(
-      DefaultCustomResourceFactory<StackGresProfile, HasMetadata> resourceFactory) {
+      DefaultCustomResourceFactory<StackGresInstanceProfile, HasMetadata> resourceFactory) {
     super(resourceFactory);
   }
 

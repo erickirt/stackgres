@@ -37,7 +37,7 @@ import io.stackgres.common.crd.sgscript.StackGresScriptStatus;
 import io.stackgres.common.patroni.PatroniCtl;
 import io.stackgres.common.patroni.StackGresPasswordKeys;
 import io.stackgres.common.resource.CustomResourceFinder;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.common.resource.ResourceFinder;
 import io.stackgres.operatorframework.reconciliation.ReconciliationResult;
 import io.stackgres.operatorframework.reconciliation.SafeReconciliator;
@@ -60,7 +60,7 @@ public class ManagedSqlReconciliator extends SafeReconciliator<StackGresClusterC
   private final CustomResourceFinder<StackGresScript> scriptFinder;
   private final ResourceFinder<Secret> secretFinder;
   private final ResourceFinder<ConfigMap> configMapFinder;
-  private final CustomResourceScheduler<StackGresCluster> clusterScheduler;
+  private final CustomResourceWriter<StackGresCluster> clusterWriter;
   private final String podName;
   private final EventController eventController;
 
@@ -72,7 +72,7 @@ public class ManagedSqlReconciliator extends SafeReconciliator<StackGresClusterC
     @Inject CustomResourceFinder<StackGresScript> scriptFinder;
     @Inject ResourceFinder<Secret> secretFinder;
     @Inject ResourceFinder<ConfigMap> configMapFinder;
-    @Inject CustomResourceScheduler<StackGresCluster> clusterScheduler;
+    @Inject CustomResourceWriter<StackGresCluster> clusterWriter;
     @Inject EventController eventController;
   }
 
@@ -85,7 +85,7 @@ public class ManagedSqlReconciliator extends SafeReconciliator<StackGresClusterC
     this.scriptFinder = parameters.scriptFinder;
     this.secretFinder = parameters.secretFinder;
     this.configMapFinder = parameters.configMapFinder;
-    this.clusterScheduler = parameters.clusterScheduler;
+    this.clusterWriter = parameters.clusterWriter;
     this.podName = parameters.propertyContext
         .getString(ClusterControllerProperty.CLUSTER_CONTROLLER_POD_NAME);
     this.eventController = parameters.eventController;
@@ -297,7 +297,7 @@ public class ManagedSqlReconciliator extends SafeReconciliator<StackGresClusterC
 
   protected void updateManagedSqlStatus(StackGresClusterContext context,
       StackGresClusterManagedSqlStatus managedSqlStatus) {
-    clusterScheduler.update(context.getCluster(),
+    clusterWriter.update(context.getCluster(),
         (currentCluster) -> {
           if (currentCluster.getStatus() == null) {
             currentCluster.setStatus(new StackGresClusterStatus());

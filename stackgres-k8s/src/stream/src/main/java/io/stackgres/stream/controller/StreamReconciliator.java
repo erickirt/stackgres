@@ -26,7 +26,7 @@ import io.stackgres.common.crd.sgstream.StackGresStreamSourcePostgres;
 import io.stackgres.common.crd.sgstream.StackGresStreamSourceSgCluster;
 import io.stackgres.common.crd.sgstream.StackGresStreamStatus;
 import io.stackgres.common.crd.sgstream.StackGresStreamStreamingStatus;
-import io.stackgres.common.resource.CustomResourceScheduler;
+import io.stackgres.common.resource.CustomResourceWriter;
 import io.stackgres.operatorframework.reconciliation.ReconciliationResult;
 import io.stackgres.operatorframework.reconciliation.Reconciliator;
 import io.stackgres.stream.app.StreamMBeamMonitor;
@@ -52,13 +52,13 @@ public class StreamReconciliator
 
   private final StreamMBeamMonitor mbeanMonitor;
   private final Metrics metrics;
-  private final CustomResourceScheduler<StackGresStream> streamScheduler;
+  private final CustomResourceWriter<StackGresStream> streamWriter;
 
   @Inject
   public StreamReconciliator(Parameters parameters) {
     this.mbeanMonitor = parameters.mbeanMonitor;
     this.metrics = parameters.metrics;
-    this.streamScheduler = parameters.streamScheduler;
+    this.streamWriter = parameters.streamWriter;
   }
 
   public StreamReconciliator() {
@@ -66,7 +66,7 @@ public class StreamReconciliator
     CdiUtil.checkPublicNoArgsConstructorIsCalledToCreateProxy(getClass());
     this.mbeanMonitor = null;
     this.metrics = null;
-    this.streamScheduler = null;
+    this.streamWriter = null;
   }
 
   @Override
@@ -131,7 +131,7 @@ public class StreamReconciliator
     stream.getStatus().getEvents().setTotalNumberOfEventsSent(metrics.getTotalNumberOfEventsSent());
     stream.getStatus().getEvents().setLastErrorSeen(metrics.getLastErrorSeen());
     stream.getStatus().getEvents().setTotalNumberOfErrorsSeen(metrics.getTotalNumberOfErrorsSeen());
-    streamScheduler.update(stream, Unchecked.consumer(
+    streamWriter.update(stream, Unchecked.consumer(
         currentStream -> currentStream.setStatus(stream.getStatus())));
     return new ReconciliationResult<Void>();
   }
@@ -193,7 +193,7 @@ public class StreamReconciliator
   public static class Parameters {
     @Inject StreamMBeamMonitor mbeanMonitor;
     @Inject Metrics metrics;
-    @Inject CustomResourceScheduler<StackGresStream> streamScheduler;
+    @Inject CustomResourceWriter<StackGresStream> streamWriter;
     @Inject StreamPropertyContext propertyContext;
   }
 

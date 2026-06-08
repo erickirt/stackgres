@@ -12,14 +12,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.stackgres.apiweb.dto.profile.ProfileDto;
 import io.stackgres.apiweb.dto.profile.ProfileSpec;
 import io.stackgres.apiweb.dto.profile.ProfileStatus;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileSpec;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileSpec;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class ProfileTransformer
-    extends AbstractDependencyResourceTransformer<ProfileDto, StackGresProfile> {
+    extends AbstractDependencyResourceTransformer<ProfileDto, StackGresInstanceProfile> {
 
   private final ObjectMapper mapper;
 
@@ -29,17 +29,17 @@ public class ProfileTransformer
   }
 
   @Override
-  public StackGresProfile toCustomResource(ProfileDto source, StackGresProfile original) {
-    StackGresProfile transformation = Optional.ofNullable(original)
-        .map(o -> mapper.convertValue(original, StackGresProfile.class))
-        .orElseGet(StackGresProfile::new);
+  public StackGresInstanceProfile toCustomResource(ProfileDto source, StackGresInstanceProfile original) {
+    StackGresInstanceProfile transformation = Optional.ofNullable(original)
+        .map(o -> mapper.convertValue(original, StackGresInstanceProfile.class))
+        .orElseGet(StackGresInstanceProfile::new);
     transformation.setMetadata(getCustomResourceMetadata(source, original));
     transformation.setSpec(getCustomResourceSpec(source.getSpec()));
     return transformation;
   }
 
   @Override
-  public ProfileDto toResource(StackGresProfile source, List<String> clusters) {
+  public ProfileDto toResource(StackGresInstanceProfile source, List<String> clusters) {
     ProfileDto transformation = new ProfileDto();
     transformation.setMetadata(getResourceMetadata(source));
     transformation.setSpec(getResourceSpec(source.getSpec()));
@@ -50,11 +50,11 @@ public class ProfileTransformer
     return transformation;
   }
 
-  private StackGresProfileSpec getCustomResourceSpec(ProfileSpec source) {
-    return mapper.convertValue(source, StackGresProfileSpec.class);
+  private StackGresInstanceProfileSpec getCustomResourceSpec(ProfileSpec source) {
+    return mapper.convertValue(source, StackGresInstanceProfileSpec.class);
   }
 
-  private ProfileSpec getResourceSpec(StackGresProfileSpec source) {
+  private ProfileSpec getResourceSpec(StackGresInstanceProfileSpec source) {
     return mapper.convertValue(source, ProfileSpec.class);
   }
 

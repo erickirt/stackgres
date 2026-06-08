@@ -26,8 +26,8 @@ import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfigList;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfig;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfigList;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileList;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileList;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackup;
 import io.stackgres.common.crd.sgshardedbackup.StackGresShardedBackupList;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
@@ -119,8 +119,8 @@ class ShardedClusterValidationQuarkusTest {
     pgConfig.getSpec().setPostgresVersion(POSTGRES_MAJOR_VERSION);
     client.resource(pgConfig).createOrReplace();
 
-    StackGresProfileList instanceList =
-        client.resources(StackGresProfile.class, StackGresProfileList.class)
+    StackGresInstanceProfileList instanceList =
+        client.resources(StackGresInstanceProfile.class, StackGresInstanceProfileList.class)
             .list();
     client.resourceList(instanceList.getItems()).delete();
     var instanceConfig = Fixtures.instanceProfile().loadSizeS().get();
@@ -160,8 +160,8 @@ class ShardedClusterValidationQuarkusTest {
         .list();
     client.resourceList(pgconfList).delete();
 
-    StackGresProfileList instanceList = client
-        .resources(StackGresProfile.class, StackGresProfileList.class)
+    StackGresInstanceProfileList instanceList = client
+        .resources(StackGresInstanceProfile.class, StackGresInstanceProfileList.class)
         .list();
     client.resourceList(instanceList).delete();
 

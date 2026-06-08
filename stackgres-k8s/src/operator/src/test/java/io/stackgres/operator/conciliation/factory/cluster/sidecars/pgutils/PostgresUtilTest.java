@@ -17,7 +17,7 @@ import io.stackgres.common.StackGresContainer;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
 import io.stackgres.operator.conciliation.factory.PostgresSocketMounts;
@@ -137,7 +137,7 @@ class PostgresUtilTest {
             .config(getDefaultConfig())
             .source(getDefaultCluster())
             .postgresConfig(new StackGresPostgresConfig())
-            .profile(new StackGresProfile())
+            .profile(new StackGresInstanceProfile())
             .currentInstances(0)
             .build())
         .dataVolumeName("test")

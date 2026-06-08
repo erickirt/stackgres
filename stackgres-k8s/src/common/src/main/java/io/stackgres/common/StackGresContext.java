@@ -121,12 +121,10 @@ public interface StackGresContext {
   String AUTH_KEY = "api.stackgres.io/auth";
   String AUTH_USER_VALUE = "user";
 
-  String LOCK_SERVICE_ACCOUNT_KEY = STACKGRES_KEY_PREFIX + "lockServiceAccount";
-  String LOCK_POD_KEY = STACKGRES_KEY_PREFIX + "lockPod";
-  String LOCK_TIMEOUT_KEY = STACKGRES_KEY_PREFIX + "lockTimeout";
-
   String INTERNAL_STACKGRES_KEY_PREFIX = "internal.stackgres.io/";
 
   String UPDATE_UNOWNED_RESOURCE_KEY = INTERNAL_STACKGRES_KEY_PREFIX + "update-unowned-resource";
+
+  String PREVIOUS_KEY = INTERNAL_STACKGRES_KEY_PREFIX + "previous";
 
 }

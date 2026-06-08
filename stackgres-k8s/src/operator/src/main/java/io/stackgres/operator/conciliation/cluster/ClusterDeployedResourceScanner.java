@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.v1.CronJob;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -41,8 +42,8 @@ import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfigList;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfig;
 import io.stackgres.common.crd.sgpooling.StackGresPoolingConfigList;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
-import io.stackgres.common.crd.sgprofile.StackGresProfileList;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfileList;
 import io.stackgres.common.crd.sgscript.StackGresScript;
 import io.stackgres.common.crd.sgscript.StackGresScriptList;
 import io.stackgres.common.labels.LabelFactoryForCluster;
@@ -149,10 +150,11 @@ public class ClusterDeployedResourceScanner
           Map.entry(Job.class, client -> client.batch().v1().jobs()),
           Map.entry(CronJob.class, client -> client.batch().v1().cronjobs()),
           Map.entry(StatefulSet.class, client -> client.apps().statefulSets()),
+          Map.entry(Lease.class, KubernetesClient::leases),
           Map.entry(StackGresScript.class, client -> client
               .resources(StackGresScript.class, StackGresScriptList.class)),
-          Map.entry(StackGresProfile.class, client -> client
-              .resources(StackGresProfile.class, StackGresProfileList.class)),
+          Map.entry(StackGresInstanceProfile.class, client -> client
+              .resources(StackGresInstanceProfile.class, StackGresInstanceProfileList.class)),
           Map.entry(StackGresPostgresConfig.class, client -> client
               .resources(StackGresPostgresConfig.class, StackGresPostgresConfigList.class)),
           Map.entry(StackGresPoolingConfig.class, client -> client

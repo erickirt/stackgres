@@ -10,10 +10,10 @@ import io.stackgres.common.crd.sgobjectstorage.StackGresObjectStorageList;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class ObjectStorageScheduler
-    extends AbstractCustomResourceScheduler<StackGresObjectStorage, StackGresObjectStorageList> {
+public class ObjectStorageWriter
+    extends AbstractCustomResourceWriter<StackGresObjectStorage, StackGresObjectStorageList> {
 
-  public ObjectStorageScheduler() {
+  public ObjectStorageWriter() {
     super(StackGresObjectStorage.class, StackGresObjectStorageList.class);
   }
 

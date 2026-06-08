@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
 import io.stackgres.common.crd.sgdbops.StackGresDbOps;
-import io.stackgres.common.crd.sgprofile.StackGresProfile;
+import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.dbops.StackGresDbOpsContext;
@@ -34,7 +34,7 @@ abstract class DbOpsJobTestCase {
 
   StackGresDbOps dbOps;
 
-  StackGresProfile clusterProfile;
+  StackGresInstanceProfile clusterProfile;
 
   @BeforeEach
   void setUp() {
