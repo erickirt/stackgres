@@ -27,6 +27,8 @@ e2e_test() {
   run_test "Creating a custom labels with http api" create_api_custom_labels
 
   run_test "Getting a custom labels with http api" get_api_custom_labels
+
+  run_test "Adding new custom labels are applied to existing Pods and PVCs" existing_resources_custom_labels
 }
 
 check_label(){
@@ -40,6 +42,40 @@ check_label(){
     success "Custom labels were created"
   else
     fail "Custom labels did not match the expected value"
+  fi
+}
+
+check_pod_label(){
+  local INSTANCE="$1"
+  local EXPECTED_LABEL_VALUE="$2"
+
+  local POD_LABEL="${POD_LABEL:-"test-label"}"
+
+  local ACTUAL_LABEL
+  ACTUAL_LABEL="$(kubectl get pod -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-$INSTANCE" -o jsonpath="{.metadata.labels.$POD_LABEL}")"
+
+  if assert_string_equal "$EXPECTED_LABEL_VALUE" "$ACTUAL_LABEL"
+  then
+    success "Custom label was applied to the existing Pod $CLUSTER_NAME-$INSTANCE"
+  else
+    fail "Custom label was not applied to the existing Pod $CLUSTER_NAME-$INSTANCE"
+  fi
+}
+
+check_pvc_label(){
+  local INSTANCE="$1"
+  local EXPECTED_LABEL_VALUE="$2"
+
+  local PVC_LABEL="${PVC_LABEL:-"test-all-label"}"
+
+  local ACTUAL_LABEL
+  ACTUAL_LABEL="$(kubectl get pvc -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-data-$CLUSTER_NAME-$INSTANCE" -o jsonpath="{.metadata.labels.$PVC_LABEL}")"
+
+  if assert_string_equal "$EXPECTED_LABEL_VALUE" "$ACTUAL_LABEL"
+  then
+    success "Custom label was applied to the existing PVC $CLUSTER_NAME-data-$CLUSTER_NAME-$INSTANCE"
+  else
+    fail "Custom label was not applied to the existing PVC $CLUSTER_NAME-data-$CLUSTER_NAME-$INSTANCE"
   fi
 }
 
@@ -181,4 +217,89 @@ EOF
 
 run_curl -r "stackgres/namespaces/$CLUSTER_NAMESPACE/sgclusters/$CLUSTER_NAME"
   assert_string_equal "$RANDOM_VALUE" "$LABEL_VALUE"
+}
+
+existing_resources_custom_labels(){
+  local POD_RANDOM_VALUE="$(random_string)"
+  local ALL_RANDOM_VALUE="$(random_string)"
+
+  cat <<EOF | kubectl apply -f -
+apiVersion: stackgres.io/v1
+kind: SGCluster
+metadata:
+  name: $CLUSTER_NAME
+  namespace: $CLUSTER_NAMESPACE
+spec:
+  instances: 2
+  postgres:
+    version: "$E2E_POSTGRES_VERSION"
+  pods:
+    managementPolicy: Parallel
+    persistentVolume:
+      size: '128Mi'
+    scheduling:
+      nodeSelector:
+        $NODE_LABEL_KEY: $NODE_LABEL_VALUE
+  sgInstanceProfile: 'size-s'
+  nonProductionOptions:
+    disableClusterPodAntiAffinity: true
+EOF
+
+  wait_until kubectl get pod -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-0"
+  wait_until kubectl get pod -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-1"
+
+  local POD_0_UID POD_1_UID
+  POD_0_UID="$(kubectl get pod -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-0" -o jsonpath='{.metadata.uid}')"
+  POD_1_UID="$(kubectl get pod -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-1" -o jsonpath='{.metadata.uid}')"
+
+  cat <<EOF | kubectl apply -f -
+apiVersion: stackgres.io/v1
+kind: SGCluster
+metadata:
+  name: $CLUSTER_NAME
+  namespace: $CLUSTER_NAMESPACE
+spec:
+  instances: 2
+  postgres:
+    version: "$E2E_POSTGRES_VERSION"
+  pods:
+    persistentVolume:
+      size: '128Mi'
+    scheduling:
+      nodeSelector:
+        $NODE_LABEL_KEY: $NODE_LABEL_VALUE
+  sgInstanceProfile: 'size-s'
+  nonProductionOptions:
+    disableClusterPodAntiAffinity: true
+  metadata:
+    labels:
+      clusterPods:
+        test-label: '$POD_RANDOM_VALUE'
+      allResources:
+        test-all-label: '$ALL_RANDOM_VALUE'
+EOF
+
+  # The newly added labels must be applied to the already existing Pods
+  wait_until check_pod_label "0" "$POD_RANDOM_VALUE"
+  wait_until check_pod_label "1" "$POD_RANDOM_VALUE"
+
+  POD_LABEL=test-all-label wait_until check_pod_label "0" "$ALL_RANDOM_VALUE"
+  POD_LABEL=test-all-label wait_until check_pod_label "1" "$ALL_RANDOM_VALUE"
+
+  # The newly added labels must be applied to the already existing PVCs
+  wait_until check_pvc_label "0" "$ALL_RANDOM_VALUE"
+  wait_until check_pvc_label "1" "$ALL_RANDOM_VALUE"
+
+  # The existing Pods must have been patched in place and not recreated
+  if assert_string_equal "$POD_0_UID" \
+    "$(kubectl get pod -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-0" -o jsonpath='{.metadata.uid}')" \
+    && assert_string_equal "$POD_1_UID" \
+    "$(kubectl get pod -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-1" -o jsonpath='{.metadata.uid}')"
+  then
+    success "Custom labels were applied to the existing Pods without recreating them"
+  else
+    fail "Custom labels were applied by recreating the Pods instead of patching them in place"
+  fi
+
+  kubectl delete sgcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME"
 }

@@ -31,6 +31,8 @@ e2e_test() {
   run_test "Creating a custom annotations with http api" create_api_custom_annotations
 
   run_test "Getting a custom annotations with http api" get_api_custom_annotations
+
+  run_test "Adding new custom annotations are applied to existing Pods" existing_pods_custom_annotations
 }
 
 direct_custom_annotations(){
@@ -271,4 +273,85 @@ EOF
 
   assert_string_equal "$POD_RANDOM_VALUE" "$POD_ANNOTATION_VALUE"
   assert_string_equal "$SERVICE_RANDOM_VALUE" "$SERVICE_ANNOTATION_VALUE"
+}
+
+existing_pods_custom_annotations(){
+  local POD_RANDOM_VALUE="$(random_string)"
+  local ALL_RANDOM_VALUE="$(random_string)"
+
+  cat <<EOF | kubectl apply -f -
+apiVersion: stackgres.io/v1
+kind: SGCluster
+metadata:
+  name: $CLUSTER_NAME
+  namespace: $CLUSTER_NAMESPACE
+spec:
+  instances: 2
+  postgres:
+    version: "$E2E_POSTGRES_VERSION"
+  pods:
+    managementPolicy: Parallel
+    persistentVolume:
+      size: '128Mi'
+    scheduling:
+      nodeSelector:
+        $NODE_LABEL_KEY: $NODE_LABEL_VALUE
+  sgInstanceProfile: 'size-s'
+  nonProductionOptions:
+    disableClusterPodAntiAffinity: true
+EOF
+
+  wait_until kubectl get pod -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-0"
+  wait_until kubectl get pod -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-1"
+
+  local POD_0_UID POD_1_UID
+  POD_0_UID="$(kubectl get pod -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-0" -o jsonpath='{.metadata.uid}')"
+  POD_1_UID="$(kubectl get pod -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-1" -o jsonpath='{.metadata.uid}')"
+
+  cat <<EOF | kubectl apply -f -
+apiVersion: stackgres.io/v1
+kind: SGCluster
+metadata:
+  name: $CLUSTER_NAME
+  namespace: $CLUSTER_NAMESPACE
+spec:
+  instances: 2
+  postgres:
+    version: "$E2E_POSTGRES_VERSION"
+  metadata:
+    annotations:
+      clusterPods:
+        test-annotation: '$POD_RANDOM_VALUE'
+      allResources:
+        test-all-annotation: '$ALL_RANDOM_VALUE'
+  pods:
+    persistentVolume:
+      size: '128Mi'
+    scheduling:
+      nodeSelector:
+        $NODE_LABEL_KEY: $NODE_LABEL_VALUE
+  sgInstanceProfile: 'size-s'
+  nonProductionOptions:
+    disableClusterPodAntiAffinity: true
+EOF
+
+  # The newly added annotations must be applied to the already existing Pods
+  wait_until check_pod_annotation "0" "$POD_RANDOM_VALUE"
+  wait_until check_pod_annotation "1" "$POD_RANDOM_VALUE"
+
+  POD_ANNOTATION=test-all-annotation wait_until check_pod_annotation "0" "$ALL_RANDOM_VALUE"
+  POD_ANNOTATION=test-all-annotation wait_until check_pod_annotation "1" "$ALL_RANDOM_VALUE"
+
+  # The existing Pods must have been patched in place and not recreated
+  if assert_string_equal "$POD_0_UID" \
+    "$(kubectl get pod -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-0" -o jsonpath='{.metadata.uid}')" \
+    && assert_string_equal "$POD_1_UID" \
+    "$(kubectl get pod -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME-1" -o jsonpath='{.metadata.uid}')"
+  then
+    success "Custom annotations were applied to the existing Pods without recreating them"
+  else
+    fail "Custom annotations were applied by recreating the Pods instead of patching them in place"
+  fi
+
+  kubectl delete sgcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME"
 }
