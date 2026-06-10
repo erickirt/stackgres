@@ -13,7 +13,6 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -229,17 +228,17 @@ class ClusterStatefulSetWithPrimaryReconciliationHandlerTest {
     assertEquals(desiredReplicas, sts.getSpec().getReplicas());
 
     verify(defaultHandler, atLeastOnce()).patch(any(), podArgumentCaptor.capture(), any());
-    for (var updatedPod : podArgumentCaptor.getAllValues()
-        .stream().filter(Pod.class::isInstance).toList()) {
-      String disruptableValue = updatedPod.getMetadata().getLabels()
-          .get(labelFactory.labelMapper().disruptableKey(cluster));
-
-      assertEquals(StackGresContext.RIGHT_VALUE, disruptableValue);
-    }
+    var updatedPods = podArgumentCaptor.getAllValues()
+        .stream().filter(Pod.class::isInstance).toList();
+    assertEquals(1, updatedPods.size(),
+        "exactly the non-disruptable primary Pod should be patched back to disruptable");
+    String disruptableValue = updatedPods.get(0).getMetadata().getLabels()
+        .get(labelFactory.labelMapper().disruptableKey(cluster));
+    assertEquals(StackGresContext.RIGHT_VALUE, disruptableValue);
 
     verify(podScanner, times(5)).getResourcesInNamespaceWithLabels(anyString(), anyMap());
     verify(defaultHandler).patch(any(), any(StatefulSet.class), any());
-    verify(defaultHandler, atMostOnce()).patch(any(), any(Pod.class), any());
+    verify(defaultHandler, times(1)).patch(any(), any(Pod.class), any());
     verify(defaultHandler, never()).delete(any(), any(StatefulSet.class));
     verify(defaultHandler, never()).patch(any(), any(PersistentVolumeClaim.class), any());
   }
