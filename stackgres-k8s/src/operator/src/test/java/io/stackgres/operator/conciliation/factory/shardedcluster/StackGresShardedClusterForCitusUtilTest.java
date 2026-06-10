@@ -863,7 +863,7 @@ class StackGresShardedClusterForCitusUtilTest {
     Assertions.assertEquals(
         configuration.getSgPoolingConfig(),
         cluster.getSpec().getConfigurations().getSgPoolingConfig());
-    if (cluster.getSpec().getPods() != null) {
+    if (pod != null) {
       Assertions.assertEquals(
           pod.getDisableConnectionPooling(),
           cluster.getSpec().getPods().getDisableConnectionPooling());
