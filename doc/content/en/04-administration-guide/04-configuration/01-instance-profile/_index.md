@@ -354,6 +354,64 @@ cluster-controller:
 
 In the latter case the total accounting of `cpu` resources requests for the Pod would be `6250m` instead of `4` and for `memory` would be of `9Gi` instead of `8Gi`.
 
+## Quality of Service (Guaranteed QoS)
+
+Kubernetes assigns each Pod a [Quality of Service (QoS) class](https://kubernetes.io/docs/concepts/workloads/pods/pod-qos/) derived from its containers' resource requests and limits. A Pod is placed in the `Guaranteed` class — the class least likely to be evicted or OOM-killed under node memory pressure — only when **every** container *and* init container has both a CPU and a memory **limit** that is **equal** to its corresponding **request**.
+
+By default a StackGres Pod is `Burstable`: the `patroni` container receives limits, but its requests are lower (the total split described above) and the sidecar containers receive requests without limits. To make the Pods `Guaranteed`, every container must have matching requests and limits. This requires two `SGCluster.spec.pods.resources` flags, combined with a profile whose requests mirror its limits:
+
+1. `enableClusterLimitsRequirements: true` — so the sidecar and init containers also receive limits (from `SGInstanceProfile.spec.containers` / `.spec.initContainers`), matching their requests.
+2. `disableResourcesRequestsSplitFromTotal: true` — so the `patroni` container's requests are assigned directly from `SGInstanceProfile.spec.requests.cpu`/`memory` instead of the total minus the other containers, allowing them to equal its limits.
+
+When an `SGInstanceProfile` is created specifying only the top-level `cpu` and `memory` fields, StackGres populates the `requests` sections with the **same** values as the limits sections (see [Resources](#resources) above), so requests already equal limits for every container. In that case the two flags are all that is needed:
+
+```yaml
+apiVersion: stackgres.io/v1
+kind: SGInstanceProfile
+metadata:
+  name: size-small
+spec:
+  cpu: "4"
+  memory: 8Gi
+---
+apiVersion: stackgres.io/v1
+kind: SGCluster
+metadata:
+  name: cluster
+spec:
+  sgInstanceProfile: size-small
+  pods:
+    resources:
+      enableClusterLimitsRequirements: true
+      disableResourcesRequestsSplitFromTotal: true
+```
+
+With this configuration every container ends up with `requests == limits`:
+
+```
+$ kubectl get pod cluster-0 --template '{{ range .spec.containers }}{{ printf "%s:\n  requests: %s\n  limits:   %s\n\n" .name .resources.requests .resources.limits }}{{ end }}'
+patroni:
+  requests: map[cpu:4 memory:8Gi]
+  limits:   map[cpu:4 memory:8Gi]
+
+envoy:
+  requests: map[cpu:1 memory:64Mi]
+  limits:   map[cpu:1 memory:64Mi]
+
+[...]
+```
+
+and the Pod is reported as `Guaranteed`:
+
+```
+$ kubectl get pod cluster-0 --template '{{ .status.qosClass }}'
+Guaranteed
+```
+
+> If you provide a custom `requests` section (or custom containers), make sure each value mirrors the corresponding limit: the top-level `cpu`/`memory`, and every entry under `containers`/`initContainers` (including any `custom-<name>` container). A single container whose request differs from its limit — or that has no limit — downgrades the whole Pod to `Burstable`.
+
+**Trade-offs.** `Guaranteed` maximizes the Pod's protection from eviction and node-pressure OOM kills, but it does not eliminate CPU throttling: because every container now has a CPU limit, the kernel's CFS scheduler can still throttle bursts, which may add latency to a Postgres workload (some operators deliberately keep CPU limits off for latency-sensitive databases). It also reserves more resources — with the total split disabled, the node must fit the `patroni` container at the full profile size **plus** every sidecar and init container, so plan node capacity accordingly.
+
 ## Huge Pages
 
 Huge pages can be configured for the `patroni` container by setting the value of `hugepages-1Gi` or `hugepages-2Mi` (for huge pages of `1Gi` or `2Mi` respectively).
