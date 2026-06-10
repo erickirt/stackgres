@@ -127,7 +127,7 @@ public class MetadataValidator implements StreamValidator {
           }
 
           final Map<String, String> serviceAccount =
-              Objects.requireNonNullElseGet(annotations.getAllResources(), Map::of);
+              Objects.requireNonNullElseGet(annotations.getServiceAccount(), Map::of);
           for (var entry : serviceAccount.entrySet()) {
             checkAnnotation(annotationServiceAccountPath, entry.getKey());
           }
