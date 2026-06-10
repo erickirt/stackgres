@@ -61,7 +61,7 @@ Each Pod in an SGCluster contains several containers that work together to provi
 **Optional Sidecars:**
 
 - `envoy`: Edge proxy for connection routing (may be deprecated in future versions)
-- `pgbouncer`: Connection pooling for improved connection scalability (port 5432)
+- `pgbouncer`: Connection pooling for improved connection scalability (port 6432)
 - `prometheus-postgres-exporter`: Exports Postgres metrics for Prometheus monitoring
 - `postgres-util`: Debugging and manual operations container (no active process, waits for user connection)
 - `fluent-bit`: Sends logs to configured SGDistributedLogs instance when distributed logs are configured

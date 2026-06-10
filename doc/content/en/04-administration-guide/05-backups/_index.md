@@ -31,7 +31,7 @@ spec:
     - sgObjectStorage: # name of the referenced SGObjectStorage
       path: # leave this empty for the operator to fill it with a default value
             # and only configure if you restore the same cluster from its own backup
-      cronSchedule: '0 5 0 0 0'
+      cronSchedule: '0 5 * * *'
       retention: 5
       compression: # <lz4|lzma|brotli>
       performance:
