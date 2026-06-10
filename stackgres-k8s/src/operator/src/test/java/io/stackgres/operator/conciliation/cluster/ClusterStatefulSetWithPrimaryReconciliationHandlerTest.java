@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
-import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -68,9 +67,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -82,6 +78,9 @@ class ClusterStatefulSetWithPrimaryReconciliationHandlerTest {
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(
       ClusterStatefulSetWithPrimaryReconciliationHandlerTest.class);
+
+  // Seeded so that a failing replica count is reproducible across runs.
+  private final Random random = new Random(0);
 
   private final LabelFactoryForCluster labelFactory =
       new ClusterLabelFactory(new ClusterLabelMapper());
@@ -202,14 +201,6 @@ class ClusterStatefulSetWithPrimaryReconciliationHandlerTest {
     verify(defaultHandler, never()).patch(any(), any(Pod.class), any());
     verify(defaultHandler, never()).delete(any(), any(StatefulSet.class));
     verify(defaultHandler, never()).patch(any(), any(PersistentVolumeClaim.class), any());
-  }
-
-  public static class Source implements ArgumentsProvider {
-    @Override
-    public Stream<? extends Arguments> provideArguments(ExtensionContext context)
-        throws Exception {
-      return Seq.range(0, 100).map(i -> Arguments.of(i));
-    }
   }
 
   @Test
@@ -670,7 +661,7 @@ class ClusterStatefulSetWithPrimaryReconciliationHandlerTest {
   }
 
   private int getRandomDesiredReplicas(int min) {
-    return new Random().nextInt(10) + min;
+    return random.nextInt(10) + min;
   }
 
   @SuppressWarnings("unchecked")
