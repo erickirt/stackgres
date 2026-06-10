@@ -12,7 +12,6 @@ import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgcluster.StackGresClusterNonProduction;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPods;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPodsPersistentVolume;
-import io.stackgres.common.crd.sgcluster.StackGresClusterPodsPersistentVolumeIoLimits;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
 import io.stackgres.common.crd.sgcluster.StackGresFeatureGates;
 import io.stackgres.operator.common.StackGresClusterReview;
