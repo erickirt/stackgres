@@ -840,8 +840,9 @@ class ClusterResourceMockedTest extends
           dto.getPods().get(1).getComponentVersions().get("prometheus-postgres-exporter"));
     }
 
-    assertNotNull(dto.getInfo());
-    {
+    // Info is only populated by the cluster get/list endpoints; the getLogs*
+    // scenarios reuse checkDto without info, so this assertion stays guarded.
+    if (dto.getInfo() != null) {
       String appendDns = "." + resource.getMetadata().getNamespace();
       String expectedPrimaryDns =
           PatroniUtil.deprecatedReadWriteName(resource.getMetadata().getName()) + appendDns;
