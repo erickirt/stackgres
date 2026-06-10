@@ -24,7 +24,7 @@ The `SGScript` custom resource represents an ordered list of versioned SQL scrip
 **Example:**
 
 ```yaml
-apiVersion: stackgres.io/v1beta1
+apiVersion: stackgres.io/v1
 kind: SGScript
 metadata:
   name: script

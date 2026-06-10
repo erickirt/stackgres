@@ -21,7 +21,7 @@ Update the SGShardedCluster configuration like below:
 
 ```yaml
 ---
-apiVersion: stackgres.io/v1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: cluster
@@ -84,7 +84,7 @@ Update the SGShardedCluster configuration like below:
 
 ```yaml
 ---
-apiVersion: stackgres.io/v1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: cluster
@@ -135,7 +135,7 @@ To configure this type of LoadBalancer is usually by setting some annotations to
 **[GKE](https://cloud.google.com/kubernetes-engine/docs/how-to/internal-load-balancing):**
 
 ```yaml
-apiVersion: stackgres.io/v1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: stackgres
@@ -152,7 +152,7 @@ spec:
 **[EKS](https://docs.aws.amazon.com/eks/latest/userguide/network-load-balancing.html):**
 
 ```yaml
-apiVersion: stackgres.io/v1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: stackgres
@@ -168,7 +168,7 @@ spec:
 **[AKS](https://docs.microsoft.com/en-us/azure/aks/internal-lb):**
 
 ```yaml
-apiVersion: stackgres.io/v1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: stackgres

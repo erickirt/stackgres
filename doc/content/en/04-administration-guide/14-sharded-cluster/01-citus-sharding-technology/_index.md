@@ -107,7 +107,7 @@ Query routers do not have replicas: each query router cluster is composed of a s
 Set `spec.coordinator.queryRouterClusters` to the desired number of query router workers:
 
 ```yaml
-apiVersion: stackgres.io/v1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: cluster
