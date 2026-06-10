@@ -91,7 +91,7 @@ spec:
   sgInstanceProfile: custom-profile
 ```
 
-The `disableResourcesRequestsSplitFromTotal` flag can also be set on the `SGShardedCluster` cutsom resource at the following paths:
+The `disableResourcesRequestsSplitFromTotal` flag can also be set on the `SGShardedCluster` custom resource at the following paths:
 - `SGShardedCluster.spec.coordinator.pods.resources.disableResourcesRequestsSplitFromTotal`
 - `SGShardedCluster.spec.workers.pods.resources.disableResourcesRequestsSplitFromTotal`
 - `SGDistributedLogs.spec.resources.disableResourcesRequestsSplitFromTotal`

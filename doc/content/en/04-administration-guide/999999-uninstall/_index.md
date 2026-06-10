@@ -42,7 +42,7 @@ my-db-cluster-2   5/5     Running   0          74s
 > **IMPORTANT**: before deleting the cluster make sure all the PersistentVolume are going to be removed
 > (if that is your intention). To do so set the field `.spec.persistentVolumeReclaimPolicy` to
 > `Delete` for the PersistentVolume that are associated to the PersistentVolumeClaim of the cluster.
-> To find out which are the PersistentVolume use the the following command:
+> To find out which are the PersistentVolume use the following command:
 > 
 > ```
 > kubectl get pvc -l app=StackGresCluster
@@ -99,7 +99,7 @@ my-db-cluster-worker1-1  5/5     Running   0          74s
 > **IMPORTANT**: before deleting the cluster make sure all the PersistentVolume are going to be removed
 > (if that is your intention). To do so set the field `.spec.persistentVolumeReclaimPolicy` to
 > `Delete` for the PersistentVolume that are associated to the PersistentVolumeClaim of the cluster.
-> To find out which are the PersistentVolume use the the following command:
+> To find out which are the PersistentVolume use the following command:
 > 
 > ```
 > kubectl get pvc -l app=StackGresShardedCluster
@@ -154,7 +154,7 @@ my-dl-cluster-0   5/5     Running   1          2m59s
 > **IMPORTANT**: before deleting the cluster make sure all the PersistentVolume are going to be removed
 > (if that is your intention). To do so set the field `.spec.persistentVolumeReclaimPolicy` to
 > `Delete` for the PersistentVolume that are associated to the PersistentVolumeClaim of the cluster.
-> To find out which are the PersistentVolume use the the following command:
+> To find out which are the PersistentVolume use the following command:
 > 
 > ```
 > kubectl get pvc -l app=StackGresCluster
