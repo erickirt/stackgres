@@ -802,7 +802,8 @@ class ClusterResourceMockedTest extends
 
   @Override
   protected void checkDto(ClusterDto dto, StackGresCluster resource) {
-    if (dto.getPods() != null) {
+    assertNotNull(dto.getPods());
+    {
       assertEquals(1, dto.getPodsReady());
       assertEquals(2, dto.getPods().size());
       assertEquals(4, dto.getPods().get(0).getContainers());
@@ -839,7 +840,8 @@ class ClusterResourceMockedTest extends
           dto.getPods().get(1).getComponentVersions().get("prometheus-postgres-exporter"));
     }
 
-    if (dto.getInfo() != null) {
+    assertNotNull(dto.getInfo());
+    {
       String appendDns = "." + resource.getMetadata().getNamespace();
       String expectedPrimaryDns =
           PatroniUtil.deprecatedReadWriteName(resource.getMetadata().getName()) + appendDns;

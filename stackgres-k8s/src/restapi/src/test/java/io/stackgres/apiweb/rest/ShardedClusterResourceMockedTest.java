@@ -749,7 +749,8 @@ class ShardedClusterResourceMockedTest extends
 
   @Override
   protected void checkDto(ShardedClusterDto dto, StackGresShardedCluster customResource) {
-    if (dto.getInfo() != null) {
+    assertNotNull(dto.getInfo());
+    {
       String appendDns = "." + "stackgres";
       String expectedPrimaryDns = StackGresShardedClusterUtil
           .primaryCoordinatorServiceName("stackgres") + appendDns;
