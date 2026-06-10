@@ -103,7 +103,7 @@ public class TransformerTestUtil {
     assertNotSame(source, actualSource,
         "The original CRD is being returned which can lead to side effects errors");
 
-    JsonUtil.assertJsonEquals(JsonUtil.toJson(target), JsonUtil.toJson(actualTarget),
+    JsonUtil.assertJsonEquals(JsonUtil.toJson(source), JsonUtil.toJson(actualSource),
         "Transformation from DTO to CRD doesn't return the "
             + "expected output. Which means that the "
             + "transformer is not accurately transforming DTOs to CRDs.");
