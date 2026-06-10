@@ -19,11 +19,15 @@ StackGres occasionally deprecates fields when better alternatives are introduced
 
 ## Deprecated Fields Reference
 
-| Deprecated Field | Replacement | Removed In |
-|-----------------|-------------|------------|
-| `spec.pods.disableMetricsExporter` | `spec.configurations.observability.disableMetrics` | Future |
-| `spec.initialData.scripts` | `spec.managedSql` with SGScript | Future |
-| `spec.initialData.restore.fromBackup.uid` | `spec.initialData.restore.fromBackup.name` | Future |
+| Resource | Deprecated Field | Replacement | Removed In |
+|----------|-----------------|-------------|------------|
+| SGCluster | `spec.pods.disableMetricsExporter` | `spec.configurations.observability.disableMetrics` | Future |
+| SGCluster | `spec.initialData.scripts` | `spec.managedSql` with SGScript | Future |
+| SGCluster | `spec.initialData.restore.fromBackup.uid` | `spec.initialData.restore.fromBackup.name` | Future |
+| SGShardedCluster | `spec.shards` | `spec.workers` | Future |
+| SGShardedCluster | `spec.postgresServices.shards` | `spec.postgresServices.workers` | Future |
+| SGShardedCluster | `spec.metadata.annotations.shardsPrimariesService` | `spec.metadata.annotations.workersPrimariesService` | Future |
+| SGShardedCluster | `spec.metadata.labels.shardsPrimariesService` | `spec.metadata.labels.workersPrimariesService` | Future |
 
 ## disableMetricsExporter Migration
 
@@ -282,6 +286,108 @@ spec:
 
 2. **Update cluster spec** to use `name` instead of `uid`.
 
+## SGShardedCluster shards to workers Migration
+
+Since StackGres 1.19.0 the SGShardedCluster CRD version has been bumped to `stackgres.io/v1beta1` and the `shards` concept has been renamed to `workers`. The following fields have been renamed:
+
+- `spec.shards` is now `spec.workers`
+- `spec.postgresServices.shards` is now `spec.postgresServices.workers`
+- `spec.metadata.annotations.shardsPrimariesService` is now `spec.metadata.annotations.workersPrimariesService`
+- `spec.metadata.labels.shardsPrimariesService` is now `spec.metadata.labels.workersPrimariesService`
+
+The deprecated fields continue to work but will be removed together with the `stackgres.io/v1alpha1` version in a future release.
+
+Also, the service exposing the primaries of the workers is now named after the SGShardedCluster name plus the `-workers` suffix (previously the `-shards` suffix). The service with the `-shards` suffix is still created for backward compatibility but applications should migrate their connection configuration to the `-workers` service.
+
+### Before (Deprecated)
+
+```yaml
+apiVersion: stackgres.io/v1alpha1
+kind: SGShardedCluster
+metadata:
+  name: my-sharded-cluster
+spec:
+  type: citus
+  database: mydatabase
+  postgres:
+    version: '16'
+  coordinator:
+    instances: 2
+    pods:
+      persistentVolume:
+        size: '10Gi'
+  shards:  # DEPRECATED
+    clusters: 4
+    instancesPerCluster: 2
+    pods:
+      persistentVolume:
+        size: '10Gi'
+  postgresServices:
+    shards:  # DEPRECATED
+      primaries:
+        enabled: true
+  metadata:
+    annotations:
+      shardsPrimariesService:  # DEPRECATED
+        my-annotation: my-value
+```
+
+### After (Current)
+
+```yaml
+apiVersion: stackgres.io/v1beta1
+kind: SGShardedCluster
+metadata:
+  name: my-sharded-cluster
+spec:
+  type: citus
+  database: mydatabase
+  postgres:
+    version: '16'
+  coordinator:
+    instances: 2
+    pods:
+      persistentVolume:
+        size: '10Gi'
+  workers:  # New name
+    clusters: 4
+    instancesPerCluster: 2
+    pods:
+      persistentVolume:
+        size: '10Gi'
+  postgresServices:
+    workers:  # New name
+      primaries:
+        enabled: true
+  metadata:
+    annotations:
+      workersPrimariesService:  # New name
+        my-annotation: my-value
+```
+
+### Migration Steps
+
+1. **Identify sharded clusters using deprecated fields**:
+   ```bash
+   kubectl get sgshardedcluster -A -o yaml | grep -E "^\s+(shards|shardsPrimariesService):"
+   ```
+
+2. **Update sharded cluster spec**:
+   ```bash
+   kubectl edit sgshardedcluster my-sharded-cluster
+   ```
+
+   Rename `spec.shards` to `spec.workers`, `spec.postgresServices.shards` to `spec.postgresServices.workers` and `shardsPrimariesService` to `workersPrimariesService` under `spec.metadata.annotations` and `spec.metadata.labels`.
+
+3. **Update YAML manifests** stored in your GitOps repositories to use `apiVersion: stackgres.io/v1beta1` and the new field names.
+
+4. **Update applications** connecting to the service with the `-shards` suffix to use the service with the `-workers` suffix.
+
+5. **Verify configuration**:
+   ```bash
+   kubectl get sgshardedcluster my-sharded-cluster -o jsonpath='{.spec.workers}'
+   ```
+
 ## Checking for Deprecated Fields
 
 ### Audit Script
@@ -311,6 +417,26 @@ for cluster in $(kubectl get sgcluster -A -o jsonpath='{range .items[*]}{.metada
     echo "[$ns/$name] Uses deprecated: spec.initialData.restore.fromBackup.uid"
   fi
 done
+
+for cluster in $(kubectl get sgshardedcluster -A -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name}{"\n"}{end}'); do
+  ns=$(echo $cluster | cut -d'/' -f1)
+  name=$(echo $cluster | cut -d'/' -f2)
+
+  # Check shards
+  if kubectl get sgshardedcluster -n $ns $name -o jsonpath='{.spec.shards}' 2>/dev/null | grep -q "."; then
+    echo "[$ns/$name] Uses deprecated: spec.shards"
+  fi
+
+  # Check postgresServices.shards
+  if kubectl get sgshardedcluster -n $ns $name -o jsonpath='{.spec.postgresServices.shards}' 2>/dev/null | grep -q "."; then
+    echo "[$ns/$name] Uses deprecated: spec.postgresServices.shards"
+  fi
+
+  # Check shardsPrimariesService
+  if kubectl get sgshardedcluster -n $ns $name -o jsonpath='{.spec.metadata.annotations.shardsPrimariesService}{.spec.metadata.labels.shardsPrimariesService}' 2>/dev/null | grep -q "."; then
+    echo "[$ns/$name] Uses deprecated: spec.metadata.annotations.shardsPrimariesService or spec.metadata.labels.shardsPrimariesService"
+  fi
+done
 ```
 
 ### Warnings in Logs
@@ -335,6 +461,7 @@ kubectl logs -n stackgres -l app=stackgres-operator | grep -i deprecated
 
 ## Related Documentation
 
+- [Sharded Cluster]({{% relref "04-administration-guide/14-sharded-cluster" %}})
 - [Managed SQL Scripts]({{% relref "04-administration-guide/15-sql-scripts" %}})
 - [SGScript Reference]({{% relref "06-crd-reference/10-sgscript" %}})
 - [Container Configuration]({{% relref "04-administration-guide/04-configuration/04-container-configuration" %}})
