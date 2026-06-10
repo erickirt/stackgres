@@ -2366,9 +2366,10 @@ spec:
                       
                       Available feature gates are:
                       * `babelfish-flavor`: Allow to use `babelfish` flavor.
+                      * `io-limits`: Allow to set per-volume I/O limits under `.spec.pods.persistentVolume.ioLimits`. Be aware that this requires the Pods to run a privileged init container as root and to mount the host cgroup filesystem.
                     items:
                       type: string
-                      description: The name of the fature gate to enable.
+                      description: The name of the feature gate to enable.
               distributedLogs:
                 type: object
                 description: |

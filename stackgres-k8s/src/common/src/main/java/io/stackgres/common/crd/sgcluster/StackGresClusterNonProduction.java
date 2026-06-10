@@ -38,7 +38,7 @@ public class StackGresClusterNonProduction {
   Boolean enableSetClusterMemoryRequests;
 
   @ValidEnumList(enumClass = StackGresFeatureGates.class, allowNulls = true,
-      message = "enabledFeatureGates must contain only babelfish-flavor")
+      message = "enabledFeatureGates must contain only babelfish-flavor or io-limits")
   List<String> enabledFeatureGates;
 
   public Boolean getDisableClusterPodAntiAffinity() {

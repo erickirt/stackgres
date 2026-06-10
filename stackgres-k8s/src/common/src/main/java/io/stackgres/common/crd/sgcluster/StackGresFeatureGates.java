@@ -9,7 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 public enum StackGresFeatureGates {
 
-  BABELFISH_FLAVOR("babelfish-flavor");
+  BABELFISH_FLAVOR("babelfish-flavor"),
+  IO_LIMITS("io-limits");
 
   private final @NotNull String type;
 
