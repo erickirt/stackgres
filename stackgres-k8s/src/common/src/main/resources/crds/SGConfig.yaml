@@ -1274,6 +1274,15 @@ spec:
                         description: |
                           If set, will use a host path volume with the specified path for the extensions cache
                            instead of a PersistentVolume
+                      resources:
+                        type: object
+                        description: |
+                          The resources of the extensions cache containers. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                        x-kubernetes-preserve-unknown-fields: true
+                        default:
+                          requests:
+                            cpu: 50m
+                            memory: 64Mi
               shardingSphere:
                 type: object
                 description: Section to configure integration with ShardingSphere operator
