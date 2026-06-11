@@ -7,7 +7,7 @@ run_op() {
 
   echo "Starting sharded dbops $NORMALIZED_OP_NAME"
 
-  rm -f /tmp/current-dbops
+  rm -f /tmp/current-dbops /tmp/completed-dbops
   local CLUSTER_NAME
   local DBOPS_NAME
   for CLUSTER_NAME in $CLUSTER_NAMES

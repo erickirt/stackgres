@@ -12,10 +12,7 @@ import java.util.stream.IntStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardingType;
-import io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForCitusUtil;
-import io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForDdpUtil;
-import io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForShardingSphereUtil;
+import io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForUtil;
 import io.stackgres.operator.conciliation.shardedcluster.StackGresShardedClusterContext.Builder;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -66,17 +63,7 @@ public class ShardedClusterWorkersClustersContextAppender {
       int index,
       Optional<StackGresShardedCluster> replicateCluster) {
     StackGresShardedCluster cluster = objectMapper.convertValue(original, StackGresShardedCluster.class);
-    switch (StackGresShardingType.fromString(cluster.getSpec().getType())) {
-      case CITUS:
-        return StackGresShardedClusterForCitusUtil.getWorkerCluster(cluster, index, replicateCluster);
-      case DDP:
-        return StackGresShardedClusterForDdpUtil.getWorkerCluster(cluster, index, replicateCluster);
-      case SHARDING_SPHERE:
-        return StackGresShardedClusterForShardingSphereUtil.getWorkerCluster(cluster, index, replicateCluster);
-      default:
-        throw new UnsupportedOperationException(
-            "Sharding technology " + cluster.getSpec().getType() + " not implemented");
-    }
+    return StackGresShardedClusterForUtil.getWorkerCluster(cluster, index, replicateCluster);
   }
 
   private List<StackGresCluster> getQueryRoutersClusters(
@@ -99,13 +86,7 @@ public class ShardedClusterWorkersClustersContextAppender {
       int index,
       Optional<StackGresShardedCluster> replicateCluster) {
     StackGresShardedCluster cluster = objectMapper.convertValue(original, StackGresShardedCluster.class);
-    switch (StackGresShardingType.fromString(cluster.getSpec().getType())) {
-      case CITUS:
-        return StackGresShardedClusterForCitusUtil.getQueryRouterCluster(cluster, index, replicateCluster);
-      default:
-        throw new UnsupportedOperationException(
-            "Sharding technology " + cluster.getSpec().getType() + " not implemented for query routers");
-    }
+    return StackGresShardedClusterForUtil.getQueryRouterCluster(cluster, index, replicateCluster);
   }
 
 }

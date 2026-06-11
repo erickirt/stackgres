@@ -1,0 +1,13 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/sharded-dbops/abstract-sharded-dbops"
+
+shell_unit_test() {
+  TIMEOUT=0
+  ! (shell_unit_test_sharded_dbops)
+  check_sharded_dbops_result
+}
+
+run_op() {
+  sleep 300
+}

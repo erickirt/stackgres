@@ -1,0 +1,13 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/sharded-dbops-resharding/abstract-sharded-resharding"
+
+shell_unit_test() {
+  EXCLUSIVE_OP=true
+  : > "$TEST_TARGET_PATH/primary_pod"
+  ! (shell_unit_test_sharded_dbops)
+  check_sharded_dbops_result || return 1
+  grep -q '^FAILURE=resharding failed. Unable to find primary, resharding aborted$' \
+    "$SHARED_PATH/$KEBAB_OP_NAME.out"
+  grep -q '^EXIT_CODE=1$' "$SHARED_PATH/$KEBAB_OP_NAME.out"
+}

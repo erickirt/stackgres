@@ -14,9 +14,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.StackGresUtil;
+import io.stackgres.common.crd.sgcluster.StackGresClusterExtension;
+import io.stackgres.common.crd.sgcluster.StackGresClusterInstalledExtension;
 import io.stackgres.common.validation.FieldReference;
 import io.stackgres.common.validation.FieldReference.ReferencedField;
 import io.sundr.builder.annotations.Buildable;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotEmpty;
 
@@ -31,6 +34,8 @@ public class StackGresShardedDbOpsMajorVersionUpgrade {
   @NotEmpty(message = "postgresVersion must not be empty")
   private String postgresVersion;
 
+  private List<@Valid StackGresClusterExtension> postgresExtensions;
+
   @NotEmpty(message = "sgPostgresConfig must not be empty")
   private String sgPostgresConfig;
 
@@ -41,6 +46,10 @@ public class StackGresShardedDbOpsMajorVersionUpgrade {
   private Boolean clone;
 
   private Boolean check;
+
+  private List<@Valid StackGresClusterInstalledExtension> toInstallPostgresExtensions;
+
+  private Integer maxErrorsAfterUpgrade;
 
   @ReferencedField("backupPaths")
   interface BackupPaths extends FieldReference { }
@@ -73,6 +82,14 @@ public class StackGresShardedDbOpsMajorVersionUpgrade {
 
   public void setPostgresVersion(String postgresVersion) {
     this.postgresVersion = postgresVersion;
+  }
+
+  public List<StackGresClusterExtension> getPostgresExtensions() {
+    return postgresExtensions;
+  }
+
+  public void setPostgresExtensions(List<StackGresClusterExtension> postgresExtensions) {
+    this.postgresExtensions = postgresExtensions;
   }
 
   public String getSgPostgresConfig() {
@@ -115,9 +132,27 @@ public class StackGresShardedDbOpsMajorVersionUpgrade {
     this.check = check;
   }
 
+  public List<StackGresClusterInstalledExtension> getToInstallPostgresExtensions() {
+    return toInstallPostgresExtensions;
+  }
+
+  public void setToInstallPostgresExtensions(
+      List<StackGresClusterInstalledExtension> toInstallPostgresExtensions) {
+    this.toInstallPostgresExtensions = toInstallPostgresExtensions;
+  }
+
+  public Integer getMaxErrorsAfterUpgrade() {
+    return maxErrorsAfterUpgrade;
+  }
+
+  public void setMaxErrorsAfterUpgrade(Integer maxErrorsAfterUpgrade) {
+    this.maxErrorsAfterUpgrade = maxErrorsAfterUpgrade;
+  }
+
   @Override
   public int hashCode() {
-    return Objects.hash(backupPaths, check, clone, link, postgresVersion, sgPostgresConfig);
+    return Objects.hash(backupPaths, check, clone, link, maxErrorsAfterUpgrade, postgresExtensions,
+        postgresVersion, sgPostgresConfig, toInstallPostgresExtensions);
   }
 
   @Override
@@ -129,12 +164,13 @@ public class StackGresShardedDbOpsMajorVersionUpgrade {
       return false;
     }
     StackGresShardedDbOpsMajorVersionUpgrade other = (StackGresShardedDbOpsMajorVersionUpgrade) obj;
-    return Objects.equals(backupPaths, other.backupPaths)
-        && Objects.equals(check, other.check)
-        && Objects.equals(clone, other.clone)
-        && Objects.equals(link, other.link)
+    return Objects.equals(backupPaths, other.backupPaths) && Objects.equals(check, other.check)
+        && Objects.equals(clone, other.clone) && Objects.equals(link, other.link)
+        && Objects.equals(maxErrorsAfterUpgrade, other.maxErrorsAfterUpgrade)
+        && Objects.equals(postgresExtensions, other.postgresExtensions)
         && Objects.equals(postgresVersion, other.postgresVersion)
-        && Objects.equals(sgPostgresConfig, other.sgPostgresConfig);
+        && Objects.equals(sgPostgresConfig, other.sgPostgresConfig)
+        && Objects.equals(toInstallPostgresExtensions, other.toInstallPostgresExtensions);
   }
 
   @Override

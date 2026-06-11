@@ -1,0 +1,36 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/sharded-dbops/abstract-sharded-dbops"
+
+shell_unit_test() {
+  EXCLUSIVE_OP=true
+  LOCK_SLEEP=0
+  echo test > "$TEST_TARGET_PATH/lock_pod"
+  ! (shell_unit_test_sharded_dbops)
+  check_sharded_dbops_result
+}
+
+run_op() {
+  sleep 300
+}
+
+mock kubectl kubectl_mock_overwrite
+
+kubectl_mock_overwrite() {
+  mokked
+  case "$*" in
+    ("get lease -n $LOCK_LEASE_NAMESPACE $LOCK_LEASE_NAME --template="*)
+    echo '
+      HOLDER_IDENTITY=test/'"$(cat "$TEST_TARGET_PATH/lock_pod")"'
+      RENEW_TIME='"$(date -u +%Y-%m-%dT%H:%M:%S.%6NZ)"'
+      LEASE_DURATION_SECONDS='"$LOCK_DURATION"'
+      LEASE_TRANSITIONS=0
+      RESOURCE_VERSION=test
+      '
+    echo wrong-test > "$TEST_TARGET_PATH/lock_pod"
+    ;;
+    *)
+    not_mokked
+    ;;
+  esac
+}

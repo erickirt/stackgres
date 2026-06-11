@@ -11,7 +11,9 @@ public enum ShardedDbOpsOperationAllowed {
 
   RESHARDING("resharding"),
   RESTART("restart"),
-  SECURITY_UPGRADE("securityUpgrade");
+  SECURITY_UPGRADE("securityUpgrade"),
+  MAJOR_VERSION_UPGRADE("majorVersionUpgrade"),
+  MINOR_VERSION_UPGRADE("minorVersionUpgrade");
 
   private final @NotNull String type;
 

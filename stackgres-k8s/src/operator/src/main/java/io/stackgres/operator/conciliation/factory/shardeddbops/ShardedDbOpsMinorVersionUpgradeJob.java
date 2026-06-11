@@ -5,8 +5,13 @@
 
 package io.stackgres.operator.conciliation.factory.shardeddbops;
 
+import static io.stackgres.common.StackGresShardedClusterUtil.getCoordinatorClusterName;
+import static io.stackgres.common.StackGresShardedClusterUtil.getQueryRouterClusterName;
+import static io.stackgres.common.StackGresShardedClusterUtil.getWorkerClusterName;
+
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
@@ -22,8 +27,15 @@ import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.ShardedClusterPath;
 import io.stackgres.common.StackGresContext;
 import io.stackgres.common.crd.CommonDefinition;
+import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgdbops.DbOpsMethodType;
+import io.stackgres.common.crd.sgdbops.DbOpsStatusCondition;
+import io.stackgres.common.crd.sgdbops.StackGresDbOps;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterStatus;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardingType;
 import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOps;
 import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOpsMinorVersionUpgrade;
 import io.stackgres.common.labels.LabelFactoryForShardedDbOps;
@@ -32,6 +44,7 @@ import io.stackgres.operator.conciliation.factory.ResourceFactory;
 import io.stackgres.operator.conciliation.shardeddbops.StackGresShardedDbOpsContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jooq.lambda.Seq;
 
 @Singleton
 @OperatorVersionBinder
@@ -56,14 +69,20 @@ public class ShardedDbOpsMinorVersionUpgradeJob extends AbstractShardedDbOpsJob 
     StackGresShardedDbOps dbOps = context.getSource();
     StackGresShardedDbOpsMinorVersionUpgrade minorVersionUpgrade =
         dbOps.getSpec().getMinorVersionUpgrade();
+    final StackGresShardedCluster cluster = context.getShardedCluster();
     return ImmutableList.<EnvVar>builder()
         .add(
             new EnvVarBuilder()
-            .withName("TARGET_VERSION")
+            .withName("POSTGRES_VERSION")
             .withValue(Optional.ofNullable(minorVersionUpgrade)
                 .map(StackGresShardedDbOpsMinorVersionUpgrade::getPostgresVersion)
-                .map(String::valueOf)
                 .orElseThrow())
+            .build(),
+            new EnvVarBuilder()
+            .withName("SOURCE_POSTGRES_VERSION")
+            .withValue(Optional.ofNullable(cluster.getStatus())
+                .map(StackGresShardedClusterStatus::getPostgresVersion)
+                .orElse(cluster.getSpec().getPostgres().getVersion()))
             .build(),
             new EnvVarBuilder()
             .withName("METHOD")
@@ -72,53 +91,125 @@ public class ShardedDbOpsMinorVersionUpgradeJob extends AbstractShardedDbOpsJob 
                 .orElse(DbOpsMethodType.IN_PLACE.toString()))
             .build(),
             new EnvVarBuilder()
-                .withName("CRD_GROUP")
-                .withValue(CommonDefinition.GROUP)
-                .build(),
+            .withName("CLUSTER_NAMES")
+            .withValue(Seq.of(getCoordinatorClusterName(cluster))
+                .filter(ignore -> !StackGresShardingType.SHARDING_SPHERE.equals(
+                    StackGresShardingType.fromString(
+                        cluster.getSpec().getType())))
+                .append(Seq.range(0, cluster
+                    .getSpec().getWorkers().getClusters())
+                    .map(index -> getWorkerClusterName(cluster, index)))
+                .append(Seq.range(
+                    0,
+                    Optional.of(cluster.getSpec())
+                    .map(StackGresShardedClusterSpec::getCoordinator)
+                    .map(StackGresShardedClusterCoordinator::getQueryRouterClusters)
+                    .orElse(0))
+                    .map(index -> getQueryRouterClusterName(cluster, String.valueOf(index))))
+                .toString(" "))
+            .build(),
             new EnvVarBuilder()
-                .withName("CLUSTER_CRD_NAME")
-                .withValue(HasMetadata.getPlural(StackGresShardedCluster.class))
-                .build(),
+            .withName("DBOPS_LABELS")
+            .withValue(dbOpsLabelFactory.shardedDbOpsLabels(context.getSource())
+                .entrySet()
+                .stream()
+                .map(e -> e.getKey() + "=" + e.getValue())
+                .collect(Collectors.joining(",")))
+            .build(),
             new EnvVarBuilder()
-                .withName("CLUSTER_NAMESPACE")
-                .withValue(context.getSource().getMetadata().getNamespace())
-                .build(),
+            .withName("DBOPS_LABELS_JSON")
+            .withValue(jsonMapper.valueToTree(
+                dbOpsLabelFactory.shardedDbOpsLabels(context.getSource()))
+                .toString())
+            .build(),
             new EnvVarBuilder()
-                .withName("CLUSTER_NAME")
-                .withValue(context.getSource().getSpec().getSgShardedCluster())
-                .build(),
+            .withName("CRD_GROUP")
+            .withValue(CommonDefinition.GROUP)
+            .build(),
             new EnvVarBuilder()
-                .withName("SERVICE_ACCOUNT")
-                .withValueFrom(new EnvVarSourceBuilder()
-                    .withFieldRef(new ObjectFieldSelector("v1", "spec.serviceAccountName"))
-                    .build())
-                .build(),
+            .withName("SHARDED_CLUSTER_CRD_NAME")
+            .withValue(HasMetadata.getPlural(StackGresShardedCluster.class))
+            .build(),
             new EnvVarBuilder()
-                .withName("POD_NAME")
-                .withValueFrom(new EnvVarSourceBuilder()
-                    .withFieldRef(new ObjectFieldSelector("v1", "metadata.name"))
-                    .build())
-                .build(),
+            .withName("SHARDED_CLUSTER_CRD_KIND")
+            .withValue(HasMetadata.getKind(StackGresShardedCluster.class))
+            .build(),
             new EnvVarBuilder()
-                .withName("DBOPS_CRD_NAME")
-                .withValue(CustomResource.getCRDName(StackGresShardedDbOps.class))
-                .build(),
+            .withName("CLUSTER_CRD_KIND")
+            .withValue(HasMetadata.getKind(StackGresCluster.class))
+            .build(),
             new EnvVarBuilder()
-                .withName("DBOPS_NAME")
-                .withValue(dbOps.getMetadata().getName())
-                .build(),
+            .withName("CLUSTER_NAMESPACE")
+            .withValue(context.getSource().getMetadata().getNamespace())
+            .build(),
             new EnvVarBuilder()
-                .withName("POSTGRES_VERSION_KEY")
-                .withValue(StackGresContext.POSTGRES_VERSION_KEY)
-                .build(),
+            .withName("SHARDED_CLUSTER_NAME")
+            .withValue(context.getSource().getSpec().getSgShardedCluster())
+            .build(),
             new EnvVarBuilder()
-                .withName("LOCK_DURATION")
-                .withValue(OperatorProperty.LOCK_DURATION.getString())
-                .build(),
-            new EnvVarBuilder()
-                .withName("LOCK_SLEEP")
-                .withValue(OperatorProperty.LOCK_POLL_INTERVAL.getString())
+            .withName("SERVICE_ACCOUNT")
+            .withValueFrom(new EnvVarSourceBuilder()
+                .withFieldRef(new ObjectFieldSelector("v1", "spec.serviceAccountName"))
                 .build())
+            .build(),
+            new EnvVarBuilder()
+            .withName("POD_NAME")
+            .withValueFrom(new EnvVarSourceBuilder()
+                .withFieldRef(new ObjectFieldSelector("v1", "metadata.name"))
+                .build())
+            .build(),
+            new EnvVarBuilder()
+            .withName("SHARDED_DBOPS_CRD_NAME")
+            .withValue(CustomResource.getCRDName(StackGresShardedDbOps.class))
+            .build(),
+            new EnvVarBuilder()
+            .withName("SHARDED_DBOPS_CRD_KIND")
+            .withValue(HasMetadata.getKind(StackGresShardedDbOps.class))
+            .build(),
+            new EnvVarBuilder()
+            .withName("SHARDED_DBOPS_CRD_APIVERSION")
+            .withValue(HasMetadata.getApiVersion(StackGresShardedDbOps.class))
+            .build(),
+            new EnvVarBuilder()
+            .withName("SHARDED_DBOPS_NAME")
+            .withValue(dbOps.getMetadata().getName())
+            .build(),
+            new EnvVarBuilder()
+            .withName("SHARDED_DBOPS_UID")
+            .withValue(dbOps.getMetadata().getUid())
+            .build(),
+            new EnvVarBuilder()
+            .withName("DBOPS_CRD_NAME")
+            .withValue(CustomResource.getCRDName(StackGresDbOps.class))
+            .build(),
+            new EnvVarBuilder()
+            .withName("DBOPS_CRD_KIND")
+            .withValue(HasMetadata.getKind(StackGresDbOps.class))
+            .build(),
+            new EnvVarBuilder()
+            .withName("DBOPS_CRD_APIVERSION")
+            .withValue(HasMetadata.getApiVersion(StackGresDbOps.class))
+            .build(),
+            new EnvVarBuilder()
+            .withName("DBOPS_COMPLETED")
+            .withValue(DbOpsStatusCondition.Type.COMPLETED.getType())
+            .build(),
+            new EnvVarBuilder()
+            .withName("DBOPS_FAILED")
+            .withValue(DbOpsStatusCondition.Type.FAILED.getType())
+            .build(),
+            new EnvVarBuilder()
+            .withName("POSTGRES_VERSION_KEY")
+            .withValue(StackGresContext.POSTGRES_VERSION_KEY)
+            .build(),
+            new EnvVarBuilder()
+            .withName("LOCK_DURATION")
+            .withValue(OperatorProperty.LOCK_DURATION.getString())
+            .build(),
+            new EnvVarBuilder()
+            .withName("LOCK_SLEEP")
+            .withValue(OperatorProperty.LOCK_POLL_INTERVAL.getString())
+            .build())
         .build();
   }
 

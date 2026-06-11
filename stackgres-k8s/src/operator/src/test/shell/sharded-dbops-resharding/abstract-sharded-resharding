@@ -1,0 +1,55 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/abstract-sharded-dbops"
+
+RUN_SCRIPT_PATH="$PROJECT_PATH/src/main/resources/templates/run-resharding.sh"
+SET_RESULT_SCRIPT_PATH=""
+OP_NAME=resharding
+NORMALIZED_OP_NAME='resharding'
+KEBAB_OP_NAME='resharding'
+SHARDED_CLUSTER_DATABASE=citus
+COORDINATOR_CLUSTER_LABELS=app=StackGresCluster,cluster-name=test-coord
+PATRONI_ROLE_KEY=role
+PATRONI_PRIMARY_ROLE=master
+PATRONI_CONTAINER_NAME=patroni
+
+shell_unit_test_skip() {
+  return 1;
+}
+
+shell_unit_test_sharded_dbops_init() {
+  rm -f "$TEST_TARGET_PATH/resharding-commands"
+}
+
+mock kubectl kubectl_mock
+
+kubectl_mock() {
+  mokked
+  case "$*" in
+    ("get lease -n $LOCK_LEASE_NAMESPACE $LOCK_LEASE_NAME --template="*)
+    echo '
+      HOLDER_IDENTITY=test/test
+      RENEW_TIME='"$(date -u +%Y-%m-%dT%H:%M:%S.%6NZ)"'
+      LEASE_DURATION_SECONDS='"$LOCK_DURATION"'
+      LEASE_TRANSITIONS=0
+      RESOURCE_VERSION=test
+      '
+    ;;
+    ("patch lease -n $LOCK_LEASE_NAMESPACE $LOCK_LEASE_NAME --type merge "*)
+    ;;
+    ("get pod -n $CLUSTER_NAMESPACE -l $COORDINATOR_CLUSTER_LABELS,$PATRONI_ROLE_KEY=$PATRONI_PRIMARY_ROLE -o name")
+    cat "$TEST_TARGET_PATH/primary_pod"
+    ;;
+    ("exec -i -n $CLUSTER_NAMESPACE pod/test-coord-0 -c $PATRONI_CONTAINER_NAME -- sh -e"*)
+    cat >> "$TEST_TARGET_PATH/resharding-commands"
+    echo "rebalance_table_shards"
+    ;;
+    ("patch $SHARDED_DBOPS_CRD_NAME -n $CLUSTER_NAMESPACE $SHARDED_DBOPS_NAME "*)
+    ;;
+    ("create --raw /api/v1/namespaces/$CLUSTER_NAMESPACE/events -f"*)
+    ;;
+    *)
+    not_mokked
+    ;;
+  esac
+}

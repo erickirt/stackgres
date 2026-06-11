@@ -85,8 +85,8 @@ spec:
                   * `resharding`: perform a resharding of the cluster.
                   * `restart`: perform a restart of the cluster.
                   * `securityUpgrade`: perform a security upgrade of the cluster.
-                #  * `majorVersionUpgrade`: perform a major version upgrade of PostgreSQL.
-                #  * `minorVersionUpgrade`: perform a minor version upgrade of PostgreSQL.
+                  * `majorVersionUpgrade`: perform a major version upgrade of PostgreSQL.
+                  * `minorVersionUpgrade`: perform a minor version upgrade of PostgreSQL.
               runAt:
                 type: string
                 description: |
@@ -133,55 +133,124 @@ spec:
                         description: |
                           The name of a strategy in Rebalancer strategy table. Will pick a default one if not specified
                           See also https://docs.citusdata.com/en/stable/develop/api_udf.html#citus-rebalance-start
-              # majorVersionUpgrade:
-              #   type: object
-              #   description: |
-              #     Configuration of major version upgrade (see also [`pg_upgrade`](https://www.postgresql.org/docs/current/pgupgrade.html) command)
-              #   properties:
-              #     postgresVersion:
-              #       type: string
-              #       description: |
-              #         The target postgres version that must have the same major version of the target SGShardedCluster.
-              #     sgPostgresConfig:
-              #       type: string
-              #       description: |
-              #         The postgres config that must have the same major version of the target postgres version.
-              #     backupPaths:
-              #       type: array
-              #       description: |
-              #         The paths were the backups for the coordinator and each shard are stored. If not set this field is filled up by the operator.
-              # 
-              #         When provided will indicate were the backups and WAL files will be stored.
-              # 
-              #         The path should be different from the current `.spec.configurations.backupPath` value for the target `SGCluster`
-              #           in order to avoid mixing WAL files of two distinct major versions of postgres.
-              #       items:
-              #         type: string
-              #         description: |
-              #           The path were the backup is stored. If not set this field is filled up by the operator.
-              # 
-              #           When provided will indicate were the backups and WAL files will be stored.
-              # 
-              #           The path should be different from the current `.spec.configurations.backups[].path` value for the target `SGCluster`
-              #             in order to avoid mixing WAL files of two distinct major versions of postgres.
-              #     link:
-              #       type: boolean
-              #       description: |
-              #         If true use hard links instead of copying files to the new cluster. This option is mutually exclusive with `clone`. Defaults to: `false`.
-              #     clone:
-              #       type: boolean
-              #       description: |
-              #         If true use efficient file cloning (also known as "reflinks" on some systems) instead of copying files to the new cluster.
-              #         This can result in near-instantaneous copying of the data files, giving the speed advantages of `link` while leaving the old
-              #           cluster untouched. This option is mutually exclusive with `link`. Defaults to: `false`.
-              # 
-              #         File cloning is only supported on some operating systems and file systems. If it is selected but not supported, the pg_upgrade
-              #           run will error. At present, it is supported on Linux (kernel 4.5 or later) with Btrfs and XFS (on file systems created with
-              #           reflink support), and on macOS with APFS.
-              #     check:
-              #       type: boolean
-              #       description: |
-              #         If true does some checks to see if the cluster can perform a major version upgrade without changing any data. Defaults to: `false`.
+              majorVersionUpgrade:
+                type: object
+                description: |
+                  Configuration of major version upgrade (see also [`pg_upgrade`](https://www.postgresql.org/docs/current/pgupgrade.html) command)
+                properties:
+                  postgresVersion:
+                    type: string
+                    description: |
+                      The target postgres version that must have the same major version of the target SGShardedCluster.
+                  postgresExtensions:
+                    type: array
+                    description: |
+                      A major version upgrade can not be performed if a required extension is not present for the target major version of the upgrade.
+                      In those cases you will have to provide the target extension version of the extension for the target major version of postgres.
+                      Beware that in some cases it is not possible to upgrade an extension alongside postgres. This is the case for PostGIS or timescaledb.
+                       In such cases you will have to upgrade the extension before or after the major version upgrade. Please make sure you read the
+                       documentation of each extension in order to understand if it is possible to upgrade it during a major version upgrade of postgres.
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          description: The name of the extension to deploy.
+                        publisher:
+                          type: string
+                          default: com.ongres
+                          description: The id of the publisher of the extension to deploy. If not specified `com.ongres` will be used by default.
+                        version:
+                          type: string
+                          description: The version of the extension to deploy. If not specified version of `stable` channel will be used by default and if only a version is available that one will be used.
+                        repository:
+                          type: string
+                          description: |
+                            The repository base URL from where to obtain the extension to deploy.
+
+                            **This section is filled by the operator.**
+                      required: ["name"]
+                  sgPostgresConfig:
+                    type: string
+                    description: |
+                      The postgres config that must have the same major version of the target postgres version.
+                  backupPaths:
+                    type: array
+                    description: |
+                      The paths were the backups for the coordinator and each shard are stored. If not set this field is filled up by the operator.
+              
+                      When provided will indicate were the backups and WAL files will be stored.
+              
+                      The path should be different from the current `.spec.configurations.backupPath` value for the target `SGCluster`
+                        in order to avoid mixing WAL files of two distinct major versions of postgres.
+                    items:
+                      type: string
+                      description: |
+                        The path were the backup is stored. If not set this field is filled up by the operator.
+              
+                        When provided will indicate were the backups and WAL files will be stored.
+              
+                        The path should be different from the current `.spec.configurations.backups[].path` value for the target `SGCluster`
+                          in order to avoid mixing WAL files of two distinct major versions of postgres.
+                  link:
+                    type: boolean
+                    description: |
+                      If true use hard links instead of copying files to the new cluster. This option is mutually exclusive with `clone`. Defaults to: `false`.
+                  clone:
+                    type: boolean
+                    description: |
+                      If true use efficient file cloning (also known as "reflinks" on some systems) instead of copying files to the new cluster.
+                      This can result in near-instantaneous copying of the data files, giving the speed advantages of `link` while leaving the old
+                        cluster untouched. This option is mutually exclusive with `link`. Defaults to: `false`.
+              
+                      File cloning is only supported on some operating systems and file systems. If it is selected but not supported, the pg_upgrade
+                        run will error. At present, it is supported on Linux (kernel 4.5 or later) with Btrfs and XFS (on file systems created with
+                        reflink support), and on macOS with APFS.
+                  check:
+                    type: boolean
+                    description: |
+                      If true does some checks to see if the cluster can perform a major version upgrade without changing any data. Defaults to: `false`.
+                  toInstallPostgresExtensions:
+                    type: array
+                    description: |
+                      The list of Postgres extensions to install.
+                      
+                      **This section is filled by the operator.**
+                    items:
+                      type: object
+                      required: ["name", "publisher", "version", "repository", "postgresVersion"]
+                      properties:
+                        name:
+                          type: string
+                          description: The name of the extension to install.
+                        publisher:
+                          type: string
+                          description: The id of the publisher of the extension to install.
+                        version:
+                          type: string
+                          description: The version of the extension to install.
+                        repository:
+                          type: string
+                          description: The repository base URL from where the extension will be installed from.
+                        postgresVersion:
+                          type: string
+                          description: The postgres major version of the extension to install.
+                        build:
+                          type: string
+                          description: The build version of the extension to install.
+                        extraMounts:
+                          type: array
+                          description: The extra mounts of the extension to install.
+                          items:
+                            type: string
+                            description: The extra mount of the installed extension.
+                  maxErrorsAfterUpgrade:
+                    type: integer
+                    default: 6
+                    description: |
+                      Indicates the number of errors that the operation can tolerate after the upgrade
+                       is performed in order to wait for the Pod to become ready and set the operation
+                       as completed.
               restart:
                 type: object
                 description: |
@@ -203,25 +272,25 @@ spec:
                     description: |
                       By default all Pods are restarted. Setting this option to `true` allows restarting only those Pods which
                         are in pending restart state as detected by the operation. Defaults to: `false`.
-              # minorVersionUpgrade:
-              #   type: object
-              #   description: |
-              #     Configuration of minor version upgrade
-              #   properties:
-              #     postgresVersion:
-              #       type: string
-              #       description: |
-              #         The target postgres version that must have the same major version of the target SGShardedCluster.
-              #     method:
-              #       type: string
-              #       description: |
-              #         The method used to perform the minor version upgrade operation. Available methods are:
-              # 
-              #         * `InPlace`: the in-place method does not require more resources than those that are available.
-              #           In case only an instance of the StackGres cluster is present this means the service disruption will
-              #           last longer so we encourage using the reduced impact restart and especially for a production environment.
-              #         * `ReducedImpact`: this procedure is the same as the in-place method but requires additional
-              #           resources in order to spawn a new updated replica that will be removed when the procedure completes.
+              minorVersionUpgrade:
+                type: object
+                description: |
+                  Configuration of minor version upgrade
+                properties:
+                  postgresVersion:
+                    type: string
+                    description: |
+                      The target postgres version that must have the same major version of the target SGShardedCluster.
+                  method:
+                    type: string
+                    description: |
+                      The method used to perform the minor version upgrade operation. Available methods are:
+              
+                      * `InPlace`: the in-place method does not require more resources than those that are available.
+                        In case only an instance of the StackGres cluster is present this means the service disruption will
+                        last longer so we encourage using the reduced impact restart and especially for a production environment.
+                      * `ReducedImpact`: this procedure is the same as the in-place method but requires additional
+                        resources in order to spawn a new updated replica that will be removed when the procedure completes.
               securityUpgrade:
                 type: object
                 description: |
@@ -279,35 +348,35 @@ spec:
                 type: string
                 description: |
                   The ISO 8601 timestamp of when the operation started running
-              # majorVersionUpgrade:
-              #   type: object
-              #   description: |
-              #     The results of a major version upgrade
-              #   properties:
-              #     sourcePostgresVersion:
-              #       type: string
-              #       description: |
-              #         The postgres version currently used by the primary instance
-              #     targetPostgresVersion:
-              #       type: string
-              #       description: |
-              #         The postgres version that the cluster will be upgraded to
-              #     pendingToRestartSgClusters:
-              #       type: array
-              #       description: |
-              #         The SGClusters that are pending to be restarted
-              #       items:
-              #         type: string
-              #     restartedSgClusters:
-              #       type: array
-              #       description: |
-              #         The SGClusters that have been restarted
-              #       items:
-              #         type: string
-              #     failure:
-              #       type: string
-              #       description: |
-              #         A failure message (when available)
+              majorVersionUpgrade:
+                type: object
+                description: |
+                  The results of a major version upgrade
+                properties:
+                  sourcePostgresVersion:
+                    type: string
+                    description: |
+                      The postgres version currently used by the primary instance
+                  targetPostgresVersion:
+                    type: string
+                    description: |
+                      The postgres version that the cluster will be upgraded to
+                  pendingToRestartSgClusters:
+                    type: array
+                    description: |
+                      The SGClusters that are pending to be restarted
+                    items:
+                      type: string
+                  restartedSgClusters:
+                    type: array
+                    description: |
+                      The SGClusters that have been restarted
+                    items:
+                      type: string
+                  failure:
+                    type: string
+                    description: |
+                      A failure message (when available)
               restart:
                 type: object
                 description: |
@@ -329,35 +398,35 @@ spec:
                     type: string
                     description: |
                       A failure message (when available)
-              # minorVersionUpgrade:
-              #   type: object
-              #   description: |
-              #     The results of a minor version upgrade
-              #   properties:
-              #     sourcePostgresVersion:
-              #       type: string
-              #       description: |
-              #         The postgres version currently used by the primary instance
-              #     targetPostgresVersion:
-              #       type: string
-              #       description: |
-              #         The postgres version that the cluster will be upgraded (or downgraded) to
-              #     pendingToRestartSgClusters:
-              #       type: array
-              #       description: |
-              #         The SGClusters that are pending to be restarted
-              #       items:
-              #         type: string
-              #     restartedSgClusters:
-              #       type: array
-              #       description: |
-              #         The SGClusters that have been restarted
-              #       items:
-              #         type: string
-              #     failure:
-              #       type: string
-              #       description: |
-              #         A failure message (when available)
+              minorVersionUpgrade:
+                type: object
+                description: |
+                  The results of a minor version upgrade
+                properties:
+                  sourcePostgresVersion:
+                    type: string
+                    description: |
+                      The postgres version currently used by the primary instance
+                  targetPostgresVersion:
+                    type: string
+                    description: |
+                      The postgres version that the cluster will be upgraded (or downgraded) to
+                  pendingToRestartSgClusters:
+                    type: array
+                    description: |
+                      The SGClusters that are pending to be restarted
+                    items:
+                      type: string
+                  restartedSgClusters:
+                    type: array
+                    description: |
+                      The SGClusters that have been restarted
+                    items:
+                      type: string
+                  failure:
+                    type: string
+                    description: |
+                      A failure message (when available)
               securityUpgrade:
                 type: object
                 description: |

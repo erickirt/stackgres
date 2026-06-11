@@ -1,0 +1,37 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/sharded-dbops-major-version-upgrade/abstract-sharded-major-version-upgrade"
+
+shell_unit_test() {
+  EXCLUSIVE_OP=true
+  printf %s ' Completed ' > "$TEST_TARGET_PATH/dbops-test-coord-status"
+  printf %s ' Completed ' > "$TEST_TARGET_PATH/dbops-test-shard0-status"
+  shell_unit_test_sharded_dbops
+  check_sharded_dbops_result || return 1
+  grep -qF '"sourcePostgresVersion":"15.5"' "$TEST_TARGET_PATH/sharded-cluster-patches"
+  grep -qF '"targetPostgresVersion":"16.2"' "$TEST_TARGET_PATH/sharded-cluster-patches"
+  grep -qF '"sourceSgPostgresConfig":"postgresconf-15"' "$TEST_TARGET_PATH/sharded-cluster-patches"
+  grep -qF '"version":"16.2"' "$TEST_TARGET_PATH/sharded-cluster-patches"
+  grep -qF '"sgPostgresConfig":"postgresconf-16"' "$TEST_TARGET_PATH/sharded-cluster-patches"
+  grep -qF '{"op":"remove","path":"/status/dbOps"}' "$TEST_TARGET_PATH/sharded-cluster-patches"
+  grep -q '^  sgCluster: test-coord$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^  sgCluster: test-shard0$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^  op: majorVersionUpgrade$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^    postgresVersion: "16.2"$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^    sgPostgresConfig: "postgresconf-16"$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^    backupPath: "sgbackups.stackgres.io/test/test-coord/16"$' \
+    "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^    backupPath: "sgbackups.stackgres.io/test/test-shard0/16"$' \
+    "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^    link: false$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^    clone: false$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^    check: false$' "$TEST_TARGET_PATH/created-dbops"
+  ! grep -q 'method:' "$TEST_TARGET_PATH/created-dbops"
+  ! grep -q 'postgresExtensions:' "$TEST_TARGET_PATH/created-dbops"
+  ! grep -q 'maxErrorsAfterUpgrade:' "$TEST_TARGET_PATH/created-dbops"
+  grep -qF '"path":"/status/majorVersionUpgrade"' "$TEST_TARGET_PATH/status-patches"
+  grep -qF '"sourcePostgresVersion": "15.5"' "$TEST_TARGET_PATH/status-patches"
+  grep -qF '"targetPostgresVersion": "16.2"' "$TEST_TARGET_PATH/status-patches"
+  grep -q '"pendingToRestartSgClusters"' "$TEST_TARGET_PATH/status-patches"
+  grep -q '"restartedSgClusters"' "$TEST_TARGET_PATH/status-patches"
+}

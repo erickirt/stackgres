@@ -57,12 +57,59 @@ import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterPostgresW
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterStatus;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorker;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardingType;
 import io.stackgres.common.patroni.StackGresPasswordKeys;
 import org.jooq.lambda.Seq;
 
 public abstract class StackGresShardedClusterForUtil implements StackGresShardedClusterUtil {
 
-  StackGresCluster getCoordinatorCluster(
+  public static StackGresCluster getCoordinatorCluster(
+      StackGresShardedCluster cluster,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    switch (StackGresShardingType.fromString(cluster.getSpec().getType())) {
+      case CITUS:
+        return StackGresShardedClusterForCitusUtil.getCoordinatorCluster(cluster, replicateCluster);
+      case DDP:
+        return StackGresShardedClusterForDdpUtil.getCoordinatorCluster(cluster, replicateCluster);
+      case SHARDING_SPHERE:
+        return StackGresShardedClusterForShardingSphereUtil.getCoordinatorCluster(cluster, replicateCluster);
+      default:
+        throw new UnsupportedOperationException(
+            "Sharding technology " + cluster.getSpec().getType() + " not implemented");
+    }
+  }
+
+  public static StackGresCluster getWorkerCluster(
+      StackGresShardedCluster cluster,
+      int index,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    switch (StackGresShardingType.fromString(cluster.getSpec().getType())) {
+      case CITUS:
+        return StackGresShardedClusterForCitusUtil.getWorkerCluster(cluster, index, replicateCluster);
+      case DDP:
+        return StackGresShardedClusterForDdpUtil.getWorkerCluster(cluster, index, replicateCluster);
+      case SHARDING_SPHERE:
+        return StackGresShardedClusterForShardingSphereUtil.getWorkerCluster(cluster, index, replicateCluster);
+      default:
+        throw new UnsupportedOperationException(
+            "Sharding technology " + cluster.getSpec().getType() + " not implemented");
+    }
+  }
+
+  public static StackGresCluster getQueryRouterCluster(
+      StackGresShardedCluster cluster,
+      int index,
+      Optional<StackGresShardedCluster> replicateCluster) {
+    switch (StackGresShardingType.fromString(cluster.getSpec().getType())) {
+      case CITUS:
+        return StackGresShardedClusterForCitusUtil.getQueryRouterCluster(cluster, index, replicateCluster);
+      default:
+        throw new UnsupportedOperationException(
+            "Sharding technology " + cluster.getSpec().getType() + " not implemented for query routers");
+    }
+  }
+
+  protected StackGresCluster getBaseCoordinatorCluster(
       StackGresShardedCluster cluster,
       Optional<StackGresShardedCluster> replicateCluster) {
     final StackGresClusterSpec spec =
@@ -135,7 +182,7 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
       StackGresShardedCluster cluster,
       StackGresClusterSpec spec);
 
-  StackGresCluster getWorkerCluster(
+  protected StackGresCluster getBaseWorkerCluster(
       StackGresShardedCluster cluster,
       int index,
       Optional<StackGresShardedCluster> replicateCluster) {
@@ -192,7 +239,7 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
     return workersCluster;
   }
 
-  StackGresCluster getQueryRouterCluster(
+  StackGresCluster getBaseQueryRouterCluster(
       StackGresShardedCluster cluster,
       int index,
       Optional<StackGresShardedCluster> replicateCluster) {

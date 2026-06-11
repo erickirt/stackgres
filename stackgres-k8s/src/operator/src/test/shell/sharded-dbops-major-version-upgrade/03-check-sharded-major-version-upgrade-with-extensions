@@ -1,0 +1,19 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/sharded-dbops-major-version-upgrade/abstract-sharded-major-version-upgrade"
+
+shell_unit_test() {
+  EXCLUSIVE_OP=true
+  POSTGRES_EXTENSIONS_JSON='[{"name":"citus"},{"name":"citus_columnar"}]'
+  TO_INSTALL_POSTGRES_EXTENSIONS_JSON='[{"name":"citus","publisher":"com.ongres","version":"14.0.0","repository":"https://extensions.stackgres.io/postgres/repository","postgresVersion":"16"}]'
+  MAX_ERRORS_AFTER_UPGRADE=6
+  printf %s ' Completed ' > "$TEST_TARGET_PATH/dbops-test-coord-status"
+  printf %s ' Completed ' > "$TEST_TARGET_PATH/dbops-test-shard0-status"
+  shell_unit_test_sharded_dbops
+  check_sharded_dbops_result || return 1
+  grep -qF "    postgresExtensions: $POSTGRES_EXTENSIONS_JSON" \
+    "$TEST_TARGET_PATH/created-dbops"
+  grep -qF "    toInstallPostgresExtensions: $TO_INSTALL_POSTGRES_EXTENSIONS_JSON" \
+    "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^    maxErrorsAfterUpgrade: 6$' "$TEST_TARGET_PATH/created-dbops"
+}

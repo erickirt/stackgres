@@ -6,7 +6,7 @@ description: Day-2 operations for sharded clusters using SGShardedDbOps.
 showToc: true
 ---
 
-SGShardedDbOps allows you to perform day-2 database operations on sharded clusters, including restarts, resharding, and security upgrades.
+SGShardedDbOps allows you to perform day-2 database operations on sharded clusters, including restarts, resharding, security upgrades, and minor and major version upgrades.
 
 > The `restart` and `securityUpgrade` operations are logically equivalent since the SGShardedCluster version is updated on any restart. These operations can also be performed without creating an SGShardedDbOps by using the [rollout]({{% relref "04-administration-guide/11-rollout" %}}) functionality, which allows the operator to automatically roll out Pod updates based on the cluster's update strategy.
 
@@ -17,6 +17,8 @@ SGShardedDbOps allows you to perform day-2 database operations on sharded cluste
 | `restart` | Rolling restart of all pods | Apply configuration changes, clear memory |
 | `resharding` | Rebalance data across workers | After adding workers, optimize distribution |
 | `securityUpgrade` | Upgrade security patches | Apply security fixes |
+| `minorVersionUpgrade` | Upgrade PostgreSQL minor version | Apply PostgreSQL minor releases |
+| `majorVersionUpgrade` | Upgrade PostgreSQL major version | Move to a new PostgreSQL major version |
 
 ## Restart Operation
 
@@ -174,6 +176,58 @@ spec:
 
 - **InPlace**: Faster, brief unavailability possible
 - **ReducedImpact**: Zero-downtime, creates temporary replicas
+
+## Minor Version Upgrade
+
+Upgrade PostgreSQL to a newer minor version. The operation updates the SGShardedCluster
+postgres version and then performs a minor version upgrade SGDbOps on the coordinator and
+each worker cluster, one at a time:
+
+```yaml
+apiVersion: stackgres.io/v1
+kind: SGShardedDbOps
+metadata:
+  name: minor-version-upgrade
+spec:
+  sgShardedCluster: my-sharded-cluster
+  op: minorVersionUpgrade
+  minorVersionUpgrade:
+    postgresVersion: "16.2"
+    method: ReducedImpact
+```
+
+### Minor Version Upgrade Methods
+
+- **InPlace**: Faster, brief unavailability possible
+- **ReducedImpact**: Zero-downtime, creates temporary replicas
+
+## Major Version Upgrade
+
+Upgrade PostgreSQL to a new major version (see also [`pg_upgrade`](https://www.postgresql.org/docs/current/pgupgrade.html)).
+An SGPostgresConfig for the target major version is required. The operation updates the
+SGShardedCluster postgres version and configuration and then performs a major version
+upgrade SGDbOps on the coordinator and each worker cluster, one at a time:
+
+```yaml
+apiVersion: stackgres.io/v1
+kind: SGShardedDbOps
+metadata:
+  name: major-version-upgrade
+spec:
+  sgShardedCluster: my-sharded-cluster
+  op: majorVersionUpgrade
+  majorVersionUpgrade:
+    postgresVersion: "16.2"
+    sgPostgresConfig: postgres-16-config
+    link: true
+```
+
+> **Important**: a major version upgrade cannot be performed if a required extension is
+>  not available for the target major version. In such cases you may specify the target
+>  extension versions using the `postgresExtensions` section. Backups for the previous
+>  major version are kept in their paths while new backups will be stored in new paths
+>  that can be specified with the `backupPaths` field (one path for the coordinator
+>  followed by one path for each worker cluster) or are generated automatically.
 
 ## Scheduling Operations
 

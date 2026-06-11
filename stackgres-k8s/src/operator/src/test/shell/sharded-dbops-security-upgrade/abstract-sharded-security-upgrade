@@ -1,0 +1,73 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/abstract-sharded-dbops"
+
+RUN_SCRIPT_PATH="$PROJECT_PATH/src/main/resources/templates/run-sharded-security-upgrade.sh"
+SET_RESULT_SCRIPT_PATH=""
+OP_NAME=securityUpgrade
+NORMALIZED_OP_NAME='security upgrade'
+KEBAB_OP_NAME='security-upgrade'
+METHOD=InPlace
+VERSION_KEY=stackgres.io/operatorVersion
+OPERATOR_VERSION=1.19.0
+
+shell_unit_test_skip() {
+  return 1;
+}
+
+shell_unit_test_sharded_dbops_init() {
+  rm -f "$TEST_TARGET_PATH/created-dbops"
+  rm -f "$TEST_TARGET_PATH/status-patches"
+}
+
+mock kubectl kubectl_mock
+
+kubectl_mock() {
+  mokked
+  case "$*" in
+    ("get lease -n $LOCK_LEASE_NAMESPACE $LOCK_LEASE_NAME --template="*)
+    echo '
+      HOLDER_IDENTITY=test/test
+      RENEW_TIME='"$(date -u +%Y-%m-%dT%H:%M:%S.%6NZ)"'
+      LEASE_DURATION_SECONDS='"$LOCK_DURATION"'
+      LEASE_TRANSITIONS=0
+      RESOURCE_VERSION=test
+      '
+    ;;
+    ("patch lease -n $LOCK_LEASE_NAMESPACE $LOCK_LEASE_NAME --type merge "*)
+    ;;
+    ("annotate $SHARDED_CLUSTER_CRD_NAME $SHARDED_CLUSTER_NAME --overwrite $VERSION_KEY=$OPERATOR_VERSION")
+    ;;
+    ("replace --force -f -")
+    cat >> "$TEST_TARGET_PATH/created-dbops"
+    printf '\n---\n' >> "$TEST_TARGET_PATH/created-dbops"
+    echo "$DBOPS_CRD_KIND replaced"
+    ;;
+    ("get $DBOPS_CRD_NAME -n $CLUSTER_NAMESPACE test-coord --template "*)
+    cat "$TEST_TARGET_PATH/dbops-test-coord-status"
+    ;;
+    ("get $DBOPS_CRD_NAME -n $CLUSTER_NAMESPACE test-shard0 --template "*)
+    cat "$TEST_TARGET_PATH/dbops-test-shard0-status"
+    ;;
+    ("get $DBOPS_CRD_NAME -n $CLUSTER_NAMESPACE -l $DBOPS_LABELS --template "*)
+    local CLUSTER
+    for CLUSTER in $CLUSTER_NAMES
+    do
+      printf '%s/%s\n' "$CLUSTER" "$(cat "$TEST_TARGET_PATH/dbops-$CLUSTER-status")"
+    done
+    ;;
+    ("get $SHARDED_DBOPS_CRD_NAME -n $CLUSTER_NAMESPACE $SHARDED_DBOPS_NAME --template="*)
+    printf '%s' add
+    ;;
+    ("patch $SHARDED_DBOPS_CRD_NAME -n $CLUSTER_NAMESPACE $SHARDED_DBOPS_NAME --type=json "*)
+    printf '%s\n' "$*" >> "$TEST_TARGET_PATH/status-patches"
+    ;;
+    ("patch $SHARDED_DBOPS_CRD_NAME -n $CLUSTER_NAMESPACE $SHARDED_DBOPS_NAME "*)
+    ;;
+    ("create --raw /api/v1/namespaces/$CLUSTER_NAMESPACE/events -f"*)
+    ;;
+    *)
+    not_mokked
+    ;;
+  esac
+}
