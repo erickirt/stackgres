@@ -2833,7 +2833,7 @@ spec:
                           enableClusterLimitsRequirements:
                             type: boolean
                             description: |
-                              When enabled resource limits for containers other than the patroni container wil be set just like for patroni contianer as specified in the SGInstanceProfile.
+                              When enabled resource limits for containers other than the patroni container will be set just like for patroni container as specified in the SGInstanceProfile.
 
                               **Changing this field may require a restart.**
                           disableResourcesRequestsSplitFromTotal:
@@ -3160,7 +3160,7 @@ spec:
                         sgInstanceProfile:
                           type: string
                           description: |
-                            Name of the [SGInstanceProfile](https://stackgres.io/doc/latest/04-postgres-cluster-management/03-resource-profiles/). A SGInstanceProfile defines CPU and memory limits. Must exist before creating a cluster. When no profile is set, a default (currently: 1 core, 2 GiB RAM) one is used.
+                            Name of the [SGInstanceProfile](https://stackgres.io/doc/latest/reference/crd/sginstanceprofile/). A SGInstanceProfile defines CPU and memory limits. Must exist before creating a cluster. When no profile is set, a default (currently: 1 core, 2 GiB RAM) one is used.
                         managedSql:
                           type: object
                           description: |
@@ -3295,7 +3295,7 @@ spec:
                                 enableClusterLimitsRequirements:
                                   type: boolean
                                   description: |
-                                    When enabled resource limits for containers other than the patroni container wil be set just like for patroni contianer as specified in the SGInstanceProfile.
+                                    When enabled resource limits for containers other than the patroni container will be set just like for patroni container as specified in the SGInstanceProfile.
 
                                     **Changing this field may require a restart.**
                                 disableResourcesRequestsSplitFromTotal:
