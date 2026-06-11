@@ -143,7 +143,7 @@ metadata:
   namespace: my-cluster
   name: pgconfig1
 spec:
-  postgresVersion: "12"
+  postgresVersion: "17"
   postgresql.conf:
     shared_buffers: '512MB'
     random_page_cost: '1.5'
@@ -289,7 +289,7 @@ metadata:
   name: cluster
 spec:
   postgres:
-    version: '12.3'
+    version: '17.10'
   instances: 3
   sgInstanceProfile: 'size-small'
   pods:
