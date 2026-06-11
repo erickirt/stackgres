@@ -54,7 +54,7 @@ You'll notice that the below is ordered from variables that affect client-side t
  applications within different connection handlings.
 
 
-```
+```yaml
 apiVersion: stackgres.io/v1
 kind: SGPoolingConfig
 metadata:
@@ -66,12 +66,11 @@ spec:
         pool_mode: session
         max_client_conn: '1000'
         default_pool_size: '80'
-        client_idle_timeout: '30s'
-        idle_transaction_timeout: '60s'
-        server_idle_timeout: '120s'
-        server_lifetime: '240s'
-        server_fast_close: '300s'
-EOF
+        client_idle_timeout: '30'
+        idle_transaction_timeout: '60'
+        server_idle_timeout: '120'
+        server_lifetime: '240'
+        server_fast_close: '1'
 ```
 
 When the server pool is fulfilled, incoming client connection will be queued in `wait` state by PgBouncer. This is why it is important to ensure that server connections are released properly, especially if they are kept during long periods of time.
