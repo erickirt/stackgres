@@ -86,7 +86,7 @@ public abstract class AbstractConciliator<T extends CustomResource<?, ?>> {
 
     ForcedChange forcedChange = new ForcedChange(
         config, deployedResourcesSnapshot);
-    SkipUpdate skipUpdate = new SkipUpdate();
+    SkipUpdate skipUpdate = new SkipUpdate(config);
     List<Tuple2<HasMetadata, HasMetadata>> patches = requiredResources.stream()
         .map(Tuple::tuple)
         .map(t -> t.concat(t.v1))
@@ -301,11 +301,19 @@ public abstract class AbstractConciliator<T extends CustomResource<?, ?>> {
   }
 
   class SkipUpdate implements Predicate<Tuple2<HasMetadata, DeployedResource>> {
+    final T config;
+
+    public SkipUpdate(T config) {
+      this.config = config;
+    }
+
     @Override
     public boolean test(
         Tuple2<HasMetadata, DeployedResource> requiredAndDeployedResourceValue) {
+      HasMetadata requiredResource = requiredAndDeployedResourceValue.v1;
       HasMetadata foundDeployedResource = requiredAndDeployedResourceValue.v2.foundDeployed();
-      boolean result = !isResourceReconciliationNotPaused(foundDeployedResource);
+      boolean result = skipUpdate(requiredResource, config)
+          || !isResourceReconciliationNotPaused(foundDeployedResource);
       if (result && LOGGER.isTraceEnabled()) {
         LOGGER.trace("Skip update for resource {} {}.{}",
             foundDeployedResource.getKind(),
