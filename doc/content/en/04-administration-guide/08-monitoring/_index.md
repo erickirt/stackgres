@@ -83,13 +83,13 @@ kubectl port-forward "$GRAFANA_POD" 9999:3000 --namespace monitoring
 You can also access the Prometheus server, by forwarding the port of the Prometheus pod:
 
 ```
-POD_NAME=$(kubectl get pods --namespace monitoring -l "app=prometheus" -o jsonpath="{.items[0].metadata.name}")
+POD_NAME=$(kubectl get pods --namespace monitoring -l "app.kubernetes.io/name=prometheus" -o jsonpath="{.items[0].metadata.name}")
 kubectl --namespace monitoring port-forward $POD_NAME 9090
 ```
 
 This will be available at `localhost:9090`.
 
-Inside the cluster, the Prometheus server is available via the `prometheus-operator-server.monitoring` DNS name.
+Inside the cluster, the Prometheus server is available via the `prometheus-kube-prometheus-prometheus.monitoring` DNS name.
 
 
 ### Exposing the Alert Manager
@@ -97,11 +97,11 @@ Inside the cluster, the Prometheus server is available via the `prometheus-opera
 You can also access the Prometheus alert manager, by forwarding the following port:
 
 ```
-export POD_NAME=$(kubectl get pods --namespace monitoring -l "app=alertmanager" -o jsonpath="{.items[0].metadata.name}")
+export POD_NAME=$(kubectl get pods --namespace monitoring -l "app.kubernetes.io/name=alertmanager" -o jsonpath="{.items[0].metadata.name}")
 kubectl --namespace monitoring port-forward $POD_NAME --address 0.0.0.0 9093
 ```
 
-Inside the cluster, the Prometheus alert manager can be accessed via `prometheus-operator-server.monitoring`.
+Inside the cluster, the Prometheus alert manager can be accessed via `prometheus-kube-prometheus-alertmanager.monitoring`.
 
 
 ## Pre-Existing Grafana Integration and Pre-Requisites
@@ -219,13 +219,8 @@ grafana-7575c4b7b5-2cbvw                                  1/1     Running   0   
 prometheus-grafana-5b458bf78c-tpqrl                       2/2     Running   0          20m
 prometheus-kube-prometheus-operator-576f4bf45b-w5j9m      2/2     Running   0          20m
 prometheus-kube-state-metrics-c65b87574-tsx24             1/1     Running   0          20m
-prometheus-operator-alertmanager-655b8bc7bf-hc6fd         2/2     Running   0          79m
-prometheus-operator-kube-state-metrics-69fcc8d48c-tmn8j   1/1     Running   0          79m
-prometheus-operator-node-exporter-28qz9                   1/1     Running   0          79m
-prometheus-operator-pushgateway-888f886ff-bxxtw           1/1     Running   0          79m
-prometheus-operator-server-7686fc69bd-mlvsx               2/2     Running   0          79m
 prometheus-prometheus-kube-prometheus-prometheus-0        3/3     Running   1          20m
-prometheus-prometheus-node-exporter-jbsm2                 0/1     Pending   0          20m
+prometheus-prometheus-node-exporter-jbsm2                 1/1     Running   0          20m
 ```
 
 
