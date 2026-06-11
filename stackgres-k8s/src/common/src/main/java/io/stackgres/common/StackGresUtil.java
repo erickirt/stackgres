@@ -406,21 +406,32 @@ public interface StackGresUtil {
         .map(Tuple2::v2)
         .findAny()
         .get();
+    long pg16Index = pgComponent
+        .streamOrderedMajorVersions()
+        .zipWithIndex()
+        .filter(t -> t.v1.equals("16"))
+        .map(Tuple2::v2)
+        .findAny()
+        .get();
     return List.of(
-        pgMajorVersionIndex <= pg15Index
+        pgMajorVersionIndex <= pg16Index
         ? new ExtensionTuple("citus", "14.0.0")
-            : pgMajorVersionIndex <= pg14Index
-            ? new ExtensionTuple("citus", "12.1.6")
-                : pgMajorVersionIndex <= pg13Index
-                ? new ExtensionTuple("citus", "11.3-1")
-                    : new ExtensionTuple("citus", "10.2-5"),
-        pgMajorVersionIndex <= pg15Index
+            : pgMajorVersionIndex <= pg15Index
+            ? new ExtensionTuple("citus", "13.2.0")
+                : pgMajorVersionIndex <= pg14Index
+                ? new ExtensionTuple("citus", "12.1.6")
+                    : pgMajorVersionIndex <= pg13Index
+                    ? new ExtensionTuple("citus", "11.3-1")
+                        : new ExtensionTuple("citus", "10.2-5"),
+        pgMajorVersionIndex <= pg16Index
         ? new ExtensionTuple("citus_columnar", "14.0.0")
-            : pgMajorVersionIndex <= pg14Index
-            ? new ExtensionTuple("citus_columnar", "12.1.6")
-                : pgMajorVersionIndex <= pg13Index
-                ? new ExtensionTuple("citus_columnar", "11.3-1")
-                    : new ExtensionTuple("citus_columnar", "10.2-5"),
+            : pgMajorVersionIndex <= pg15Index
+            ? new ExtensionTuple("citus_columnar", "13.2.0")
+                : pgMajorVersionIndex <= pg14Index
+                ? new ExtensionTuple("citus_columnar", "12.1.6")
+                    : pgMajorVersionIndex <= pg13Index
+                    ? new ExtensionTuple("citus_columnar", "11.3-1")
+                        : new ExtensionTuple("citus_columnar", "10.2-5"),
         new ExtensionTuple("pg_cron"));
   }
 
