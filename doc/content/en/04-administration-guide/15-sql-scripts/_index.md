@@ -29,7 +29,7 @@ spec:
  scripts:
  - name: create-my-database
    script: |
-    CREATE DATABASE my-database OWNER postgres;
+    CREATE DATABASE "my-database" OWNER postgres;
 ```
 
 The script is referenced via its name in the SGCluster definition:
@@ -216,7 +216,7 @@ The groups of scripts in the referenced SGScripts are executed sequentially
  scripts in the following SGScript from being executed.
 
 The scripts entry in an SGScript are executed sequentially following the order of the array
- `SGScript.spec.managedSql.scripts`. By default, the execution is stopped as soon as any of the script fails.
+ `SGScript.spec.scripts`. By default, the execution is stopped as soon as any of the script fails.
  This behavior can be changed by changing the value of the field `SGScript.spec.continueOnError`. When this
  field is set to `true` the failure of any script does not block the following script from being executed.
 

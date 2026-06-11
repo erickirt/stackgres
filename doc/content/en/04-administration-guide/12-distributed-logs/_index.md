@@ -67,7 +67,7 @@ $ PGPASSWORD=$(kubectl get secret distributedlogs --template '{{ printf "%s" (in
 Then, we can connect to our distributed logs cluster via `psql`:
 
 ```
-$ kubectl run psql --env $PGPASSWORD --rm -it --image ongres/postgres-util --restart=Never -- psql -h distributedlogs postgres postgres
+$ kubectl run psql --env "PGPASSWORD=$PGPASSWORD" --rm -it --image ongres/postgres-util --restart=Never -- psql -h distributedlogs postgres postgres
 ```
 
 Now that we're in `psql`, we can query the logs with SQL.
