@@ -165,8 +165,8 @@ By default, the [Prometheus Operator](https://github.com/coreos/prometheus-opera
 
 StackGres includes two ways:
 
-- [Automatic integration]({{% relref "/04-administration-guide/01-installation/01-pre-requisites/#integrating-pre-existing-grafanas" %}})
-- [Manual integration]({{% relref "/04-administration-guide/01-installation/01-pre-requisites/#manual-integration" %}})
+- [Automatic integration]({{% relref "04-administration-guide/08-monitoring/#integrating-grafana" %}})
+- [Manual integration]({{% relref "04-administration-guide/08-monitoring/#manual-integration" %}})
 
 Some manual steps are required in order to achieve such integration.
 

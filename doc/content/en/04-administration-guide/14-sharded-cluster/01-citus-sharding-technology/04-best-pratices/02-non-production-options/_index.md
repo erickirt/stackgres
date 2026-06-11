@@ -7,7 +7,7 @@ description: Important notes for non-production options in the production enviro
 
 Please refer to the [Cluster Non-Production Options]({{% relref "04-administration-guide/02-cluster-creation/04-best-pratices/02-non-production-options" %}}) page since those also apply to the Sharded Cluster.
 
-The only difference is that, after setting those options you will have to restart the Postgres cluster Pods by simply deleting them (or using a [restart SGDbOps]({{% relref "06-crd-reference/08-sgdbops#restart" %}})) for each cluster that belongs to the sharded cluster:
+The only difference is that, after setting those options you will have to restart the Postgres cluster Pods by simply deleting them (or using a [restart SGDbOps]({{% relref "06-crd-reference/08-sgdbops#sgdbopsspecrestart" %}})) for each cluster that belongs to the sharded cluster:
 
 ```bash
 kubectl get sgcluster -l app=StackGresShardedCluster,stackgres.io/shardedcluster-name=simple -o name \

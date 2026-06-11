@@ -434,7 +434,7 @@ spec:
 
 ## Apply Configuration changes
 
-Each configuration, once applied, require a restart of the SGCluster's Pods by running a [restart SGDbOps]({{% relref "06-crd-reference/08-sgdbops#restart" %}}).
+Each configuration, once applied, require a restart of the SGCluster's Pods by running a [restart SGDbOps]({{% relref "06-crd-reference/08-sgdbops#sgdbopsspecrestart" %}}).
 
 ## Custom containers
 

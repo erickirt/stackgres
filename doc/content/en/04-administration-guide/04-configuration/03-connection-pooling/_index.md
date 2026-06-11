@@ -63,7 +63,7 @@ Some applications, do not handle connection closing properly, which may require 
 
 ## Changing Configuration
 
-The [SGPoolingConfig Customizing Pooling Configuration Section]({{% relref "06-crd-reference/04-sgpoolingconfig/#pgbouncer" %}}) explains the different options for scaling connections properly.
+The [SGPoolingConfig Customizing Pooling Configuration Section]({{% relref "06-crd-reference/04-sgpoolingconfig/#sgpoolingconfigspecpgbouncer" %}}) explains the different options for scaling connections properly.
 
 Check the following sections for more insights related to how to configure the connection pooler:
 

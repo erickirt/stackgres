@@ -43,7 +43,7 @@ helm install --create-namespace --namespace monitoring \
  prometheus prometheus-community/kube-prometheus-stack
 ```
 
-> StackGres provides advanced options for monitoring installation, see [Operator installation with Helm]({{% relref "04-administration-guide/01-installation/02-installation-via-helm/#stackgres-operator-installation" %}}) in the [Production installation section]({{% relref "04-administration-guide/01-installation/#monitoring" %}}).
+> StackGres provides advanced options for monitoring installation, see [Operator installation with Helm]({{% relref "04-administration-guide/01-installation/02-installation-via-helm/#stackgres-operator-installation" %}}) in the [Production installation section]({{% relref "04-administration-guide/01-installation/02-installation-via-helm/#installation-with-monitoring" %}}).
 
 Once the operator is installed, you can retrieve the generated credentials. By default, they are user `admin` and password `prom-operator`.
 
