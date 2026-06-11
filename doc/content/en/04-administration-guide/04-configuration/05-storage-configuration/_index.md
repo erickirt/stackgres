@@ -298,7 +298,7 @@ spec:
 
 ### Sharded Cluster Storage
 
-Configure storage per cluster type (cooridnator and worker):
+Configure storage per cluster type (coordinator and worker):
 
 ```yaml
 apiVersion: stackgres.io/v1beta1

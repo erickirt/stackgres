@@ -104,7 +104,7 @@ Execute:
 kubectl get validatingwebhookconfigurations.admissionregistration.k8s.io stackgres-operator -o yaml > validating-webhook-stackgres-operator.yaml
 ```
 
-Now delete the StackGres operator `validating-webhook` exucting:
+Now delete the StackGres operator `validating-webhook` executing:
 
 ```bash
 kubectl delete validatingwebhookconfigurations.admissionregistration.k8s.io stackgres-operator
@@ -153,7 +153,7 @@ $ kubectl describe sts -n ongres-db ongres-db | grep -i capacity
   Capacity:      15Gi
 ```
 
-At this moment it is recommended to resotre the StackGres operator `validating-webhook`:
+At this moment it is recommended to restore the StackGres operator `validating-webhook`:
 
 ```bash
 kubectl create -f validating-webhook-stackgres-operator.yaml

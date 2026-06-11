@@ -79,7 +79,7 @@ If you need this report again please execute:
 helm get notes -n stackgres stackgres-operator
 ```
 
-**To deinstall K3S you should execute:** 
+**To uninstall K3S you should execute:** 
 
 ```
 sudo /usr/local/bin/k3s-uninstall.sh

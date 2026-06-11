@@ -57,7 +57,7 @@ Check the alerts section below for the full alerts description and YAML definiti
 
 These are some useful alerts that you can add to your StackGres cluster.
 
-| Alert                                    | Severity | Threshod | Description                                                     |
+| Alert                                    | Severity | Threshold | Description                                                     |
 |------------------------------------------|----------|----------|-----------------------------------------------------------------|
 | PostgresExporterErrors                   | critical |   5m     | Check the last scrape from postgres-exporter                    |
 | PostgresInstanceDown                     | critical |   1m     | Check is postgres service is up                                 |
@@ -68,7 +68,7 @@ These are some useful alerts that you can add to your StackGres cluster.
 | PostgresTooManyDeadTuples                | warning  |   30m    | Check if there are to many dead tuples                          |
 | PostgresTooManyConnections               | warning  |   5m     | Check if postgres connections are above 90% of max_connections  |
 | PostgresNotEnoughConnections             | warning  |   5m     | Check if postgres available connections are less than 5         |
-| PgBouncerWaitingClients                  | crititcal|   1m     | Check if pgbouncer has waiting clients                          |
+| PgBouncerWaitingClients                  | critical |   1m     | Check if pgbouncer has waiting clients                          |
 | PgBouncerNotEnoughConnections            | critical |   5m     | Check if pool size is not enough for the current connections    |
 | PgBouncerPoolFillingUp                   | warning  |   5m     | Check if pgBouncer pool is filling up                           |
 | PgBouncerAvgWaitTimeTooHigh              | warning  |   5m     | Check if time spent by clients waiting for a connections > 1s   |

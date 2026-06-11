@@ -80,7 +80,7 @@ After applying the YAML change to the cluster, the extensions will be downloaded
  plpgsql            | 1.0             | 1.0               | PL/pgSQL procedural language
  dblink             | 1.2             | 1.2               | connect to other PostgreSQL databases from within a database
  plpython3u         | 1.0             | 1.0               | PL/Python3U untrusted procedural language
-(5 rows)
+(6 rows)
 ```
 
 As usual, to use an extension on a database use the `create extension` command like below:
