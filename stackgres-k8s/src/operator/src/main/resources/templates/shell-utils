@@ -1,7 +1,7 @@
 #!/bin/sh
 
 LOCK_DURATION="${LOCK_DURATION:-60}"
-LOCK_SLEEP="${LOCK_SLEEP:-5}"
+LOCK_SLEEP="${LOCK_SLEEP:-${LOCK_POLL_INTERVAL:-5}}"
 QUEUE_NAME=create_event.pipe
 RETRY_DELAY="${RETRY_DELAY:-1000}"
 RETRY_LIMIT="${RETRY_LIMIT:-10}"
@@ -38,7 +38,7 @@ maintain_lock() {
 #   SERVICE_ACCOUNT       - service account of the worker pod
 #   POD_NAME              - worker pod name
 #   LOCK_DURATION         - lease duration in seconds
-#   LOCK_SLEEP            - renewal interval in seconds
+#   LOCK_SLEEP            - renewal interval in seconds (defaults to LOCK_POLL_INTERVAL)
 try_lock() {
   if [ -z "$LOCK_LEASE_NAMESPACE" ] || [ -z "$LOCK_LEASE_NAME" ] \
     || [ -z "$POD_NAME" ] || [ -z "$SERVICE_ACCOUNT" ]
