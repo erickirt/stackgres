@@ -4,7 +4,18 @@ $(document).ready(function(){
         // Get postgres extensions file
         $.ajax({
             url: "https://extensions.stackgres.io/postgres/repository/v1/index.json",
-        }).done(function(extIndex) {
+                }).done(function(extIndex) {
+            function escapeHtml(value) {
+                return String(value)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#39;");
+            }
+            function safeUrl(url) {
+                return /^https?:\/\//i.test(String(url)) ? escapeHtml(url) : "#";
+            }
             let extensions = extIndex.extensions.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0))
     
             let tableHtml = `
@@ -24,7 +35,7 @@ $(document).ready(function(){
 
                 tableHtml += `
                     <tr>
-                        <td><a href="` + ext.url + `" target="_blank">` + ext.name + `</a></td>`;
+                        <td><a href="` + safeUrl(ext.url) + `" target="_blank">` + escapeHtml(ext.name) + `</a></td>`;
                 
                 /* Postgres 12 */
                 let pg12 = [];
@@ -37,7 +48,7 @@ $(document).ready(function(){
                     })
                 })
 
-                tableHtml += '<td>' + pg12.join(', ') + '</td>';
+                tableHtml += '<td>' + escapeHtml(pg12.join(', ')) + '</td>';
                 
                 /* Postgres 13 */
                 let pg13 = [];
@@ -50,7 +61,7 @@ $(document).ready(function(){
                     })
                 })
 
-                tableHtml += '<td>' + pg13.join(', ') + '</td>';                
+                tableHtml += '<td>' + escapeHtml(pg13.join(', ')) + '</td>';                
                         
                 /* Postgres 14 */
                 let pg14 = [];
@@ -63,9 +74,9 @@ $(document).ready(function(){
                     })
                 })
 
-                tableHtml += '<td>' + pg14.join(', ') + '</td>';
+                tableHtml += '<td>' + escapeHtml(pg14.join(', ')) + '</td>';
 
-                tableHtml += `<td class="capitalFirstLetter">` + ext.description + `</td>
+                tableHtml += `<td class="capitalFirstLetter">` + escapeHtml(ext.description) + `</td>
                 </tr>`;
 
 
