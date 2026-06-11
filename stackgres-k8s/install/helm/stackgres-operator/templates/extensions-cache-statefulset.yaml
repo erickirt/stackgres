@@ -26,7 +26,6 @@ spec:
         fsGroup: 1000
         {{- end }}
       serviceAccountName: {{ .Release.Name }}-extensions-cache
-      shareProcessNamespace: true
       terminationGracePeriodSeconds: 0
       restartPolicy: Always
       {{- with .Values.extensions.cache.schedulerName }}
@@ -65,7 +64,18 @@ spec:
           {{- end }}
           {{- if .Values.extensions.cache.hostPath }}
           runAsUser: 0
+          {{- else }}
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
           {{- end }}
+        {{- with .Values.extensions.cache.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         args:
           - '/bin/sh'
           - '-ec'
@@ -122,7 +132,18 @@ spec:
           {{- end }}
           {{- if .Values.extensions.cache.hostPath }}
           runAsUser: 0
+          {{- else }}
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
           {{- end }}
+        {{- with .Values.extensions.cache.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         env:
           - name: HOME
             value: /tmp
