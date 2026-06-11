@@ -12,6 +12,15 @@ mkdir -p "data/crds"
 STACKGRES_VERSION="${STACKGRES_VERSION:-$(sh "$PROJECT_PATH/stackgres-k8s/ci/build/version.sh")}"
 echo "current_version: \"$STACKGRES_VERSION\"" > "data/versions.yml"
 
+COMPONENT_VERSIONS_FILE="$(ls -1 "$PROJECT_PATH/stackgres-k8s/src/common/src/main/resources"/versions-*.properties \
+  | sort -V | tail -n 1)"
+POSTGRES_MAJOR_VERSIONS="$(awk '/^postgresql=/{flag=1; sub(/^postgresql=/,"")}
+  flag{line=$0; gsub(/[ \\]/,"",line); printf "%s",line; if ($0 !~ /\\$/) flag=0}' \
+  "$COMPONENT_VERSIONS_FILE" \
+  | tr ',' '\n' | sed 's/-build-.*//' | cut -d . -f 1 | sort -n | uniq)"
+echo "postgres_min_version: \"$(printf '%s\n' "$POSTGRES_MAJOR_VERSIONS" | head -n 1)\"" >> "data/versions.yml"
+echo "postgres_max_version: \"$(printf '%s\n' "$POSTGRES_MAJOR_VERSIONS" | tail -n 1)\"" >> "data/versions.yml"
+
 find "$PROJECT_PATH/stackgres-k8s/src/common/src/main/resources/crds" -name '*.yaml' \
   | while read -r FILE
     do
