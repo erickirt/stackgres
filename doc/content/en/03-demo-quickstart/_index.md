@@ -33,9 +33,6 @@ helm install --create-namespace --namespace stackgres stackgres-operator stackgr
 
 This will install all required resources, and add the StackGres operator to a new namespace `stackgres`.
 
-> The `stackgres-operator-demo.yml` will expose the UI with a LoadBalancer. Note that using this feature
-> might cause additional cost by your hosting provider (for example, this is the case for EKS, GKE, and AKS).
-
 ## Waiting for Operator Startup
 
 Use the command below to wait until the operator is ready to use:
