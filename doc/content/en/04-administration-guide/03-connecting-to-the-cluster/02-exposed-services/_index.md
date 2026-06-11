@@ -131,7 +131,7 @@ spec:
       primaryService:
         networking.gke.io/load-balancer-type: "Internal"
       replicasService:
-        service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+        networking.gke.io/load-balancer-type: "Internal"
 ```
 
 
