@@ -214,7 +214,7 @@ spec:
               sgInstanceProfile:
                 type: string
                 description: |
-                  Name of the [SGInstanceProfile](https://stackgres.io/doc/latest/04-postgres-cluster-management/03-resource-profiles/). A SGInstanceProfile defines CPU and memory limits. Must exist before creating a distributed logs. When no profile is set, a default (currently: 1 core, 2 GiB RAM) one is used.
+                  Name of the [SGInstanceProfile](https://stackgres.io/doc/latest/reference/crd/sginstanceprofile/). A SGInstanceProfile defines CPU and memory limits. Must exist before creating a distributed logs. When no profile is set, a default (currently: 1 core, 2 GiB RAM) one is used.
 
                   **Changing this field may require a restart.**
               configurations:
