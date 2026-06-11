@@ -50,10 +50,21 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      securityContext:
+        {{- if or (not (.Capabilities.APIVersions.Has "project.openshift.io/v1")) .Values.developer.disableArbitraryUser }}
+        runAsNonRoot: true
+        {{- end }}
       containers:
       - name: "annotate-namespaces"
         image: {{ template "kubectl-image" . }}
         imagePullPolicy: "IfNotPresent"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
         {{- with .Values.jobs.resources }}
         resources:
           {{- toYaml . | nindent 10 }}
