@@ -109,7 +109,7 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
     }
   }
 
-  protected StackGresCluster getBaseCoordinatorCluster(
+  StackGresCluster getBaseCoordinatorCluster(
       StackGresShardedCluster cluster,
       Optional<StackGresShardedCluster> replicateCluster) {
     final StackGresClusterSpec spec =
@@ -182,7 +182,7 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
       StackGresShardedCluster cluster,
       StackGresClusterSpec spec);
 
-  protected StackGresCluster getBaseWorkerCluster(
+  StackGresCluster getBaseWorkerCluster(
       StackGresShardedCluster cluster,
       int index,
       Optional<StackGresShardedCluster> replicateCluster) {
@@ -245,6 +245,7 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
       Optional<StackGresShardedCluster> replicateCluster) {
     final StackGresClusterSpec spec =
         new StackGresClusterSpecBuilder(cluster.getSpec().getCoordinator())
+        .withConfigurations(cluster.getSpec().getCoordinator().getConfigurationsForCoordinator())
         .build();
     setClusterSpecFromShardedCluster(cluster, spec, index + 1, replicateCluster);
     spec.setReplication(null);
@@ -257,7 +258,7 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
         .findFirst()
         .ifPresent(specOverride -> setClusterSpecFromShardOverrides(
             cluster, specOverride, spec, index + 1));
-    updateWorkerClusterSpec(cluster, spec, index);
+    updateQueryRouterClusterSpec(cluster, spec, index);
     StackGresCluster queryRouterCluster = new StackGresCluster();
     queryRouterCluster.setMetadata(new ObjectMeta());
     queryRouterCluster.getMetadata().setNamespace(cluster.getMetadata().getNamespace());
@@ -292,15 +293,22 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
     return queryRouterCluster;
   }
 
-  abstract void updateWorkerClusterSpec(
+  void updateWorkerClusterSpec(
       StackGresShardedCluster cluster,
       StackGresClusterSpec spec,
-      int index);
+      int index) {
+  }
+
+  void updateQueryRouterClusterSpec(
+      StackGresShardedCluster cluster,
+      StackGresClusterSpec spec,
+      int index) {
+  }
 
   void setClusterSpecFromShardedCluster(
       StackGresShardedCluster cluster,
       StackGresClusterSpec spec,
-      int index,
+      int globalIndex,
       Optional<StackGresShardedCluster> replicateCluster) {
     spec.setProfile(cluster.getSpec().getProfile());
     setPostgres(cluster, spec);
@@ -308,13 +316,13 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
     setPostgresExtensions(cluster, spec);
     setConfigurationsObservability(cluster, spec);
     setConfigurationsPostgresExporter(cluster, spec);
-    setConfigurationsBackups(cluster, spec, index);
+    setConfigurationsBackups(cluster, spec, globalIndex);
     setConfigurationsCredentials(cluster, spec);
-    setMetadata(cluster, spec, index);
-    setInitialData(cluster, spec, index);
-    setManagedSql(cluster, spec, index);
+    setMetadata(cluster, spec, globalIndex);
+    setInitialData(cluster, spec, globalIndex);
+    setManagedSql(cluster, spec, globalIndex);
     if (cluster.getSpec().getReplicateFrom() != null) {
-      int plainIndex = StackGresShardedClusterUtil.getPlainIndex(cluster, index);
+      int plainIndex = StackGresShardedClusterUtil.getPlainIndex(cluster, globalIndex);
       spec.setReplicateFrom(new StackGresClusterReplicateFrom());
       if (cluster.getSpec().getReplicateFrom().getInstance() != null) {
         spec.getReplicateFrom().setInstance(new StackGresClusterReplicateFromInstance());
@@ -337,7 +345,7 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
                       "SGShardedCluster "
                       + cluster.getSpec().getReplicateFrom().getInstance().getSgShardedCluster()
                       + " was not found")),
-                  index));
+                  globalIndex));
         }
       }
       if (cluster.getSpec().getReplicateFrom().getStorage() != null) {
@@ -658,7 +666,7 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
       StackGresShardedCluster cluster,
       StackGresShardedClusterWorker specOverride,
       StackGresClusterSpec spec,
-      int index) {
+      int globalIndex) {
     if (specOverride.getConfigurationsForWorkers() != null) {
       if (specOverride.getConfigurationsForWorkers().getSgPostgresConfig() != null) {
         spec.getConfigurations().setSgPostgresConfig(
@@ -696,7 +704,7 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
     }
     if (specOverride.getManagedSql() != null) {
       final String defaultScript = ManagedSqlUtil.defaultName(
-          StackGresShardedClusterUtil.getClusterName(cluster, index));
+          StackGresShardedClusterUtil.getClusterName(cluster, globalIndex));
       spec.setManagedSql(new StackGresClusterManagedSqlBuilder(specOverride.getManagedSql())
           .withScripts(
               Seq.of(new StackGresClusterManagedScriptEntryBuilder()
@@ -714,8 +722,8 @@ public abstract class StackGresShardedClusterForUtil implements StackGresSharded
       if (spec.getMetadata() == null) {
         spec.setMetadata(new StackGresClusterSpecMetadata());
       }
-      setOverridesLabels(specOverride, spec, index);
-      setOverridesAnnotations(specOverride, spec, index);
+      setOverridesLabels(specOverride, spec, globalIndex);
+      setOverridesAnnotations(specOverride, spec, globalIndex);
     }
     if (specOverride.getPodsForWorkers() != null) {
       if (specOverride.getPodsForWorkers().getLivenessProbe() != null) {

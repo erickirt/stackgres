@@ -26,6 +26,7 @@ import io.stackgres.common.labels.ShardedClusterLabelMapper;
 import io.stackgres.operator.conciliation.shardedcluster.StackGresShardedClusterContext;
 import io.stackgres.operator.initialization.DefaultPoolingConfigFactory;
 import io.stackgres.operatorframework.resource.ResourceUtil;
+import org.jooq.lambda.tuple.Tuple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,7 +64,7 @@ class ShardedClusterWorkersPgBouncerDefaultPoolingConfigTest {
   void generateResource_whenPoolingConfigEmpty_shouldGenerateDefault() {
     cluster.getSpec().getWorkers().getConfigurations()
         .setSgPoolingConfig("workers-pgbouncerconf");
-    when(context.getWorkersPoolingConfig()).thenReturn(Optional.empty());
+    when(context.getWorkersPoolingConfigs()).thenReturn(List.of(Tuple.tuple(0, Optional.empty())));
 
     List<HasMetadata> resources = factory.generateResource(context).toList();
 
@@ -84,7 +85,7 @@ class ShardedClusterWorkersPgBouncerDefaultPoolingConfigTest {
         .withOwnerReferences(List.of(ResourceUtil.getControllerOwnerReference(cluster)))
         .endMetadata()
         .build();
-    when(context.getWorkersPoolingConfig()).thenReturn(Optional.of(existingConfig));
+    when(context.getWorkersPoolingConfigs()).thenReturn(List.of(Tuple.tuple(0, Optional.of(existingConfig))));
 
     List<HasMetadata> resources = factory.generateResource(context).toList();
 
@@ -105,7 +106,7 @@ class ShardedClusterWorkersPgBouncerDefaultPoolingConfigTest {
         .withOwnerReferences(List.of(ResourceUtil.getControllerOwnerReference(cluster)))
         .endMetadata()
         .build();
-    when(context.getWorkersPoolingConfig()).thenReturn(Optional.of(existingConfig));
+    when(context.getWorkersPoolingConfigs()).thenReturn(List.of(Tuple.tuple(0, Optional.of(existingConfig))));
 
     List<HasMetadata> resources = factory.generateResource(context).toList();
 
@@ -114,7 +115,19 @@ class ShardedClusterWorkersPgBouncerDefaultPoolingConfigTest {
 
   @Test
   void generateResource_whenSameAsCoordinatorPoolingConfig_shouldNotGenerate() {
-    lenient().when(context.getWorkersPoolingConfig()).thenReturn(Optional.empty());
+    lenient().when(context.getWorkersPoolingConfigs()).thenReturn(List.of(Tuple.tuple(0, Optional.empty())));
+
+    List<HasMetadata> resources = factory.generateResource(context).toList();
+
+    assertTrue(resources.isEmpty());
+  }
+
+  @Test
+  void generateResource_whenConnectionPoolingDisabled_shouldNotGenerate() {
+    cluster.getSpec().getWorkers().getConfigurations()
+        .setSgPoolingConfig("workers-pgbouncerconf");
+    cluster.getSpec().getWorkers().getPods().setDisableConnectionPooling(true);
+    lenient().when(context.getWorkersPoolingConfigs()).thenReturn(List.of(Tuple.tuple(0, Optional.empty())));
 
     List<HasMetadata> resources = factory.generateResource(context).toList();
 

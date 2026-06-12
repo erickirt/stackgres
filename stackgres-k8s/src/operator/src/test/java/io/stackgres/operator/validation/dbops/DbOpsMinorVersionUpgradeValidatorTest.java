@@ -158,6 +158,58 @@ class DbOpsMinorVersionUpgradeValidatorTest {
         + " SGShardedCluster test", resultMessage);
   }
 
+  @Test
+  void givenManagedClusterAndDbOpsOwnedByShardedDbOpsOnCreation_shouldNotFail()
+      throws ValidationFailed {
+    final StackGresDbOpsReview review = getCreationReview();
+    review.getRequest().getObject().getSpec().getMinorVersionUpgrade().setPostgresVersion(
+        FIRST_PG_MINOR_VERSION);
+    review.getRequest().getObject().getMetadata().setOwnerReferences(List.of(
+        new OwnerReferenceBuilder()
+        .withKind("SGShardedDbOps")
+        .withName("test")
+        .build()));
+    cluster.getMetadata().setOwnerReferences(List.of(
+        new OwnerReferenceBuilder()
+        .withKind("SGShardedCluster")
+        .withName("test")
+        .withController(true)
+        .build()));
+
+    String sgcluster = review.getRequest().getObject().getSpec().getSgCluster();
+    String namespace = review.getRequest().getObject().getMetadata().getNamespace();
+    when(clusterFinder.findByNameAndNamespace(sgcluster, namespace))
+        .thenReturn(Optional.of(cluster));
+
+    validator.validate(review);
+
+    verify(clusterFinder).findByNameAndNamespace(eq(sgcluster), eq(namespace));
+  }
+
+  @Test
+  void givenManagedClusterWithTargetPostgresVersionAlreadySetOnCreation_shouldNotFail()
+      throws ValidationFailed {
+    final StackGresDbOpsReview review = getCreationReview();
+    review.getRequest().getObject().getSpec().getMinorVersionUpgrade().setPostgresVersion(
+        FIRST_PG_MINOR_VERSION);
+    cluster.getMetadata().setOwnerReferences(List.of(
+        new OwnerReferenceBuilder()
+        .withKind("SGShardedCluster")
+        .withName("test")
+        .withController(true)
+        .build()));
+
+    String sgcluster = review.getRequest().getObject().getSpec().getSgCluster();
+    String namespace = review.getRequest().getObject().getMetadata().getNamespace();
+    cluster.getSpec().getPostgres().setVersion(FIRST_PG_MINOR_VERSION);
+    when(clusterFinder.findByNameAndNamespace(sgcluster, namespace))
+        .thenReturn(Optional.of(cluster));
+
+    validator.validate(review);
+
+    verify(clusterFinder).findByNameAndNamespace(eq(sgcluster), eq(namespace));
+  }
+
   private StackGresDbOpsReview getCreationReview() {
     return AdmissionReviewFixtures.dbOps().loadMinorVersionUpgradeCreate().get();
   }

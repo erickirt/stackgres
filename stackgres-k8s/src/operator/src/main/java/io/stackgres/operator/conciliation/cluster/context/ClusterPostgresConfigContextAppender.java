@@ -35,6 +35,7 @@ public class ClusterPostgresConfigContextAppender {
   }
 
   public void appendContext(StackGresCluster cluster, Builder contextBuilder, String version) {
+    cluster.getStatus().setSgPostgresConfig(cluster.getSpec().getConfigurations().getSgPostgresConfig());
     final Optional<StackGresPostgresConfig> postgresConfig = postgresConfigFinder
         .findByNameAndNamespace(
             cluster.getSpec().getConfigurations().getSgPostgresConfig(),

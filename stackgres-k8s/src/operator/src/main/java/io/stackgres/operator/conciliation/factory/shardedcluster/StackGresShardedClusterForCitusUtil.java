@@ -84,11 +84,20 @@ public interface StackGresShardedClusterForCitusUtil extends StackGresShardedClu
 
     @Override
     void updateWorkerClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
+      spec.getConfigurations().setSgPostgresConfig(
+          StackGresShardedClusterUtil.workerConfigName(cluster, index));
+      setConfigurationsPatroniInitialConfig(cluster, spec, index + 1);
+    }
+
+    @Override
+    void updateQueryRouterClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
+      spec.getConfigurations().setSgPostgresConfig(
+          StackGresShardedClusterUtil.queryRouterConfigName(cluster, index));
       setConfigurationsPatroniInitialConfig(cluster, spec, index + 1);
     }
 
     private void setConfigurationsPatroniInitialConfig(
-        StackGresShardedCluster cluster, final StackGresClusterSpec spec, int index) {
+        StackGresShardedCluster cluster, final StackGresClusterSpec spec, int globalIndex) {
       if (spec.getConfigurations() == null) {
         spec.setConfigurations(new StackGresClusterConfigurations());
       }
@@ -112,7 +121,7 @@ public interface StackGresShardedClusterForCitusUtil extends StackGresShardedClu
           .put("scope", cluster.getMetadata().getName());
       var citus = new HashMap<String, Object>(2);
       citus.put("database", cluster.getSpec().getDatabase());
-      citus.put("group", index);
+      citus.put("group", globalIndex);
       spec.getConfigurations().getPatroni().getInitialConfig()
           .put("citus", citus);
     }
@@ -190,54 +199,12 @@ public interface StackGresShardedClusterForCitusUtil extends StackGresShardedClu
 
   static StackGresPostgresConfig getCoordinatorPostgresConfig(
       StackGresShardedCluster cluster, StackGresPostgresConfig coordinatorPostgresConfig) {
-    Map<String, String> postgresqlConf =
-        coordinatorPostgresConfig.getSpec().getPostgresqlConf();
-    final int maxConnections =
-        Optional.ofNullable(postgresqlConf.get("max_connections"))
-        .map(Integer::parseInt)
-        .orElse(100);
-    final int workers = cluster.getSpec().getWorkers().getClusters();
-    final String sharedPreloadLibraries =
-        Optional.ofNullable(postgresqlConf.get("shared_preload_libraries"))
-        .orElse("");
-    final String spaceSeparatedSharedPreloadLibraries =
-        sharedPreloadLibraries
-        .replace(',', ' ');
-    Map<String, String> computedParameters = Map.of(
-        "citus.max_client_connections",
-        String.valueOf(
-            maxConnections * 90 / (100 * (1 + workers))
-            ));
-    Map<String, String> overwrittenParameters = Map.of(
-        "cron.database_name",
-        "postgres",
-        "cron.host",
-        ClusterPath.PG_RUN_PATH.path(),
-        "shared_preload_libraries",
-        Seq.of("pg_cron")
-        .append(Seq.of(spaceSeparatedSharedPreloadLibraries.split(" +"))
-            .filter(Predicate.not(String::isEmpty))
-            .filter(Predicate.not(String::isBlank))
-            .filter(Predicate.not("pg_cron"::equals)))
-        .collect(Collectors.joining(", ")));
-    return
-        new StackGresPostgresConfigBuilder(coordinatorPostgresConfig)
-        .withMetadata(new ObjectMetaBuilder()
-            .withNamespace(cluster.getMetadata().getNamespace())
-            .withName(StackGresShardedClusterUtil.coordinatorConfigName(cluster))
-            .build())
-        .editSpec()
-        .withPostgresqlConf(Seq.seq(postgresqlConf)
-            .append(Seq.seq(computedParameters)
-                .filter(t -> !postgresqlConf.containsKey(t.v1)))
-            .filter(t -> !overwrittenParameters.containsKey(t.v1))
-            .append(Seq.seq(overwrittenParameters))
-            .toMap(Tuple2::v1, Tuple2::v2))
-        .endSpec()
-        .withStatus(null)
-        .build();
+    return getCitusPostgresConfig(
+        cluster,
+        StackGresShardedClusterUtil.coordinatorConfigName(cluster),
+        coordinatorPostgresConfig);
   }
-  
+
   static StackGresScript getCoordinatorScript(
       StackGresShardedClusterContext context) {
     StackGresShardedCluster cluster = context.getShardedCluster();
@@ -251,6 +218,69 @@ public interface StackGresShardedClusterForCitusUtil extends StackGresShardedClu
             getCitusUpdateWorkersScript(context, 0),
             getCitusUpdateQueryRoutersScript(context, 1))
         .endSpec()
+        .build();
+  }
+
+  static StackGresPostgresConfig getWorkerPostgresConfig(
+      StackGresShardedCluster cluster,
+      int index,
+      StackGresPostgresConfig workerPostgresConfig) {
+    return getCitusPostgresConfig(
+        cluster,
+        StackGresShardedClusterUtil.workerConfigName(cluster, index),
+        workerPostgresConfig);
+  }
+
+  static StackGresPostgresConfig getQueryRouterPostgresConfig(
+      StackGresShardedCluster cluster,
+      int index,
+      StackGresPostgresConfig queryRouterPostgresConfig) {
+    return getCitusPostgresConfig(
+        cluster,
+        StackGresShardedClusterUtil.queryRouterConfigName(cluster, index),
+        queryRouterPostgresConfig);
+  }
+
+  private static StackGresPostgresConfig getCitusPostgresConfig(
+      StackGresShardedCluster cluster,
+      String configName,
+      StackGresPostgresConfig postgresConfig) {
+    Map<String, String> postgresqlConf =
+        postgresConfig.getSpec().getPostgresqlConf();
+    final String sharedPreloadLibraries =
+        Optional.ofNullable(postgresqlConf.get("shared_preload_libraries"))
+        .orElse("");
+    final String spaceSeparatedSharedPreloadLibraries =
+        sharedPreloadLibraries
+        .replace(',', ' ');
+    Map<String, String> computedParameters = Map.of();
+    Map<String, String> overwrittenParameters = Map.of(
+        "cron.database_name",
+        "postgres",
+        "cron.host",
+        ClusterPath.PG_RUN_PATH.path(),
+        "shared_preload_libraries",
+        Seq.of("citus", "pg_cron")
+        .append(Seq.of(spaceSeparatedSharedPreloadLibraries.split(" +"))
+            .filter(Predicate.not(String::isEmpty))
+            .filter(Predicate.not(String::isBlank))
+            .filter(Predicate.not(List.of("citus", "pg_cron")::contains)))
+        .collect(Collectors.joining(", ")));
+    return
+        new StackGresPostgresConfigBuilder(postgresConfig)
+        .withMetadata(new ObjectMetaBuilder()
+            .withNamespace(cluster.getMetadata().getNamespace())
+            .withName(configName)
+            .build())
+        .editSpec()
+        .withPostgresqlConf(Seq.seq(postgresqlConf)
+            .append(Seq.seq(computedParameters)
+                .filter(t -> !postgresqlConf.containsKey(t.v1)))
+            .filter(t -> !overwrittenParameters.containsKey(t.v1))
+            .append(Seq.seq(overwrittenParameters))
+            .toMap(Tuple2::v1, Tuple2::v2))
+        .endSpec()
+        .withStatus(null)
         .build();
   }
 

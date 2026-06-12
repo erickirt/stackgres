@@ -24,7 +24,10 @@ public class ShardedClusterWorkersPrimaryEndpointsContextAppender {
     this.endpointsFinder = endpointsFinder;
   }
 
-  public void appendContext(List<StackGresCluster> workers, Builder contextBuilder) {
+  public void appendContext(
+      List<StackGresCluster> workers,
+      List<StackGresCluster> queryRouters,
+      Builder contextBuilder) {
     List<Endpoints> workersPrimaryEndpoints = workers.stream()
         .map(shard -> endpointsFinder
             .findByNameAndNamespace(
@@ -33,6 +36,14 @@ public class ShardedClusterWorkersPrimaryEndpointsContextAppender {
         .flatMap(Optional::stream)
         .toList();
     contextBuilder.workersPrimaryEndpoints(workersPrimaryEndpoints);
+    List<Endpoints> queryRoutersPrimaryEndpoints = queryRouters.stream()
+        .map(shard -> endpointsFinder
+            .findByNameAndNamespace(
+                PatroniUtil.readWriteName(shard),
+                shard.getMetadata().getNamespace()))
+        .flatMap(Optional::stream)
+        .toList();
+    contextBuilder.queryRoutersPrimaryEndpoints(queryRoutersPrimaryEndpoints);
   }
 
 }

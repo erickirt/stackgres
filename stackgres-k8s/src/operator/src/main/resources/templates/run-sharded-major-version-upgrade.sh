@@ -14,7 +14,7 @@ run_op() {
   then
     echo "Setting $NORMALIZED_OP_NAME status for $SHARDED_CLUSTER_CRD_KIND $SHARDED_CLUSTER_NAME"
     if ! kubectl patch "$SHARDED_CLUSTER_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_CLUSTER_NAME" --type merge \
-      -p "{\"status\":{\"dbOps\":{\"majorVersionUpgrade\":{\"sourcePostgresVersion\":$(printf %s "$SOURCE_POSTGRES_VERSION" | to_json_string),\"targetPostgresVersion\":$(printf %s "$POSTGRES_VERSION" | to_json_string),\"sourceSgPostgresConfig\":$(printf %s "$SOURCE_SG_POSTGRES_CONFIG" | to_json_string)}}}}" \
+      -p "{\"status\":{\"dbOps\":{\"majorVersionUpgrade\":{\"sourcePostgresVersion\":$(printf %s "$SOURCE_POSTGRES_VERSION" | to_json_string),\"targetPostgresVersion\":$(printf %s "$TARGET_POSTGRES_VERSION" | to_json_string),\"sourceSgPostgresConfig\":$(printf %s "$SOURCE_SG_POSTGRES_CONFIG" | to_json_string)}}}}" \
       > /tmp/dbops-update-sharded-cluster 2>&1
     then
       echo "FAILURE=$NORMALIZED_OP_NAME failed. Can not update $SHARDED_CLUSTER_CRD_KIND status: $(cat /tmp/dbops-update-sharded-cluster)" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
@@ -25,9 +25,9 @@ run_op() {
       --template='{{ .status.dbOps.majorVersionUpgrade.sourcePostgresVersion }}')"
   fi
 
-  echo "Setting postgres version $POSTGRES_VERSION and SGPostgresConfig $SG_POSTGRES_CONFIG for $SHARDED_CLUSTER_CRD_KIND $SHARDED_CLUSTER_NAME"
+  echo "Setting postgres version $TARGET_POSTGRES_VERSION and SGPostgresConfig $SG_POSTGRES_CONFIG for $SHARDED_CLUSTER_CRD_KIND $SHARDED_CLUSTER_NAME"
   if ! kubectl patch "$SHARDED_CLUSTER_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_CLUSTER_NAME" --type merge \
-    -p "{\"spec\":{\"postgres\":{\"version\":$(printf %s "$POSTGRES_VERSION" | to_json_string)},\"coordinator\":{\"configurations\":{\"sgPostgresConfig\":$(printf %s "$SG_POSTGRES_CONFIG" | to_json_string)}},\"workers\":{\"configurations\":{\"sgPostgresConfig\":$(printf %s "$SG_POSTGRES_CONFIG" | to_json_string)}}}}" \
+    -p "{\"spec\":{\"postgres\":{\"version\":$(printf %s "$TARGET_POSTGRES_VERSION" | to_json_string)},\"coordinator\":{\"configurations\":{\"sgPostgresConfig\":$(printf %s "$SG_POSTGRES_CONFIG" | to_json_string)}},\"workers\":{\"configurations\":{\"sgPostgresConfig\":$(printf %s "$SG_POSTGRES_CONFIG" | to_json_string)}}}}" \
     > /tmp/dbops-update-sharded-cluster 2>&1
   then
     echo "FAILURE=$NORMALIZED_OP_NAME failed. Can not update $SHARDED_CLUSTER_CRD_KIND: $(cat /tmp/dbops-update-sharded-cluster)" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
@@ -83,7 +83,7 @@ spec:
   sgCluster: $CLUSTER_NAME
   op: majorVersionUpgrade
   majorVersionUpgrade:
-    postgresVersion: $(printf %s "$POSTGRES_VERSION" | to_json_string)
+    postgresVersion: $(printf %s "$TARGET_POSTGRES_VERSION" | to_json_string)
     sgPostgresConfig: $(printf %s "$SG_POSTGRES_CONFIG" | to_json_string)
     link: $LINK
     clone: $CLONE
@@ -188,7 +188,7 @@ update_status() {
 [
   {"op":"$OPERATION","path":"/status/majorVersionUpgrade","value":{
       "sourcePostgresVersion": $(printf %s "$SOURCE_POSTGRES_VERSION" | to_json_string),
-      "targetPostgresVersion": $(printf %s "$POSTGRES_VERSION" | to_json_string),
+      "targetPostgresVersion": $(printf %s "$TARGET_POSTGRES_VERSION" | to_json_string),
       "pendingToRestartSgClusters": [$(
         FIRST=true
         for CLUSTER in $PENDING_TO_RESTART_CLUSTERS

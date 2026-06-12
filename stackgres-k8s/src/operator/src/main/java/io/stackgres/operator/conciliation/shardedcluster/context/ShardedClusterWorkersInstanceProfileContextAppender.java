@@ -5,19 +5,23 @@
 
 package io.stackgres.operator.conciliation.shardedcluster.context;
 
+import java.util.List;
 import java.util.Optional;
 
+import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgprofile.StackGresInstanceProfile;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorker;
 import io.stackgres.common.resource.CustomResourceFinder;
-import io.stackgres.operator.conciliation.ContextAppender;
 import io.stackgres.operator.conciliation.shardedcluster.StackGresShardedClusterContext.Builder;
 import io.stackgres.operator.initialization.DefaultProfileFactory;
 import jakarta.enterprise.context.ApplicationScoped;
+import org.jooq.lambda.tuple.Tuple;
+import org.jooq.lambda.tuple.Tuple2;
+import org.jooq.lambda.tuple.Tuple3;
 
 @ApplicationScoped
-public class ShardedClusterWorkersInstanceProfileContextAppender
-    extends ContextAppender<StackGresShardedCluster, Builder> {
+public class ShardedClusterWorkersInstanceProfileContextAppender {
 
   private final CustomResourceFinder<StackGresInstanceProfile> profileFinder;
   private final DefaultProfileFactory defaultProfileFactory;
@@ -29,20 +33,41 @@ public class ShardedClusterWorkersInstanceProfileContextAppender
     this.defaultProfileFactory = defaultProfileFactory;
   }
 
-  @Override
-  public void appendContext(StackGresShardedCluster cluster, Builder contextBuilder) {
+  public void appendContext(
+      StackGresShardedCluster cluster,
+      Builder contextBuilder,
+      List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>> workers,
+      List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>> queryRouters) {
+    var workersProfiles = workers
+        .stream()
+        .map(worker -> findProfiles(cluster, worker))
+        .toList();
+    contextBuilder.workersProfiles(workersProfiles);
+    var queryRoutersProfiles = queryRouters
+        .stream()
+        .map(queryRouter -> findProfiles(cluster, queryRouter))
+        .toList();
+    contextBuilder.queryRoutersProfiles(queryRoutersProfiles);
+  }
+
+  private Tuple2<Integer, Optional<StackGresInstanceProfile>> findProfiles(
+      StackGresShardedCluster cluster,
+      Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster> worker) {
+    final String workerInstanceProfileName = worker.v2
+        .map(StackGresShardedClusterWorker::getSgInstanceProfile)
+        .orElse(cluster.getSpec().getWorkers().getSgInstanceProfile());
     final Optional<StackGresInstanceProfile> workersProfile = profileFinder
         .findByNameAndNamespace(
-            cluster.getSpec().getWorkers().getSgInstanceProfile(),
+            workerInstanceProfileName,
             cluster.getMetadata().getNamespace());
-    if (!cluster.getSpec().getWorkers().getSgInstanceProfile()
+    if (!workerInstanceProfileName
         .equals(defaultProfileFactory.getDefaultResourceName(cluster))
         && workersProfile.isEmpty()) {
       throw new IllegalArgumentException(
           StackGresInstanceProfile.KIND
-            + " " + cluster.getSpec().getWorkers().getSgInstanceProfile() + " was not found");
+          + " " + workerInstanceProfileName + " was not found");
     }
-    contextBuilder.workersProfile(workersProfile);
+    return Tuple.tuple(worker.v1, workersProfile);
   }
 
 }

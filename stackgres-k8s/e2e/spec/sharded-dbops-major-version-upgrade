@@ -2,20 +2,21 @@
 
 . "$SPEC_PATH/abstract/sharded-dbops"
 
-export E2E_CITUS_MINOR_SOURCE_POSTGRES_VERSION="${E2E_CITUS_MINOR_SOURCE_POSTGRES_VERSION:-17.9}"
-export E2E_CITUS_MINOR_TARGET_POSTGRES_VERSION="${E2E_CITUS_MINOR_TARGET_POSTGRES_VERSION:-17.10}"
+export E2E_CITUS_MAJOR_SOURCE_POSTGRES_VERSION="${E2E_CITUS_MAJOR_SOURCE_POSTGRES_VERSION:-16.14}"
+export E2E_CITUS_MAJOR_TARGET_POSTGRES_VERSION="${E2E_CITUS_MAJOR_TARGET_POSTGRES_VERSION:-17.10}"
 
 e2e_test_extra_hash() {
   printf '%s\n' \
-    E2E_CITUS_MINOR_SOURCE_POSTGRES_VERSION="$E2E_CITUS_MINOR_SOURCE_POSTGRES_VERSION" \
-    E2E_CITUS_MINOR_TARGET_POSTGRES_VERSION="$E2E_CITUS_MINOR_TARGET_POSTGRES_VERSION"
+    E2E_CITUS_MAJOR_SOURCE_POSTGRES_VERSION="$E2E_CITUS_MAJOR_SOURCE_POSTGRES_VERSION" \
+    E2E_CITUS_MAJOR_TARGET_POSTGRES_VERSION="$E2E_CITUS_MAJOR_TARGET_POSTGRES_VERSION"
   "$SHELL" "$PROJECT_PATH/stackgres-k8s/ci/build/build-functions.sh" path_hash \
     "$(realpath --relative-to "$PROJECT_PATH" "$SPEC_PATH/abstract/sharded-dbops")"
 }
 
 e2e_test_install() {
-  E2E_POSTGRES_VERSION="$E2E_CITUS_MINOR_SOURCE_POSTGRES_VERSION"
+  E2E_POSTGRES_VERSION="$E2E_CITUS_MAJOR_SOURCE_POSTGRES_VERSION"
   CLUSTER_NAME="$(get_sgshardedcluster_name "$SPEC_NAME")"
+  TARGET_PGCONFIG="$CLUSTER_NAME-pgconfig-for-major-version-upgrade"
 
   create_or_replace_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE" "3" "1" "0"
 
@@ -24,13 +25,25 @@ e2e_test_install() {
 }
 
 e2e_test() {
-  run_test "Checking that minor version upgrade sharded dbops is working" check_sharded_dbops_minor_version_upgrade_is_working
+  run_test "Checking that major version upgrade sharded dbops is working" check_sharded_dbops_major_version_upgrade_is_working
 }
 
-check_sharded_dbops_minor_version_upgrade_is_working() {
-  SHARDED_DBOPS_NAME="$(get_sgshardeddbops_name minor-version-upgrade-"${CLUSTER_NAME}-$(shuf -i 0-65535 -n 1)")"
+check_sharded_dbops_major_version_upgrade_is_working() {
+  SHARDED_DBOPS_NAME="$(get_sgshardeddbops_name major-"${CLUSTER_NAME}-$(shuf -i 0-65535 -n 1)")"
 
   generate_sharded_mock_data
+
+  cat << EOF | kubectl create -f -
+apiVersion: stackgres.io/v1
+kind: SGPostgresConfig
+metadata:
+  name: $TARGET_PGCONFIG
+  namespace: $CLUSTER_NAMESPACE
+spec:
+  postgresVersion: "${E2E_CITUS_MAJOR_TARGET_POSTGRES_VERSION%%.*}"
+  postgresql.conf:
+    shared_buffers: '32MB'
+EOF
 
   cat << EOF | kubectl create -f -
 apiVersion: stackgres.io/v1
@@ -40,14 +53,15 @@ metadata:
   namespace: $CLUSTER_NAMESPACE
 spec:
   sgShardedCluster: $CLUSTER_NAME
-  op: minorVersionUpgrade
-  minorVersionUpgrade:
-    postgresVersion: "$E2E_CITUS_MINOR_TARGET_POSTGRES_VERSION"
-    method: InPlace
+  op: majorVersionUpgrade
+  majorVersionUpgrade:
+    postgresVersion: "$E2E_CITUS_MAJOR_TARGET_POSTGRES_VERSION"
+    sgPostgresConfig: $TARGET_PGCONFIG
+    link: true
 EOF
 
   if wait_until eval '[ "$(kubectl get sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" \
-    --template "{{ .spec.postgres.version }}")" = "$E2E_CITUS_MINOR_TARGET_POSTGRES_VERSION" ]'
+    --template "{{ .spec.postgres.version }}")" = "$E2E_CITUS_MAJOR_TARGET_POSTGRES_VERSION" ]'
   then
     success "SGShardedCluster postgres version was updated to the target version"
   else
@@ -65,7 +79,7 @@ EOF
   wait_sharded_dbops_is_completed "$SHARDED_DBOPS_NAME"
 
   if kubectl get sgshardeddbops -n "$CLUSTER_NAMESPACE" "$SHARDED_DBOPS_NAME" \
-    --template '{{ .status.minorVersionUpgrade.restartedSgClusters }}' \
+    --template '{{ .status.majorVersionUpgrade.restartedSgClusters }}' \
     | grep -qF "$CLUSTER_NAME-worker1"
   then
     success "All SGClusters appear in the restartedSgClusters status"
@@ -73,9 +87,17 @@ EOF
     fail "Not all SGClusters appear in the restartedSgClusters status"
   fi
 
+  if kubectl get sgshardedcluster -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" \
+    --template '{{ .status.dbOps }}' | grep -qxF '<no value>'
+  then
+    success "SGShardedCluster dbOps status was cleaned up"
+  else
+    fail "SGShardedCluster dbOps status was not cleaned up"
+  fi
+
   wait_sharded_cluster "$CLUSTER_NAME" "$CLUSTER_NAMESPACE"
 
-  check_sharded_members_postgres_version "$E2E_CITUS_MINOR_TARGET_POSTGRES_VERSION"
+  check_sharded_members_postgres_version "$E2E_CITUS_MAJOR_TARGET_POSTGRES_VERSION"
 
   check_sharded_mock_data
 }

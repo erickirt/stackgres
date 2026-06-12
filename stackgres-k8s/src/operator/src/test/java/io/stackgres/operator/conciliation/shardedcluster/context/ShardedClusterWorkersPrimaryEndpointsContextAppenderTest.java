@@ -34,6 +34,8 @@ class ShardedClusterWorkersPrimaryEndpointsContextAppenderTest {
 
   private StackGresCluster worker1;
 
+  private StackGresCluster queryRouter0;
+
   @Spy
   private StackGresShardedClusterContext.Builder contextBuilder;
 
@@ -46,6 +48,8 @@ class ShardedClusterWorkersPrimaryEndpointsContextAppenderTest {
     worker0.getMetadata().setName(worker0.getMetadata().getName() + "0");
     worker1 = Fixtures.cluster().loadDefault().get();
     worker1.getMetadata().setName(worker0.getMetadata().getName() + "1");
+    queryRouter0 = Fixtures.cluster().loadDefault().get();
+    queryRouter0.getMetadata().setName(queryRouter0.getMetadata().getName() + "-qr0");
     contextAppender = new ShardedClusterWorkersPrimaryEndpointsContextAppender(endpointsFinder);
   }
 
@@ -63,6 +67,12 @@ class ShardedClusterWorkersPrimaryEndpointsContextAppenderTest {
         .withName(PatroniUtil.readWriteName(worker1))
         .endMetadata()
         .build();
+    Endpoints queryRouterEndpoints0 =
+        new EndpointsBuilder()
+        .withNewMetadata()
+        .withName(PatroniUtil.readWriteName(queryRouter0))
+        .endMetadata()
+        .build();
     when(endpointsFinder.findByNameAndNamespace(
         PatroniUtil.readWriteName(worker0),
         worker0.getMetadata().getNamespace()))
@@ -71,8 +81,13 @@ class ShardedClusterWorkersPrimaryEndpointsContextAppenderTest {
         PatroniUtil.readWriteName(worker1),
         worker0.getMetadata().getNamespace()))
         .thenReturn(Optional.of(endpoints1));
-    contextAppender.appendContext(List.of(worker0, worker1), contextBuilder);
+    when(endpointsFinder.findByNameAndNamespace(
+        PatroniUtil.readWriteName(queryRouter0),
+        queryRouter0.getMetadata().getNamespace()))
+        .thenReturn(Optional.of(queryRouterEndpoints0));
+    contextAppender.appendContext(List.of(worker0, worker1), List.of(queryRouter0), contextBuilder);
     verify(contextBuilder).workersPrimaryEndpoints(List.of(endpoints0, endpoints1));
+    verify(contextBuilder).queryRoutersPrimaryEndpoints(List.of(queryRouterEndpoints0));
   }
 
   @Test
@@ -85,8 +100,13 @@ class ShardedClusterWorkersPrimaryEndpointsContextAppenderTest {
         PatroniUtil.readWriteName(worker1),
         worker1.getMetadata().getNamespace()))
         .thenReturn(Optional.empty());
-    contextAppender.appendContext(List.of(worker0, worker1), contextBuilder);
+    when(endpointsFinder.findByNameAndNamespace(
+        PatroniUtil.readWriteName(queryRouter0),
+        queryRouter0.getMetadata().getNamespace()))
+        .thenReturn(Optional.empty());
+    contextAppender.appendContext(List.of(worker0, worker1), List.of(queryRouter0), contextBuilder);
     verify(contextBuilder).workersPrimaryEndpoints(List.of());
+    verify(contextBuilder).queryRoutersPrimaryEndpoints(List.of());
   }
 
   @Test
@@ -105,8 +125,16 @@ class ShardedClusterWorkersPrimaryEndpointsContextAppenderTest {
         PatroniUtil.readWriteName(worker1),
         worker1.getMetadata().getNamespace()))
         .thenReturn(Optional.empty());
-    contextAppender.appendContext(List.of(worker0, worker1), contextBuilder);
+    contextAppender.appendContext(List.of(worker0, worker1), List.of(), contextBuilder);
     verify(contextBuilder).workersPrimaryEndpoints(List.of(endpoints0));
+    verify(contextBuilder).queryRoutersPrimaryEndpoints(List.of());
+  }
+
+  @Test
+  void givenNoQueryRouters_shouldPassEmpty() {
+    contextAppender.appendContext(List.of(), List.of(), contextBuilder);
+    verify(contextBuilder).workersPrimaryEndpoints(List.of());
+    verify(contextBuilder).queryRoutersPrimaryEndpoints(List.of());
   }
 
 }

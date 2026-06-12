@@ -63,7 +63,12 @@ run_op() {
     SOURCE_EXTENSIONS="$(kubectl get "$CLUSTER_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" -o json \
       | jq '.spec.postgres.extensions')"
     SOURCE_POSTGRES_CONFIG="$(kubectl get "$CLUSTER_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" \
-      --template='{{ .spec.configurations.sgPostgresConfig }}')"
+      --template='{{ if .status }}{{ if .status.sgPostgresConfig }}{{ .status.sgPostgresConfig }}{{ end }}{{ end }}')"
+    if [ "x$SOURCE_POSTGRES_CONFIG" = "x" ]
+    then
+      SOURCE_POSTGRES_CONFIG="$(kubectl get "$CLUSTER_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" \
+        --template='{{ .spec.configurations.sgPostgresConfig }}')"
+    fi
     SOURCE_BACKUP_PATH="$(kubectl get "$CLUSTER_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" \
       --template='{{ if .status }}{{ if .status.backupPaths }}{{ index .status.backupPaths 0 }}{{ end }}{{ end }}')"
     if [ "$SOURCE_BACKUP_PATH" = '<no value>' ]

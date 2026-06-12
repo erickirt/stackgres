@@ -66,6 +66,8 @@ kubectl_mock() {
     ("get $CLUSTER_CRD_NAME.$CRD_GROUP -n $CLUSTER_NAMESPACE $CLUSTER_NAME --template={{ .status.postgresVersion }}")
     printf '%s' "$SOURCE_VERSION"
     ;;
+    ("get $CLUSTER_CRD_NAME.$CRD_GROUP -n $CLUSTER_NAMESPACE $CLUSTER_NAME --template={{ if .status }}{{ if .status.sgPostgresConfig }}{{ .status.sgPostgresConfig }}{{ end }}{{ end }}")
+    ;;
     ("get $CLUSTER_CRD_NAME.$CRD_GROUP -n $CLUSTER_NAMESPACE $CLUSTER_NAME --template={{ .spec.configurations.sgPostgresConfig }}")
     printf %s "postgresconf"
     ;;

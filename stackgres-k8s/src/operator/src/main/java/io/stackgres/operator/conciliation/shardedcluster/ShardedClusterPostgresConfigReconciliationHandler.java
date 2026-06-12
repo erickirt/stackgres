@@ -45,4 +45,20 @@ public class ShardedClusterPostgresConfigReconciliationHandler
             .anyMatch(label::equals));
   }
 
+  @Override
+  protected void doDelete(StackGresShardedCluster context, HasMetadata resource) {
+    LOGGER.debug("Skipping deleting {} {}.{}",
+        resource.getKind(),
+        resource.getMetadata().getNamespace(),
+        resource.getMetadata().getName());
+  }
+
+  @Override
+  protected void doDeleteWithOrphans(StackGresShardedCluster context, HasMetadata resource) {
+    LOGGER.debug("Skipping deleting {} {}.{}",
+        resource.getKind(),
+        resource.getMetadata().getNamespace(),
+        resource.getMetadata().getName());
+  }
+
 }

@@ -384,6 +384,7 @@ class StackGresShardedClusterForCitusUtilTest {
     return Fixtures.shardedCluster().getBuilder()
         .withNewSpec()
         .withNewPostgres()
+        .withVersion("16.4")
         .endPostgres()
         .withNewCoordinator()
         .withNewConfigurationsForCoordinator()

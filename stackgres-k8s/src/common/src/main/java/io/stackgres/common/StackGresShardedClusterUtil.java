@@ -100,7 +100,18 @@ public interface StackGresShardedClusterUtil {
   }
 
   static String coordinatorConfigName(StackGresShardedCluster cluster) {
-    return getCoordinatorClusterName(cluster);
+    return getCoordinatorClusterName(cluster) + "-"
+        + cluster.getSpec().getPostgres().getVersion().split("\\.")[0];
+  }
+
+  static String workerConfigName(StackGresShardedCluster cluster, int index) {
+    return getWorkerClusterName(cluster, index) + "-"
+        + cluster.getSpec().getPostgres().getVersion().split("\\.")[0];
+  }
+
+  static String queryRouterConfigName(StackGresShardedCluster cluster, int index) {
+    return getQueryRouterClusterName(cluster, index) + "-"
+        + cluster.getSpec().getPostgres().getVersion().split("\\.")[0];
   }
 
   static String coordinatorScriptName(StackGresShardedCluster cluster) {

@@ -73,7 +73,7 @@ public class ShardedDbOpsMajorVersionUpgradeJob extends AbstractShardedDbOpsJob 
     return ImmutableList.<EnvVar>builder()
         .add(
             new EnvVarBuilder()
-            .withName("POSTGRES_VERSION")
+            .withName("TARGET_POSTGRES_VERSION")
             .withValue(Optional.ofNullable(majorVersionUpgrade)
                 .map(StackGresShardedDbOpsMajorVersionUpgrade::getPostgresVersion)
                 .orElseThrow())

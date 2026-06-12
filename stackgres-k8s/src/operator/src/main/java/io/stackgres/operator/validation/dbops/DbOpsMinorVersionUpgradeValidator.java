@@ -21,6 +21,7 @@ import io.stackgres.common.StackGresVersion;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgdbops.StackGresDbOps;
 import io.stackgres.common.crd.sgdistributedlogs.StackGresDistributedLogs;
+import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOps;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.operator.common.StackGresDbOpsReview;
 import io.stackgres.operator.conciliation.cluster.context.ClusterPostgresVersionContextAppender;
@@ -79,7 +80,19 @@ public class DbOpsMinorVersionUpgradeValidator implements DbOpsValidator {
                     ownerReference.getKind(),
                     HasMetadata.getKind(StackGresDistributedLogs.class)))
                 .findFirst();
-            if (foundOwnerReference.isPresent()) {
+            boolean ownedByShardedDbOps = Optional.of(dbOps.getMetadata())
+                .map(ObjectMeta::getOwnerReferences)
+                .stream()
+                .flatMap(List::stream)
+                .anyMatch(ownerReference -> Objects.equals(
+                    ownerReference.getKind(),
+                    HasMetadata.getKind(StackGresShardedDbOps.class)));
+            boolean targetPostgresVersionAlreadySetOnCluster = Objects.equals(
+                dbOps.getSpec().getMinorVersionUpgrade().getPostgresVersion(),
+                cluster.getSpec().getPostgres().getVersion());
+            if (foundOwnerReference.isPresent()
+                && !ownedByShardedDbOps
+                && !targetPostgresVersionAlreadySetOnCluster) {
               OwnerReference ownerReference = foundOwnerReference.get();
               fail("Can not perform minor version upgrade on SGCluster managed by "
                   + ownerReference.getKind() + " " + ownerReference.getName());

@@ -6,55 +6,86 @@
 package io.stackgres.operator.conciliation.shardedcluster.context;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorker;
 import io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForUtil;
 import io.stackgres.operator.conciliation.shardedcluster.StackGresShardedClusterContext.Builder;
 import jakarta.enterprise.context.ApplicationScoped;
+import org.jooq.lambda.tuple.Tuple;
+import org.jooq.lambda.tuple.Tuple3;
 
 @ApplicationScoped
 public class ShardedClusterWorkersClustersContextAppender {
 
+  private final ShardedClusterWorkersInstanceProfileContextAppender
+      shardedClusterWorkersInstanceProfileContextAppender;
+  private final ShardedClusterWorkersPostgresConfigContextAppender
+      shardedClusterWorkersPostgresConfigContextAppender;
+  private final ShardedClusterWorkersPoolingConfigContextAppender
+      shardedClusterWorkersPoolingConfigContextAppender;
   private final ShardedClusterWorkersPrimaryEndpointsContextAppender
       shardedClusterWorkersPrimaryEndpointsContextAppender;
-  private final ShardedClusterQueryRoutersPrimaryEndpointsContextAppender
-      shardedClusterQueryRoutersPrimaryEndpointsContextAppender;
   private final ObjectMapper objectMapper;
 
   public ShardedClusterWorkersClustersContextAppender(
+      ShardedClusterWorkersInstanceProfileContextAppender
+          shardedClusterWorkersInstanceProfileContextAppender,
+      ShardedClusterWorkersPostgresConfigContextAppender
+          shardedClusterWorkersPostgresConfigContextAppender,
+      ShardedClusterWorkersPoolingConfigContextAppender
+          shardedClusterWorkersPoolingConfigContextAppender,
       ShardedClusterWorkersPrimaryEndpointsContextAppender
           shardedClusterWorkersPrimaryEndpointsContextAppender,
-      ShardedClusterQueryRoutersPrimaryEndpointsContextAppender
-          shardedClusterQueryRoutersPrimaryEndpointsContextAppender,
       ObjectMapper objectMapper) {
+    this.shardedClusterWorkersInstanceProfileContextAppender =
+        shardedClusterWorkersInstanceProfileContextAppender;
+    this.shardedClusterWorkersPostgresConfigContextAppender =
+        shardedClusterWorkersPostgresConfigContextAppender;
+    this.shardedClusterWorkersPoolingConfigContextAppender =
+        shardedClusterWorkersPoolingConfigContextAppender;
     this.shardedClusterWorkersPrimaryEndpointsContextAppender =
         shardedClusterWorkersPrimaryEndpointsContextAppender;
-    this.shardedClusterQueryRoutersPrimaryEndpointsContextAppender =
-        shardedClusterQueryRoutersPrimaryEndpointsContextAppender;
     this.objectMapper = objectMapper;
   }
 
   public void appendContext(
       StackGresShardedCluster cluster,
       Builder contextBuilder,
+      String postgresVersion,
       Optional<StackGresShardedCluster> replicateCluster) {
-    List<StackGresCluster> workers = getWorkersClusters(cluster, replicateCluster);
+    var plainOverrides = cluster.getSpec().getPlainOverrides();
+    var indexedWorkers = getWorkersClusters(cluster, plainOverrides, replicateCluster);
+    final List<StackGresCluster> workers = indexedWorkers.stream().map(Tuple3::v3).toList();
     contextBuilder.workers(workers);
-    shardedClusterWorkersPrimaryEndpointsContextAppender.appendContext(workers, contextBuilder);
-    List<StackGresCluster> queryRouters = getQueryRoutersClusters(cluster, replicateCluster);
+    var indexedQueryRouters = getQueryRoutersClusters(cluster, plainOverrides, replicateCluster);
+    final List<StackGresCluster> queryRouters = indexedQueryRouters.stream().map(Tuple3::v3).toList();
     contextBuilder.queryRouters(queryRouters);
-    shardedClusterQueryRoutersPrimaryEndpointsContextAppender.appendContext(queryRouters, contextBuilder);
+    shardedClusterWorkersInstanceProfileContextAppender.appendContext(
+        cluster, contextBuilder, indexedWorkers, indexedQueryRouters);
+    shardedClusterWorkersPostgresConfigContextAppender.appendContext(
+        cluster, contextBuilder, postgresVersion, indexedWorkers, indexedQueryRouters);
+    shardedClusterWorkersPoolingConfigContextAppender.appendContext(
+        cluster, contextBuilder, indexedWorkers, indexedQueryRouters);
+    shardedClusterWorkersPrimaryEndpointsContextAppender.appendContext(workers, queryRouters, contextBuilder);
   }
 
-  private List<StackGresCluster> getWorkersClusters(
+  private List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>> getWorkersClusters(
       StackGresShardedCluster cluster,
+      List<StackGresShardedClusterWorker> plainOverrides,
       Optional<StackGresShardedCluster> replicateCluster) {
     return IntStream.range(0, cluster.getSpec().getWorkers().getClusters())
-        .mapToObj(index -> getWorkerCluster(cluster, index, replicateCluster))
+        .mapToObj(index -> Tuple.tuple(
+            index,
+            plainOverrides.stream()
+            .filter(override -> Objects.equals(override.getIndex(), index))
+            .findFirst(),
+            getWorkerCluster(cluster, index, replicateCluster)))
         .toList();
   }
 
@@ -66,8 +97,9 @@ public class ShardedClusterWorkersClustersContextAppender {
     return StackGresShardedClusterForUtil.getWorkerCluster(cluster, index, replicateCluster);
   }
 
-  private List<StackGresCluster> getQueryRoutersClusters(
+  private List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>> getQueryRoutersClusters(
       StackGresShardedCluster cluster,
+      List<StackGresShardedClusterWorker> plainOverrides,
       Optional<StackGresShardedCluster> replicateCluster) {
     final int queryRouterIndexOffset =
         Optional.ofNullable(cluster.getSpec().getCoordinator().getQueryRouterIndexOffset())
@@ -77,7 +109,12 @@ public class ShardedClusterWorkersClustersContextAppender {
     return IntStream.range(
             queryRouterIndexOffset,
             queryRouterIndexOffset + queryRouterClusters)
-        .mapToObj(index -> getQueryRouterCluster(cluster, index, replicateCluster))
+        .mapToObj(index -> Tuple.tuple(
+            index,
+            plainOverrides.stream()
+            .filter(override -> Objects.equals(override.getIndex(), index))
+            .findFirst(),
+            getQueryRouterCluster(cluster, index, replicateCluster)))
         .toList();
   }
 
