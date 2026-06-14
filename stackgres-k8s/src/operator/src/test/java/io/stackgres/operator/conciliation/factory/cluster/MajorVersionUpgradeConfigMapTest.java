@@ -88,7 +88,6 @@ class MajorVersionUpgradeConfigMapTest {
     assertTrue(source instanceof ConfigMap);
     ConfigMap configMap = (ConfigMap) source;
     assertNotNull(configMap.getData());
-    assertFalse(configMap.getData().containsKey("postgresql.conf"));
     assertTrue(configMap.getData().containsKey("postgresql.conf"));
     String targetPgConf = configMap.getData().get("postgresql.conf");
     assertTrue(targetPgConf.contains("max_connections"));
@@ -97,19 +96,8 @@ class MajorVersionUpgradeConfigMapTest {
   }
 
   @Test
-  void buildSource_whenNoTargetPostgresConfig_shouldFail() {
-    setPostgresConfigs();
+  void buildSource_whenNoPostgresConfig_shouldFail() {
     when(context.getPostgresConfig()).thenReturn(Optional.empty());
-
-    var ex = assertThrows(RuntimeException.class,
-        () -> majorVersionUpgradeConfigMap.buildSource(context));
-
-    assertEquals("No target SGPostgresConfig found", ex.getMessage());
-  }
-
-  @Test
-  void buildSource_whenNoSourcePostgresConfig_shouldFail() {
-    setPostgresConfigs();
 
     var ex = assertThrows(RuntimeException.class,
         () -> majorVersionUpgradeConfigMap.buildSource(context));

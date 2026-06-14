@@ -630,6 +630,34 @@ spec:
                       Indicates the number of errors that the operation can tolerate after the upgrade
                        is performed in order to wait for the Pod to become ready and set the operation
                        as completed.
+                  manualRollback:
+                    type: boolean
+                    default: false
+                    description: |
+                      When set to `true` the major version upgrade does not automatically roll back or
+                       clean up on its own. Instead, when the upgrade fails (or, on success, before the
+                       cleanup that removes the source data directory) the operation pauses: it sets
+                       `.status.majorVersionUpgrade.status` to `failed` or `succeeded`, the operator raises
+                       the `WaitingRollback` condition, and the operation waits until
+                       `.status.majorVersionUpgrade.rollback` is set.
+
+                      While paused, the `major-version-upgrade` init container of the primary instance stays
+                       alive (sleeping) so it can be inspected and the upgrade can be performed manually by
+                       exec-ing into it.
+
+                      When `.status.majorVersionUpgrade.rollback` is set to `false` the init container exits
+                       successfully (assuming the user has already performed the upgrade manually) and the
+                       operation waits for the Pod to become ready tolerating up to
+                       `maxErrorsAfterUpgrade` plus `maxErrorsAfterContinueOnFailure` errors. When set to
+                       `true` the operation performs a rollback regardless of whether it had failed or
+                       succeeded.
+                  maxErrorsAfterContinueOnFailure:
+                    type: integer
+                    default: 0
+                    description: |
+                      Only used when `manualRollback` is `true`. After `.status.majorVersionUpgrade.rollback`
+                       is set to `false` to continue a paused operation, this number of errors is added to
+                       `maxErrorsAfterUpgrade` as the budget allowed while waiting for the Pod to become ready.
               restart:
                 type: object
                 description: |
@@ -916,11 +944,23 @@ spec:
                   phase:
                     type: string
                     description: |
-                      The phase the operation is or was executing
+                      The phase the operation is or was executing.
+
+                      When `manualRollback` is `true` and the operation is paused waiting for a rollback
+                       decision the phase is set to `wait-post-failed-upgrade-decision` (the upgrade failed)
+                       or `wait-post-upgrade-decision` (the upgrade succeeded, before the cleanup that
+                       removes the source data).
                   failure:
                     type: string
                     description: |
                       A failure message (when available)
+                  rollback:
+                    type: boolean
+                    description: |
+                      Set when `manualRollback` is `true` to resolve a paused operation (when the phase is
+                       `wait-post-failed-upgrade-decision` or `wait-post-upgrade-decision`). When `false` the
+                       operation continues (assuming the upgrade was performed manually) and waits for
+                       readiness; when `true` the operation performs a rollback.
               restart:
                 type: object
                 description: |

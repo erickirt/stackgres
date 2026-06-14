@@ -2682,6 +2682,13 @@ spec:
                         type: boolean
                         description: |
                           Indicates to rollback from a previous major version upgrade
+                      manualRollback:
+                        type: boolean
+                        description: |
+                          Indicates that the major version upgrade should pause on failure (and, on
+                           success, before cleanup) so that it can be inspected and a rollback decision
+                           can be taken manually. When set the major-version-upgrade init container, on
+                           failure, stays alive waiting for the decision instead of exiting.
                   restart:
                     type: object
                     description: |

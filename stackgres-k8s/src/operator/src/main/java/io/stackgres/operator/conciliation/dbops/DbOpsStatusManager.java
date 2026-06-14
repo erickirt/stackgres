@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
+import io.stackgres.common.JobUtil;
 import io.stackgres.common.PatroniUtil;
 import io.stackgres.common.StackGresContext;
 import io.stackgres.common.StackGresProperty;
@@ -38,6 +39,7 @@ import io.stackgres.common.crd.sgdbops.DbOpsOperation;
 import io.stackgres.common.crd.sgdbops.DbOpsRestartStatus;
 import io.stackgres.common.crd.sgdbops.DbOpsStatusCondition;
 import io.stackgres.common.crd.sgdbops.StackGresDbOps;
+import io.stackgres.common.crd.sgdbops.StackGresDbOpsMajorVersionUpgradeStatus;
 import io.stackgres.common.crd.sgdbops.StackGresDbOpsMinorVersionUpgrade;
 import io.stackgres.common.crd.sgdbops.StackGresDbOpsMinorVersionUpgradeStatus;
 import io.stackgres.common.crd.sgdbops.StackGresDbOpsRestart;
@@ -354,18 +356,10 @@ public class DbOpsStatusManager
   }
 
   private void updateJobBasedDbOps(StackGresDbOps source) {
-    final boolean isJobFinishedAndStatusNotUpdated;
     final Optional<Job> job = jobFinder.findByNameAndNamespace(
         DbOpsUtil.jobName(source),
         source.getMetadata().getNamespace());
-    isJobFinishedAndStatusNotUpdated = job
-        .map(Job::getStatus)
-        .map(JobStatus::getConditions)
-        .stream()
-        .flatMap(List::stream)
-        .filter(condition -> Objects.equals(condition.getType(), "Failed")
-            || Objects.equals(condition.getType(), "Completed"))
-        .anyMatch(condition -> Objects.equals(condition.getStatus(), "True"));
+    final Optional<Boolean> jobCompleted = JobUtil.isJobCompleteOrFailed(job);
     if (source.getStatus() == null) {
       source.setStatus(new StackGresDbOpsStatus());
     }
@@ -380,25 +374,57 @@ public class DbOpsStatusManager
     source.getStatus().setOpRetries(
         Math.max(0, failed - 1) + (failed > 0 ? active : 0));
 
-    if (isJobFinishedAndStatusNotUpdated) {
-      if (source.getStatus() == null) {
-        source.setStatus(new StackGresDbOpsStatus());
-      }
+    updateMajorVersionUpgradeWaitingRollbackCondition(source);
+
+    if (jobCompleted.isPresent()) {
       updateCondition(getFalseRunning(), source);
-      updateCondition(getCompleted(), source);
-      if (Optional.of(source)
+      final boolean dbOpsAlreadyFailed = Optional.of(source)
           .map(StackGresDbOps::getStatus)
           .map(StackGresDbOpsStatus::getConditions)
           .stream()
           .flatMap(List::stream)
           .filter(condition -> Objects.equals(condition.getType(),
               DbOpsStatusCondition.Type.FAILED.getType()))
-          .noneMatch(condition -> Objects.equals(condition.getStatus(), "True"))) {
+          .anyMatch(condition -> Objects.equals(condition.getStatus(), "True"));
+      if (dbOpsAlreadyFailed) {
+        // The operation already recorded a failure (e.g. the run script set OperationFailed). Never
+        // stamp OperationCompleted over a failed operation.
+        updateCondition(getFalseCompleted(), source);
+      } else if (jobCompleted.orElse(false)) {
+        updateCondition(getCompleted(), source);
+      } else {
         LOGGER.warn(
-            "DbOps {} failed since the job completed but status condition is neither completed or failed",
+            "DbOps {} failed since the job failed but status condition is neither completed nor failed",
             getDbOpsId(source));
         updateCondition(getFailedDueToUnexpectedFailure(), source);
+        updateCondition(getFalseCompleted(), source);
       }
+    }
+  }
+
+  private void updateMajorVersionUpgradeWaitingRollbackCondition(StackGresDbOps source) {
+    if (!source.getSpec().isOpMajorVersionUpgrade()) {
+      return;
+    }
+    final Optional<StackGresDbOpsMajorVersionUpgradeStatus> majorVersionUpgrade =
+        Optional.ofNullable(source.getStatus())
+        .map(StackGresDbOpsStatus::getMajorVersionUpgrade);
+    final String phase = majorVersionUpgrade
+        .map(StackGresDbOpsMajorVersionUpgradeStatus::getPhase)
+        .orElse(null);
+    final Boolean rollback = majorVersionUpgrade
+        .map(StackGresDbOpsMajorVersionUpgradeStatus::getRollback)
+        .orElse(null);
+    if (rollback == null
+        && DbOpsUtil.MAJOR_VERSION_UPGRADE_WAIT_POST_FAILED_UPGRADE_DECISION_PHASE.equals(phase)) {
+      updateCondition(
+          DbOpsStatusCondition.DBOPS_WAITING_ROLLBACK_AFTER_FAILED.getCondition(), source);
+    } else if (rollback == null
+        && DbOpsUtil.MAJOR_VERSION_UPGRADE_WAIT_POST_UPGRADE_DECISION_PHASE.equals(phase)) {
+      updateCondition(
+          DbOpsStatusCondition.DBOPS_WAITING_ROLLBACK_AFTER_SUCCEEDED.getCondition(), source);
+    } else {
+      updateCondition(DbOpsStatusCondition.DBOPS_FALSE_WAITING_ROLLBACK.getCondition(), source);
     }
   }
 

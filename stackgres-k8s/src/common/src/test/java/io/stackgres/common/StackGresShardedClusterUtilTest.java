@@ -210,6 +210,27 @@ class StackGresShardedClusterUtilTest {
   }
 
   @Test
+  void coordinatorConfigName_withTargetVersion_usesTargetMajorVersionSuffix() {
+    assertEquals(
+        "stackgres-coord-17",
+        StackGresShardedClusterUtil.coordinatorConfigName(newCluster(), "17.10"));
+  }
+
+  @Test
+  void workerConfigName_withTargetVersion_usesTargetMajorVersionSuffix() {
+    assertEquals(
+        "stackgres-worker2-17",
+        StackGresShardedClusterUtil.workerConfigName(newCluster(), 2, "17.10"));
+  }
+
+  @Test
+  void queryRouterConfigName_withTargetVersion_usesTargetMajorVersionSuffix() {
+    assertEquals(
+        "stackgres-router0-17",
+        StackGresShardedClusterUtil.queryRouterConfigName(newCluster(), 1024, "17.10"));
+  }
+
+  @Test
   void coordinatorScriptName_returnsNameDashCoord() {
     assertEquals(
         "stackgres-coord",

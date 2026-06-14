@@ -97,6 +97,9 @@ public class MajorVersionUpgrade implements ContainerFactory<ClusterContainerCon
     String rollback = Optional.ofNullable(majorVersionUpgradeStatus.getRollback())
         .map(Object::toString)
         .orElse(Boolean.FALSE.toString());
+    String manualRollback = Optional.ofNullable(majorVersionUpgradeStatus.getManualRollback())
+        .map(Object::toString)
+        .orElse(Boolean.FALSE.toString());
 
     final String targetPatroniImageName = StackGresUtil.getPatroniImageName(
         clusterContext.getCluster(), targetVersion);
@@ -163,6 +166,10 @@ public class MajorVersionUpgrade implements ContainerFactory<ClusterContainerCon
                 new EnvVarBuilder()
                     .withName("ROLLBACK")
                     .withValue(rollback)
+                    .build(),
+                new EnvVarBuilder()
+                    .withName("MANUAL_ROLLBACK")
+                    .withValue(manualRollback)
                     .build(),
                 new EnvVarBuilder()
                     .withName("POD_NAME")

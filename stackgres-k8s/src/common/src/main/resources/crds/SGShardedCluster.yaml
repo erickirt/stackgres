@@ -3911,6 +3911,20 @@ spec:
                         type: string
                         description: |
                           The SGPostgresConfig used before the major version upgrade
+                      sgDbOps:
+                        type: array
+                        description: |
+                          The list of SGDbOps created by the SGShardedDbOps to perform the major version upgrade.
+
+                          The entries follow the same ordering convention as `SGShardedBackup.status.sgBackups`: the
+                          first entry targets the coordinator, followed by the workers and then the query routers.
+
+                          While this section is present the operator stops reconciling the child SGClusters so that
+                          the SGDbOps are in full control of the major version upgrade of each SGCluster.
+                        items:
+                          type: string
+                          description: |
+                            One of the SGDbOps created by the SGShardedDbOps to perform the major version upgrade.
                   minorVersionUpgrade:
                     type: object
                     description: |

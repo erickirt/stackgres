@@ -31,9 +31,7 @@ spec:
     method: InPlace
 EOF
 
-  if kubectl wait --timeout "$((E2E_TIMEOUT * 2))s" -n "$CLUSTER_NAMESPACE" sgdbops "$DBOPS_NAME" \
-    --for condition=Completed \
-    && kubectl wait --timeout "0s" -n "$CLUSTER_NAMESPACE" sgdbops "$DBOPS_NAME" \
+  if kubectl wait --timeout "${E2E_TIMEOUT}s" -n "$CLUSTER_NAMESPACE" sgdbops "$DBOPS_NAME" \
     --for condition=Failed
   then
     success "restart failed."

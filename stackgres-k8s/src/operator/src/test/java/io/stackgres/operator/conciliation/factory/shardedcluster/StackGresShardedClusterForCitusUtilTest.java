@@ -699,6 +699,7 @@ class StackGresShardedClusterForCitusUtilTest {
     Assertions.assertEquals(
         shardedCluster.getSpec().getReplication(),
         cluster.getSpec().getReplication());
+    setExpectedShardPostgresConfig(shardedCluster, configuration, index, queryRouter);
     checkClusterSettings(
         clusterSpec,
         configuration,
@@ -763,7 +764,20 @@ class StackGresShardedClusterForCitusUtilTest {
     Assertions.assertEquals(
         replication,
         cluster.getSpec().getReplication());
+    setExpectedShardPostgresConfig(shardedCluster, configuration, index, queryRouter);
     checkClusterSettings(clusterSpec, configuration, pod, cluster);
+  }
+
+  private void setExpectedShardPostgresConfig(
+      StackGresShardedCluster shardedCluster,
+      StackGresClusterConfigurations configuration,
+      int index,
+      boolean queryRouter) {
+    if (index > 0) {
+      configuration.setSgPostgresConfig(queryRouter
+          ? StackGresShardedClusterUtil.queryRouterConfigName(shardedCluster, index - 1)
+          : StackGresShardedClusterUtil.workerConfigName(shardedCluster, index - 1));
+    }
   }
 
   private void checkClusterGlobalSettingsOnly(

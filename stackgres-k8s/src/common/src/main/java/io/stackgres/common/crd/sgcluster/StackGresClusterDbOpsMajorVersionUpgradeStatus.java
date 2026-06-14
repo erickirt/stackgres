@@ -63,6 +63,8 @@ public class StackGresClusterDbOpsMajorVersionUpgradeStatus extends ClusterDbOps
 
   private Boolean rollback;
 
+  private Boolean manualRollback;
+
   @ReferencedField("primaryInstance")
   interface PrimaryInstance extends FieldReference {
   }
@@ -190,12 +192,20 @@ public class StackGresClusterDbOpsMajorVersionUpgradeStatus extends ClusterDbOps
     this.rollback = rollback;
   }
 
+  public Boolean getManualRollback() {
+    return manualRollback;
+  }
+
+  public void setManualRollback(Boolean manualRollback) {
+    this.manualRollback = manualRollback;
+  }
+
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
     result = prime * result + Objects.hash(check, clone, dataChecksum, encoding, link, locale,
-        rollback, sourceBackupPath, sourcePostgresExtensions, sourcePostgresVersion,
+        manualRollback, rollback, sourceBackupPath, sourcePostgresExtensions, sourcePostgresVersion,
         sourceReplicationMode, sourceSgPostgresConfig, targetPostgresVersion);
     return result;
   }
@@ -215,7 +225,9 @@ public class StackGresClusterDbOpsMajorVersionUpgradeStatus extends ClusterDbOps
     return Objects.equals(check, other.check) && Objects.equals(clone, other.clone)
         && Objects.equals(dataChecksum, other.dataChecksum)
         && Objects.equals(encoding, other.encoding) && Objects.equals(link, other.link)
-        && Objects.equals(locale, other.locale) && Objects.equals(rollback, other.rollback)
+        && Objects.equals(locale, other.locale)
+        && Objects.equals(manualRollback, other.manualRollback)
+        && Objects.equals(rollback, other.rollback)
         && Objects.equals(sourceBackupPath, other.sourceBackupPath)
         && Objects.equals(sourcePostgresExtensions, other.sourcePostgresExtensions)
         && Objects.equals(sourcePostgresVersion, other.sourcePostgresVersion)

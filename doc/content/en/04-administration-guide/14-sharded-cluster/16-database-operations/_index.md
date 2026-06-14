@@ -229,6 +229,47 @@ spec:
 >  that can be specified with the `backupPaths` field (one path for the coordinator
 >  followed by one path for each worker cluster) or are generated automatically.
 
+While the SGShardedDbOps is running, the SGShardedCluster stops reconciling its child SGClusters
+(the names of the created child SGDbOps are tracked in
+`SGShardedCluster.status.dbOps.majorVersionUpgrade.sgDbOps`) so that each child SGDbOps is in full
+control of the major version upgrade of its SGCluster.
+
+### Manual rollback
+
+The SGShardedDbOps always creates the child SGDbOps with `manualRollback: true`, so each child
+[pauses]({{% relref "04-administration-guide/06-database-operations/07-major-version-upgrade/#manual-rollback" %}})
+on failure (and, on success, before its cleanup).
+
+- By default (the SGShardedDbOps `manualRollback` is `false`) the decision for each child is taken
+  automatically: a failed child is rolled back and a succeeded child is continued/cleaned up.
+- When the SGShardedDbOps `manualRollback` is `true`, whenever a child pauses the SGShardedDbOps
+  mirrors the child state to its own `.status.majorVersionUpgrade.status`, the operator raises the
+  `WaitingRollback` condition, and the SGShardedDbOps waits until you set
+  `.status.majorVersionUpgrade.rollback`. That value (`false` to continue assuming a manual upgrade,
+  `true` to roll back) is then propagated to the waiting child SGDbOps. The
+  `maxErrorsAfterContinueOnFailure` field is propagated to each child as well.
+
+```yaml
+apiVersion: stackgres.io/v1
+kind: SGShardedDbOps
+metadata:
+  name: major-version-upgrade
+spec:
+  sgShardedCluster: my-sharded-cluster
+  op: majorVersionUpgrade
+  majorVersionUpgrade:
+    postgresVersion: "16.2"
+    sgPostgresConfig: postgres-16-config
+    link: true
+    manualRollback: true
+```
+
+```bash
+# When the SGShardedDbOps is waiting (condition WaitingRollback=True), resolve it:
+kubectl patch sgshardeddbops major-version-upgrade --type merge \
+  -p '{"status":{"majorVersionUpgrade":{"rollback":false}}}'
+```
+
 ## Scheduling Operations
 
 ### Run at Specific Time

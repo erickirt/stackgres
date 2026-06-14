@@ -38,6 +38,8 @@ public class StackGresDbOpsMajorVersionUpgradeStatus {
 
   private String failure;
 
+  private Boolean rollback;
+
   public String getSourcePostgresVersion() {
     return sourcePostgresVersion;
   }
@@ -102,10 +104,19 @@ public class StackGresDbOpsMajorVersionUpgradeStatus {
     this.failure = failure;
   }
 
+  public Boolean getRollback() {
+    return rollback;
+  }
+
+  public void setRollback(Boolean rollback) {
+    this.rollback = rollback;
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(failure, initialInstances, pendingToRestartInstances, phase,
-        primaryInstance, restartedInstances, sourcePostgresVersion, targetPostgresVersion);
+        primaryInstance, restartedInstances, rollback, sourcePostgresVersion,
+        targetPostgresVersion);
   }
 
   @Override
@@ -123,6 +134,7 @@ public class StackGresDbOpsMajorVersionUpgradeStatus {
         && Objects.equals(phase, other.phase)
         && Objects.equals(primaryInstance, other.primaryInstance)
         && Objects.equals(restartedInstances, other.restartedInstances)
+        && Objects.equals(rollback, other.rollback)
         && Objects.equals(sourcePostgresVersion, other.sourcePostgresVersion)
         && Objects.equals(targetPostgresVersion, other.targetPostgresVersion);
   }

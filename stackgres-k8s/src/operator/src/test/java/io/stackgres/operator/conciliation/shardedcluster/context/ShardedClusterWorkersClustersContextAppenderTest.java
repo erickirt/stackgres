@@ -74,8 +74,10 @@ class ShardedClusterWorkersClustersContextAppenderTest {
     verify(contextBuilder).queryRouters(queryRouters.capture());
     assertEquals(cluster.getSpec().getWorkers().getClusters(), workers.getValue().size());
     assertEquals(List.of(), queryRouters.getValue());
-    ArgumentCaptor<List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>>> indexedWorkers = ArgumentCaptor.captor();
-    ArgumentCaptor<List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>>> indexedQueryRouters = ArgumentCaptor.captor();
+    ArgumentCaptor<List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>>>
+        indexedWorkers = ArgumentCaptor.captor();
+    ArgumentCaptor<List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>>>
+        indexedQueryRouters = ArgumentCaptor.captor();
     verify(shardedClusterWorkersInstanceProfileContextAppender).appendContext(
         eq(cluster), eq(contextBuilder), indexedWorkers.capture(), indexedQueryRouters.capture());
     assertEquals(
@@ -105,8 +107,10 @@ class ShardedClusterWorkersClustersContextAppenderTest {
     ArgumentCaptor<List<StackGresCluster>> queryRouters = ArgumentCaptor.captor();
     verify(contextBuilder).queryRouters(queryRouters.capture());
     assertEquals(1, queryRouters.getValue().size());
-    ArgumentCaptor<List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>>> indexedWorkers = ArgumentCaptor.captor();
-    ArgumentCaptor<List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>>> indexedQueryRouters = ArgumentCaptor.captor();
+    ArgumentCaptor<List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>>>
+        indexedWorkers = ArgumentCaptor.captor();
+    ArgumentCaptor<List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>>>
+        indexedQueryRouters = ArgumentCaptor.captor();
     verify(shardedClusterWorkersInstanceProfileContextAppender).appendContext(
         eq(cluster), eq(contextBuilder), indexedWorkers.capture(), indexedQueryRouters.capture());
     assertEquals(

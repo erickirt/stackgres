@@ -59,8 +59,6 @@ public interface StackGresShardedClusterForCitusUtil extends StackGresShardedClu
         spec.setConfigurations(
             new StackGresClusterConfigurationsBuilder(spec.getConfigurations())
             .build());
-        spec.getConfigurations().setSgPostgresConfig(
-            StackGresShardedClusterUtil.coordinatorConfigName(cluster));
       }
       setConfigurationsPatroniInitialConfig(cluster, spec, 0);
       if (spec.getManagedSql() == null) {
@@ -84,16 +82,27 @@ public interface StackGresShardedClusterForCitusUtil extends StackGresShardedClu
 
     @Override
     void updateWorkerClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
-      spec.getConfigurations().setSgPostgresConfig(
-          StackGresShardedClusterUtil.workerConfigName(cluster, index));
       setConfigurationsPatroniInitialConfig(cluster, spec, index + 1);
     }
 
     @Override
     void updateQueryRouterClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
-      spec.getConfigurations().setSgPostgresConfig(
-          StackGresShardedClusterUtil.queryRouterConfigName(cluster, index));
       setConfigurationsPatroniInitialConfig(cluster, spec, index + 1);
+    }
+
+    @Override
+    String getCoordinatorPostgresConfig(StackGresShardedCluster cluster) {
+      return StackGresShardedClusterUtil.coordinatorConfigName(cluster);
+    }
+
+    @Override
+    String getWorkerPostgresConfig(StackGresShardedCluster cluster, int index) {
+      return StackGresShardedClusterUtil.workerConfigName(cluster, index);
+    }
+
+    @Override
+    String getQueryRouterPostgresConfig(StackGresShardedCluster cluster, int index) {
+      return StackGresShardedClusterUtil.queryRouterConfigName(cluster, index);
     }
 
     private void setConfigurationsPatroniInitialConfig(

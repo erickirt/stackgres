@@ -43,7 +43,7 @@ class ShardedDbOpsStatusManagerTest {
       .withNewStatus()
       .withConditions(
           new JobConditionBuilder()
-          .withType("Completed")
+          .withType("Complete")
           .withStatus("False")
           .build(),
           new JobConditionBuilder()
@@ -57,7 +57,7 @@ class ShardedDbOpsStatusManagerTest {
       .withNewStatus()
       .withConditions(
           new JobConditionBuilder()
-          .withType("Completed")
+          .withType("Complete")
           .withStatus("False")
           .build(),
           new JobConditionBuilder()
@@ -70,7 +70,7 @@ class ShardedDbOpsStatusManagerTest {
   private final Job completedJob = new JobBuilder()
       .withNewStatus()
       .withConditions(new JobConditionBuilder()
-          .withType("Completed")
+          .withType("Complete")
           .withStatus("True")
           .build(),
           new JobConditionBuilder()
@@ -136,7 +136,7 @@ class ShardedDbOpsStatusManagerTest {
     dbOps.setStatus(new StackGresShardedDbOpsStatus());
     dbOps.getStatus().setConditions(List.of(
         ShardedDbOpsStatusCondition.DBOPS_FALSE_RUNNING.getCondition().setLastTransitionTime(),
-        ShardedDbOpsStatusCondition.DBOPS_FALSE_COMPLETED.getCondition(),
+        ShardedDbOpsStatusCondition.DBOPS_FALSE_COMPLETED.getCondition().setLastTransitionTime(),
         ShardedDbOpsStatusCondition.DBOPS_FAILED.getCondition().setLastTransitionTime()
         .setLastTransitionTime()));
 
@@ -149,7 +149,7 @@ class ShardedDbOpsStatusManagerTest {
         ShardedDbOpsStatusCondition.DBOPS_FALSE_RUNNING.getCondition(),
         dbOps.getStatus().getConditions());
     assertCondition(
-        ShardedDbOpsStatusCondition.DBOPS_COMPLETED.getCondition(),
+        ShardedDbOpsStatusCondition.DBOPS_FALSE_COMPLETED.getCondition(),
         dbOps.getStatus().getConditions());
     assertCondition(
         ShardedDbOpsStatusCondition.DBOPS_FAILED.getCondition(),
@@ -199,10 +199,6 @@ class ShardedDbOpsStatusManagerTest {
     assertCondition(
         ShardedDbOpsStatusCondition.DBOPS_COMPLETED.getCondition(),
         dbOps.getStatus().getConditions());
-    assertCondition(
-        ShardedDbOpsStatusCondition.DBOPS_FAILED.getCondition(),
-        dbOps.getStatus().getConditions(),
-        "Unexpected failure");
     verify(jobFinder, times(1)).findByNameAndNamespace(any(), any());
   }
 
@@ -218,7 +214,7 @@ class ShardedDbOpsStatusManagerTest {
         ShardedDbOpsStatusCondition.DBOPS_FALSE_RUNNING.getCondition(),
         dbOps.getStatus().getConditions());
     assertCondition(
-        ShardedDbOpsStatusCondition.DBOPS_COMPLETED.getCondition(),
+        ShardedDbOpsStatusCondition.DBOPS_FALSE_COMPLETED.getCondition(),
         dbOps.getStatus().getConditions());
     assertCondition(
         ShardedDbOpsStatusCondition.DBOPS_FAILED.getCondition(),
@@ -254,9 +250,8 @@ class ShardedDbOpsStatusManagerTest {
         ShardedDbOpsStatusCondition.DBOPS_COMPLETED.getCondition(),
         dbOps.getStatus().getConditions());
     assertCondition(
-        ShardedDbOpsStatusCondition.DBOPS_FAILED.getCondition(),
-        dbOps.getStatus().getConditions(),
-        "Unexpected failure");
+        ShardedDbOpsStatusCondition.DBOPS_FALSE_FAILED.getCondition(),
+        dbOps.getStatus().getConditions());
     verify(jobFinder, times(1)).findByNameAndNamespace(any(), any());
   }
 

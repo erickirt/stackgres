@@ -5,9 +5,12 @@
 
 package io.stackgres.operator.conciliation.factory.shardeddbops;
 
+import static io.stackgres.common.StackGresShardedClusterUtil.coordinatorConfigName;
 import static io.stackgres.common.StackGresShardedClusterUtil.getCoordinatorClusterName;
 import static io.stackgres.common.StackGresShardedClusterUtil.getQueryRouterClusterName;
 import static io.stackgres.common.StackGresShardedClusterUtil.getWorkerClusterName;
+import static io.stackgres.common.StackGresShardedClusterUtil.queryRouterConfigName;
+import static io.stackgres.common.StackGresShardedClusterUtil.workerConfigName;
 
 import java.util.List;
 import java.util.Optional;
@@ -70,6 +73,45 @@ public class ShardedDbOpsMajorVersionUpgradeJob extends AbstractShardedDbOpsJob 
     StackGresShardedDbOpsMajorVersionUpgrade majorVersionUpgrade =
         dbOps.getSpec().getMajorVersionUpgrade();
     final StackGresShardedCluster cluster = context.getShardedCluster();
+    final String targetPostgresVersion = Optional.ofNullable(majorVersionUpgrade)
+        .map(StackGresShardedDbOpsMajorVersionUpgrade::getPostgresVersion)
+        .orElseThrow();
+    final boolean isCitus = StackGresShardingType.CITUS.equals(
+        StackGresShardingType.fromString(cluster.getSpec().getType()));
+    final String rawSgPostgresConfig = Optional.ofNullable(majorVersionUpgrade)
+        .map(StackGresShardedDbOpsMajorVersionUpgrade::getSgPostgresConfig)
+        .orElseThrow();
+    final int workerClusters = cluster.getSpec().getWorkers().getClusters();
+    final int queryRouterClusters = Optional.of(cluster.getSpec())
+        .map(StackGresShardedClusterSpec::getCoordinator)
+        .map(StackGresShardedClusterCoordinator::getQueryRouterClusters)
+        .orElse(0);
+    final List<String> clusterNames = Seq.of(getCoordinatorClusterName(cluster))
+        .filter(ignore -> !StackGresShardingType.SHARDING_SPHERE.equals(
+            StackGresShardingType.fromString(cluster.getSpec().getType())))
+        .append(Seq.range(0, workerClusters)
+            .map(index -> getWorkerClusterName(cluster, index)))
+        .append(Seq.range(0, queryRouterClusters)
+            .map(index -> getQueryRouterClusterName(cluster, String.valueOf(index))))
+        .toList();
+    // The child SGDbOps each upgrade a child SGCluster, so each must reference the SGPostgresConfig
+    // that the target child SGCluster will actually use. The actual name is provided by the
+    // coordinatorConfigName/workerConfigName/queryRouterConfigName functions (for citus a per-cluster
+    // config named "<childClusterName>-<major>" with citus/pg_cron injected; for other sharding types
+    // the configured SGPostgresConfig). Aligned by position with CLUSTER_NAMES.
+    final String clusterSgPostgresConfigs;
+    if (isCitus) {
+      clusterSgPostgresConfigs = Seq.of(coordinatorConfigName(cluster, targetPostgresVersion))
+          .append(Seq.range(0, workerClusters)
+              .map(index -> workerConfigName(cluster, index, targetPostgresVersion)))
+          .append(Seq.range(0, queryRouterClusters)
+              .map(index -> queryRouterConfigName(cluster, index, targetPostgresVersion)))
+          .toString(" ");
+    } else {
+      clusterSgPostgresConfigs = clusterNames.stream()
+          .map(ignore -> rawSgPostgresConfig)
+          .collect(Collectors.joining(" "));
+    }
     return ImmutableList.<EnvVar>builder()
         .add(
             new EnvVarBuilder()
@@ -150,22 +192,26 @@ public class ShardedDbOpsMajorVersionUpgradeJob extends AbstractShardedDbOpsJob 
                 .orElse(""))
             .build(),
             new EnvVarBuilder()
+            .withName("MANUAL_ROLLBACK")
+            .withValue(Optional.ofNullable(majorVersionUpgrade)
+                .map(StackGresShardedDbOpsMajorVersionUpgrade::getManualRollback)
+                .map(String::valueOf)
+                .orElse("false"))
+            .build(),
+            new EnvVarBuilder()
+            .withName("MAX_ERRORS_AFTER_CONTINUE_ON_FAILURE")
+            .withValue(Optional.ofNullable(majorVersionUpgrade)
+                .map(StackGresShardedDbOpsMajorVersionUpgrade::getMaxErrorsAfterContinueOnFailure)
+                .map(String::valueOf)
+                .orElse(""))
+            .build(),
+            new EnvVarBuilder()
             .withName("CLUSTER_NAMES")
-            .withValue(Seq.of(getCoordinatorClusterName(cluster))
-                .filter(ignore -> !StackGresShardingType.SHARDING_SPHERE.equals(
-                    StackGresShardingType.fromString(
-                        cluster.getSpec().getType())))
-                .append(Seq.range(0, cluster
-                    .getSpec().getWorkers().getClusters())
-                    .map(index -> getWorkerClusterName(cluster, index)))
-                .append(Seq.range(
-                    0,
-                    Optional.of(cluster.getSpec())
-                    .map(StackGresShardedClusterSpec::getCoordinator)
-                    .map(StackGresShardedClusterCoordinator::getQueryRouterClusters)
-                    .orElse(0))
-                    .map(index -> getQueryRouterClusterName(cluster, String.valueOf(index))))
-                .toString(" "))
+            .withValue(String.join(" ", clusterNames))
+            .build(),
+            new EnvVarBuilder()
+            .withName("CLUSTER_SG_POSTGRES_CONFIGS")
+            .withValue(clusterSgPostgresConfigs)
             .build(),
             new EnvVarBuilder()
             .withName("DBOPS_LABELS")

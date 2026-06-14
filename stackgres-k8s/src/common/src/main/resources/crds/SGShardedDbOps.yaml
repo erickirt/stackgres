@@ -251,6 +251,24 @@ spec:
                       Indicates the number of errors that the operation can tolerate after the upgrade
                        is performed in order to wait for the Pod to become ready and set the operation
                        as completed.
+                  manualRollback:
+                    type: boolean
+                    default: false
+                    description: |
+                      When set to `true` the SGShardedDbOps waits for a rollback decision to be set on
+                       its own `.status.majorVersionUpgrade.rollback` whenever one of the child SGDbOps
+                       it created pauses (it always creates the child SGDbOps with `manualRollback: true`).
+                       The operator raises the `WaitingRollback` condition while waiting. The decision is
+                       then propagated to the waiting child SGDbOps.
+
+                      When `false` the decision for each child is taken automatically: a failed child is
+                       rolled back and a succeeded child is cleaned up.
+                  maxErrorsAfterContinueOnFailure:
+                    type: integer
+                    default: 0
+                    description: |
+                      Propagated to each child SGDbOps. See the `maxErrorsAfterContinueOnFailure` field of
+                       SGDbOps major version upgrade.
               restart:
                 type: object
                 description: |
@@ -377,6 +395,18 @@ spec:
                     type: string
                     description: |
                       A failure message (when available)
+                  status:
+                    type: string
+                    description: |
+                      Set when `manualRollback` is `true` and the SGShardedDbOps is waiting for a rollback
+                       decision because one of its child SGDbOps paused. Indicates whether that child had
+                       `failed` or `succeeded`.
+                  rollback:
+                    type: boolean
+                    description: |
+                      Set when `manualRollback` is `true` to resolve a paused SGShardedDbOps. The value is
+                       propagated to the waiting child SGDbOps `.status.majorVersionUpgrade.rollback`: `false`
+                       continues (assuming the upgrade was performed manually), `true` performs a rollback.
               restart:
                 type: object
                 description: |

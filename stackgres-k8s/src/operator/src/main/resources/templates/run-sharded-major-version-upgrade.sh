@@ -46,27 +46,7 @@ run_op() {
     echo "Creating $DBOPS_CRD_KIND $DBOPS_NAME for $CLUSTER_CRD_KIND $CLUSTER_NAME"
     echo "$DBOPS_NAME" >> /tmp/current-dbops
     BACKUP_PATH="$(printf %s "$BACKUP_PATHS" | cut -d ' ' -f "$INDEX")"
-    OPTIONAL_FIELDS=""
-    if [ -n "$BACKUP_PATH" ]
-    then
-      OPTIONAL_FIELDS="$OPTIONAL_FIELDS
-    backupPath: $(printf %s "$BACKUP_PATH" | to_json_string)"
-    fi
-    if [ -n "$POSTGRES_EXTENSIONS_JSON" ]
-    then
-      OPTIONAL_FIELDS="$OPTIONAL_FIELDS
-    postgresExtensions: $POSTGRES_EXTENSIONS_JSON"
-    fi
-    if [ -n "$TO_INSTALL_POSTGRES_EXTENSIONS_JSON" ]
-    then
-      OPTIONAL_FIELDS="$OPTIONAL_FIELDS
-    toInstallPostgresExtensions: $TO_INSTALL_POSTGRES_EXTENSIONS_JSON"
-    fi
-    if [ -n "$MAX_ERRORS_AFTER_UPGRADE" ]
-    then
-      OPTIONAL_FIELDS="$OPTIONAL_FIELDS
-    maxErrorsAfterUpgrade: $MAX_ERRORS_AFTER_UPGRADE"
-    fi
+    CLUSTER_SG_POSTGRES_CONFIG="$(printf %s "$CLUSTER_SG_POSTGRES_CONFIGS" | cut -d ' ' -f "$INDEX")"
     DBOPS_YAML="$(cat << EOF
 apiVersion: $DBOPS_CRD_APIVERSION
 kind: $DBOPS_CRD_KIND
@@ -84,10 +64,43 @@ spec:
   op: majorVersionUpgrade
   majorVersionUpgrade:
     postgresVersion: $(printf %s "$TARGET_POSTGRES_VERSION" | to_json_string)
-    sgPostgresConfig: $(printf %s "$SG_POSTGRES_CONFIG" | to_json_string)
+    sgPostgresConfig: $(printf %s "$CLUSTER_SG_POSTGRES_CONFIG" | to_json_string)
     link: $LINK
     clone: $CLONE
-    check: $CHECK$OPTIONAL_FIELDS
+    check: $CHECK
+    manualRollback: true
+$(
+    if [ -n "$BACKUP_PATH" ]
+    then
+      cat << INNER_EOF
+    backupPath: $(printf %s "$BACKUP_PATH" | to_json_string)
+INNER_EOF
+    fi
+    if [ -n "$POSTGRES_EXTENSIONS_JSON" ]
+    then
+      cat << INNER_EOF
+    postgresExtensions: $POSTGRES_EXTENSIONS_JSON
+INNER_EOF
+    fi
+    if [ -n "$TO_INSTALL_POSTGRES_EXTENSIONS_JSON" ]
+    then
+      cat << INNER_EOF
+    toInstallPostgresExtensions: $TO_INSTALL_POSTGRES_EXTENSIONS_JSON
+INNER_EOF
+    fi
+    if [ -n "$MAX_ERRORS_AFTER_UPGRADE" ]
+    then
+      cat << INNER_EOF
+    maxErrorsAfterUpgrade: $MAX_ERRORS_AFTER_UPGRADE
+INNER_EOF
+    fi
+    if [ -n "$MAX_ERRORS_AFTER_CONTINUE_ON_FAILURE" ]
+    then
+      cat << INNER_EOF
+    maxErrorsAfterContinueOnFailure: $MAX_ERRORS_AFTER_CONTINUE_ON_FAILURE
+INNER_EOF
+    fi
+)
 EOF
 )"
     if ! printf %s "$DBOPS_YAML" | kubectl replace --force -f - > /tmp/dbops-create-dbops 2>&1
@@ -99,8 +112,104 @@ EOF
     INDEX="$((INDEX + 1))"
   done
 
+  echo "Setting the list of created $DBOPS_CRD_KIND on $SHARDED_CLUSTER_CRD_KIND $SHARDED_CLUSTER_NAME status"
+  if ! kubectl patch "$SHARDED_CLUSTER_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_CLUSTER_NAME" --type merge \
+    -p "{\"status\":{\"dbOps\":{\"majorVersionUpgrade\":{\"sgDbOps\":[$(
+      cat /tmp/current-dbops | sed 's/^\(.*\)$/"\1"/' | tr '\n' ',' | sed 's/,$//'
+    )]}}}}" \
+    > /tmp/dbops-update-sharded-cluster 2>&1
+  then
+    echo "FAILURE=$NORMALIZED_OP_NAME failed. Can not update $SHARDED_CLUSTER_CRD_KIND status: $(cat /tmp/dbops-update-sharded-cluster)" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
+    exit 1
+  fi
+
+  # Each child SGDbOps is created with manualRollback enabled, so on failure it pauses with
+  # .status.majorVersionUpgrade.phase = wait-post-failed-upgrade-decision and, on success, before
+  # its cleanup with .status.majorVersionUpgrade.phase = wait-post-upgrade-decision, in both cases
+  # waiting for its .status.majorVersionUpgrade.rollback to be set. Wait for every child to reach
+  # such a decision point (or to terminate with a hard failure) before taking a single coordinated
+  # decision for all of them.
+  echo "Waiting for SGDbOps $(cat /tmp/current-dbops | tr '\n' ' ' | tr -s ' ') to reach the rollback decision point"
+  local ANY_FAILED
+  while true
+  do
+    local ALL_AT_DECISION_POINT=true
+    ANY_FAILED=false
+    for DBOPS_NAME in $(cat /tmp/current-dbops)
+    do
+      CHILD_PHASE="$(child_dbops_phase "$DBOPS_NAME")"
+      DBOPS_STATUS="$(kubectl get "$DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$DBOPS_NAME" \
+        --template '{{ range .status.conditions }}{{ if eq .status "True" }} {{ .type }} {{ end }}{{ end }}')"
+      case "$CHILD_PHASE" in
+        (wait-post-failed-upgrade-decision)
+        ANY_FAILED=true
+        ;;
+        (wait-post-upgrade-decision)
+        ;;
+        (*)
+        if printf %s "$DBOPS_STATUS" | grep -q " $DBOPS_FAILED "
+        then
+          # Hard failure: the child could not even reach the decision point
+          ANY_FAILED=true
+        elif printf %s "$DBOPS_STATUS" | grep -q " $DBOPS_COMPLETED "
+        then
+          : # already completed, treat as a success that needs no decision
+        else
+          ALL_AT_DECISION_POINT=false
+        fi
+        ;;
+      esac
+    done
+    update_status
+    if "$ALL_AT_DECISION_POINT"
+    then
+      break
+    fi
+    sleep 2
+  done
+
+  # Coordinated unique decision: roll back all SGDbOps if any of them failed, otherwise (all the
+  # SGDbOps succeeded) continue all of them. When this SGShardedDbOps has its own manualRollback
+  # enabled the decision is delegated to the user through this SGShardedDbOps
+  # .status.majorVersionUpgrade.rollback.
+  local DECISION
+  if [ "$MANUAL_ROLLBACK" = true ]
+  then
+    local AGGREGATE_STATUS=succeeded
+    if "$ANY_FAILED"
+    then
+      AGGREGATE_STATUS=failed
+    fi
+    echo "All $DBOPS_CRD_KIND reached the decision point (status: $AGGREGATE_STATUS)." \
+      "Waiting for the rollback decision to be set on $SHARDED_DBOPS_CRD_KIND $SHARDED_DBOPS_NAME .status.majorVersionUpgrade.rollback..."
+    kubectl patch "$SHARDED_DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_DBOPS_NAME" --type merge \
+      -p "{\"status\":{\"majorVersionUpgrade\":{\"status\":\"$AGGREGATE_STATUS\"}}}" >/dev/null 2>&1 || true
+    DECISION="$(wait_for_sharded_rollback_decision)"
+    kubectl patch "$SHARDED_DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_DBOPS_NAME" --type merge \
+      -p '{"status":{"majorVersionUpgrade":{"status":null,"rollback":null}}}' >/dev/null 2>&1 || true
+  elif "$ANY_FAILED"
+  then
+    DECISION=true
+  else
+    DECISION=false
+  fi
+
+  echo "Taking coordinated rollback decision $DECISION for all $DBOPS_CRD_KIND"
+  for DBOPS_NAME in $(cat /tmp/current-dbops)
+  do
+    case "$(child_dbops_phase "$DBOPS_NAME")" in
+      (wait-post-failed-upgrade-decision|wait-post-upgrade-decision)
+      echo "Setting rollback decision $DECISION on $DBOPS_CRD_KIND $DBOPS_NAME"
+      kubectl patch "$DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$DBOPS_NAME" --type merge \
+        -p "{\"status\":{\"majorVersionUpgrade\":{\"rollback\":$DECISION}}}" >/dev/null 2>&1 || true
+      ;;
+    esac
+  done
+
   echo "Waiting for SGDbOps $(cat /tmp/current-dbops | tr '\n' ' ' | tr -s ' ') to complete"
+  rm -f /tmp/completed-dbops
   touch /tmp/completed-dbops
+  local FAILED=false
   while true
   do
     local COMPLETED=true
@@ -120,10 +229,10 @@ EOF
         if printf %s "$DBOPS_STATUS" | grep -q " $DBOPS_FAILED "
         then
           echo "...$DBOPS_NAME failed"
-          echo "FAILURE=$NORMALIZED_OP_NAME failed. SGDbOps $DBOPS_NAME failed" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
-          exit 1
+          FAILED=true
+        else
+          echo "...$DBOPS_NAME completed"
         fi
-        echo "...$DBOPS_NAME completed"
       fi
     done
     if "$COMPLETED"
@@ -132,6 +241,12 @@ EOF
     fi
     sleep 2
   done
+
+  if "$FAILED"
+  then
+    echo "FAILURE=$NORMALIZED_OP_NAME failed. One or more SGDbOps failed" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
+    exit 1
+  fi
 
   echo "Removing $NORMALIZED_OP_NAME status from $SHARDED_CLUSTER_CRD_KIND $SHARDED_CLUSTER_NAME"
   if ! kubectl patch "$SHARDED_CLUSTER_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_CLUSTER_NAME" --type json \
@@ -143,6 +258,32 @@ EOF
   fi
 
   echo "Sharded DbOps $NORMALIZED_OP_NAME completed"
+}
+
+# Returns the child SGDbOps .status.majorVersionUpgrade.phase (empty if unset). A child created with
+# manualRollback enabled pauses at phase wait-post-failed-upgrade-decision on failure and at phase
+# wait-post-upgrade-decision on success (before its cleanup), in both cases waiting for its
+# .status.majorVersionUpgrade.rollback to be set.
+child_dbops_phase() {
+  kubectl get "$DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$1" -o json 2>/dev/null \
+    | jq -r 'if .status.majorVersionUpgrade.phase == null then "" else .status.majorVersionUpgrade.phase end' \
+    2>/dev/null || printf ''
+}
+
+wait_for_sharded_rollback_decision() {
+  local DECISION
+  while true
+  do
+    DECISION="$(kubectl get "$SHARDED_DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_DBOPS_NAME" -o json 2>/dev/null \
+      | jq -r 'if .status.majorVersionUpgrade.rollback == null then "" else (.status.majorVersionUpgrade.rollback | tostring) end' \
+      2>/dev/null || printf '')"
+    if [ "$DECISION" = true ] || [ "$DECISION" = false ]
+    then
+      printf %s "$DECISION"
+      return 0
+    fi
+    sleep 2
+  done
 }
 
 update_status() {

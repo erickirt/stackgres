@@ -8,7 +8,7 @@ shell_unit_test() {
   printf %s ' Failed ' > "$TEST_TARGET_PATH/dbops-test-shard0-status"
   ! (shell_unit_test_sharded_dbops)
   check_sharded_dbops_result || return 1
-  grep -q '^FAILURE=major version upgrade failed. SGDbOps test-shard0 failed$' \
+  grep -q '^FAILURE=major version upgrade failed. One or more SGDbOps failed$' \
     "$SHARED_PATH/$KEBAB_OP_NAME.out"
   grep -q '^EXIT_CODE=1$' "$SHARED_PATH/$KEBAB_OP_NAME.out"
 }
