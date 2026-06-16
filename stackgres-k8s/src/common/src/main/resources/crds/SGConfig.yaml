@@ -86,7 +86,7 @@ spec:
                 description: |
                   Section to configure namespaces that the operator is allowed to use. If allowedNamespaces is defined it will be used instead. If empty all namespaces will be allowed (default).
                   
-                  See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#labelselector-v1-meta
+                  See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#labelselector-v1-meta
 
                   > This value can only be set in operator helm chart.
                   > It is set by OLM for scoped operator installation. See https://olm.operatorframework.io/docs/advanced-tasks/operator-scoping-with-operatorgroups/
@@ -216,26 +216,26 @@ spec:
                   resources:
                     type: object
                     description: |
-                      Operator Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                      Operator Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#resourcerequirements-v1-core
 
                       > This value can only be set in operator helm chart.
                     x-kubernetes-preserve-unknown-fields: true
                   schedulerName:
                     type: string
                     description: |
-                      Operator Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      Operator Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   runtimeClassName:
                     type: string
                     description: |
-                      Operator Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      Operator Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   preemptionPolicy:
                     type: string
                     description: |
-                      Operator Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      Operator Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   priorityClassName:
                     type: string
                     description: |
-                      Operator Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      Operator Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   nodeSelector:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
@@ -246,7 +246,7 @@ spec:
                   tolerations:
                     type: array
                     description: |
-                      Operator Pod tolerations. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#toleration-v1-core
+                      Operator Pod tolerations. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#toleration-v1-core
 
                       > This value can only be set in operator helm chart.
                     items:
@@ -256,7 +256,7 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                     description: |
-                      Operator Pod affinity. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#affinity-v1-core
+                      Operator Pod affinity. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#affinity-v1-core
 
                       > This value can only be set in operator helm chart.
                   serviceAccount:
@@ -347,37 +347,37 @@ spec:
                   resources:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
-                    description: REST API Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                    description: REST API Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#resourcerequirements-v1-core
                   schedulerName:
                     type: string
                     description: |
-                      REST API Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      REST API Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   runtimeClassName:
                     type: string
                     description: |
-                      REST API Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      REST API Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   preemptionPolicy:
                     type: string
                     description: |
-                      REST API Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      REST API Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   priorityClassName:
                     type: string
                     description: |
-                      REST API Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      REST API Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   nodeSelector:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                     description: REST API Pod node selector
                   tolerations:
                     type: array
-                    description: REST API Pod tolerations. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#toleration-v1-core
+                    description: REST API Pod tolerations. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#toleration-v1-core
                     items:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                   affinity:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
-                    description: REST API Pod affinity. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#affinity-v1-core
+                    description: REST API Pod affinity. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#affinity-v1-core
                   serviceAccount:
                     type: object
                     description: Section to configure REST API ServiceAccount
@@ -422,7 +422,7 @@ spec:
                   resources:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
-                    description: Web Console resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                    description: Web Console resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#resourcerequirements-v1-core
                   service:
                     type: object
                     description: Section to configure Web Console service.
@@ -619,37 +619,37 @@ spec:
                             resources:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
-                              description: OpenTelemetry Collector Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                              description: OpenTelemetry Collector Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#resourcerequirements-v1-core
                             schedulerName:
                               type: string
                               description: |
-                                OpenTelemetry Collector Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                                OpenTelemetry Collector Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                             runtimeClassName:
                               type: string
                               description: |
-                                OpenTelemetry Collector Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                                OpenTelemetry Collector Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                             preemptionPolicy:
                               type: string
                               description: |
-                                OpenTelemetry Collector Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                                OpenTelemetry Collector Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                             priorityClassName:
                               type: string
                               description: |
-                                OpenTelemetry Collector Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                                OpenTelemetry Collector Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                             nodeSelector:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
                               description: OpenTelemetry Collector Pod node selector
                             tolerations:
                               type: array
-                              description: OpenTelemetry Collector Pod tolerations. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#toleration-v1-core
+                              description: OpenTelemetry Collector Pod tolerations. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#toleration-v1-core
                               items:
                                 type: object
                                 x-kubernetes-preserve-unknown-fields: true
                             affinity:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
-                              description: OpenTelemetry Collector Pod affinity. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#affinity-v1-core
+                              description: OpenTelemetry Collector Pod affinity. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#affinity-v1-core
                   annotations:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
@@ -657,37 +657,37 @@ spec:
                   resources:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
-                    description: OpenTelemetry Collector Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                    description: OpenTelemetry Collector Pod resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#resourcerequirements-v1-core
                   schedulerName:
                     type: string
                     description: |
-                      OpenTelemetry Collector Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      OpenTelemetry Collector Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   runtimeClassName:
                     type: string
                     description: |
-                      OpenTelemetry Collector Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      OpenTelemetry Collector Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   preemptionPolicy:
                     type: string
                     description: |
-                      OpenTelemetry Collector Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      OpenTelemetry Collector Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   priorityClassName:
                     type: string
                     description: |
-                      OpenTelemetry Collector Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      OpenTelemetry Collector Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   nodeSelector:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                     description: OpenTelemetry Collector Pod node selector
                   tolerations:
                     type: array
-                    description: OpenTelemetry Collector Pod tolerations. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#toleration-v1-core
+                    description: OpenTelemetry Collector Pod tolerations. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#toleration-v1-core
                     items:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                   affinity:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
-                    description: OpenTelemetry Collector Pod affinity. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#affinity-v1-core
+                    description: OpenTelemetry Collector Pod affinity. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#affinity-v1-core
                   serviceAccount:
                     type: object
                     description: Section to configure OpenTelemetry Collector ServiceAccount
@@ -713,22 +713,22 @@ spec:
                       spec:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
-                        description: Section to configure OpenTelemetry Collector Service specs. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#servicespec-v1-core
+                        description: Section to configure OpenTelemetry Collector Service specs. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#servicespec-v1-core
                   ports:
                     type: array
-                    description: Section to configure OpenTelemetry Collector ports. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#containerport-v1-core
+                    description: Section to configure OpenTelemetry Collector ports. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#containerport-v1-core
                     items:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                   volumeMounts:
                     type: array
-                    description: Section to configure OpenTelemetry Collector Volume Mounts. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volumemount-v1-core
+                    description: Section to configure OpenTelemetry Collector Volume Mounts. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#volumemount-v1-core
                     items:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                   volumes:
                     type: array
-                    description: Section to configure OpenTelemetry Collector Volumes. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volume-v1-core
+                    description: Section to configure OpenTelemetry Collector Volumes. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#volume-v1-core
                     items:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
@@ -817,37 +817,37 @@ spec:
                   resources:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
-                    description: Operator Installation Jobs resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                    description: Operator Installation Jobs resources. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#resourcerequirements-v1-core
                   schedulerName:
                     type: string
                     description: |
-                      Operator Installation Job's Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      Operator Installation Job's Pod scheduler name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   runtimeClassName:
                     type: string
                     description: |
-                      Operator Installation Job's Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      Operator Installation Job's Pod runtime class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   preemptionPolicy:
                     type: string
                     description: |
-                      Operator Installation Job's Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      Operator Installation Job's Pod preemption policy. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   priorityClassName:
                     type: string
                     description: |
-                      Operator Installation Job's Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#container-v1-core
+                      Operator Installation Job's Pod priority class name. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#container-v1-core
                   nodeSelector:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                     description: Operator Installation Jobs node selector
                   tolerations:
                     type: array
-                    description: Operator Installation Jobs tolerations. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#toleration-v1-core
+                    description: Operator Installation Jobs tolerations. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#toleration-v1-core
                     items:
                       type: object
                       x-kubernetes-preserve-unknown-fields: true
                   affinity:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
-                    description: Operator Installation Jobs affinity. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#affinity-v1-core
+                    description: Operator Installation Jobs affinity. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#affinity-v1-core
                   serviceAccount:
                     type: object
                     description: Section to configure Jobs ServiceAccount
@@ -1277,7 +1277,7 @@ spec:
                       resources:
                         type: object
                         description: |
-                          The resources of the extensions cache containers. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core
+                          The resources of the extensions cache containers. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#resourcerequirements-v1-core
                         x-kubernetes-preserve-unknown-fields: true
                         default:
                           requests:
@@ -1376,13 +1376,13 @@ spec:
                         properties:
                           volumes:
                             type: array
-                            description: Pod volumes. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volume-v1-core
+                            description: Pod volumes. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#volume-v1-core
                             items:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
                           volumeMounts:
                             type: array
-                            description: Pod's container volume mounts. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volumemount-v1-core
+                            description: Pod's container volume mounts. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#volumemount-v1-core
                             items:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
@@ -1393,13 +1393,13 @@ spec:
                         properties:
                           volumes:
                             type: array
-                            description: Pod volumes. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volume-v1-core
+                            description: Pod volumes. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#volume-v1-core
                             items:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
                           volumeMounts:
                             type: array
-                            description: Pod's container volume mounts. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volumemount-v1-core
+                            description: Pod's container volume mounts. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#volumemount-v1-core
                             items:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
@@ -1410,13 +1410,13 @@ spec:
                         properties:
                           volumes:
                             type: array
-                            description: Pod volumes. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volume-v1-core
+                            description: Pod volumes. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#volume-v1-core
                             items:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
                           volumeMounts:
                             type: array
-                            description: Pod's container volume mounts. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volumemount-v1-core
+                            description: Pod's container volume mounts. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#volumemount-v1-core
                             items:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
@@ -1427,13 +1427,13 @@ spec:
                         properties:
                           volumes:
                             type: array
-                            description: Pod volumes. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volume-v1-core
+                            description: Pod volumes. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#volume-v1-core
                             items:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
                           volumeMounts:
                             type: array
-                            description: Pod's container volume mounts. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volumemount-v1-core
+                            description: Pod's container volume mounts. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#volumemount-v1-core
                             items:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
@@ -1444,13 +1444,13 @@ spec:
                         properties:
                           volumes:
                             type: array
-                            description: Pod volumes. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volume-v1-core
+                            description: Pod volumes. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#volume-v1-core
                             items:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
                           volumeMounts:
                             type: array
-                            description: Pod's container volume mounts. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volumemount-v1-core
+                            description: Pod's container volume mounts. See https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#volumemount-v1-core
                             items:
                               type: object
                               x-kubernetes-preserve-unknown-fields: true
