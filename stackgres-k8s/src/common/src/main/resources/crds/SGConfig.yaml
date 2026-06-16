@@ -148,6 +148,19 @@ spec:
 
                   > This value can only be set in operator helm chart.
                   > This is the namespace where the Subscription is created for OLM installations.
+              featureGates:
+                type: array
+                description: |
+                  A list of StackGres feature gates to enable globally for all the SGClusters and SGShardedClusters managed by the operator.
+
+                  Some features require elevated privileges or a relaxed Pod security and, for this reason, can only be enabled by the
+                   operator administrator at the operator level instead of by the authors of each SGCluster or SGShardedCluster.
+
+                  Available feature gates are:
+                  * `io-limits`: Allow to set per-volume I/O limits under `.spec.pods.persistentVolume.ioLimits` of SGCluster and SGShardedCluster. Be aware that this requires the Pods to run a privileged `setup-io-limits` init container as root (with only the `CHOWN` capability) and to mount the host cgroup filesystem read-write.
+                items:
+                  type: string
+                  description: The name of the feature gate to enable.
               serviceAccount:
                 type: object
                 description: |

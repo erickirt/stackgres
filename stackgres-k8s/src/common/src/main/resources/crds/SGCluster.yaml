@@ -904,6 +904,8 @@ spec:
                           >  running as root with only the `CHOWN` cabability set. Also both the `setup-io-limits` init container and the `cluster-controller`
                           >  container will require to mount the host path `/sys/fs/cgroup` in order to be able to set owner of and write to the `io.max` file that
                           >  will allows to set the io limits.
+                          >  For this reason this feature must be enabled globally by the operator administrator by adding the `io-limits` feature gate under
+                          >  `.spec.featureGates` of the SGConfig. Setting any of the value above without the `io-limits` feature gate enabled will be rejected.
                         properties:
                           readIops:
                             type: integer
@@ -2425,7 +2427,6 @@ spec:
                       
                       Available feature gates are:
                       * `babelfish-flavor`: Allow to use `babelfish` flavor.
-                      * `io-limits`: Allow to set per-volume I/O limits under `.spec.pods.persistentVolume.ioLimits`. Be aware that this requires the Pods to run a privileged init container as root and to mount the host cgroup filesystem.
                     items:
                       type: string
                       description: The name of the feature gate to enable.

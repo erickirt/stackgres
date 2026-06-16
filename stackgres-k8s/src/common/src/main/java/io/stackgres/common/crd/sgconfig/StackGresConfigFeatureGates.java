@@ -3,17 +3,17 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-package io.stackgres.common.crd.sgcluster;
+package io.stackgres.common.crd.sgconfig;
 
 import org.jetbrains.annotations.NotNull;
 
-public enum StackGresFeatureGates {
+public enum StackGresConfigFeatureGates {
 
-  BABELFISH_FLAVOR("babelfish-flavor");
+  IO_LIMITS("io-limits");
 
   private final @NotNull String type;
 
-  StackGresFeatureGates(@NotNull String type) {
+  StackGresConfigFeatureGates(@NotNull String type) {
     this.type = type;
   }
 

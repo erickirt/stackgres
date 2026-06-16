@@ -37,6 +37,8 @@ public class ConfigSpec {
 
   private String sgConfigNamespace;
 
+  private List<String> featureGates;
+
   private ConfigOptionalServiceAccount serviceAccount;
 
   private ConfigOperator operator;
@@ -145,6 +147,14 @@ public class ConfigSpec {
 
   public void setSgConfigNamespace(String sgConfigNamespace) {
     this.sgConfigNamespace = sgConfigNamespace;
+  }
+
+  public List<String> getFeatureGates() {
+    return featureGates;
+  }
+
+  public void setFeatureGates(List<String> featureGates) {
+    this.featureGates = featureGates;
   }
 
   public ConfigOptionalServiceAccount getServiceAccount() {

@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.crd.LocalObjectReference;
+import io.stackgres.common.validation.ValidEnumList;
 import io.sundr.builder.annotations.Buildable;
 
 @RegisterForReflection
@@ -43,6 +44,10 @@ public class StackGresConfigSpec {
   private Boolean allowImpersonationForRestApi;
 
   private String sgConfigNamespace;
+
+  @ValidEnumList(enumClass = StackGresConfigFeatureGates.class, allowNulls = true,
+      message = "featureGates must contain only io-limits")
+  private List<String> featureGates;
 
   private StackGresConfigOptionalServiceAccount serviceAccount;
 
@@ -152,6 +157,14 @@ public class StackGresConfigSpec {
 
   public void setSgConfigNamespace(String sgConfigNamespace) {
     this.sgConfigNamespace = sgConfigNamespace;
+  }
+
+  public List<String> getFeatureGates() {
+    return featureGates;
+  }
+
+  public void setFeatureGates(List<String> featureGates) {
+    this.featureGates = featureGates;
   }
 
   public StackGresConfigOptionalServiceAccount getServiceAccount() {
@@ -279,8 +292,8 @@ public class StackGresConfigSpec {
     return Objects.hash(adminui, allowImpersonationForRestApi, allowedNamespaceLabelSelector,
         allowedNamespaces, authentication, cert, collector, containerRegistry, deploy, developer,
         disableClusterRole, disableCrdsAndWebhooksUpdate, enableConversionWebhooks, extensions,
-        grafana, imagePullPolicy, imagePullSecrets, jobs, operator, prometheus, rbac, restapi,
-        serviceAccount, sgConfigNamespace, shardingSphere);
+        featureGates, grafana, imagePullPolicy, imagePullSecrets, jobs, operator, prometheus, rbac,
+        restapi, serviceAccount, sgConfigNamespace, shardingSphere);
   }
 
   @Override
@@ -303,7 +316,9 @@ public class StackGresConfigSpec {
         && Objects.equals(disableClusterRole, other.disableClusterRole)
         && Objects.equals(disableCrdsAndWebhooksUpdate, other.disableCrdsAndWebhooksUpdate)
         && Objects.equals(enableConversionWebhooks, other.enableConversionWebhooks)
-        && Objects.equals(extensions, other.extensions) && Objects.equals(grafana, other.grafana)
+        && Objects.equals(extensions, other.extensions)
+        && Objects.equals(featureGates, other.featureGates)
+        && Objects.equals(grafana, other.grafana)
         && Objects.equals(imagePullPolicy, other.imagePullPolicy)
         && Objects.equals(imagePullSecrets, other.imagePullSecrets)
         && Objects.equals(jobs, other.jobs) && Objects.equals(operator, other.operator)

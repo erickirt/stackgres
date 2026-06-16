@@ -9,20 +9,27 @@ import java.util.Optional;
 
 import io.stackgres.common.ErrorType;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
-import io.stackgres.common.crd.sgcluster.StackGresClusterNonProduction;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPods;
 import io.stackgres.common.crd.sgcluster.StackGresClusterPodsPersistentVolume;
 import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
-import io.stackgres.common.crd.sgcluster.StackGresFeatureGates;
 import io.stackgres.operator.common.StackGresClusterReview;
+import io.stackgres.operator.validation.IoLimitsFeatureGate;
 import io.stackgres.operator.validation.ValidationType;
 import io.stackgres.operatorframework.admissionwebhook.AdmissionRequest;
 import io.stackgres.operatorframework.admissionwebhook.validating.ValidationFailed;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 
 @Singleton
 @ValidationType(ErrorType.CONSTRAINT_VIOLATION)
 public class IoLimitsFeatureGateValidator implements ClusterValidator {
+
+  private final IoLimitsFeatureGate ioLimitsFeatureGate;
+
+  @Inject
+  public IoLimitsFeatureGateValidator(IoLimitsFeatureGate ioLimitsFeatureGate) {
+    this.ioLimitsFeatureGate = ioLimitsFeatureGate;
+  }
 
   @Override
   public void validate(StackGresClusterReview review) throws ValidationFailed {
@@ -37,19 +44,11 @@ public class IoLimitsFeatureGateValidator implements ClusterValidator {
             || ioLimits.getReadMiBps() != null
             || ioLimits.getWriteMiBps() != null)
         .orElse(false);
-    boolean hasIoLimitsFeatureGateEnabled = Optional.of(review.getRequest())
-        .map(AdmissionRequest::getObject)
-        .map(StackGresCluster::getSpec)
-        .map(StackGresClusterSpec::getNonProductionOptions)
-        .map(StackGresClusterNonProduction::getEnabledFeatureGates)
-        .map(featureGates -> featureGates.contains(
-            StackGresFeatureGates.IO_LIMITS.toString()))
-        .orElse(false);
-    if (hasIoLimits && !hasIoLimitsFeatureGateEnabled) {
-      failWithFields("To enable per-volume I/O limits you must add \"io-limits\""
-          + " feature gate under \".spec.nonProductionOptions.enabledFeatureGates\"."
-          + " Be aware that setting I/O limits requires the Pods to run a privileged"
-          + " init container as root and to mount the host cgroup filesystem.",
+    if (hasIoLimits && !ioLimitsFeatureGate.isEnabled()) {
+      failWithFields("To enable per-volume I/O limits you must add the \"io-limits\""
+          + " feature gate under \".spec.featureGates\" of the SGConfig. This can only be done"
+          + " by the operator administrator. Be aware that setting I/O limits requires the Pods"
+          + " to run a privileged init container as root and to mount the host cgroup filesystem.",
           ".spec.pods.persistentVolume.ioLimits");
     }
   }
