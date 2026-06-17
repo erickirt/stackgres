@@ -66,11 +66,11 @@ public interface StackGresShardedClusterForShardingSphereUtil extends StackGresS
 
   class Util extends StackGresShardedClusterForUtil {
     @Override
-    protected void updateCoordinatorSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec) {
+    void updateCoordinatorSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec) {
     }
 
     @Override
-    protected void updateWorkerClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
+    void updateWorkerClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
       if (spec.getManagedSql() == null) {
         spec.setManagedSql(new StackGresClusterManagedSql());
       }

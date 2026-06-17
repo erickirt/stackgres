@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -207,11 +208,9 @@ public class ReconciliatorWorkerThreadPool {
   protected String getExecutorTrace(
       ReconciliatorThreadPoolExecutor executor,
       long currentTimestamp) {
-    synchronized (executor.executingReconciliations) {
-      return executor.executingReconciliations.entrySet().stream()
-          .map(entry -> entry.getKey().toString() + " " + (currentTimestamp - entry.getValue()) + "ms")
-          .collect(Collectors.joining("\n"));
-    }
+    return executor.executingReconciliations.entrySet().stream()
+        .map(entry -> entry.getKey().toString() + " " + (currentTimestamp - entry.getValue()) + "ms")
+        .collect(Collectors.joining("\n"));
   }
 
   static class ReconciliationRunnable implements Runnable, Comparable<ReconciliationRunnable> {
@@ -298,7 +297,7 @@ public class ReconciliatorWorkerThreadPool {
   static class ReconciliatorThreadPoolExecutor {
 
     final ThreadPoolExecutor threadPoolExecutor;
-    final Map<ReconciliationRunnable, Long> executingReconciliations = Collections.synchronizedMap(new HashMap<>());
+    final Map<ReconciliationRunnable, Long> executingReconciliations = new ConcurrentHashMap<>();
     final Set<ReconciliationRunnable> toExecuteReconciliations = Collections.synchronizedSet(new HashSet<>());
     final Map<String, Long> lastExecutions = Collections.synchronizedMap(new HashMap<>());
     final boolean useFairness;

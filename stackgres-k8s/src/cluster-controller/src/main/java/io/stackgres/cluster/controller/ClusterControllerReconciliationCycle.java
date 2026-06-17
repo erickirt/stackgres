@@ -170,7 +170,7 @@ public class ClusterControllerReconciliationCycle
   }
 
   @Override
-  protected StackGresClusterContext getContextWithExistingResourcesOnly(
+  public StackGresClusterContext getContextWithExistingResourcesOnly(
       StackGresClusterContext context,
       List<Tuple2<HasMetadata, Optional<HasMetadata>>> existingResourcesOnly) {
     return ImmutableStackGresClusterContext.copyOf(context)

@@ -119,7 +119,7 @@ class ReconciliationCycleTest {
     }
 
     @Override
-    protected ResourceHandlerContext getContextWithExistingResourcesOnly(
+    public ResourceHandlerContext getContextWithExistingResourcesOnly(
         ResourceHandlerContext context,
         List<Tuple2<HasMetadata, Optional<HasMetadata>>> existingResourcesOnly) {
       return null;
@@ -139,7 +139,7 @@ class ReconciliationCycleTest {
     }
 
     @Override
-    protected List<TestCustomResource> getExistingContextResources() {
+    public List<TestCustomResource> getExistingContextResources() {
       return null;
     }
 

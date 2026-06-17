@@ -291,7 +291,7 @@ public abstract class ReconciliationCycle<T extends ResourceHandlerContext,
   protected abstract void onConfigError(T context,
       HasMetadata contextResource, Exception ex);
 
-  protected abstract T getContextWithExistingResourcesOnly(T context,
+  public abstract T getContextWithExistingResourcesOnly(T context,
       List<Tuple2<HasMetadata, Optional<HasMetadata>>> existingResourcesOnly);
 
   protected abstract List<HasMetadata> getRequiredResources(T context);
@@ -314,7 +314,7 @@ public abstract class ReconciliationCycle<T extends ResourceHandlerContext,
         .findAny();
   }
 
-  protected abstract List<H> getExistingContextResources();
+  public abstract List<H> getExistingContextResources();
 
   protected abstract H getExistingContextResource(H contextResource);
 

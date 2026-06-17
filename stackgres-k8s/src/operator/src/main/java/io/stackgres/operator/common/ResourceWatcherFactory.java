@@ -34,7 +34,7 @@ public class ResourceWatcherFactory extends AbstractResourceWatcherFactory {
   }
 
   @Override
-  public void onError(WatcherException cause) {
+  protected void onError(WatcherException cause) {
     Service operatorService = serviceFinder
         .findByNameAndNamespace(
             OperatorProperty.OPERATOR_NAME.getString(),
