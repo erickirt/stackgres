@@ -35,6 +35,18 @@
       <groupId>org.hibernate.orm</groupId>
       <artifactId>hibernate-c3p0</artifactId>
     </dependency>
+    <!--
+      Debezium's JDBC sink builds a Hibernate SessionFactory at runtime
+      (SgClusterStreamMigrationHandler), which loads the default ByteBuddy
+      bytecode provider. Quarkus enhances entities at build time and excludes
+      byte-buddy from the runner, so it must be declared explicitly here to be
+      packaged, otherwise the job crashes with ClassNotFoundException for
+      net.bytebuddy.description.type.TypeDefinition.
+    -->
+    <dependency>
+      <groupId>net.bytebuddy</groupId>
+      <artifactId>byte-buddy</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>io.debezium</groupId>
