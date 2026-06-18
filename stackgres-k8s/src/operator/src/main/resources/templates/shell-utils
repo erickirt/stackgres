@@ -7,6 +7,7 @@ LOCK_GET_RETRY_DELAY="${LOCK_GET_RETRY_DELAY:-2}"
 QUEUE_NAME=create_event.pipe
 RETRY_DELAY="${RETRY_DELAY:-1000}"
 RETRY_LIMIT="${RETRY_LIMIT:-10}"
+RETRY_MAX_DELAY="${RETRY_MAX_DELAY:-60000}"
 
 SHELL="$(readlink /proc/$$/exe || true)"
 if ! command -v "$SHELL" >/dev/null 2>&1 \
@@ -362,15 +363,45 @@ retry() {
   local BACKOFF
   until "$@"
   do
-    if [ "$RETRY" -ge "$RETRY_LIMIT" ]
+    if retry_stop "$RETRY"
     then
-      >&2 echo "Failed $@ after retrying $RETRY_LIMIT times"
       return 1
     fi
-    BACKOFF="$(( (RETRY_DELAY << RETRY > 60 * 1000 ? 60 * 1000 : RETRY_DELAY << RETRY) / 1000 ))"
+    BACKOFF="$(retry_backoff_delay "$RETRY")"
     >&2 echo "Will retry command after backoff of $BACKOFF seconds ($((RETRY_LIMIT - RETRY)) retry left)"
     sleep "$BACKOFF"
     RETRY="$((RETRY+1))"
-    sleep 5
   done      
+}
+
+retry_forever() {
+  until "$@"
+  do
+    retry_backoff
+  done
+}
+
+is_not_conflict() {
+  local OUTPUT="$1"
+  ! printf %s "$OUTPUT" | grep -q 'the object has been modified'
+}
+
+retry_backoff() {
+  local RETRY="${1:-0}"
+  sleep "$(retry_backoff_delay "$RETRY")"
+}
+
+retry_backoff_delay() {
+  local RETRY="${1:0}"
+  printf %s "$(( (RETRY_DELAY << RETRY > RETRY_MAX_DELAY ? RETRY_MAX_DELAY : RETRY_DELAY << RETRY) / 1000 ))"
+}
+
+retry_stop() {
+  local RETRY="${1:-0}"
+  if [ "$RETRY" -ge "$RETRY_LIMIT" ]
+  then
+    >&2 echo "Failed $@ after retrying $RETRY_LIMIT times"
+    return 0
+  fi
+  return 1
 }

@@ -25,6 +25,12 @@ public class ShardedDbOpsSpec {
 
   private Integer maxRetries;
 
+  private String retryDelay;
+
+  private Integer retryLimit;
+
+  private String retryMaxDelay;
+
   private ShardedDbOpsResharding resharding;
 
   private ShardedDbOpsMajorVersionUpgrade majorVersionUpgrade;
@@ -81,6 +87,30 @@ public class ShardedDbOpsSpec {
 
   public void setMaxRetries(Integer maxRetries) {
     this.maxRetries = maxRetries;
+  }
+
+  public String getRetryDelay() {
+    return retryDelay;
+  }
+
+  public void setRetryDelay(String retryDelay) {
+    this.retryDelay = retryDelay;
+  }
+
+  public Integer getRetryLimit() {
+    return retryLimit;
+  }
+
+  public void setRetryLimit(Integer retryLimit) {
+    this.retryLimit = retryLimit;
+  }
+
+  public String getRetryMaxDelay() {
+    return retryMaxDelay;
+  }
+
+  public void setRetryMaxDelay(String retryMaxDelay) {
+    this.retryMaxDelay = retryMaxDelay;
   }
 
   public ShardedDbOpsResharding getResharding() {

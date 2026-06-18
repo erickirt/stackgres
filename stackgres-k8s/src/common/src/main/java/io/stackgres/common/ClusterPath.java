@@ -45,8 +45,6 @@ public enum ClusterPath implements EnvVarPathSource<StackGresCluster> {
   LOCAL_BIN_RUN_REPACK_SH_PATH(LOCAL_BIN_PATH, "dbops/repack/run-repack.sh"),
   LOCAL_BIN_RUN_MAJOR_VERSION_UPGRADE_SH_PATH(LOCAL_BIN_PATH,
       "dbops/major-version-upgrade/run-major-version-upgrade.sh"),
-  LOCAL_BIN_RUN_RESTART_SH_PATH(LOCAL_BIN_PATH,
-      "dbops/restart/run-restart.sh"),
   LOCAL_BIN_COPY_BINARIES_SH_PATH(LOCAL_BIN_PATH,
       "dbops/major-version-upgrade/copy-binaries.sh"),
   LOCAL_BIN_MAJOR_VERSION_UPGRADE_SH_PATH(LOCAL_BIN_PATH,

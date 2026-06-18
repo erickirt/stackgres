@@ -165,7 +165,7 @@ EOF
     then
       break
     fi
-    sleep 2
+    retry_backoff
   done
 
   # Coordinated unique decision: roll back all SGDbOps if any of them failed, otherwise (all the
@@ -239,7 +239,7 @@ EOF
     then
       break
     fi
-    sleep 2
+    retry_backoff
   done
 
   if "$FAILED"
@@ -282,7 +282,7 @@ wait_for_sharded_rollback_decision() {
       printf %s "$DECISION"
       return 0
     fi
-    sleep 2
+    retry_backoff
   done
 }
 

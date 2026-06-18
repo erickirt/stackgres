@@ -204,7 +204,10 @@ public interface StackGresClusterContext extends GenerationContext<StackGresClus
             bc.v1.getTimeout(),
             bc.v1.getReconciliationTimeout(),
             bc.v1.getMaxRetries(),
-            bc.v1.getRetainWalsForUnmanagedLifecycle()));
+            bc.v1.getRetainWalsForUnmanagedLifecycle(),
+            bc.v1.getRetryDelay(),
+            bc.v1.getRetryLimit(),
+            bc.v1.getRetryMaxDelay()));
   }
 
   default Optional<BackupStorage> getBackupStorage() {
@@ -274,6 +277,9 @@ public interface StackGresClusterContext extends GenerationContext<StackGresClus
             null,
             null,
             null,
+            null,
+            null,
+            null,
             null));
   }
 
@@ -295,6 +301,9 @@ public interface StackGresClusterContext extends GenerationContext<StackGresClus
                 bp.getUploadConcurrency(),
                 bp.getDownloadConcurrency()))
             .orElse(null),
+            null,
+            null,
+            null,
             null,
             null,
             null,

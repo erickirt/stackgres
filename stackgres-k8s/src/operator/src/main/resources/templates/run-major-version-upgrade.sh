@@ -33,12 +33,17 @@ run_op() {
           else .
           end')"
     fi
-    PATCH_OUTPUT="$(kubectl patch --dry-run "$CLUSTER_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --type merge -p "$CLUSTER" 2>&1)"
+    OUTPUT="$(kubectl patch --dry-run "$CLUSTER_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --type merge -p "$CLUSTER" 2>&1)"
     }
   do
-    echo "FAILURE=$NORMALIZED_OP_NAME failed. $PATCH_OUTPUT" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
-    exit 1
+    if is_not_conflict "$OUTPUT"
+    then
+      echo "FAILURE=$NORMALIZED_OP_NAME failed. $OUTPUT" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
+      exit 1
+    fi
+    retry_backoff
   done
+  printf %s "$OUTPUT"
   echo "done"
   echo
 
@@ -146,7 +151,7 @@ EOF
       printf '%s' "$DBOPS" | kubectl replace --raw /apis/"$CRD_GROUP"/v1/namespaces/"$CLUSTER_NAMESPACE"/"$CLUSTER_CRD_NAME"/"$CLUSTER_NAME" -f -
       }
     do
-      sleep 1
+      retry_backoff
     done
   else
     PREVIOUS_TARGET_VERSION="$(kubectl get "$CLUSTER_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" \
@@ -197,7 +202,7 @@ EOF
 EOF
         )"
     do
-      sleep 1
+      retry_backoff
     done
   fi
 
@@ -211,16 +216,20 @@ EOF
 
   update_status init
 
-  RETRY=3
-  while [ "$RETRY" != 0 ]
+  RETRY=0
+  while true
   do
     CURRENT_PRIMARY_POD="$(kubectl get pods -n "$CLUSTER_NAMESPACE" -l "$CLUSTER_PRIMARY_POD_LABELS" -o name)"
     if [ -n "$CURRENT_PRIMARY_POD" ]
     then
       break
     fi
-    RETRY="$((RETRY-1))"
-    sleep 5
+    retry_backoff "$RETRY"
+    RETRY="$((RETRY + 1))"
+    if retry_stop "$RETRY"
+    then
+      break
+    fi
   done
   CURRENT_PRIMARY_INSTANCE="$(printf '%s' "$CURRENT_PRIMARY_POD" | cut -d / -f 2)"
   if [ "x$CURRENT_PRIMARY_INSTANCE" != "x" ] \
@@ -240,16 +249,18 @@ EOF
     until {
       CLUSTER="$({ kubectl get "$CLUSTER_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" -o json || printf .; } | jq -c .)"
       CLUSTER="$(printf '%s' "$CLUSTER" | jq -c '.spec.replication.mode = "async"')"
-      REPLACE_OUTPUT="$(printf '%s' "$CLUSTER" | kubectl replace --raw /apis/"$CRD_GROUP"/v1/namespaces/"$CLUSTER_NAMESPACE"/"$CLUSTER_CRD_NAME"/"$CLUSTER_NAME" -f - 2>&1)"
+      OUTPUT="$(printf '%s' "$CLUSTER" | kubectl replace --raw /apis/"$CRD_GROUP"/v1/namespaces/"$CLUSTER_NAMESPACE"/"$CLUSTER_CRD_NAME"/"$CLUSTER_NAME" -f - 2>&1)"
       }
     do
-      if ! printf %s "$REPLACE_OUTPUT" | grep -q 'the object has been modified; please apply your changes to the latest version and try again'
+      printf %s "$OUTPUT"
+      if is_not_conflict "$OUTPUT"
       then
-        echo "FAILURE=$NORMALIZED_OP_NAME failed. $REPLACE_OUTPUT" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
+        echo "FAILURE=$NORMALIZED_OP_NAME failed. $OUTPUT" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
         exit 1
       fi 
-      sleep 1
+      retry_backoff
     done
+    printf %s "$OUTPUT"
     echo "done"
     echo
   fi
@@ -265,16 +276,18 @@ EOF
   # accepting connections again), so retry the CHECKPOINT while the primary pod
   # exists instead of failing the whole upgrade on a transient "could not connect"
   # error. A genuinely dead primary is still bounded by the operation timeout.
+  RETRY=0
   until kubectl exec -n "$CLUSTER_NAMESPACE" "$PRIMARY_INSTANCE" -c "$PATRONI_CONTAINER_NAME" \
       -- psql -q -t -A -c "CHECKPOINT" -c "CHECKPOINT"
   do
-    if ! kubectl get pod -n "$CLUSTER_NAMESPACE" "$PRIMARY_INSTANCE" -o name > /dev/null 2>&1
+    echo "Primary instance $PRIMARY_INSTANCE is not accepting connections yet"
+    retry_backoff "$RETRY"
+    RETRY="$((RETRY + 1))"
+    if retry_stop "$RETRY"
     then
       echo "FAILURE=$NORMALIZED_OP_NAME failed. Please check pod $PRIMARY_INSTANCE logs for more info" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
       return 1
     fi
-    echo "Primary instance $PRIMARY_INSTANCE is not accepting connections yet, retrying CHECKPOINT..."
-    sleep 5
   done
 
   PHASE="upgrade"
@@ -302,16 +315,18 @@ EOF
           else .
           end')"
     fi
-    REPLACE_OUTPUT="$(printf '%s' "$CLUSTER" | kubectl replace --raw /apis/"$CRD_GROUP"/v1/namespaces/"$CLUSTER_NAMESPACE"/"$CLUSTER_CRD_NAME"/"$CLUSTER_NAME" -f - 2>&1)"
+    OUTPUT="$(printf '%s' "$CLUSTER" | kubectl replace --raw /apis/"$CRD_GROUP"/v1/namespaces/"$CLUSTER_NAMESPACE"/"$CLUSTER_CRD_NAME"/"$CLUSTER_NAME" -f - 2>&1)"
     }
   do
-    if ! printf %s "$REPLACE_OUTPUT" | grep -q 'the object has been modified; please apply your changes to the latest version and try again'
+    printf %s "$OUTPUT"
+    if is_not_conflict "$OUTPUT"
     then
-      echo "FAILURE=$NORMALIZED_OP_NAME failed. $REPLACE_OUTPUT" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
+      echo "FAILURE=$NORMALIZED_OP_NAME failed. $OUTPUT" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
       exit 1
     fi 
-    sleep 1
+    retry_backoff
   done
+  printf %s "$OUTPUT"
   echo "done"
   echo
 
@@ -326,7 +341,7 @@ EOF
     then
       break
     fi
-    sleep 1
+    retry_backoff
   done
   echo "done"
   echo
@@ -431,7 +446,7 @@ EOF
       printf '%s' "$CLUSTER" | kubectl replace --raw /apis/"$CRD_GROUP"/v1/namespaces/"$CLUSTER_NAMESPACE"/"$CLUSTER_CRD_NAME"/"$CLUSTER_NAME" -f -
       }
     do
-      sleep 1
+      retry_backoff
     done
     echo "done"
     echo
@@ -444,7 +459,7 @@ EOF
       jq 'del(.status.dbOps) | del(.metadata.annotations["'"$ROLLOUT_DBOPS_KEY"'"])' | \
       kubectl replace --raw /apis/"$CRD_GROUP"/v1/namespaces/"$CLUSTER_NAMESPACE"/"$CLUSTER_CRD_NAME"/"$CLUSTER_NAME" -f -
   do
-    sleep 1
+    retry_backoff
   done
 }
 
@@ -477,7 +492,10 @@ update_status() {
         done)"
   fi
   PENDING_TO_RESTART_INSTANCES_COUNT="$(echo "$PENDING_TO_RESTART_INSTANCES" | tr ' ' 's' | tr '\n' ' ' | wc -w)"
-  EXISTING_PODS="$(kubectl get pods -n "$CLUSTER_NAMESPACE" -l "$CLUSTER_POD_LABELS" -o name)"
+  until EXISTING_PODS="$(kubectl get pods -n "$CLUSTER_NAMESPACE" -l "$CLUSTER_POD_LABELS" -o name)"
+  do
+    retry_backoff
+  done
   RESTARTED_INSTANCES="$(echo "$EXISTING_PODS" | cut -d / -f 2 | grep -v "^\($(
       echo "$PENDING_TO_RESTART_INSTANCES" | tr '\n' ' ' | sed '{s/ $//;s/ /\\|/g}'
     )\)$" | sort)"
@@ -491,9 +509,12 @@ update_status() {
   fi
   echo
 
-  OPERATION="$(kubectl get "$DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$DBOPS_NAME" \
+  until OPERATION="$(kubectl get "$DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$DBOPS_NAME" \
     --template='{{ if .status.majorVersionUpgrade }}replace{{ else }}add{{ end }}')"
-  kubectl patch "$DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$DBOPS_NAME" --type=json \
+  do
+    retry_backoff
+  done
+  until kubectl patch "$DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$DBOPS_NAME" --type=json \
     -p "$(cat << EOF
 [
   {"op":"$OPERATION","path":"/status/majorVersionUpgrade","value":{
@@ -545,17 +566,20 @@ update_status() {
 ]
 EOF
     )"
+  do
+    retry_backoff
+  done
 }
 
 wait_for_instance() {
   local INSTANCE="$1"
   until kubectl get pod -n "$CLUSTER_NAMESPACE" "$INSTANCE" -o name >/dev/null 2>&1
   do
-    sleep 1
+    retry_backoff
   done
   until kubectl wait pod -n "$CLUSTER_NAMESPACE" "$INSTANCE" --for condition=Ready --timeout 0 >/dev/null 2>&1
   do
-    sleep 1
+    retry_backoff
   done
 }
 
@@ -565,8 +589,9 @@ wait_for_major_version_upgrade() {
   local INIT_WAITING
   until kubectl get pod -n "$CLUSTER_NAMESPACE" "$PRIMARY_INSTANCE" -o name >/dev/null 2>&1
   do
-    sleep 1
+    retry_backoff
   done
+  RETRY=0
   while true
   do
     if kubectl wait pod -n "$CLUSTER_NAMESPACE" "$PRIMARY_INSTANCE" --for condition=Ready --timeout 0 >/dev/null 2>&1
@@ -607,7 +632,8 @@ wait_for_major_version_upgrade() {
       # waiting for the Pod to become ready and keep waiting.
       MAX_ERRORS="$(( ${MAX_ERRORS_AFTER_UPGRADE:-0} + ${MAX_ERRORS_AFTER_CONTINUE_ON_FAILURE:-0} ))"
     fi
-    sleep 1
+    retry_backoff "$RETRY"
+    RETRY="$((RETRY + 1))"
   done
 }
 
@@ -672,15 +698,12 @@ major_version_upgrade_rollback_gate() {
 
 set_major_version_upgrade_phase() {
   local NEW_PHASE="$1"
-  until kubectl patch "$DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$DBOPS_NAME" --type merge \
+  retry_forever kubectl patch "$DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$DBOPS_NAME" --type merge \
     -p "{\"status\":{\"majorVersionUpgrade\":{\"phase\":\"$NEW_PHASE\"}}}" >/dev/null
-  do
-    sleep 1
-  done
 }
 
 clear_major_version_upgrade_rollback_decision() {
-  kubectl patch "$DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$DBOPS_NAME" --type merge \
+  retry_forever kubectl patch "$DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$DBOPS_NAME" --type merge \
     -p '{"status":{"majorVersionUpgrade":{"rollback":null}}}' >/dev/null 2>&1 || true
 }
 
@@ -696,23 +719,27 @@ wait_for_major_version_upgrade_rollback_decision() {
       printf %s "$ROLLBACK_DECISION"
       return 0
     fi
-    sleep 2
+    retry_backoff
   done
 }
 
 signal_major_version_upgrade_init_container() {
   local KIND="$1"
-  kubectl exec -n "$CLUSTER_NAMESPACE" "$PRIMARY_INSTANCE" \
+  until kubectl exec -n "$CLUSTER_NAMESPACE" "$PRIMARY_INSTANCE" \
     -c "$MAJOR_VERSION_UPGRADE_CONTAINER_NAME" -- \
-    touch "$PG_UPGRADE_PATH/.major-version-upgrade-$KIND" || true
+    touch "$PG_UPGRADE_PATH/.major-version-upgrade-$KIND"
+  do
+    retry_backoff
+  done
 }
 
 wait_for_major_version_upgrade_check() {
   local PRIMARY_INSTANCE="$1"
   until kubectl get pod -n "$CLUSTER_NAMESPACE" "$PRIMARY_INSTANCE" -o name >/dev/null 2>&1
   do
-    sleep 1
+    retry_backoff
   done
+  RETRY=0
   while true
   do
     MAJOR_VERSION_UPGRADE_LOGS="$(
@@ -754,7 +781,8 @@ wait_for_major_version_upgrade_check() {
       fi
       break
     fi
-    sleep 1
+    retry_backoff "$RETRY"
+    RETRY="$((RETRY + 1))"
   done
 }
 
@@ -790,11 +818,18 @@ rollback_major_version_upgrade() {
     then
       CLUSTER="$(printf '%s' "$CLUSTER" | jq -c '.status.backupPaths = ["'"$SOURCE_BACKUP_PATH"'"]')"
     fi
-    printf '%s' "$CLUSTER" | kubectl replace --raw /apis/"$CRD_GROUP"/v1/namespaces/"$CLUSTER_NAMESPACE"/"$CLUSTER_CRD_NAME"/"$CLUSTER_NAME" -f -
+    OUTPUT="$(printf '%s' "$CLUSTER" | kubectl replace --raw /apis/"$CRD_GROUP"/v1/namespaces/"$CLUSTER_NAMESPACE"/"$CLUSTER_CRD_NAME"/"$CLUSTER_NAME" -f - 2>&1)"
     }
   do
-    sleep 1
+    printf %s "$OUTPUT"
+    if is_not_conflict "$OUTPUT"
+    then
+      echo "FAILURE=$NORMALIZED_OP_NAME failed. $OUTPUT" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
+      exit 1
+    fi
+    retry_backoff
   done
+  printf %s "$OUTPUT"
   echo "done"
   echo
 
@@ -806,7 +841,7 @@ rollback_major_version_upgrade() {
     printf '%s' "$DBOPS" | kubectl replace --raw /apis/"$CRD_GROUP"/v1/namespaces/"$CLUSTER_NAMESPACE"/"$CLUSTER_CRD_NAME"/"$CLUSTER_NAME" -f -
     }
   do
-    sleep 1
+    retry_backoff
   done
 
   echo "Waiting StatefulSet to be updated..."
@@ -821,7 +856,7 @@ rollback_major_version_upgrade() {
     then
       break
     fi
-    sleep 1
+    retry_backoff
   done
   echo "done"
   echo
@@ -863,7 +898,7 @@ rollback_major_version_upgrade() {
       jq 'del(.status.dbOps) | del(.metadata.annotations["'"$ROLLOUT_DBOPS_KEY"'"])' | \
       kubectl replace --raw /apis/"$CRD_GROUP"/v1/namespaces/"$CLUSTER_NAMESPACE"/"$CLUSTER_CRD_NAME"/"$CLUSTER_NAME" -f -
   do
-    sleep 1
+    retry_backoff
   done
 }
 
@@ -874,19 +909,17 @@ downscale_cluster_instances() {
     create_event "DecreasingInstances" "Normal" "Decreasing instances of $CLUSTER_CRD_NAME $CLUSTER_NAME"
     echo
 
-    kubectl patch "$CLUSTER_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --type=json \
-      -p "$(cat << EOF
-[
-  {"op":"replace","path":"/spec/instances","value":1}
-]
-EOF
-        )"
+    until kubectl patch "$CLUSTER_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --type=json \
+      -p '[{"op":"replace","path":"/spec/instances","value":1}]'
+    do
+      retry_backoff
+    done
 
     echo "Waiting cluster downscale..."
 
     until [ "$(kubectl get pods -n "$CLUSTER_NAMESPACE" -l "$CLUSTER_POD_LABELS" -o name | cut -d / -f 2)" = "$PRIMARY_INSTANCE" ]
     do
-      sleep 1
+      retry_backoff
     done
 
     echo "done"
@@ -902,13 +935,11 @@ upscale_cluster_instances() {
     create_event "IncreasingInstances" "Normal" "Increasing instances of $CLUSTER_CRD_NAME $CLUSTER_NAME"
     echo
 
-    kubectl patch "$CLUSTER_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --type=json \
-      -p "$(cat << EOF
-[
-  {"op":"replace","path":"/spec/instances","value":$INITIAL_INSTANCES_COUNT}
-]
-EOF
-        )"
+    until kubectl patch "$CLUSTER_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$CLUSTER_NAME" --type=json \
+      -p '[{"op":"replace","path":"/spec/instances","value":'"$INITIAL_INSTANCES_COUNT"'}]'
+    do
+      retry_backoff
+    done
 
     echo "Waiting cluster upscale"
     echo

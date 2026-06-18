@@ -46,10 +46,10 @@ export E2E_SPEC_TRY_UNINSTALL_ON_FAILURE="${E2E_SPEC_TRY_UNINSTALL_ON_FAILURE:-$
 export E2E_SKIP_SPEC_UNINSTALL="${E2E_SKIP_SPEC_UNINSTALL:-$([ "$E2E_SKIP_OPERATOR_INSTALL" = true ] && printf true || printf false)}"
 export KIND_LOCK_PATH="${E2E_TEMP_PATH}/kind-lock$SUFFIX"
 export KIND_LOG="${KIND_LOG:-true}"
-export KIND_LOG_PATH="${E2E_TEMP_PATH}/kind-log$SUFFIX"
+export KIND_LOG_HOST_PATH="${E2E_TEMP_PATH}/kind-log$SUFFIX"
 export KIND_LOG_RESOURCES="${KIND_LOG_RESOURCES:-false}"
 export KIND_CONTAINERD_CACHE_PATH="${E2E_TEMP_PATH}/kind-cache$SUFFIX"
-export EXTENSIONS_CACHE_HOST_PATH="/containerd-cache/extensions"
+export EXTENSIONS_CACHE_NODE_PATH="/containerd-cache/extensions"
 export E2E_TEST_REGISTRY="$CI_REGISTRY"
 export E2E_TEST_REGISTRY_PATH="$SG_CI_PROJECT_PATH"
 export E2E_USE_TEST_HASHES=true
@@ -254,20 +254,20 @@ run_in_e2e_lock() {
 
 run_all_e2e() {
   set +e
-  docker run --rm -u 0 -v "${KIND_LOG_PATH%/*}:/source" alpine \
-    rm -rf "/source/${KIND_LOG_PATH##*/}"
-  docker run --rm -u 0 -v "${KIND_LOG_PATH%/*}:/source" alpine \
-    mkdir -p "/source/${KIND_LOG_PATH##*/}"
+  docker run --rm -u 0 -v "${KIND_LOG_HOST_PATH%/*}:/source" alpine \
+    rm -rf "/source/${KIND_LOG_HOST_PATH##*/}"
+  docker run --rm -u 0 -v "${KIND_LOG_HOST_PATH%/*}:/source" alpine \
+    mkdir -p "/source/${KIND_LOG_HOST_PATH##*/}"
   "$E2E_SHELL" $([ "$E2E_DEBUG" != true ] || printf '%s' '-x') stackgres-k8s/e2e/run-all-tests.sh
   EXIT_CODE="$?"
   if [ "$KIND_LOG" = true ]
   then
     mkdir -p stackgres-k8s/e2e/target/kind-logs
-    docker run --rm -u 0 -v "$KIND_LOG_PATH:/source/kind-logs" \
+    docker run --rm -u 0 -v "$KIND_LOG_HOST_PATH:/source/kind-logs" \
       -v "$(pwd)/stackgres-k8s/e2e/target:/target" alpine \
       cp -r "/source/kind-logs/." /target/kind-logs/.
-    docker run --rm -u 0 -v "${KIND_LOG_PATH%/*}:/source" alpine \
-      rm -rf "/source/${KIND_LOG_PATH##*/}"
+    docker run --rm -u 0 -v "${KIND_LOG_HOST_PATH%/*}:/source" alpine \
+      rm -rf "/source/${KIND_LOG_HOST_PATH##*/}"
     docker run --rm -u 0 \
       -v "$(pwd)/stackgres-k8s/e2e/target:/target" alpine \
       chown -R "$(id -u):$(id -g)" '/target/kind-logs'

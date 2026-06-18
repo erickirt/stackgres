@@ -30,20 +30,30 @@ get_extensions_index_hash() {
 }
 
 cache_extensions_index() {
-  if [ "$EXTENSIONS_CACHE_ENABLED" = true ] && [ -n "$EXTENSIONS_CACHE_HOST_PATH" ]
-  then
-    docker run --rm -v "$EXTENSIONS_CACHE_HOST_PATH:/extensions" alpine \
-      sh -c 'cat /extensions/local-extensions-index.json' | jq . > "$TARGET_PATH/extensions-index.json" \
-      || true
-  fi
   if [ "$EXTENSIONS_INDEX_CACHED" != true ] || [ ! -f "$TARGET_PATH/extensions-index.json" ]
   then
-    curl -s -f "$(get_extensions_metadata_url index.json)" \
-      > "$TARGET_PATH/extensions-index.json"
-    if [ ! -f "$TARGET_PATH/extensions-unwrapped-hashes.json" ]
+    if [ "$EXTENSIONS_CACHE_ENABLED" = true ] && [ -n "$EXTENSIONS_CACHE_HOST_PATH" ]
+    then
+      docker run --rm -v "$EXTENSIONS_CACHE_HOST_PATH:/extensions" alpine \
+        sh -c 'cat /extensions/local-extensions-index.json' | jq . > "$TARGET_PATH/extensions-index.json" \
+        || true
+      docker run --rm -v "$EXTENSIONS_CACHE_HOST_PATH:/extensions" alpine \
+        sh -c 'cat /extensions/local-extensions-hashes.json' | jq . > "$TARGET_PATH/extensions-hashes.json" \
+        || true
+    fi
+    if [ ! -s "$TARGET_PATH/extensions-index.json" ]
+    then
+      curl -s -f "$(get_extensions_metadata_url index.json)" \
+        > "$TARGET_PATH/extensions-index.json"
+    fi
+    if [ ! -s "$TARGET_PATH/extensions-hashes.json" ]
     then
       curl -s -f "$(get_extensions_metadata_url hashes.json)" \
         > "$TARGET_PATH/extensions-hashes.json"
+      rm "$TARGET_PATH/extensions-unwrapped-hashes.json"
+    fi
+    if [ ! -f "$TARGET_PATH/extensions-unwrapped-hashes.json" ]
+    then
       jq '
         .publishers = (.publishers | map(
           {
@@ -64,6 +74,9 @@ cache_extensions_index() {
       jq . "$TARGET_PATH/extensions-index.json" \
         | docker run -i --rm -v "$EXTENSIONS_CACHE_HOST_PATH:/extensions" alpine \
           sh -c 'cat > /extensions/local-extensions-index.json'
+      jq . "$TARGET_PATH/extensions-hashes.json" \
+        | docker run -i --rm -v "$EXTENSIONS_CACHE_HOST_PATH:/extensions" alpine \
+          sh -c 'cat > /extensions/local-extensions-hashes.json'
     fi
     EXTENSIONS_INDEX_CACHED=true
   fi

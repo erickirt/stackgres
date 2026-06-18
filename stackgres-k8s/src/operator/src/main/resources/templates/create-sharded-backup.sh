@@ -154,12 +154,25 @@ EOF
     then
       DRY_RUN_CLIENT=$(kubectl version --client=true -o json | jq -r 'if (.clientVersion.minor | sub("[^0-9].*$";"") | tonumber) < 18 then "true" else "client" end')
       echo "Updating backup CR"
-      {
-        retry kubectl get "$SHARDED_BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_BACKUP_NAME" -o yaml
-        printf '%s\n' "$SHARDED_BACKUP_STATUS_YAML"
-      } | kubectl create --dry-run="$DRY_RUN_CLIENT" -f - -o json | tee /tmp/backup-to-patch
-      retry kubectl patch "$SHARDED_BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_BACKUP_NAME" -o yaml \
-        --type merge --patch-file /tmp/backup-to-patch
+      while true
+      do
+        {
+          retry kubectl get "$SHARDED_BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_BACKUP_NAME" -o yaml
+          printf '%s\n' "$SHARDED_BACKUP_STATUS_YAML"
+        } | kubectl create --dry-run="$DRY_RUN_CLIENT" -f - -o json | tee /tmp/backup-to-patch
+        if ! kubectl patch "$SHARDED_BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_BACKUP_NAME" -o yaml \
+          --type merge --patch-file /tmp/backup-to-patch > /tmp/backup-update 2>&1
+        then
+          if is_not_conflict "$(cat /tmp/backup-update)"
+          then
+            cat /tmp/backup-update
+            return 1
+          fi
+          retry_backoff
+        fi
+        cat /tmp/backup-update
+        break
+      done
     else
       SHARDED_BACKUP_ALREADY_COMPLETED=true
     fi

@@ -76,7 +76,7 @@ EOF
     then
       break
     fi
-    sleep 2
+    retry_backoff
   done
 
   echo "Sharded DbOps $NORMALIZED_OP_NAME completed"

@@ -100,6 +100,34 @@ public interface DbOpsUtil {
         .orElseGet(() -> String.valueOf(Integer.MAX_VALUE));
   }
 
+  static String getRetryDelay(StackGresDbOps dbOps) {
+    return Optional.of(dbOps)
+        .map(StackGresDbOps::getSpec)
+        .map(StackGresDbOpsSpec::getRetryDelay)
+        .map(Duration::parse)
+        .map(Duration::toMillis)
+        .map(Object::toString)
+        .orElse("1000");
+  }
+
+  static String getRetryLimit(StackGresDbOps dbOps) {
+    return Optional.of(dbOps)
+        .map(StackGresDbOps::getSpec)
+        .map(StackGresDbOpsSpec::getRetryLimit)
+        .map(Object::toString)
+        .orElse("10");
+  }
+
+  static String getRetryMaxDelay(StackGresDbOps dbOps) {
+    return Optional.of(dbOps)
+        .map(StackGresDbOps::getSpec)
+        .map(StackGresDbOpsSpec::getRetryMaxDelay)
+        .map(Duration::parse)
+        .map(Duration::toMillis)
+        .map(Object::toString)
+        .orElse("60000");
+  }
+
   static String getKebabCaseOperation(StackGresDbOps dbOps) {
     return UPPERCASE_LETTER_PATTERN
         .matcher(dbOps.getSpec().getOp())

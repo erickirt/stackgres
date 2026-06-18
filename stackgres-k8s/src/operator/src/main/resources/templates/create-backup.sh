@@ -264,20 +264,26 @@ EOF
     then
       DRY_RUN_CLIENT=$(kubectl version --client=true -o json | jq -r 'if (.clientVersion.minor | sub("[^0-9].*$";"") | tonumber) < 18 then "true" else "client" end')
       echo "Updating backup CR"
-      retry kubectl get "$BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$BACKUP_NAME" -o yaml > /tmp/backup-found
-      {
-        cat /tmp/backup-found
-        echo "$BACKUP_STATUS_YAML"
-      } | kubectl create --dry-run="$DRY_RUN_CLIENT" -f - -o json > /tmp/backup-to-patch
-      if ! retry kubectl patch "$BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$BACKUP_NAME" -o json \
-        --type merge --patch-file /tmp/backup-to-patch | tee /tmp/backup-update 2>&1
-      then
+      while true
+      do
+        retry kubectl get "$BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$BACKUP_NAME" -o yaml > /tmp/backup-found
+        {
+          cat /tmp/backup-found
+          echo "$BACKUP_STATUS_YAML"
+        } | kubectl create --dry-run="$DRY_RUN_CLIENT" -f - -o json > /tmp/backup-to-patch
+        if ! kubectl patch "$BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$BACKUP_NAME" -o json \
+          --type merge --patch-file /tmp/backup-to-patch > /tmp/backup-update 2>&1
+        then
+          if in_not_conflict "$(cat /tmp/backup-update)"
+          then
+            cat /tmp/backup-update
+            exit 1
+          fi
+          retry_backoff
+        fi
         cat /tmp/backup-update
-        echo
-        exit 1
-      fi
-      cat /tmp/backup-update
-      echo
+        break
+      done
     else
       BACKUP_ALREADY_COMPLETED=true
     fi
@@ -463,8 +469,7 @@ EOF
         break
       fi
       if [ "x$(jq -r 'if .status.error != null then .status.error.message else "" end' /tmp/backup-volumesnapshot)" != x ] \
-        && ! jq -r '.status.error.message' /tmp/backup-volumesnapshot \
-          | grep -qF 'the object has been modified; please apply your changes to the latest version and try again'
+        && is_not_conflict "$(jq -r '.status.error.message' /tmp/backup-volumesnapshot)"
       then
         cat /tmp/backup-volumesnapshot
         echo 'Backup failed due to error in VolumeSnapshot'

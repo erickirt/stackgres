@@ -313,6 +313,18 @@ public abstract class AbstractShardedDbOpsJob implements ShardedDbOpsJobFactory 
                         new EnvVarBuilder()
                             .withName("LOCK_GET_RETRY_DELAY")
                             .withValue(OperatorProperty.LOCK_GET_RETRY_DELAY.getString())
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("RETRY_DELAY")
+                            .withValue(ShardedDbOpsUtil.getRetryDelay(dbOps))
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("RETRY_LIMIT")
+                            .withValue(ShardedDbOpsUtil.getRetryLimit(dbOps))
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("RETRY_MAX_DELAY")
+                            .withValue(ShardedDbOpsUtil.getRetryMaxDelay(dbOps))
                             .build())
                     .addAll(runEnvVars)
                     .build())

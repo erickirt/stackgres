@@ -56,6 +56,7 @@ import io.stackgres.common.labels.LabelFactoryForCluster;
 import io.stackgres.common.labels.LabelFactoryForShardedBackup;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.ResourceGenerator;
+import io.stackgres.operator.conciliation.backup.BackupRetry;
 import io.stackgres.operator.conciliation.factory.ResourceFactory;
 import io.stackgres.operator.conciliation.factory.VolumePair;
 import io.stackgres.operator.conciliation.factory.shardedcluster.ShardedClusterEnvironmentVariablesFactory;
@@ -301,6 +302,18 @@ public class ShardedBackupJob
                         .orElse("300"))
                     .build(),
                     new EnvVarBuilder()
+                    .withName("RETRY_DELAY")
+                    .withValue(BackupRetry.getRetryDelay(backup.getSpec().getRetryDelay()))
+                    .build(),
+                    new EnvVarBuilder()
+                    .withName("RETRY_LIMIT")
+                    .withValue(BackupRetry.getRetryLimit(backup.getSpec().getRetryLimit()))
+                    .build(),
+                    new EnvVarBuilder()
+                    .withName("RETRY_MAX_DELAY")
+                    .withValue(BackupRetry.getRetryMaxDelay(backup.getSpec().getRetryMaxDelay()))
+                    .build(),
+                    new EnvVarBuilder()
                     .withName("CLUSTER_CRD_NAME")
                     .withValue(CustomResource.getCRDName(StackGresCluster.class))
                     .build(),
@@ -432,6 +445,14 @@ public class ShardedBackupJob
                     new EnvVarBuilder()
                     .withName("LOCK_POLL_INTERVAL")
                     .withValue(OperatorProperty.LOCK_POLL_INTERVAL.getString())
+                    .build(),
+                    new EnvVarBuilder()
+                    .withName("LOCK_GET_RETRIES")
+                    .withValue(OperatorProperty.LOCK_GET_RETRIES.getString())
+                    .build(),
+                    new EnvVarBuilder()
+                    .withName("LOCK_GET_RETRY_DELAY")
+                    .withValue(OperatorProperty.LOCK_GET_RETRY_DELAY.getString())
                     .build())
                 .build())
             .withCommand("/bin/bash", "-e" + (LOGGER.isTraceEnabled() ? "x" : ""),

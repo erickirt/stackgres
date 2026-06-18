@@ -111,8 +111,26 @@ spec:
                   type: integer
                   description: |
                     The maximum number of retries the backup operation is allowed to do after a failure.
-  
+
                     A value of `0` (zero) means no retries are made. Defaults to: `3`.
+                retryDelay:
+                  type: string
+                  description: |
+                    An ISO 8601 duration in the format `PnDTnHnMn.nS`, that specifies the initial delay used by the exponential backoff applied when a command run by the backup script is retried and in general by unbounded retries and in some cases without exponential backoff.
+
+                    Defaults to: `PT1S`.
+                retryLimit:
+                  type: integer
+                  description: |
+                    The maximum number of times a command run by the backup script is retried before failing.
+
+                    Defaults to: `10`.
+                retryMaxDelay:
+                  type: string
+                  description: |
+                    An ISO 8601 duration in the format `PnDTnHnMn.nS`, that specifies the maximum delay the exponential backoff is allowed to reach when a command run by the backup script is retried.
+
+                    Defaults to: `PT1M`.
             status:
               type: object
               properties:

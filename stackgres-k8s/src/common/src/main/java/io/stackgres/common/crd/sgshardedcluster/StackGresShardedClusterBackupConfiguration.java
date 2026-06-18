@@ -5,16 +5,22 @@
 
 package io.stackgres.common.crd.sgshardedcluster;
 
+import java.time.Duration;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.crd.sgbackup.StackGresBaseBackupPerformance;
+import io.stackgres.common.validation.FieldReference;
+import io.stackgres.common.validation.FieldReference.ReferencedField;
 import io.sundr.builder.annotations.Buildable;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -57,7 +63,52 @@ public class StackGresShardedClusterBackupConfiguration {
   @Min(value = 0, message = "maxRetries must be greather or equals to 0.")
   private Integer maxRetries;
 
+  private String retryDelay;
+
+  @Min(value = 0, message = "retryLimit must be greather or equals to 0.")
+  private Integer retryLimit;
+
+  private String retryMaxDelay;
+
   private Boolean retainWalsForUnmanagedLifecycle;
+
+  @ReferencedField("retryDelay")
+  interface RetryDelay extends FieldReference {
+  }
+
+  @ReferencedField("retryMaxDelay")
+  interface RetryMaxDelay extends FieldReference {
+  }
+
+  @JsonIgnore
+  @AssertTrue(message = "retryDelay must be positive and in ISO 8601 duration format:"
+      + " `PnDTnHnMn.nS`.",
+      payload = RetryDelay.class)
+  public boolean isRetryDelayValid() {
+    try {
+      if (retryDelay != null) {
+        return !Duration.parse(retryDelay).isNegative();
+      }
+      return true;
+    } catch (DateTimeParseException ex) {
+      return false;
+    }
+  }
+
+  @JsonIgnore
+  @AssertTrue(message = "retryMaxDelay must be positive and in ISO 8601 duration format:"
+      + " `PnDTnHnMn.nS`.",
+      payload = RetryMaxDelay.class)
+  public boolean isRetryMaxDelayValid() {
+    try {
+      if (retryMaxDelay != null) {
+        return !Duration.parse(retryMaxDelay).isNegative();
+      }
+      return true;
+    } catch (DateTimeParseException ex) {
+      return false;
+    }
+  }
 
   public Integer getRetention() {
     return retention;
@@ -163,6 +214,30 @@ public class StackGresShardedClusterBackupConfiguration {
     this.maxRetries = maxRetries;
   }
 
+  public String getRetryDelay() {
+    return retryDelay;
+  }
+
+  public void setRetryDelay(String retryDelay) {
+    this.retryDelay = retryDelay;
+  }
+
+  public Integer getRetryLimit() {
+    return retryLimit;
+  }
+
+  public void setRetryLimit(Integer retryLimit) {
+    this.retryLimit = retryLimit;
+  }
+
+  public String getRetryMaxDelay() {
+    return retryMaxDelay;
+  }
+
+  public void setRetryMaxDelay(String retryMaxDelay) {
+    this.retryMaxDelay = retryMaxDelay;
+  }
+
   public Boolean getRetainWalsForUnmanagedLifecycle() {
     return retainWalsForUnmanagedLifecycle;
   }
@@ -175,7 +250,8 @@ public class StackGresShardedClusterBackupConfiguration {
   public int hashCode() {
     return Objects.hash(compression, cronSchedule, fastVolumeSnapshot, maxRetries, paths,
         performance, queryRouterPaths, reconciliationTimeout, retainWalsForUnmanagedLifecycle,
-        retention, sgObjectStorage, timeout, useVolumeSnapshot, volumeSnapshotClass);
+        retention, retryDelay, retryLimit, retryMaxDelay, sgObjectStorage, timeout,
+        useVolumeSnapshot, volumeSnapshotClass);
   }
 
   @Override
@@ -196,6 +272,9 @@ public class StackGresShardedClusterBackupConfiguration {
         && Objects.equals(reconciliationTimeout, other.reconciliationTimeout)
         && Objects.equals(retainWalsForUnmanagedLifecycle, other.retainWalsForUnmanagedLifecycle)
         && Objects.equals(retention, other.retention)
+        && Objects.equals(retryDelay, other.retryDelay)
+        && Objects.equals(retryLimit, other.retryLimit)
+        && Objects.equals(retryMaxDelay, other.retryMaxDelay)
         && Objects.equals(sgObjectStorage, other.sgObjectStorage)
         && Objects.equals(timeout, other.timeout)
         && Objects.equals(useVolumeSnapshot, other.useVolumeSnapshot)

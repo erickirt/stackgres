@@ -49,6 +49,13 @@ public class StackGresDbOpsSpec {
   @Min(value = 0, message = "maxRetries must be greather or equals to 0.")
   private Integer maxRetries;
 
+  private String retryDelay;
+
+  @Min(value = 0, message = "retryLimit must be greather or equals to 0.")
+  private Integer retryLimit;
+
+  private String retryMaxDelay;
+
   @Valid
   private StackGresDbOpsBenchmark benchmark;
 
@@ -80,6 +87,14 @@ public class StackGresDbOpsSpec {
 
   @ReferencedField("timeout")
   interface Timeout extends FieldReference {
+  }
+
+  @ReferencedField("retryDelay")
+  interface RetryDelay extends FieldReference {
+  }
+
+  @ReferencedField("retryMaxDelay")
+  interface RetryMaxDelay extends FieldReference {
   }
 
   @ReferencedField("benchmark")
@@ -162,6 +177,36 @@ public class StackGresDbOpsSpec {
     try {
       if (timeout != null) {
         return !Duration.parse(timeout).isNegative();
+      }
+      return true;
+    } catch (DateTimeParseException ex) {
+      return false;
+    }
+  }
+
+  @JsonIgnore
+  @AssertTrue(message = "retryDelay must be positive and in ISO 8601 duration format:"
+      + " `PnDTnHnMn.nS`.",
+      payload = RetryDelay.class)
+  public boolean isRetryDelayValid() {
+    try {
+      if (retryDelay != null) {
+        return !Duration.parse(retryDelay).isNegative();
+      }
+      return true;
+    } catch (DateTimeParseException ex) {
+      return false;
+    }
+  }
+
+  @JsonIgnore
+  @AssertTrue(message = "retryMaxDelay must be positive and in ISO 8601 duration format:"
+      + " `PnDTnHnMn.nS`.",
+      payload = RetryMaxDelay.class)
+  public boolean isRetryMaxDelayValid() {
+    try {
+      if (retryMaxDelay != null) {
+        return !Duration.parse(retryMaxDelay).isNegative();
       }
       return true;
     } catch (DateTimeParseException ex) {
@@ -282,6 +327,30 @@ public class StackGresDbOpsSpec {
     this.maxRetries = maxRetries;
   }
 
+  public String getRetryDelay() {
+    return retryDelay;
+  }
+
+  public void setRetryDelay(String retryDelay) {
+    this.retryDelay = retryDelay;
+  }
+
+  public Integer getRetryLimit() {
+    return retryLimit;
+  }
+
+  public void setRetryLimit(Integer retryLimit) {
+    this.retryLimit = retryLimit;
+  }
+
+  public String getRetryMaxDelay() {
+    return retryMaxDelay;
+  }
+
+  public void setRetryMaxDelay(String retryMaxDelay) {
+    this.retryMaxDelay = retryMaxDelay;
+  }
+
   public StackGresDbOpsBenchmark getBenchmark() {
     return benchmark;
   }
@@ -341,7 +410,8 @@ public class StackGresDbOpsSpec {
   @Override
   public int hashCode() {
     return Objects.hash(benchmark, majorVersionUpgrade, maxRetries, minorVersionUpgrade, op, repack,
-        restart, runAt, securityUpgrade, sgCluster, timeout, vacuum);
+        restart, retryDelay, retryLimit, retryMaxDelay, runAt, securityUpgrade, sgCluster, timeout,
+        vacuum);
   }
 
   @Override
@@ -358,7 +428,11 @@ public class StackGresDbOpsSpec {
         && Objects.equals(maxRetries, other.maxRetries)
         && Objects.equals(minorVersionUpgrade, other.minorVersionUpgrade)
         && Objects.equals(op, other.op) && Objects.equals(repack, other.repack)
-        && Objects.equals(restart, other.restart) && Objects.equals(runAt, other.runAt)
+        && Objects.equals(restart, other.restart)
+        && Objects.equals(retryDelay, other.retryDelay)
+        && Objects.equals(retryLimit, other.retryLimit)
+        && Objects.equals(retryMaxDelay, other.retryMaxDelay)
+        && Objects.equals(runAt, other.runAt)
         && Objects.equals(securityUpgrade, other.securityUpgrade)
         && Objects.equals(sgCluster, other.sgCluster) && Objects.equals(timeout, other.timeout)
         && Objects.equals(vacuum, other.vacuum);

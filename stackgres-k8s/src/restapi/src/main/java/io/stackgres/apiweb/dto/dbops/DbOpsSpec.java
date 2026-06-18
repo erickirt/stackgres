@@ -25,6 +25,12 @@ public class DbOpsSpec {
 
   private Integer maxRetries;
 
+  private String retryDelay;
+
+  private Integer retryLimit;
+
+  private String retryMaxDelay;
+
   private DbOpsBenchmark benchmark;
 
   private DbOpsVacuum vacuum;
@@ -85,6 +91,30 @@ public class DbOpsSpec {
 
   public void setMaxRetries(Integer maxRetries) {
     this.maxRetries = maxRetries;
+  }
+
+  public String getRetryDelay() {
+    return retryDelay;
+  }
+
+  public void setRetryDelay(String retryDelay) {
+    this.retryDelay = retryDelay;
+  }
+
+  public Integer getRetryLimit() {
+    return retryLimit;
+  }
+
+  public void setRetryLimit(Integer retryLimit) {
+    this.retryLimit = retryLimit;
+  }
+
+  public String getRetryMaxDelay() {
+    return retryMaxDelay;
+  }
+
+  public void setRetryMaxDelay(String retryMaxDelay) {
+    this.retryMaxDelay = retryMaxDelay;
   }
 
   public DbOpsBenchmark getBenchmark() {

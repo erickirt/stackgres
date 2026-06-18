@@ -313,6 +313,18 @@ public abstract class AbstractDbOpsJob implements DbOpsJobFactory {
                         new EnvVarBuilder()
                             .withName("LOCK_GET_RETRY_DELAY")
                             .withValue(OperatorProperty.LOCK_GET_RETRY_DELAY.getString())
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("RETRY_DELAY")
+                            .withValue(DbOpsUtil.getRetryDelay(dbOps))
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("RETRY_LIMIT")
+                            .withValue(DbOpsUtil.getRetryLimit(dbOps))
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("RETRY_MAX_DELAY")
+                            .withValue(DbOpsUtil.getRetryMaxDelay(dbOps))
                             .build())
                     .addAll(runEnvVars)
                     .build())

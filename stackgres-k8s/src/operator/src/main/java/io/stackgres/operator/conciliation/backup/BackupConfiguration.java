@@ -17,6 +17,9 @@ public record BackupConfiguration(
     Integer timeout,
     Integer reconciliationTimeout,
     Integer maxRetries,
-    Boolean retainWalsForUnmanagedLifecycle
+    Boolean retainWalsForUnmanagedLifecycle,
+    String retryDelay,
+    Integer retryLimit,
+    String retryMaxDelay
 ) {
 }
