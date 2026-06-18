@@ -2,6 +2,8 @@
 
 LOCK_DURATION="${LOCK_DURATION:-60}"
 LOCK_SLEEP="${LOCK_SLEEP:-${LOCK_POLL_INTERVAL:-5}}"
+LOCK_GET_RETRIES="${LOCK_GET_RETRIES:-5}"
+LOCK_GET_RETRY_DELAY="${LOCK_GET_RETRY_DELAY:-2}"
 QUEUE_NAME=create_event.pipe
 RETRY_DELAY="${RETRY_DELAY:-1000}"
 RETRY_LIMIT="${RETRY_LIMIT:-10}"
@@ -31,6 +33,28 @@ maintain_lock() {
   done
 }
 
+# Reads the Lease into /tmp/lock-lease using the provided go-template.
+# A transient failure to reach the API server (e.g. a momentary 401/Unauthorized
+# or connection error under load) must NOT be mistaken for a lost lock, so the
+# read is retried LOCK_GET_RETRIES times (waiting LOCK_GET_RETRY_DELAY seconds in
+# between, which stays well within LOCK_DURATION) before giving up. The previous
+# CAS-based lock tolerated these failures implicitly; the Lease lock must do so
+# explicitly. Returns non-zero only when the Lease can not be read after retries.
+get_lease() {
+  local ATTEMPT=0
+  until kubectl get lease -n "$LOCK_LEASE_NAMESPACE" "$LOCK_LEASE_NAME" \
+    --template="$1" > /tmp/lock-lease 2>/tmp/lock-lease.err
+  do
+    cat /tmp/lock-lease.err
+    ATTEMPT="$((ATTEMPT + 1))"
+    if [ "$ATTEMPT" -ge "$LOCK_GET_RETRIES" ]
+    then
+      return 1
+    fi
+    sleep "$LOCK_GET_RETRY_DELAY"
+  done
+}
+
 # Lock implementation backed by a coordination.k8s.io/v1 Lease.
 # Required env vars:
 #   LOCK_LEASE_NAMESPACE  - namespace holding the Lease (typically the cluster namespace)
@@ -39,6 +63,8 @@ maintain_lock() {
 #   POD_NAME              - worker pod name
 #   LOCK_DURATION         - lease duration in seconds
 #   LOCK_SLEEP            - renewal interval in seconds (defaults to LOCK_POLL_INTERVAL)
+#   LOCK_GET_RETRIES      - times to retry reading the Lease on transient API errors
+#   LOCK_GET_RETRY_DELAY  - seconds to wait between Lease read retries
 try_lock() {
   if [ -z "$LOCK_LEASE_NAMESPACE" ] || [ -z "$LOCK_LEASE_NAME" ] \
     || [ -z "$POD_NAME" ] || [ -z "$SERVICE_ACCOUNT" ]
@@ -55,10 +81,8 @@ try_lock() {
   LEASE_TRANSITIONS={{ with .spec.leaseTransitions }}{{ . }}{{ else }}0{{ end }}
   RESOURCE_VERSION={{ .metadata.resourceVersion }}
   '
-  if ! kubectl get lease -n "$LOCK_LEASE_NAMESPACE" "$LOCK_LEASE_NAME" \
-    --template="$TEMPLATE" > /tmp/lock-lease 2>/tmp/lock-lease.err
+  if ! get_lease "$TEMPLATE"
   then
-    cat /tmp/lock-lease.err
     return 1
   fi
   . /tmp/lock-lease
@@ -109,10 +133,8 @@ try_lock() {
   then
     # Refetch the lease; if we still hold it the patch failure was a transient
     # CAS conflict and we retry. Otherwise the lock has been taken by someone else.
-    if ! kubectl get lease -n "$LOCK_LEASE_NAMESPACE" "$LOCK_LEASE_NAME" \
-      --template="$TEMPLATE" > /tmp/lock-lease 2>/tmp/lock-lease.err
+    if ! get_lease "$TEMPLATE"
     then
-      cat /tmp/lock-lease.err
       return 1
     fi
     . /tmp/lock-lease
@@ -144,10 +166,8 @@ release_lock() {
   HOLDER_IDENTITY={{ with .spec.holderIdentity }}{{ . }}{{ end }}
   RESOURCE_VERSION={{ .metadata.resourceVersion }}
   '
-  if ! kubectl get lease -n "$LOCK_LEASE_NAMESPACE" "$LOCK_LEASE_NAME" \
-    --template="$TEMPLATE" > /tmp/lock-lease 2>/tmp/lock-lease.err
+  if ! get_lease "$TEMPLATE"
   then
-    cat /tmp/lock-lease.err
     return 0
   fi
   . /tmp/lock-lease

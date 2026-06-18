@@ -1,0 +1,42 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/backup/abstract-backup"
+
+# A transient failure to read the Lease (e.g. a momentary "Unauthorized" from the
+# API server under load) must be retried, not mistaken for a lost lock, so the
+# backup must still succeed.
+LOCK_GET_RETRY_DELAY=0
+
+shell_unit_test() {
+  echo 0 > "$TEST_TARGET_PATH/lock_get_count"
+  shell_unit_test_backup
+}
+
+mock kubectl kubectl_mock_overwrite
+
+kubectl_mock_overwrite() {
+  mokked
+  case "$*" in
+    ("get lease -n $LOCK_LEASE_NAMESPACE $LOCK_LEASE_NAME --template="*)
+    local GET_COUNT="$(cat "$TEST_TARGET_PATH/lock_get_count")"
+    echo "$((GET_COUNT + 1))" > "$TEST_TARGET_PATH/lock_get_count"
+    # Fail the very first read to simulate a transient API error, then serve a
+    # valid Lease held by this pod on every subsequent read.
+    if [ "$GET_COUNT" = 0 ]
+    then
+      echo "error: You must be logged in to the server (Unauthorized)" >&2
+      return 1
+    fi
+    echo '
+      HOLDER_IDENTITY=test/test
+      RENEW_TIME='"$(date -u +%Y-%m-%dT%H:%M:%S.%6NZ)"'
+      LEASE_DURATION_SECONDS='"$LOCK_DURATION"'
+      LEASE_TRANSITIONS=0
+      RESOURCE_VERSION=test
+      '
+    ;;
+    *)
+    not_mokked
+    ;;
+  esac
+}

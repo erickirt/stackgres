@@ -32,6 +32,7 @@ import io.stackgres.common.CdiUtil;
 import io.stackgres.common.ClusterPath;
 import io.stackgres.common.KubectlUtil;
 import io.stackgres.common.LeaseLockUtil;
+import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.StackGresVolume;
 import io.stackgres.common.crd.sgdbops.DbOpsStatusCondition;
@@ -304,6 +305,14 @@ public abstract class AbstractDbOpsJob implements DbOpsJobFactory {
                             .withName("LOCK_LEASE_NAME")
                             .withValue(LeaseLockUtil.leaseNameForCluster(
                                 context.getCluster().getMetadata().getUid()))
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("LOCK_GET_RETRIES")
+                            .withValue(OperatorProperty.LOCK_GET_RETRIES.getString())
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("LOCK_GET_RETRY_DELAY")
+                            .withValue(OperatorProperty.LOCK_GET_RETRY_DELAY.getString())
                             .build())
                     .addAll(runEnvVars)
                     .build())

@@ -75,6 +75,8 @@
     <stackgres.stream.podName>stackgres</stackgres.stream.podName>
     <stackgres.lockPollInterval>5</stackgres.lockPollInterval>
     <stackgres.lockDuration>60</stackgres.lockDuration>
+    <stackgres.lockGetRetries>5</stackgres.lockGetRetries>
+    <stackgres.lockGetRetryDelay>2</stackgres.lockGetRetryDelay>
     <stackgres.prometheus.allowAutobind>false</stackgres.prometheus.allowAutobind>
     <stackgres.authentication.secretName>stackgres-api-admin</stackgres.authentication.secretName>
     <stackgres.restapiNamespace>stackgres</stackgres.restapiNamespace>
