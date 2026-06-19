@@ -16,8 +16,12 @@ import java.util.Map;
 
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
+import io.stackgres.common.crd.sgcluster.StackGresCluster;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
+import io.stackgres.common.fixture.Fixtures;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class StackGresUtilTest {
@@ -163,6 +167,100 @@ class StackGresUtilTest {
     assertThat(map1).containsKey(StackGresUtil.MD5SUM_2_KEY);
     assertThat(map1.get(StackGresUtil.MD5SUM_2_KEY)).isNotNull();
     assertThat(map1.get(StackGresUtil.MD5SUM_2_KEY)).isNotEqualTo(map2.get(StackGresUtil.MD5SUM_2_KEY));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+      "17, 14.0.0",
+      "16, 14.0.0",
+      "15, 13.2.0",
+      "14, 12.1.6",
+      "13, 11.3-1",
+  })
+  void getShardedClusterExtensions_shouldReturnCitusExtensionsForPostgresMajorVersion(
+      String postgresMajorVersion, String citusVersion) {
+    StackGresShardedCluster cluster = Fixtures.shardedCluster().loadDefault().get();
+    String postgresVersion = StackGresComponent.POSTGRESQL.getLatest()
+        .streamOrderedVersions()
+        .filter(version -> version.startsWith(postgresMajorVersion + "."))
+        .findFirst()
+        .get();
+    cluster.getSpec().getPostgres().setVersion(postgresVersion);
+
+    List<ExtensionTuple> extensions = StackGresUtil.getShardedClusterExtensions(cluster);
+
+    assertEquals(
+        List.of(
+            new ExtensionTuple("citus", citusVersion),
+            new ExtensionTuple("citus_columnar", citusVersion),
+            new ExtensionTuple("pg_cron")),
+        extensions);
+  }
+
+  @Test
+  void getPatroniVersionForCluster_shouldPreferStatusPostgresVersion() {
+    StackGresCluster cluster = Fixtures.cluster().loadDefault().get();
+    String latestPostgresVersion = StackGresComponent.POSTGRESQL.getLatest()
+        .streamOrderedVersions().findFirst().get();
+    cluster.getSpec().getPostgres().setVersion(latestPostgresVersion);
+    final String statusPostgresVersion = cluster.getStatus().getPostgresVersion();
+
+    assertEquals(
+        StackGresUtil.getPatroniVersion(cluster, statusPostgresVersion),
+        StackGresUtil.getPatroniVersion(cluster));
+  }
+
+  @Test
+  void getPatroniVersionForCluster_shouldFallbackToSpecPostgresVersionWhenStatusIsNull() {
+    StackGresCluster cluster = Fixtures.cluster().loadDefault().get();
+    cluster.setStatus(null);
+
+    assertEquals(
+        StackGresUtil.getPatroniVersion(cluster, cluster.getSpec().getPostgres().getVersion()),
+        StackGresUtil.getPatroniVersion(cluster));
+  }
+
+  @Test
+  void getPatroniVersionForCluster_shouldFallbackToSpecWhenStatusPostgresVersionIsNull() {
+    StackGresCluster cluster = Fixtures.cluster().loadDefault().get();
+    cluster.getStatus().setPostgresVersion(null);
+
+    assertEquals(
+        StackGresUtil.getPatroniVersion(cluster, cluster.getSpec().getPostgres().getVersion()),
+        StackGresUtil.getPatroniVersion(cluster));
+  }
+
+  @Test
+  void getPatroniVersionForShardedCluster_shouldPreferStatusPostgresVersion() {
+    StackGresShardedCluster cluster = Fixtures.shardedCluster().loadDefault().get();
+    String latestPostgresVersion = StackGresComponent.POSTGRESQL.getLatest()
+        .streamOrderedVersions().findFirst().get();
+    cluster.getSpec().getPostgres().setVersion(latestPostgresVersion);
+    final String statusPostgresVersion = cluster.getStatus().getPostgresVersion();
+
+    assertEquals(
+        StackGresUtil.getPatroniVersion(cluster, statusPostgresVersion),
+        StackGresUtil.getPatroniVersion(cluster));
+  }
+
+  @Test
+  void getPatroniVersionForShardedCluster_shouldFallbackToSpecWhenStatusIsNull() {
+    StackGresShardedCluster cluster = Fixtures.shardedCluster().loadDefault().get();
+    cluster.setStatus(null);
+
+    assertEquals(
+        StackGresUtil.getPatroniVersion(cluster, cluster.getSpec().getPostgres().getVersion()),
+        StackGresUtil.getPatroniVersion(cluster));
+  }
+
+  @Test
+  void getPatroniVersionForShardedCluster_shouldFallbackToSpecWhenStatusPostgresVersionIsNull() {
+    StackGresShardedCluster cluster = Fixtures.shardedCluster().loadDefault().get();
+    cluster.getStatus().setPostgresVersion(null);
+
+    assertEquals(
+        StackGresUtil.getPatroniVersion(cluster, cluster.getSpec().getPostgres().getVersion()),
+        StackGresUtil.getPatroniVersion(cluster));
   }
 
   @Test

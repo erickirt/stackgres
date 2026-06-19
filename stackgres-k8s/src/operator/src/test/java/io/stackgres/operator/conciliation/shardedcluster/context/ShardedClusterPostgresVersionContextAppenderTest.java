@@ -102,9 +102,6 @@ class ShardedClusterPostgresVersionContextAppenderTest {
   private ShardedClusterCoordinatorPostgresConfigContextAppender clusterCoordinatorPostgresConfigContextAppender;
 
   @Mock
-  private ShardedClusterWorkersPostgresConfigContextAppender clusterWorkersPostgresConfigContextAppender;
-
-  @Mock
   private ShardedClusterRestoreBackupContextAppender clusterRestoreBackupContextAppender;
 
   @Mock
@@ -128,7 +125,6 @@ class ShardedClusterPostgresVersionContextAppenderTest {
     contextAppender = new ShardedClusterPostgresVersionContextAppender(
         eventController,
         clusterCoordinatorPostgresConfigContextAppender,
-        clusterWorkersPostgresConfigContextAppender,
         clusterRestoreBackupContextAppender,
         clusterReplicateFromContextAppender,
         clusterCoordinatorContextAppender,
@@ -152,8 +148,8 @@ class ShardedClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getBuildVersion());
     verify(clusterCoordinatorPostgresConfigContextAppender).appendContext(
         cluster, contextBuilder, cluster.getStatus().getPostgresVersion());
-    verify(clusterWorkersPostgresConfigContextAppender).appendContext(
-        cluster, contextBuilder, cluster.getStatus().getPostgresVersion());
+    verify(clusterWorkersContextAppender).appendContext(
+        cluster, contextBuilder, cluster.getStatus().getPostgresVersion(), Optional.empty());
     verify(clusterRestoreBackupContextAppender).appendContext(
         cluster, contextBuilder, cluster.getStatus().getPostgresVersion());
     verify(clusterExtensionsContextAppender).appendContext(
@@ -178,8 +174,8 @@ class ShardedClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getBuildVersion());
     verify(clusterCoordinatorPostgresConfigContextAppender).appendContext(
         cluster, contextBuilder, cluster.getStatus().getPostgresVersion());
-    verify(clusterWorkersPostgresConfigContextAppender).appendContext(
-        cluster, contextBuilder, cluster.getStatus().getPostgresVersion());
+    verify(clusterWorkersContextAppender).appendContext(
+        cluster, contextBuilder, cluster.getStatus().getPostgresVersion(), Optional.empty());
     verify(clusterRestoreBackupContextAppender).appendContext(
         cluster, contextBuilder, cluster.getStatus().getPostgresVersion());
     verify(clusterExtensionsContextAppender).appendContext(
@@ -204,8 +200,8 @@ class ShardedClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getBuildVersion());
     verify(clusterCoordinatorPostgresConfigContextAppender).appendContext(
         cluster, contextBuilder, cluster.getStatus().getPostgresVersion());
-    verify(clusterWorkersPostgresConfigContextAppender).appendContext(
-        cluster, contextBuilder, cluster.getStatus().getPostgresVersion());
+    verify(clusterWorkersContextAppender).appendContext(
+        cluster, contextBuilder, cluster.getStatus().getPostgresVersion(), Optional.empty());
     verify(clusterRestoreBackupContextAppender).appendContext(
         cluster, contextBuilder, cluster.getStatus().getPostgresVersion());
     verify(clusterExtensionsContextAppender).appendContext(
@@ -232,8 +228,8 @@ class ShardedClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getBuildVersion());
     verify(clusterCoordinatorPostgresConfigContextAppender).appendContext(
         cluster, contextBuilder, cluster.getStatus().getPostgresVersion());
-    verify(clusterWorkersPostgresConfigContextAppender).appendContext(
-        cluster, contextBuilder, cluster.getStatus().getPostgresVersion());
+    verify(clusterWorkersContextAppender).appendContext(
+        cluster, contextBuilder, cluster.getStatus().getPostgresVersion(), Optional.empty());
     verify(clusterRestoreBackupContextAppender).appendContext(
         cluster, contextBuilder, cluster.getStatus().getPostgresVersion());
     verify(clusterExtensionsContextAppender).appendContext(
@@ -259,8 +255,8 @@ class ShardedClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getBuildVersion());
     verify(clusterCoordinatorPostgresConfigContextAppender).appendContext(
         cluster, contextBuilder, randomVersion);
-    verify(clusterWorkersPostgresConfigContextAppender).appendContext(
-        cluster, contextBuilder, randomVersion);
+    verify(clusterWorkersContextAppender).appendContext(
+        cluster, contextBuilder, randomVersion, Optional.empty());
     verify(clusterRestoreBackupContextAppender).appendContext(
         cluster, contextBuilder, randomVersion);
     verify(clusterExtensionsContextAppender).appendContext(
@@ -285,8 +281,8 @@ class ShardedClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getPostgresVersion().startsWith(randomMajorPostgresVersion + "."));
     verify(clusterCoordinatorPostgresConfigContextAppender).appendContext(
         eq(cluster), eq(contextBuilder), startsWith(randomMajorPostgresVersion + "."));
-    verify(clusterWorkersPostgresConfigContextAppender).appendContext(
-        eq(cluster), eq(contextBuilder), startsWith(randomMajorPostgresVersion + "."));
+    verify(clusterWorkersContextAppender).appendContext(
+        eq(cluster), eq(contextBuilder), startsWith(randomMajorPostgresVersion + "."), eq(Optional.empty()));
     verify(clusterRestoreBackupContextAppender).appendContext(
         eq(cluster), eq(contextBuilder), startsWith(randomMajorPostgresVersion + "."));
     verify(clusterExtensionsContextAppender).appendContext(
@@ -312,8 +308,8 @@ class ShardedClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getBuildVersion());
     verify(clusterCoordinatorPostgresConfigContextAppender).appendContext(
         cluster, contextBuilder, latestVersion);
-    verify(clusterWorkersPostgresConfigContextAppender).appendContext(
-        cluster, contextBuilder, latestVersion);
+    verify(clusterWorkersContextAppender).appendContext(
+        cluster, contextBuilder, latestVersion, Optional.empty());
     verify(clusterRestoreBackupContextAppender).appendContext(
         cluster, contextBuilder, latestVersion);
     verify(clusterExtensionsContextAppender).appendContext(
@@ -360,8 +356,8 @@ class ShardedClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getBuildVersion());
     verify(clusterCoordinatorPostgresConfigContextAppender).appendContext(
         cluster, contextBuilder, FIRST_PG_MINOR_VERSION);
-    verify(clusterWorkersPostgresConfigContextAppender).appendContext(
-        cluster, contextBuilder, FIRST_PG_MINOR_VERSION);
+    verify(clusterWorkersContextAppender).appendContext(
+        cluster, contextBuilder, FIRST_PG_MINOR_VERSION, Optional.empty());
     verify(clusterRestoreBackupContextAppender).appendContext(
         cluster, contextBuilder, FIRST_PG_MINOR_VERSION);
   }
@@ -437,8 +433,8 @@ class ShardedClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getBuildVersion());
     verify(clusterCoordinatorPostgresConfigContextAppender).appendContext(
         cluster, contextBuilder, targetVersion);
-    verify(clusterWorkersPostgresConfigContextAppender).appendContext(
-        cluster, contextBuilder, targetVersion);
+    verify(clusterWorkersContextAppender).appendContext(
+        cluster, contextBuilder, targetVersion, Optional.empty());
     verify(clusterRestoreBackupContextAppender).appendContext(
         cluster, contextBuilder, targetVersion);
     verify(clusterExtensionsContextAppender).appendContext(
@@ -467,8 +463,8 @@ class ShardedClusterPostgresVersionContextAppenderTest {
         cluster.getStatus().getBuildVersion());
     verify(clusterCoordinatorPostgresConfigContextAppender).appendContext(
         cluster, contextBuilder, FIRST_PG_MINOR_VERSION);
-    verify(clusterWorkersPostgresConfigContextAppender).appendContext(
-        cluster, contextBuilder, FIRST_PG_MINOR_VERSION);
+    verify(clusterWorkersContextAppender).appendContext(
+        cluster, contextBuilder, FIRST_PG_MINOR_VERSION, Optional.empty());
     verify(clusterRestoreBackupContextAppender).appendContext(
         cluster, contextBuilder, FIRST_PG_MINOR_VERSION);
     verify(clusterExtensionsContextAppender).appendContext(

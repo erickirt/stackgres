@@ -9,4 +9,4 @@ By default Pods are not re-created nor the Postgres instances restart automatica
 
 It is possible to configure this rollout strategy in order for a restart of the cluster to happen without requiring to create a restart day 2 operation.
 
-You can configure the rollout strategy of the cluster in the [SGCluster CRD updateStrategy section]({{% relref "06-crd-reference/01-sgcluster#sgclusterspecpodsupdatestartegy" %}}).
+You can configure the rollout strategy of the cluster in the [SGCluster CRD updateStrategy section]({{% relref "06-crd-reference/01-sgcluster#sgclusterspecpodsupdatestrategy" %}}).

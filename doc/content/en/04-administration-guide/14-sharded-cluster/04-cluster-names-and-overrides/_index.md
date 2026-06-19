@@ -15,7 +15,7 @@ By default the coordinator SGCluster is named after the SGShardedCluster with th
 If you want a specific name, set `spec.coordinator.clusterName`:
 
 ```yaml
-apiVersion: stackgres.io/v1
+apiVersion: stackgres.io/v1beta1
 kind: SGShardedCluster
 metadata:
   name: cluster

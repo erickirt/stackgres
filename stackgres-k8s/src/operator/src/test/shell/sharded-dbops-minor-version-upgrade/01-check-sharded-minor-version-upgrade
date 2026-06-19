@@ -1,0 +1,22 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/sharded-dbops-minor-version-upgrade/abstract-sharded-minor-version-upgrade"
+
+shell_unit_test() {
+  EXCLUSIVE_OP=true
+  printf %s ' Completed ' > "$TEST_TARGET_PATH/dbops-test-coord-status"
+  printf %s ' Completed ' > "$TEST_TARGET_PATH/dbops-test-shard0-status"
+  shell_unit_test_sharded_dbops
+  check_sharded_dbops_result || return 1
+  grep -qF '"version":"16.2"' "$TEST_TARGET_PATH/sharded-cluster-patches"
+  grep -q '^  sgCluster: test-coord$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^  sgCluster: test-shard0$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^  op: minorVersionUpgrade$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^    method: InPlace$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^    postgresVersion: "16.2"$' "$TEST_TARGET_PATH/created-dbops"
+  grep -qF '"path":"/status/minorVersionUpgrade"' "$TEST_TARGET_PATH/status-patches"
+  grep -qF '"sourcePostgresVersion": "16.1"' "$TEST_TARGET_PATH/status-patches"
+  grep -qF '"targetPostgresVersion": "16.2"' "$TEST_TARGET_PATH/status-patches"
+  grep -q '"pendingToRestartSgClusters"' "$TEST_TARGET_PATH/status-patches"
+  grep -q '"restartedSgClusters"' "$TEST_TARGET_PATH/status-patches"
+}

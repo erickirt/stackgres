@@ -80,7 +80,7 @@ public class BackupJobTest {
     backupPerformance = new BackupPerformance(10L, 10L, 1, null, null);
     backupConfig =
         new BackupConfiguration(5, "* * * 5 *", "10", "/tmp", backupPerformance,
-            null, null, null, null, null, null, null);
+            null, null, null, null, null, null, null, null, null, null);
     sgBackup.getSpec().setSgCluster(sgCluster.getMetadata().getName());
   }
 

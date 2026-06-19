@@ -34,6 +34,13 @@ public interface DbOpsUtil {
 
   String SUFFIX = "-dbops";
 
+  // Phases set on SGDbOps.status.majorVersionUpgrade.phase when manualRollback is enabled and the
+  // operation pauses waiting for the SGDbOps.status.majorVersionUpgrade.rollback decision.
+  // Must match the values set by the run-major-version-upgrade.sh shell script.
+  String MAJOR_VERSION_UPGRADE_WAIT_POST_UPGRADE_DECISION_PHASE = "wait-post-upgrade-decision";
+  String MAJOR_VERSION_UPGRADE_WAIT_POST_FAILED_UPGRADE_DECISION_PHASE =
+      "wait-post-failed-upgrade-decision";
+
   static String roleName(StackGresCluster cluster) {
     return roleName(cluster.getMetadata().getName());
   }
@@ -91,6 +98,34 @@ public interface DbOpsUtil {
         .map(Duration::getSeconds)
         .map(Object::toString)
         .orElseGet(() -> String.valueOf(Integer.MAX_VALUE));
+  }
+
+  static String getRetryDelay(StackGresDbOps dbOps) {
+    return Optional.of(dbOps)
+        .map(StackGresDbOps::getSpec)
+        .map(StackGresDbOpsSpec::getRetryDelay)
+        .map(Duration::parse)
+        .map(Duration::toMillis)
+        .map(Object::toString)
+        .orElse("1000");
+  }
+
+  static String getRetryLimit(StackGresDbOps dbOps) {
+    return Optional.of(dbOps)
+        .map(StackGresDbOps::getSpec)
+        .map(StackGresDbOpsSpec::getRetryLimit)
+        .map(Object::toString)
+        .orElse("10");
+  }
+
+  static String getRetryMaxDelay(StackGresDbOps dbOps) {
+    return Optional.of(dbOps)
+        .map(StackGresDbOps::getSpec)
+        .map(StackGresDbOpsSpec::getRetryMaxDelay)
+        .map(Duration::parse)
+        .map(Duration::toMillis)
+        .map(Object::toString)
+        .orElse("60000");
   }
 
   static String getKebabCaseOperation(StackGresDbOps dbOps) {

@@ -6,6 +6,7 @@
 package io.stackgres.operator.conciliation.factory.shardedcluster.citus;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -83,7 +84,7 @@ class CitusShardedClusterCoordinatorPostgresConfigTest {
   }
 
   @Test
-  void generateResource_whenTypeCitus_shouldIncludeCitusMaxClientConnections() {
+  void generateResource_whenTypeCitus_shouldNotComputeCitusMaxClientConnections() {
     cluster.getSpec().setType("citus");
     when(context.getShardedCluster()).thenReturn(cluster);
     when(context.getSource()).thenReturn(cluster);
@@ -98,8 +99,30 @@ class CitusShardedClusterCoordinatorPostgresConfigTest {
     List<HasMetadata> resources = factory.generateResource(context).toList();
 
     StackGresPostgresConfig config = (StackGresPostgresConfig) resources.getFirst();
-    assertTrue(config.getSpec().getPostgresqlConf()
+    assertFalse(config.getSpec().getPostgresqlConf()
         .containsKey("citus.max_client_connections"));
+  }
+
+  @Test
+  void generateResource_whenTypeCitus_shouldIncludeCitusFirstInSharedPreloadLibraries() {
+    cluster.getSpec().setType("citus");
+    when(context.getShardedCluster()).thenReturn(cluster);
+    when(context.getSource()).thenReturn(cluster);
+
+    StackGresPostgresConfig existingConfig = new StackGresPostgresConfigBuilder()
+        .withNewSpec()
+        .withPostgresqlConf(Map.of(
+            "max_connections", "100",
+            "shared_preload_libraries", "citus, pg_stat_statements"))
+        .endSpec()
+        .build();
+    when(context.getCoordinatorPostgresConfig()).thenReturn(Optional.of(existingConfig));
+
+    List<HasMetadata> resources = factory.generateResource(context).toList();
+
+    StackGresPostgresConfig config = (StackGresPostgresConfig) resources.getFirst();
+    assertEquals("citus, pg_cron, pg_stat_statements",
+        config.getSpec().getPostgresqlConf().get("shared_preload_libraries"));
   }
 
   @Test

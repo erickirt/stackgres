@@ -83,6 +83,44 @@ At the end of the logs you should see something like:
 Major version upgrade performed
 ```
 
+## Manual rollback
+
+By default a major version upgrade decides on its own what to do when it fails: it performs an
+automatic rollback (restoring the SGCluster to its previous state) when the `major-version-upgrade`
+init container fails or when the Pod does not become ready within the configured number of errors
+(`maxErrorsAfterUpgrade`).
+
+Setting `manualRollback: true` in the `majorVersionUpgrade` section lets you intervene before that
+decision is made, which is useful to fix an upgrade by hand instead of losing it to a rollback:
+
+- When the upgrade fails, the `major-version-upgrade` init container does **not** exit. It stays
+  alive (sleeping) so you can exec into it, inspect the failure and, if you want to keep the upgrade,
+  perform the `pg_upgrade` manually inside it.
+- The operation then pauses: it sets `.status.majorVersionUpgrade.phase` to
+  `wait-post-failed-upgrade-decision` (or, on a successful upgrade, `wait-post-upgrade-decision`
+  before the source data directory is removed) and the operator sets the `WaitingRollback` condition
+  to `True`.
+- The operation waits until you set `.status.majorVersionUpgrade.rollback`:
+  - `false`: the operation continues assuming the upgrade was performed manually. The init container
+    exits successfully, the Pod is started and the operation waits for it to become ready tolerating
+    up to `maxErrorsAfterUpgrade` plus `maxErrorsAfterContinueOnFailure` errors.
+  - `true`: the operation performs a rollback regardless of whether it had failed or succeeded.
+
+For example, to inspect a paused upgrade and then let it continue:
+
+```bash
+# Exec into the paused init container to inspect and, if needed, perform the upgrade manually
+kubectl exec -it demo-0 -c major-version-upgrade -- sh
+
+# Continue the operation (the upgrade was performed manually)
+kubectl patch sgdbops my-major-version-upgrade --type merge \
+  -p '{"status":{"majorVersionUpgrade":{"rollback":false}}}'
+
+# Or roll back instead
+kubectl patch sgdbops my-major-version-upgrade --type merge \
+  -p '{"status":{"majorVersionUpgrade":{"rollback":true}}}'
+```
+
 ## Extensions and Major Version Upgrade
 
 When upgrading with extensions, the rule of thumb is to read the documentation of each specific extension to check if there is any special procedure to follow.

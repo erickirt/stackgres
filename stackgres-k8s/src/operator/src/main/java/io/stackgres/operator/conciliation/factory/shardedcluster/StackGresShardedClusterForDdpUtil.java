@@ -88,14 +88,14 @@ public interface StackGresShardedClusterForDdpUtil extends StackGresShardedClust
   static StackGresCluster getCoordinatorCluster(
       StackGresShardedCluster cluster,
       Optional<StackGresShardedCluster> replicateCluster) {
-    return UTIL.getCoordinatorCluster(cluster, replicateCluster);
+    return UTIL.getBaseCoordinatorCluster(cluster, replicateCluster);
   }
 
   static StackGresCluster getWorkerCluster(
       StackGresShardedCluster cluster,
       int index,
       Optional<StackGresShardedCluster> replicateCluster) {
-    return UTIL.getWorkerCluster(cluster, index, replicateCluster);
+    return UTIL.getBaseWorkerCluster(cluster, index, replicateCluster);
   }
   
   static StackGresScript getCoordinatorScript(

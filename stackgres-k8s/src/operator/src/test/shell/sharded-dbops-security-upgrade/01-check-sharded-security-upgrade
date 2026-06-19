@@ -1,0 +1,17 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/sharded-dbops-security-upgrade/abstract-sharded-security-upgrade"
+
+shell_unit_test() {
+  EXCLUSIVE_OP=true
+  printf %s ' Completed ' > "$TEST_TARGET_PATH/dbops-test-coord-status"
+  printf %s ' Completed ' > "$TEST_TARGET_PATH/dbops-test-shard0-status"
+  shell_unit_test_sharded_dbops
+  check_sharded_dbops_result || return 1
+  grep -q '^  sgCluster: test-coord$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^  sgCluster: test-shard0$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^  op: securityUpgrade$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '^    method: InPlace$' "$TEST_TARGET_PATH/created-dbops"
+  grep -q '"pendingToRestartSgClusters"' "$TEST_TARGET_PATH/status-patches"
+  grep -q '"restartedSgClusters"' "$TEST_TARGET_PATH/status-patches"
+}

@@ -1,0 +1,12 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/sharded-dbops-resharding/abstract-sharded-resharding"
+
+shell_unit_test() {
+  EXCLUSIVE_OP=true
+  echo 'pod/test-coord-0' > "$TEST_TARGET_PATH/primary_pod"
+  shell_unit_test_sharded_dbops
+  check_sharded_dbops_result || return 1
+  grep -q 'get_rebalance_table_shards_plan()' "$TEST_TARGET_PATH/resharding-commands"
+  grep -q 'rebalance_table_shards(' "$TEST_TARGET_PATH/resharding-commands"
+}

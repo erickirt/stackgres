@@ -10,6 +10,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.StackGresUtil;
+import io.stackgres.common.crd.ResourceRequirements;
 
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
@@ -22,6 +23,8 @@ public class ConfigExtensionsCache {
   private ConfigExtensionsCachePersistentVolume persistentVolume;
 
   private String hostPath;
+
+  private ResourceRequirements resources;
 
   public Boolean getEnabled() {
     return enabled;
@@ -53,6 +56,14 @@ public class ConfigExtensionsCache {
 
   public void setHostPath(String hostPath) {
     this.hostPath = hostPath;
+  }
+
+  public ResourceRequirements getResources() {
+    return resources;
+  }
+
+  public void setResources(ResourceRequirements resources) {
+    this.resources = resources;
   }
 
   @Override

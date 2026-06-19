@@ -26,6 +26,7 @@ import io.stackgres.common.labels.ShardedClusterLabelMapper;
 import io.stackgres.operator.conciliation.shardedcluster.StackGresShardedClusterContext;
 import io.stackgres.operator.initialization.DefaultProfileFactory;
 import io.stackgres.operatorframework.resource.ResourceUtil;
+import org.jooq.lambda.tuple.Tuple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,7 +64,7 @@ class ShardedClusterWorkersDefaultInstanceProfileTest {
   @Test
   void generateResource_whenProfileEmpty_shouldGenerateDefault() {
     cluster.getSpec().getWorkers().setSgInstanceProfile("size-m");
-    when(context.getWorkersProfile()).thenReturn(Optional.empty());
+    when(context.getWorkersProfiles()).thenReturn(List.of(Tuple.tuple(0, Optional.empty())));
 
     List<HasMetadata> resources =
         shardedClusterWorkersDefaultInstanceProfile.generateResource(context).toList();
@@ -83,7 +84,7 @@ class ShardedClusterWorkersDefaultInstanceProfileTest {
         .withOwnerReferences(List.of(ResourceUtil.getControllerOwnerReference(cluster)))
         .endMetadata()
         .build();
-    when(context.getWorkersProfile()).thenReturn(Optional.of(existingProfile));
+    when(context.getWorkersProfiles()).thenReturn(List.of(Tuple.tuple(0, Optional.of(existingProfile))));
 
     List<HasMetadata> resources =
         shardedClusterWorkersDefaultInstanceProfile.generateResource(context).toList();
@@ -103,7 +104,7 @@ class ShardedClusterWorkersDefaultInstanceProfileTest {
         .withOwnerReferences(List.of(ResourceUtil.getControllerOwnerReference(cluster)))
         .endMetadata()
         .build();
-    when(context.getWorkersProfile()).thenReturn(Optional.of(existingProfile));
+    when(context.getWorkersProfiles()).thenReturn(List.of(Tuple.tuple(0, Optional.of(existingProfile))));
 
     List<HasMetadata> resources =
         shardedClusterWorkersDefaultInstanceProfile.generateResource(context).toList();
@@ -113,7 +114,7 @@ class ShardedClusterWorkersDefaultInstanceProfileTest {
 
   @Test
   void generateResource_whenSameAsCoordinatorProfile_shouldNotGenerate() {
-    lenient().when(context.getWorkersProfile()).thenReturn(Optional.empty());
+    lenient().when(context.getWorkersProfiles()).thenReturn(List.of(Tuple.tuple(0, Optional.empty())));
 
     List<HasMetadata> resources =
         shardedClusterWorkersDefaultInstanceProfile.generateResource(context).toList();

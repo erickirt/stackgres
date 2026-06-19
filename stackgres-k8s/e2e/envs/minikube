@@ -39,22 +39,22 @@ reset_k8s() {
 
   delete_k8s
 
-  if [ -n "$K8S_CACHE_PATH" ] \
+  if [ -n "$K8S_CACHE_HOST_PATH" ] \
     && [ "$MINIKUBE_DRIVER" = docker ]
   then
-    echo "Setting up minikube containerd cache for $K8S_CACHE_PATH..."
+    echo "Setting up minikube containerd cache for $K8S_CACHE_HOST_PATH..."
     if [ "$K8S_CACHE_RESET" = true ]
     then
-      docker run --rm -v "$K8S_CACHE_PATH:/containerd-cache" alpine \
+      docker run --rm -v "$K8S_CACHE_HOST_PATH:/containerd-cache" alpine \
         sh -ec 'rm -rf /containerd-cache/*'
     fi
 
-    docker run --rm -v "$K8S_CACHE_PATH:/containerd-cache" alpine \
+    docker run --rm -v "$K8S_CACHE_HOST_PATH:/containerd-cache" alpine \
       sh -ec 'mkdir -p "/containerd-cache/volume"'
     if docker volume inspect minikube >/dev/null 2>&1 \
       && [ "$(docker volume inspect minikube 2>/dev/null \
         | jq '.[0]
-          |  .Options.device == "'"$K8S_CACHE_PATH"'/volume"
+          |  .Options.device == "'"$K8S_CACHE_HOST_PATH"'/volume"
              and .Options.o == "bind"
              and .Options.type == "none"')" != true ]
     then
@@ -63,9 +63,9 @@ reset_k8s() {
     if ! docker volume inspect minikube >/dev/null 2>&1
     then
       docker volume create --name minikube \
-        --opt type=none --opt o=bind --opt "device=$K8S_CACHE_PATH/volume"
+        --opt type=none --opt o=bind --opt "device=$K8S_CACHE_HOST_PATH/volume"
     fi
-    docker run --rm -v "$K8S_CACHE_PATH:/containerd-cache" alpine \
+    docker run --rm -v "$K8S_CACHE_HOST_PATH:/containerd-cache" alpine \
       sh -ec '
         if test -d /containerd-cache/volume/lib/containerd \
           && ! test -d /containerd-cache/containerd
@@ -105,17 +105,17 @@ reset_k8s() {
     --feature-gates "$MINIKUBE_FEATURE_GATES"
   minikube -p "$MINIKUBE_NAME" addons enable volumesnapshots
 
-  if [ -n "$K8S_CACHE_PATH" ] \
+  if [ -n "$K8S_CACHE_HOST_PATH" ] \
     && [ "$MINIKUBE_DRIVER" = docker ] \
-    && docker run --rm -v "$K8S_CACHE_PATH:/containerd-cache" alpine \
+    && docker run --rm -v "$K8S_CACHE_HOST_PATH:/containerd-cache" alpine \
       sh -ec '
         ! test -d /containerd-cache/boot-volume \
           || test -d /containerd-cache/containerd
         '
   then
-    echo "Replacing minikube containerd cache with $K8S_CACHE_PATH..."
+    echo "Replacing minikube containerd cache with $K8S_CACHE_HOST_PATH..."
     minikube -p "$MINIKUBE_NAME" stop
-    docker run --rm -v "$K8S_CACHE_PATH:/containerd-cache" alpine \
+    docker run --rm -v "$K8S_CACHE_HOST_PATH:/containerd-cache" alpine \
       sh -ec '
         if ! test -d /containerd-cache/boot-volume
         then

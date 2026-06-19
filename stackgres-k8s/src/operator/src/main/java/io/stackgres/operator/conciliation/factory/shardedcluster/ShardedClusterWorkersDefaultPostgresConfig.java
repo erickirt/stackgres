@@ -23,6 +23,7 @@ import io.stackgres.operator.initialization.DefaultShardedClusterPostgresConfigF
 import io.stackgres.operatorframework.resource.ResourceUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jooq.lambda.tuple.Tuple2;
 
 @Singleton
 @OperatorVersionBinder
@@ -44,21 +45,25 @@ public class ShardedClusterWorkersDefaultPostgresConfig
   public Stream<HasMetadata> generateResource(StackGresShardedClusterContext context) {
     return Stream
         .of(true)
-        .filter(ignored -> context.getWorkersPostgresConfig().isEmpty()
-            || context.getWorkersPostgresConfig()
-            .filter(postgresConfig -> labelFactory.defaultConfigLabels(context.getSource())
-                .entrySet()
-                .stream()
-                .allMatch(label -> Optional
-                    .ofNullable(postgresConfig.getMetadata().getLabels())
-                    .stream()
-                    .map(Map::entrySet)
-                    .flatMap(Set::stream)
-                    .anyMatch(label::equals)))
-            .map(postgresConfig -> postgresConfig.getMetadata().getOwnerReferences())
+        .filter(ignored -> context.getWorkersPostgresConfigs().stream()
+            .map(Tuple2::v2).anyMatch(Optional::isEmpty)
+            || context.getWorkersPostgresConfigs()
             .stream()
-            .flatMap(List::stream)
-            .anyMatch(ResourceUtil.getControllerOwnerReference(context.getSource())::equals))
+            .map(Tuple2::v2)
+            .anyMatch(workersPostgresConfig -> workersPostgresConfig
+                .filter(postgresConfig -> labelFactory.defaultConfigLabels(context.getSource())
+                    .entrySet()
+                    .stream()
+                    .allMatch(label -> Optional
+                        .ofNullable(postgresConfig.getMetadata().getLabels())
+                        .stream()
+                        .map(Map::entrySet)
+                        .flatMap(Set::stream)
+                        .anyMatch(label::equals)))
+                .map(postgresConfig -> postgresConfig.getMetadata().getOwnerReferences())
+                .stream()
+                .flatMap(List::stream)
+                .anyMatch(ResourceUtil.getControllerOwnerReference(context.getSource())::equals)))
         .filter(ignored -> !context.getSource().getSpec()
             .getCoordinator().getConfigurationsForCoordinator().getSgPostgresConfig()
             .equals(context.getSource().getSpec().getWorkers().getConfigurations().getSgPostgresConfig()))

@@ -10,10 +10,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
-import io.stackgres.common.crd.sgshardedcluster.StackGresShardingType;
-import io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForCitusUtil;
-import io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForDdpUtil;
-import io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForShardingSphereUtil;
+import io.stackgres.operator.conciliation.factory.shardedcluster.StackGresShardedClusterForUtil;
 import io.stackgres.operator.conciliation.shardedcluster.StackGresShardedClusterContext.Builder;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -47,17 +44,7 @@ public class ShardedClusterCoordinatorClusterContextAppender {
       StackGresShardedCluster original,
       Optional<StackGresShardedCluster> replicateCluster) {
     StackGresShardedCluster cluster = objectMapper.convertValue(original, StackGresShardedCluster.class);
-    switch (StackGresShardingType.fromString(cluster.getSpec().getType())) {
-      case CITUS:
-        return StackGresShardedClusterForCitusUtil.getCoordinatorCluster(cluster, replicateCluster);
-      case DDP:
-        return StackGresShardedClusterForDdpUtil.getCoordinatorCluster(cluster, replicateCluster);
-      case SHARDING_SPHERE:
-        return StackGresShardedClusterForShardingSphereUtil.getCoordinatorCluster(cluster, replicateCluster);
-      default:
-        throw new UnsupportedOperationException(
-            "Sharding technology " + cluster.getSpec().getType() + " not implemented");
-    }
+    return StackGresShardedClusterForUtil.getCoordinatorCluster(cluster, replicateCluster);
   }
 
 }

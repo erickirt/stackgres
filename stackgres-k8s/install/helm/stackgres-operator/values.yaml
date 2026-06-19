@@ -2,8 +2,10 @@
 containerRegistry: quay.io
 # -- Image pull policy used for images loaded by the Operator
 imagePullPolicy: "IfNotPresent"
-# -- Section to configure Operator allowed namespaces that the operator is allowed to use. If empty all namespaces will be allowed (default). 
+# -- Section to configure Operator allowed namespaces that the operator is allowed to use. If empty all namespaces will be allowed (default).
 allowedNamespaces: []
+# -- A list of StackGres feature gates to enable globally for all the SGClusters and SGShardedClusters managed by the operator. Available feature gates are: `io-limits` (allow to set per-volume I/O limits, which require the Pods to run a privileged init container as root and to mount the host cgroup filesystem).
+featureGates: []
 # Section to configure Operator Installation ServiceAccount
 serviceAccount:
   # -- If `true` the Operator Installation ServiceAccount will be created
@@ -524,6 +526,12 @@ extensions:
     # -- (string) If set, will use a host path volume with the specified path for the extensions cache
     #   instead of a PersistentVolume
     hostPath:
+    # -- The resources of the extensions cache containers. See
+    #   https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
 
 # Following options are for developers only, but can also be useful in some cases ;)
 
@@ -592,5 +600,5 @@ developer:
 specFields: [
   containerRegistry, imagePullPolicy, imagePullSecrets, allowedNamespaces, allowedNamespaceLabelSelector,
   disableClusterRole, allowImpersonationForRestApi, disableCrdsAndWebhooksUpdate, sgConfigNamespace,
-  serviceAccount, operator, restapi, adminui, collector, jobs, deploy, cert, rbac, authentication,
-  prometheus, grafana, extensions, shardingSphere, developer ]
+  featureGates, serviceAccount, operator, restapi, adminui, collector, jobs, deploy, cert, rbac,
+  authentication, prometheus, grafana, extensions, shardingSphere, developer ]

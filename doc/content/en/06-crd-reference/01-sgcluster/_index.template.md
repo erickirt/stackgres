@@ -65,8 +65,8 @@ metadata:
   name: stackgres
 spec:
   pods:
-    disableConnectionPooling: false
-    disableMetricsExporter: false
-    disablePostgresUtil: false
+    disableConnectionPooling: true
+    disableMetricsExporter: true
+    disablePostgresUtil: true
     disableEnvoy: true
 ```

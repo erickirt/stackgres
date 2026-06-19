@@ -802,7 +802,8 @@ class ClusterResourceMockedTest extends
 
   @Override
   protected void checkDto(ClusterDto dto, StackGresCluster resource) {
-    if (dto.getPods() != null) {
+    assertNotNull(dto.getPods());
+    {
       assertEquals(1, dto.getPodsReady());
       assertEquals(2, dto.getPods().size());
       assertEquals(4, dto.getPods().get(0).getContainers());
@@ -839,6 +840,8 @@ class ClusterResourceMockedTest extends
           dto.getPods().get(1).getComponentVersions().get("prometheus-postgres-exporter"));
     }
 
+    // Info is only populated by the cluster get/list endpoints; the getLogs*
+    // scenarios reuse checkDto without info, so this assertion stays guarded.
     if (dto.getInfo() != null) {
       String appendDns = "." + resource.getMetadata().getNamespace();
       String expectedPrimaryDns =

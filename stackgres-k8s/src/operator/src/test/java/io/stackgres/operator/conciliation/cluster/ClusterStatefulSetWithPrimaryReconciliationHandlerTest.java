@@ -13,7 +13,6 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -28,7 +27,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
-import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -68,9 +66,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.ArgumentsProvider;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -82,6 +77,9 @@ class ClusterStatefulSetWithPrimaryReconciliationHandlerTest {
 
   protected static final Logger LOGGER = LoggerFactory.getLogger(
       ClusterStatefulSetWithPrimaryReconciliationHandlerTest.class);
+
+  // Seeded so that a failing replica count is reproducible across runs.
+  private final Random random = new Random(0);
 
   private final LabelFactoryForCluster labelFactory =
       new ClusterLabelFactory(new ClusterLabelMapper());
@@ -204,14 +202,6 @@ class ClusterStatefulSetWithPrimaryReconciliationHandlerTest {
     verify(defaultHandler, never()).patch(any(), any(PersistentVolumeClaim.class), any());
   }
 
-  public static class Source implements ArgumentsProvider {
-    @Override
-    public Stream<? extends Arguments> provideArguments(ExtensionContext context)
-        throws Exception {
-      return Seq.range(0, 100).map(i -> Arguments.of(i));
-    }
-  }
-
   @Test
   @DisplayName("Scaling up StatefulSet with non disrputable Pod with index lower than replicas"
       + " count should result in the same number of desired replicas and fix disruptable Label")
@@ -238,17 +228,17 @@ class ClusterStatefulSetWithPrimaryReconciliationHandlerTest {
     assertEquals(desiredReplicas, sts.getSpec().getReplicas());
 
     verify(defaultHandler, atLeastOnce()).patch(any(), podArgumentCaptor.capture(), any());
-    for (var updatedPod : podArgumentCaptor.getAllValues()
-        .stream().filter(Pod.class::isInstance).toList()) {
-      String disruptableValue = updatedPod.getMetadata().getLabels()
-          .get(labelFactory.labelMapper().disruptableKey(cluster));
-
-      assertEquals(StackGresContext.RIGHT_VALUE, disruptableValue);
-    }
+    var updatedPods = podArgumentCaptor.getAllValues()
+        .stream().filter(Pod.class::isInstance).toList();
+    assertEquals(1, updatedPods.size(),
+        "exactly the non-disruptable primary Pod should be patched back to disruptable");
+    String disruptableValue = updatedPods.get(0).getMetadata().getLabels()
+        .get(labelFactory.labelMapper().disruptableKey(cluster));
+    assertEquals(StackGresContext.RIGHT_VALUE, disruptableValue);
 
     verify(podScanner, times(5)).getResourcesInNamespaceWithLabels(anyString(), anyMap());
     verify(defaultHandler).patch(any(), any(StatefulSet.class), any());
-    verify(defaultHandler, atMostOnce()).patch(any(), any(Pod.class), any());
+    verify(defaultHandler, times(1)).patch(any(), any(Pod.class), any());
     verify(defaultHandler, never()).delete(any(), any(StatefulSet.class));
     verify(defaultHandler, never()).patch(any(), any(PersistentVolumeClaim.class), any());
   }
@@ -670,7 +660,7 @@ class ClusterStatefulSetWithPrimaryReconciliationHandlerTest {
   }
 
   private int getRandomDesiredReplicas(int min) {
-    return new Random().nextInt(10) + min;
+    return random.nextInt(10) + min;
   }
 
   @SuppressWarnings("unchecked")

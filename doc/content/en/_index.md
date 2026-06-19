@@ -31,7 +31,7 @@ resources created by the user.
 
 # The Stack
 
-Curently the stack of StackGres is composed of the following components:
+Currently the stack of StackGres is composed of the following components:
 
 * [PostgreSQL](https://www.postgresql.org/): The world's most advanced open source relational database
 * [Patroni](https://github.com/zalando/patroni): The HA solution that relies on kubernetes distributed consensus storage to 

@@ -8,8 +8,8 @@ package io.stackgres.operator.conciliation.factory.cluster;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
@@ -22,6 +22,9 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.StackGresVolume;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
+import io.stackgres.common.crd.sgcluster.StackGresClusterDbOpsMajorVersionUpgradeStatus;
+import io.stackgres.common.crd.sgcluster.StackGresClusterDbOpsStatus;
+import io.stackgres.common.crd.sgcluster.StackGresClusterStatus;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfigBuilder;
 import io.stackgres.common.fixture.Fixtures;
@@ -30,7 +33,6 @@ import io.stackgres.common.labels.ClusterLabelMapper;
 import io.stackgres.common.labels.LabelFactoryForCluster;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
 import io.stackgres.operator.conciliation.factory.VolumePair;
-import io.stackgres.operator.initialization.DefaultClusterPostgresConfigFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,9 +46,6 @@ class MajorVersionUpgradeConfigMapTest {
       new ClusterLabelFactory(new ClusterLabelMapper());
 
   @Mock
-  private DefaultClusterPostgresConfigFactory defaultPostgresConfigFactory;
-
-  @Mock
   private StackGresClusterContext context;
 
   private MajorVersionUpgradeConfigMap majorVersionUpgradeConfigMap;
@@ -55,20 +54,33 @@ class MajorVersionUpgradeConfigMapTest {
 
   @BeforeEach
   void setUp() {
-    majorVersionUpgradeConfigMap =
-        new MajorVersionUpgradeConfigMap(labelFactory, defaultPostgresConfigFactory);
+    majorVersionUpgradeConfigMap = new MajorVersionUpgradeConfigMap(labelFactory);
     cluster = Fixtures.cluster().loadDefault().get();
-    when(context.getCluster()).thenReturn(cluster);
+    lenient().when(context.getCluster()).thenReturn(cluster);
+    lenient().when(context.getSource()).thenReturn(cluster);
   }
 
-  @Test
-  void buildSource_shouldGenerateConfigMapWithPostgresConf() {
-    StackGresPostgresConfig postgresConfig = new StackGresPostgresConfigBuilder()
+  private void setMajorVersionUpgradeStatus() {
+    if (cluster.getStatus() == null) {
+      cluster.setStatus(new StackGresClusterStatus());
+    }
+    cluster.getStatus().setDbOps(new StackGresClusterDbOpsStatus());
+    cluster.getStatus().getDbOps().setMajorVersionUpgrade(
+        new StackGresClusterDbOpsMajorVersionUpgradeStatus());
+  }
+
+  private void setPostgresConfigs() {
+    StackGresPostgresConfig targetPostgresConfig = new StackGresPostgresConfigBuilder()
         .withNewSpec()
         .withPostgresqlConf(Map.of("max_connections", "200", "shared_buffers", "256MB"))
         .endSpec()
         .build();
-    when(context.getPostgresConfig()).thenReturn(Optional.of(postgresConfig));
+    lenient().when(context.getPostgresConfig()).thenReturn(Optional.of(targetPostgresConfig));
+  }
+
+  @Test
+  void buildSource_shouldGenerateConfigMapWithPostgresConf() {
+    setPostgresConfigs();
 
     HasMetadata source = majorVersionUpgradeConfigMap.buildSource(context);
 
@@ -77,59 +89,25 @@ class MajorVersionUpgradeConfigMapTest {
     ConfigMap configMap = (ConfigMap) source;
     assertNotNull(configMap.getData());
     assertTrue(configMap.getData().containsKey("postgresql.conf"));
-    String pgConf = configMap.getData().get("postgresql.conf");
-    assertTrue(pgConf.contains("max_connections"));
-    assertTrue(pgConf.contains("shared_buffers"));
+    String targetPgConf = configMap.getData().get("postgresql.conf");
+    assertTrue(targetPgConf.contains("max_connections"));
+    assertTrue(targetPgConf.contains("200"));
+    assertTrue(targetPgConf.contains("shared_buffers"));
   }
 
   @Test
-  void buildSource_whenCustomPostgresConfigAvailable_shouldUseCustomConfig() {
-    Map<String, String> customConf = Map.of(
-        "max_connections", "500",
-        "work_mem", "64MB");
-    StackGresPostgresConfig postgresConfig = new StackGresPostgresConfigBuilder()
-        .withNewSpec()
-        .withPostgresqlConf(customConf)
-        .endSpec()
-        .build();
-    when(context.getPostgresConfig()).thenReturn(Optional.of(postgresConfig));
-
-    HasMetadata source = majorVersionUpgradeConfigMap.buildSource(context);
-
-    ConfigMap configMap = (ConfigMap) source;
-    String pgConf = configMap.getData().get("postgresql.conf");
-    assertTrue(pgConf.contains("max_connections"));
-    assertTrue(pgConf.contains("500"));
-    assertTrue(pgConf.contains("work_mem"));
-    assertTrue(pgConf.contains("64MB"));
-  }
-
-  @Test
-  void buildSource_whenNoPostgresConfig_shouldFallBackToDefault() {
-    StackGresPostgresConfig defaultConfig = new StackGresPostgresConfigBuilder()
-        .withNewSpec()
-        .withPostgresqlConf(Map.of("max_connections", "100"))
-        .endSpec()
-        .build();
+  void buildSource_whenNoPostgresConfig_shouldFail() {
     when(context.getPostgresConfig()).thenReturn(Optional.empty());
-    when(defaultPostgresConfigFactory.buildResource(any())).thenReturn(defaultConfig);
 
-    HasMetadata source = majorVersionUpgradeConfigMap.buildSource(context);
+    var ex = assertThrows(RuntimeException.class,
+        () -> majorVersionUpgradeConfigMap.buildSource(context));
 
-    ConfigMap configMap = (ConfigMap) source;
-    String pgConf = configMap.getData().get("postgresql.conf");
-    assertTrue(pgConf.contains("max_connections"));
-    assertTrue(pgConf.contains("100"));
+    assertEquals("SGPostgresConfig not found", ex.getMessage());
   }
 
   @Test
   void buildSource_shouldHaveCorrectNamespaceAndName() {
-    StackGresPostgresConfig postgresConfig = new StackGresPostgresConfigBuilder()
-        .withNewSpec()
-        .withPostgresqlConf(Map.of("max_connections", "100"))
-        .endSpec()
-        .build();
-    when(context.getPostgresConfig()).thenReturn(Optional.of(postgresConfig));
+    setPostgresConfigs();
 
     HasMetadata source = majorVersionUpgradeConfigMap.buildSource(context);
 
@@ -142,12 +120,7 @@ class MajorVersionUpgradeConfigMapTest {
 
   @Test
   void buildSource_shouldHaveLabels() {
-    StackGresPostgresConfig postgresConfig = new StackGresPostgresConfigBuilder()
-        .withNewSpec()
-        .withPostgresqlConf(Map.of("max_connections", "100"))
-        .endSpec()
-        .build();
-    when(context.getPostgresConfig()).thenReturn(Optional.of(postgresConfig));
+    setPostgresConfigs();
 
     HasMetadata source = majorVersionUpgradeConfigMap.buildSource(context);
 
@@ -157,13 +130,9 @@ class MajorVersionUpgradeConfigMapTest {
   }
 
   @Test
-  void buildVolumes_shouldReturnSingleVolumePair() {
-    StackGresPostgresConfig postgresConfig = new StackGresPostgresConfigBuilder()
-        .withNewSpec()
-        .withPostgresqlConf(Map.of("max_connections", "100"))
-        .endSpec()
-        .build();
-    when(context.getPostgresConfig()).thenReturn(Optional.of(postgresConfig));
+  void buildVolumes_whenMajorVersionUpgradeInProgress_shouldReturnSingleVolumePair() {
+    setMajorVersionUpgradeStatus();
+    setPostgresConfigs();
 
     List<VolumePair> volumePairs = majorVersionUpgradeConfigMap.buildVolumes(context).toList();
 
@@ -172,6 +141,17 @@ class MajorVersionUpgradeConfigMapTest {
     assertEquals(StackGresVolume.POSTGRES_CONFIG.getName(),
         volumePair.getVolume().getName());
     assertTrue(volumePair.getSource().isPresent());
+  }
+
+  @Test
+  void buildVolumes_whenNoMajorVersionUpgradeInProgress_shouldReturnNoVolumePair() {
+    if (cluster.getStatus() != null) {
+      cluster.getStatus().setDbOps(null);
+    }
+
+    List<VolumePair> volumePairs = majorVersionUpgradeConfigMap.buildVolumes(context).toList();
+
+    assertTrue(volumePairs.isEmpty());
   }
 
   @Test
@@ -188,12 +168,7 @@ class MajorVersionUpgradeConfigMapTest {
 
   @Test
   void buildSource_shouldContainMd5Sum() {
-    StackGresPostgresConfig postgresConfig = new StackGresPostgresConfigBuilder()
-        .withNewSpec()
-        .withPostgresqlConf(Map.of("max_connections", "100"))
-        .endSpec()
-        .build();
-    lenient().when(context.getPostgresConfig()).thenReturn(Optional.of(postgresConfig));
+    setPostgresConfigs();
 
     HasMetadata source = majorVersionUpgradeConfigMap.buildSource(context);
 

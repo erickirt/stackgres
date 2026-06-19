@@ -132,10 +132,12 @@ run_pgbench() {
   if ! "$READ_WRITE"
   then
     create_event_service "BenchmarkPostInitializationStarted" "Normal" "Benchamrk post initialization started"
+    RETRY=0
     until [ "$(PGHOST="$PRIMARY_PGHOST" psql -q -t -A -d "$DATABASE_NAME" \
       -c "SELECT NOT EXISTS (SELECT * FROM pg_stat_replication WHERE replay_lsn != pg_current_wal_lsn())")" = "t" ]
     do
-      sleep 1
+      retry_backoff "$RETRY"
+      RETRY="$((RETRY + 1))"
     done
     create_event_service "BenchmarkPostInitializationCompleted" "Normal" "Benchamrk post initialization completed"
   fi
@@ -189,8 +191,8 @@ EOF
 try_drop_pgbench_database() {
   (
   set +e
-  DROP_RETRY=3
-  while [ "$DROP_RETRY" -ge 0 ]
+  RETRY=0
+  while true
   do
     try_function_with_output psql -q \
       -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$DATABASE_NAME' AND pid != pg_backend_pid()" \
@@ -199,9 +201,16 @@ try_drop_pgbench_database() {
     then
       break
     fi
-    create_event_service "DropDatabaseFailed" "Warning" "Can not drop $DATABASE_NAME database: $MESSAGE"
-    DROP_RETRY="$((DROP_RETRY - 1))"
-    sleep 3
+    retry_backoff
+    RETRY="$((RETRY + 1))"
+    if retry_stop "$RETRY"
+    then
+      break
+    fi
   done
+    if [ "$(cat "$SHARED_PATH/exit_code")" != 0 ]
+    then
+      create_event_service "DropDatabaseFailed" "Warning" "Can not drop $DATABASE_NAME database: $MESSAGE"
+    fi
   )
 }

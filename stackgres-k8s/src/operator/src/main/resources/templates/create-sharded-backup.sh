@@ -21,7 +21,7 @@ run() {
   set +x
   while (kill -0 "$PID" && kill -0 "$TRY_LOCK_PID") 2>/dev/null
   do
-    true
+    sleep 1
   done
   )
 
@@ -154,12 +154,25 @@ EOF
     then
       DRY_RUN_CLIENT=$(kubectl version --client=true -o json | jq -r 'if (.clientVersion.minor | sub("[^0-9].*$";"") | tonumber) < 18 then "true" else "client" end')
       echo "Updating backup CR"
-      {
-        retry kubectl get "$SHARDED_BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_BACKUP_NAME" -o yaml
-        printf '%s\n' "$SHARDED_BACKUP_STATUS_YAML"
-      } | kubectl create --dry-run="$DRY_RUN_CLIENT" -f - -o json | tee /tmp/backup-to-patch
-      retry kubectl patch "$SHARDED_BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_BACKUP_NAME" -o yaml \
-        --type merge --patch-file /tmp/backup-to-patch
+      while true
+      do
+        {
+          retry kubectl get "$SHARDED_BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_BACKUP_NAME" -o yaml
+          printf '%s\n' "$SHARDED_BACKUP_STATUS_YAML"
+        } | kubectl create --dry-run="$DRY_RUN_CLIENT" -f - -o json | tee /tmp/backup-to-patch
+        if ! kubectl patch "$SHARDED_BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_BACKUP_NAME" -o yaml \
+          --type merge --patch-file /tmp/backup-to-patch > /tmp/backup-update 2>&1
+        then
+          if is_not_conflict "$(cat /tmp/backup-update)"
+          then
+            cat /tmp/backup-update
+            return 1
+          fi
+          retry_backoff
+        fi
+        cat /tmp/backup-update
+        break
+      done
     else
       SHARDED_BACKUP_ALREADY_COMPLETED=true
     fi
@@ -255,7 +268,7 @@ EOF
             ]'
           exit 1
         fi
-        printf %s "$BACKUP_NAME" >> /tmp/completed-backups
+        printf '%s\n' "$BACKUP_NAME" >> /tmp/completed-backups
         BACKUP_COMPRESSED_SIZE="$((BACKUP_COMPRESSED_SIZE + $(printf %s "$BACKUP_STATUS" | cut -d ' ' -f 2) ))"
         BACKUP_UNCOMPRESSED_SIZE="$((BACKUP_UNCOMPRESSED_SIZE + $(printf %s "$BACKUP_STATUS" | cut -d ' ' -f 3) ))"
         echo "...$BACKUP_NAME completed"

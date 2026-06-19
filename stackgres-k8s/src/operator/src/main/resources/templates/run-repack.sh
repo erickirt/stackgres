@@ -16,6 +16,7 @@ run_op() {
 }
 
 run_command() {
+  COMMAND=''
   if "$NO_ORDER"
   then
     COMMAND="$COMMAND"' -n'
@@ -37,7 +38,7 @@ run_command() {
     COMMAND="$COMMAND"' -C'
   fi
   get_primary_instance
-  kubectl exec -n "$CLUSTER_NAMESPACE" "$PRIMARY_INSTANCE" -c "$PATRONI_CONTAINER_NAME" -- pg_repack $ARGS "$@"
+  kubectl exec -n "$CLUSTER_NAMESPACE" "$PRIMARY_INSTANCE" -c "$PATRONI_CONTAINER_NAME" -- pg_repack $COMMAND "$@"
 }
 
 get_primary_instance() {
@@ -45,7 +46,7 @@ get_primary_instance() {
   PRIMARY_INSTANCE="$(printf '%s' "$PRIMARY_POD" | cut -d / -f 2)"
   until kubectl wait pod -n "$CLUSTER_NAMESPACE" "$PRIMARY_INSTANCE" --for condition=Ready --timeout 0 >/dev/null 2>&1
   do
-    sleep 1
+    retry_backoff
     PRIMARY_POD="$(kubectl get pods -n "$CLUSTER_NAMESPACE" -l "$CLUSTER_PRIMARY_POD_LABELS" -o name)"
     PRIMARY_INSTANCE="$(printf '%s' "$PRIMARY_POD" | cut -d / -f 2)"
   done

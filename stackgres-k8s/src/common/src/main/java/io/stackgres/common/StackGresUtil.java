@@ -64,7 +64,7 @@ public interface StackGresUtil {
   String DATA_SUFFIX = "-data";
   String BACKUP_SUFFIX = "-backup";
   Pattern EMPTY_LINE_PATTERN = Pattern.compile(
-      "^\\s*(:?#.*)?$");
+      "^\\s*(?:#.*)?$");
   Pattern PARAMETER_PATTERN = Pattern.compile(
       "^\\s*(?<parameter>[^\\s=]+)"
           + "\\s*[=\\s]\\s*"
@@ -406,21 +406,32 @@ public interface StackGresUtil {
         .map(Tuple2::v2)
         .findAny()
         .get();
+    long pg16Index = pgComponent
+        .streamOrderedMajorVersions()
+        .zipWithIndex()
+        .filter(t -> t.v1.equals("16"))
+        .map(Tuple2::v2)
+        .findAny()
+        .get();
     return List.of(
-        pgMajorVersionIndex <= pg15Index
+        pgMajorVersionIndex <= pg16Index
         ? new ExtensionTuple("citus", "14.0.0")
-            : pgMajorVersionIndex <= pg14Index
-            ? new ExtensionTuple("citus", "12.1.6")
-                : pgMajorVersionIndex <= pg13Index
-                ? new ExtensionTuple("citus", "11.3-1")
-                    : new ExtensionTuple("citus", "10.2-5"),
-        pgMajorVersionIndex <= pg15Index
+            : pgMajorVersionIndex <= pg15Index
+            ? new ExtensionTuple("citus", "13.2.0")
+                : pgMajorVersionIndex <= pg14Index
+                ? new ExtensionTuple("citus", "12.1.6")
+                    : pgMajorVersionIndex <= pg13Index
+                    ? new ExtensionTuple("citus", "11.3-1")
+                        : new ExtensionTuple("citus", "10.2-5"),
+        pgMajorVersionIndex <= pg16Index
         ? new ExtensionTuple("citus_columnar", "14.0.0")
-            : pgMajorVersionIndex <= pg14Index
-            ? new ExtensionTuple("citus_columnar", "12.1.6")
-                : pgMajorVersionIndex <= pg13Index
-                ? new ExtensionTuple("citus_columnar", "11.3-1")
-                    : new ExtensionTuple("citus_columnar", "10.2-5"),
+            : pgMajorVersionIndex <= pg15Index
+            ? new ExtensionTuple("citus_columnar", "13.2.0")
+                : pgMajorVersionIndex <= pg14Index
+                ? new ExtensionTuple("citus_columnar", "12.1.6")
+                    : pgMajorVersionIndex <= pg13Index
+                    ? new ExtensionTuple("citus_columnar", "11.3-1")
+                        : new ExtensionTuple("citus_columnar", "10.2-5"),
         new ExtensionTuple("pg_cron"));
   }
 
@@ -437,14 +448,11 @@ public interface StackGresUtil {
   }
 
   static String getPatroniVersion(StackGresCluster cluster) {
-    if (StackGresVersion.getStackGresVersionAsNumber(cluster) <= StackGresVersion.V_1_18.getVersionAsNumber()) {
-      return getPatroniVersion(
-          cluster,
-          Optional.ofNullable(cluster.getStatus().getPostgresVersion())
-          .orElse(cluster.getSpec().getPostgres().getVersion()));
-    }
-
-    return getPatroniVersion(cluster, cluster.getStatus().getPostgresVersion());
+    return getPatroniVersion(
+        cluster,
+        Optional.ofNullable(cluster.getStatus())
+        .map(status -> status.getPostgresVersion())
+        .orElseGet(() -> cluster.getSpec().getPostgres().getVersion()));
   }
 
   static String getPatroniVersion(StackGresCluster cluster, String postgresVersion) {
@@ -456,14 +464,11 @@ public interface StackGresUtil {
   }
 
   static String getPatroniVersion(StackGresShardedCluster cluster) {
-    if (StackGresVersion.getStackGresVersionAsNumber(cluster) <= StackGresVersion.V_1_18.getVersionAsNumber()) {
-      return getPatroniVersion(
-          cluster,
-          Optional.ofNullable(cluster.getStatus())
-          .map(StackGresShardedClusterStatus::getPostgresVersion)
-          .orElse(cluster.getSpec().getPostgres().getVersion()));
-    }
-    return getPatroniVersion(cluster, cluster.getStatus().getPostgresVersion());
+    return getPatroniVersion(
+        cluster,
+        Optional.ofNullable(cluster.getStatus())
+        .map(StackGresShardedClusterStatus::getPostgresVersion)
+        .orElseGet(() -> cluster.getSpec().getPostgres().getVersion()));
   }
 
   static String getPatroniVersion(StackGresShardedCluster cluster, String postgresVersion) {

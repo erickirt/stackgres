@@ -31,7 +31,7 @@ public class ResourceWatcherFactory extends AbstractResourceWatcherFactory {
   }
 
   @Override
-  public void onError(WatcherException cause) {
+  protected void onError(WatcherException cause) {
     eventController.sendEvent(ClusterControllerEventReason.CLUSTER_CONTROLLER_ERROR,
         "Watcher was closed unexpectedly: " + (cause.getMessage() != null
             ? cause.getMessage()

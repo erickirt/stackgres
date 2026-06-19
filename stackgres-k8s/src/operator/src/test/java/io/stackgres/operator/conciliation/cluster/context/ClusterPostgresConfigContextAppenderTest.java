@@ -63,6 +63,26 @@ class ClusterPostgresConfigContextAppenderTest {
     contextAppender.appendContext(cluster, contextBuilder,
         cluster.getSpec().getPostgres().getVersion());
     verify(contextBuilder).postgresConfig(postgresConfig);
+    assertEquals(
+        cluster.getSpec().getConfigurations().getSgPostgresConfig(),
+        cluster.getStatus().getSgPostgresConfig());
+  }
+
+  @Test
+  void givenClusterWithMajorVersionUpgradeStatus_shouldLookupSourcePostgresConfig() {
+    final var postgresConfig = Optional.of(
+        new StackGresPostgresConfigBuilder()
+        .withNewSpec()
+        .withPostgresVersion(cluster.getSpec().getPostgres().getVersion().replaceAll("\\..*$", ""))
+        .endSpec()
+        .build());
+    when(postgresConfigFinder.findByNameAndNamespace(
+        cluster.getSpec().getConfigurations().getSgPostgresConfig(),
+        cluster.getMetadata().getNamespace()))
+        .thenReturn(postgresConfig);
+    contextAppender.appendContext(cluster, contextBuilder,
+        cluster.getSpec().getPostgres().getVersion());
+    verify(contextBuilder).postgresConfig(postgresConfig);
   }
 
   @Test

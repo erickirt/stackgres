@@ -1,0 +1,34 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/sharded-dbops/abstract-sharded-dbops"
+
+shell_unit_test() {
+  EXCLUSIVE_OP=true
+  LOCK_SLEEP=0
+  echo 0 > "$TEST_TARGET_PATH/lock_annotation_count"
+  shell_unit_test_sharded_dbops
+  check_sharded_dbops_result
+}
+
+run_op() {
+  sleep 1
+}
+
+mock kubectl kubectl_mock_overwrite
+
+kubectl_mock_overwrite() {
+  mokked
+  case "$*" in
+    ("patch lease -n $LOCK_LEASE_NAMESPACE $LOCK_LEASE_NAME --type merge "*)
+    local ANNOTATION_COUNT="$(cat "$TEST_TARGET_PATH/lock_annotation_count")"
+    echo "$((ANNOTATION_COUNT + 1))" > "$TEST_TARGET_PATH/lock_annotation_count"
+    if [ "$ANNOTATION_COUNT" = 1 ]
+    then
+      return 1
+    fi
+    ;;
+    *)
+    not_mokked
+    ;;
+  esac
+}

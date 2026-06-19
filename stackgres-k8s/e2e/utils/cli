@@ -391,7 +391,7 @@ cli() {
       ('--k8s-cache-path')
       cli_set_parameter_value "$@"
       shift "$(cli_get_parameter_shifts "$@")"
-      K8S_CACHE_PATH="$VALUE"
+      K8S_CACHE_HOST_PATH="$VALUE"
       ;;
       ('--disable-extensions-cache')
       cli_set_parameter_boolean_negation "$@"
@@ -507,7 +507,7 @@ cli() {
   if [ "$USE_CURRENT_BUILD" = true ]
   then
     E2E_BUILD_ONLY_MODULES=true
-    E2E_EXTRA_MOUNT_BUILD_PATH="$K8S_CACHE_PATH"/build
+    E2E_EXTRA_MOUNT_BUILD_PATH="$K8S_CACHE_HOST_PATH"/build
   fi
   if "$DO_BUILD"
   then
@@ -532,9 +532,12 @@ cli_init_e2e_variables() {
   K8S_REUSE=true
   K8S_EXTRA_PORT=30100:9443:0.0.0.0:tcp
   K8S_USE_INTERNAL_REPOSITORY=true
-  K8S_CACHE_PATH=~/".stackgres/${KIND_NAME:-kind}-cache"
+  K8S_CACHE_HOST_PATH="${K8S_CACHE_HOST_PATH:-~/".stackgres/${KIND_NAME:-kind}-cache"}"
+  KIND_LOG_HOST_PATH="${K8S_CACHE_HOST_PATH}/logs"
+  KIND_LOG_RESOURCES_POLICY_HOST_PATH="${K8S_CACHE_HOST_PATH}/kind-apiserver-audit-policy"
   EXTENSIONS_CACHE_ENABLED=true
-  EXTENSIONS_CACHE_HOST_PATH=/containerd-cache/extensions
+  EXTENSIONS_CACHE_HOST_PATH="${EXTENSIONS_CACHE_HOST_PATH:-${K8S_CACHE_HOST_PATH}/extensions}"
+  EXTENSIONS_CACHE_NODE_PATH=/containerd-cache/extensions
   IMAGE_TAG="$(git rev-parse --short=8 HEAD)-jvm"
   E2E_FORCE_IMAGE_PULL=false
   E2E_SKIP_OPERATOR_LOAD=true
@@ -571,11 +574,14 @@ cli_export_e2e_variables() {
     E2E_ENV \
     K8S_REUSE \
     K8S_USE_INTERNAL_REPOSITORY \
-    K8S_CACHE_PATH \
+    K8S_CACHE_HOST_PATH \
+    KIND_LOG_HOST_PATH \
+    KIND_LOG_RESOURCES_POLICY_HOST_PATH \
     EXTENSIONS_CACHE_ENABLED \
     SKIP_PUSH \
     SKIP_REMOTE_MANIFEST \
     EXTENSIONS_CACHE_HOST_PATH \
+    EXTENSIONS_CACHE_NODE_PATH \
     E2E_EXTRA_MOUNT_BUILD_PATH \
     E2E_BUILD_ONLY_MODULES \
     K8S_EXTRA_PORT \

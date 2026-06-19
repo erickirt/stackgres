@@ -11,10 +11,12 @@ import java.util.Optional;
 
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
+import io.stackgres.common.JobUtil;
 import io.stackgres.common.ShardedDbOpsUtil;
 import io.stackgres.common.crd.Condition;
 import io.stackgres.common.crd.sgshardeddbops.ShardedDbOpsStatusCondition;
 import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOps;
+import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOpsMajorVersionUpgradeStatus;
 import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOpsStatus;
 import io.stackgres.common.resource.ResourceFinder;
 import io.stackgres.operator.conciliation.StatusManager;
@@ -44,64 +46,88 @@ public class ShardedDbOpsStatusManager
 
   @Override
   public StackGresShardedDbOps refreshCondition(StackGresShardedDbOps source) {
-    final boolean isJobFailedAndStatusNotUpdated;
-    if (Optional.of(source)
-        .map(StackGresShardedDbOps::getStatus)
-        .map(StackGresShardedDbOpsStatus::getConditions)
-        .stream()
-        .flatMap(List::stream)
-        .filter(condition -> Objects.equals(condition.getType(),
-            ShardedDbOpsStatusCondition.Type.COMPLETED.getType()))
-        .anyMatch(condition -> Objects.equals(condition.getStatus(), "True"))) {
-      isJobFailedAndStatusNotUpdated = false;
-    } else {
-      final Optional<Job> job = jobFinder.findByNameAndNamespace(
-          ShardedDbOpsUtil.jobName(source),
-          source.getMetadata().getNamespace());
-      isJobFailedAndStatusNotUpdated = job
-          .map(Job::getStatus)
-          .map(JobStatus::getConditions)
-          .stream()
-          .flatMap(List::stream)
-          .filter(condition -> Objects.equals(condition.getType(), "Failed")
-              || Objects.equals(condition.getType(), "Completed"))
-          .anyMatch(condition -> Objects.equals(condition.getStatus(), "True"));
-      if (source.getStatus() == null) {
-        source.setStatus(new StackGresShardedDbOpsStatus());
-      }
-      final int active = job
-          .map(Job::getStatus)
-          .map(JobStatus::getActive)
-          .orElse(0);
-      final int failed = job
-          .map(Job::getStatus)
-          .map(JobStatus::getFailed)
-          .orElse(0);
-      source.getStatus().setOpRetries(
-          Math.max(0, failed - 1) + (failed > 0 ? active : 0));
+    if (isAlreadySuccessfullyCompleted(source)) {
+      return source;
     }
+    final Optional<Job> job = jobFinder.findByNameAndNamespace(
+        ShardedDbOpsUtil.jobName(source),
+        source.getMetadata().getNamespace());
+    final Optional<Boolean> jobCompleted = JobUtil.isJobCompleteOrFailed(job);
+    if (source.getStatus() == null) {
+      source.setStatus(new StackGresShardedDbOpsStatus());
+    }
+    final int active = job
+        .map(Job::getStatus)
+        .map(JobStatus::getActive)
+        .orElse(0);
+    final int failed = job
+        .map(Job::getStatus)
+        .map(JobStatus::getFailed)
+        .orElse(0);
+    source.getStatus().setOpRetries(
+        Math.max(0, failed - 1) + (failed > 0 ? active : 0));
 
-    if (isJobFailedAndStatusNotUpdated) {
-      if (source.getStatus() == null) {
-        source.setStatus(new StackGresShardedDbOpsStatus());
-      }
+    updateMajorVersionUpgradeWaitingRollbackCondition(source);
+
+    if (jobCompleted.isPresent()) {
       updateCondition(getFalseRunning(), source);
-      updateCondition(getCompleted(), source);
-      if (Optional.of(source)
+      final boolean dbOpsAlreadyFailed = Optional.of(source)
           .map(StackGresShardedDbOps::getStatus)
           .map(StackGresShardedDbOpsStatus::getConditions)
           .stream()
           .flatMap(List::stream)
           .filter(condition -> Objects.equals(condition.getType(),
               ShardedDbOpsStatusCondition.Type.FAILED.getType()))
-          .noneMatch(condition -> Objects.equals(condition.getStatus(), "True"))) {
+          .anyMatch(condition -> Objects.equals(condition.getStatus(), "True"));
+      if (dbOpsAlreadyFailed) {
+        // The operation already recorded a failure: never stamp OperationCompleted over it.
+        updateCondition(getFalseCompleted(), source);
+      } else if (jobCompleted.orElse(false)) {
+        updateCondition(getCompleted(), source);
+      } else {
         LOGGER.warn(
-            "ShardedDbOps {} failed since the job completed but status condition is neither completed or failed",
+            "ShardedDbOps {} failed since the job failed but status condition is neither completed nor failed",
             getShardedDbOpsId(source));
         updateCondition(getFailedDueToUnexpectedFailure(), source);
+        updateCondition(getFalseCompleted(), source);
       }
     }
     return source;
+  }
+
+  private static boolean isAlreadySuccessfullyCompleted(StackGresShardedDbOps source) {
+    return Optional.of(source)
+        .map(StackGresShardedDbOps::getStatus)
+        .map(StackGresShardedDbOpsStatus::getConditions)
+        .stream()
+        .flatMap(List::stream)
+        .filter(condition -> Objects.equals(condition.getStatus(), "True"))
+        .anyMatch(condition -> Objects.equals(condition.getType(),
+            ShardedDbOpsStatusCondition.Type.COMPLETED.getType()));
+  }
+
+  private void updateMajorVersionUpgradeWaitingRollbackCondition(StackGresShardedDbOps source) {
+    if (!source.getSpec().isOpMajorVersionUpgrade()) {
+      return;
+    }
+    final Optional<StackGresShardedDbOpsMajorVersionUpgradeStatus> majorVersionUpgrade =
+        Optional.ofNullable(source.getStatus())
+        .map(StackGresShardedDbOpsStatus::getMajorVersionUpgrade);
+    final String waitingStatus = majorVersionUpgrade
+        .map(StackGresShardedDbOpsMajorVersionUpgradeStatus::getStatus)
+        .orElse(null);
+    final Boolean rollback = majorVersionUpgrade
+        .map(StackGresShardedDbOpsMajorVersionUpgradeStatus::getRollback)
+        .orElse(null);
+    if (waitingStatus != null && rollback == null) {
+      updateCondition("failed".equals(waitingStatus)
+          ? ShardedDbOpsStatusCondition.DBOPS_WAITING_ROLLBACK_AFTER_FAILED.getCondition()
+          : ShardedDbOpsStatusCondition.DBOPS_WAITING_ROLLBACK_AFTER_SUCCEEDED.getCondition(),
+          source);
+    } else {
+      updateCondition(ShardedDbOpsStatusCondition.DBOPS_FALSE_WAITING_ROLLBACK.getCondition(),
+          source);
+    }
   }
 
   protected Condition getFalseRunning() {
@@ -110,6 +136,10 @@ public class ShardedDbOpsStatusManager
 
   protected Condition getCompleted() {
     return ShardedDbOpsStatusCondition.DBOPS_COMPLETED.getCondition();
+  }
+
+  protected Condition getFalseCompleted() {
+    return ShardedDbOpsStatusCondition.DBOPS_FALSE_COMPLETED.getCondition();
   }
 
   protected Condition getFailedDueToUnexpectedFailure() {

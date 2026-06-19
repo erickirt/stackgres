@@ -98,7 +98,10 @@ public interface StackGresBackupContext extends GenerationContext<StackGresBacku
             bc.v1.getTimeout(),
             bc.v1.getReconciliationTimeout(),
             bc.v1.getMaxRetries(),
-            bc.v1.getRetainWalsForUnmanagedLifecycle()))
+            bc.v1.getRetainWalsForUnmanagedLifecycle(),
+            bc.v1.getRetryDelay(),
+            bc.v1.getRetryLimit(),
+            bc.v1.getRetryMaxDelay()))
         .orElseThrow();
   }
 

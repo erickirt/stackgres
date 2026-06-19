@@ -36,7 +36,6 @@ import io.stackgres.operatorframework.admissionwebhook.validating.ValidationPipe
 import io.stackgres.testutil.JsonUtil;
 import org.jooq.lambda.tuple.Tuple;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -142,33 +141,37 @@ class AbstractReconciliatorTest {
   }
 
   @Test
-  @Disabled("Reconciliation worker is no more secuential and this test is now broken")
-  void shouldRunReconciliationOnceIfReconciliationMethodIsCalledTwiceWhileRunning() {
-    when(scanner.getResources()).thenReturn(List.of(customResource));
+  void shouldCoalesceReconcileAllRequestsReceivedWhileACycleIsRunning() {
+    // Block the first reconciliation cycle so the next requests arrive while it runs.
+    // Stub the outer reconciliationsCycle (the loop entry point) rather than the inner
+    // per-resource reconciliationCycle, which is now dispatched to a worker thread pool
+    // and is therefore not a deterministic synchronization point.
     CompletableFuture<Void> waitInternal = new CompletableFuture<>();
     CompletableFuture<Void> waitExternal = new CompletableFuture<>();
     doAnswer(invocation -> {
       waitExternal.complete(null);
       waitInternal.join();
       return null;
-    }).when(reconciliator).reconciliationCycle(any(), anyInt(), anyBoolean());
+    }).when(reconciliator).reconciliationsCycle(any());
 
     reconciliator.reconcileAll();
     waitExternal.join();
+    // These three requests must be coalesced into a single follow-up cycle.
+    reconciliator.reconcileAll();
     reconciliator.reconcileAll();
     reconciliator.reconcileAll();
     waitInternal.complete(null);
 
     verify(reconciliator, timeout(1000).times(2)).reconciliationsCycle(any());
-    verify(reconciliator, timeout(1000).times(2)).reconciliationCycle(any(), anyInt(), anyBoolean());
 
     reconciliator.stop();
 
+    // Exactly two cycles ran: the first request, then one coalesced cycle batching the
+    // three requests made while it was running (not three separate cycles).
+    verify(reconciliator, times(2)).reconciliationsCycle(any());
+    verify(reconciliator, times(1)).reconciliationsCycle(List.of(Optional.empty()));
     verify(reconciliator, times(1)).reconciliationsCycle(
-        List.of(Optional.empty()));
-    verify(reconciliator, times(1)).reconciliationsCycle(
-        List.of(Optional.empty(), Optional.empty()));
-    verify(reconciliator, times(2)).reconciliationCycle(customResource, 0, false);
+        List.of(Optional.empty(), Optional.empty(), Optional.empty()));
   }
 
   @Test

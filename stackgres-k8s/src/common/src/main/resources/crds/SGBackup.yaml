@@ -111,8 +111,26 @@ spec:
                   type: integer
                   description: |
                     The maximum number of retries the backup operation is allowed to do after a failure.
-  
+
                     A value of `0` (zero) means no retries are made. Defaults to: `3`.
+                retryDelay:
+                  type: string
+                  description: |
+                    An ISO 8601 duration in the format `PnDTnHnMn.nS`, that specifies the initial delay used by the exponential backoff applied when a command run by the backup script is retried and in general by unbounded retries and in some cases without exponential backoff.
+
+                    Defaults to: `PT1S`.
+                retryLimit:
+                  type: integer
+                  description: |
+                    The maximum number of times a command run by the backup script is retried before failing.
+
+                    Defaults to: `10`.
+                retryMaxDelay:
+                  type: string
+                  description: |
+                    An ISO 8601 duration in the format `PnDTnHnMn.nS`, that specifies the maximum delay the exponential backoff is allowed to reach when a command run by the backup script is retried.
+
+                    Defaults to: `PT1M`.
             status:
               type: object
               properties:
@@ -358,7 +376,7 @@ spec:
                                   type: object
                                   required: ["accessKeyId", "secretAccessKey"]
                                   description: |
-                                    Kubernetes [SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#secretkeyselector-v1-core)(s) to reference the Secrets that contain the information about the `awsCredentials`. Note that you may use the same or different Secrets for the `accessKeyId` and the `secretAccessKey`. In the former case, the `keys` that identify each must be, obviously, different.
+                                    Kubernetes [SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#secretkeyselector-v1-core)(s) to reference the Secrets that contain the information about the `awsCredentials`. Note that you may use the same or different Secrets for the `accessKeyId` and the `secretAccessKey`. In the former case, the `keys` that identify each must be, obviously, different.
                                   properties:
                                     accessKeyId:
                                       type: object
@@ -427,7 +445,7 @@ spec:
                                   type: object
                                   required: ["accessKeyId", "secretAccessKey"]
                                   description: |
-                                    Kubernetes [SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#secretkeyselector-v1-core)(s) to reference the Secret(s) that contain the information about the `awsCredentials`. Note that you may use the same or different Secrets for the `accessKeyId` and the `secretAccessKey`. In the former case, the `keys` that identify each must be, obviously, different.
+                                    Kubernetes [SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#secretkeyselector-v1-core)(s) to reference the Secret(s) that contain the information about the `awsCredentials`. Note that you may use the same or different Secrets for the `accessKeyId` and the `secretAccessKey`. In the former case, the `keys` that identify each must be, obviously, different.
                                   properties:
                                     accessKeyId:
                                       type: object
@@ -497,7 +515,7 @@ spec:
                                   type: object
                                   required: [ "serviceAccountJSON" ]
                                   description: |
-                                    A Kubernetes [SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#secretkeyselector-v1-core) to reference the Secrets that contain the information about the Service Account to access GCS.
+                                    A Kubernetes [SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#secretkeyselector-v1-core) to reference the Secrets that contain the information about the Service Account to access GCS.
                                   properties:
                                     serviceAccountJSON:
                                       type: object
@@ -533,7 +551,7 @@ spec:
                                   type: object
                                   required: [ "storageAccount", "accessKey" ]
                                   description: |
-                                    Kubernetes [SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#secretkeyselector-v1-core)(s) to reference the Secret(s) that contain the information about the `azureCredentials`. Note that you may use the same or different Secrets for the `storageAccount` and the `accessKey`. In the former case, the `keys` that identify each must be, obviously, different.
+                                    Kubernetes [SecretKeySelector](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.36/#secretkeyselector-v1-core)(s) to reference the Secret(s) that contain the information about the `azureCredentials`. Note that you may use the same or different Secrets for the `storageAccount` and the `accessKey`. In the former case, the `keys` that identify each must be, obviously, different.
                                   properties:
                                     storageAccount:
                                       type: object

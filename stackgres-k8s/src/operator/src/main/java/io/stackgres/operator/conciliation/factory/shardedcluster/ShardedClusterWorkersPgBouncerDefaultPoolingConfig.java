@@ -24,6 +24,7 @@ import io.stackgres.operator.initialization.DefaultPoolingConfigFactory;
 import io.stackgres.operatorframework.resource.ResourceUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jooq.lambda.tuple.Tuple2;
 
 @Singleton
 @OperatorVersionBinder
@@ -48,21 +49,23 @@ public class ShardedClusterWorkersPgBouncerDefaultPoolingConfig
             .map(StackGresClusterPods::getDisableConnectionPooling)
             .orElse(false))
         .filter(disabled -> !disabled)
-        .filter(ignored -> context.getWorkersPoolingConfig().isEmpty()
-            || context.getWorkersPoolingConfig()
-            .filter(poolingConfig -> labelFactory.defaultConfigLabels(context.getSource())
-                .entrySet()
-                .stream()
-                .allMatch(label -> Optional
-                    .ofNullable(poolingConfig.getMetadata().getLabels())
+        .filter(ignored -> context.getWorkersPoolingConfigs().stream()
+            .map(Tuple2::v2).anyMatch(Optional::isEmpty)
+            || context.getWorkersPoolingConfigs().stream().map(Tuple2::v2)
+            .anyMatch(workersPoolingConfig -> workersPoolingConfig
+                .filter(postgresConfig -> labelFactory.defaultConfigLabels(context.getSource())
+                    .entrySet()
                     .stream()
-                    .map(Map::entrySet)
-                    .flatMap(Set::stream)
-                    .anyMatch(label::equals)))
-            .map(postgresConfig -> postgresConfig.getMetadata().getOwnerReferences())
-            .stream()
-            .flatMap(List::stream)
-            .anyMatch(ResourceUtil.getControllerOwnerReference(context.getSource())::equals))
+                    .allMatch(label -> Optional
+                        .ofNullable(postgresConfig.getMetadata().getLabels())
+                        .stream()
+                        .map(Map::entrySet)
+                        .flatMap(Set::stream)
+                        .anyMatch(label::equals)))
+                .map(postgresConfig -> postgresConfig.getMetadata().getOwnerReferences())
+                .stream()
+                .flatMap(List::stream)
+                .anyMatch(ResourceUtil.getControllerOwnerReference(context.getSource())::equals)))
         .filter(ignored -> !context.getSource().getSpec()
             .getCoordinator().getConfigurationsForCoordinator().getSgPoolingConfig()
             .equals(context.getSource().getSpec().getWorkers().getConfigurations().getSgPoolingConfig()))

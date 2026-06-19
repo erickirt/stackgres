@@ -43,7 +43,7 @@ helm install --create-namespace --namespace monitoring \
  prometheus prometheus-community/kube-prometheus-stack
 ```
 
-> StackGres provides advanced options for monitoring installation, see [Operator installation with Helm]({{% relref "04-administration-guide/01-installation/02-installation-via-helm/#stackgres-operator-installation" %}}) in the [Production installation section]({{% relref "04-administration-guide/01-installation/#monitoring" %}}).
+> StackGres provides advanced options for monitoring installation, see [Operator installation with Helm]({{% relref "04-administration-guide/01-installation/02-installation-via-helm/#stackgres-operator-installation" %}}) in the [Production installation section]({{% relref "04-administration-guide/01-installation/02-installation-via-helm/#installation-with-monitoring" %}}).
 
 Once the operator is installed, you can retrieve the generated credentials. By default, they are user `admin` and password `prom-operator`.
 
@@ -83,13 +83,13 @@ kubectl port-forward "$GRAFANA_POD" 9999:3000 --namespace monitoring
 You can also access the Prometheus server, by forwarding the port of the Prometheus pod:
 
 ```
-POD_NAME=$(kubectl get pods --namespace monitoring -l "app=prometheus" -o jsonpath="{.items[0].metadata.name}")
+POD_NAME=$(kubectl get pods --namespace monitoring -l "app.kubernetes.io/name=prometheus" -o jsonpath="{.items[0].metadata.name}")
 kubectl --namespace monitoring port-forward $POD_NAME 9090
 ```
 
 This will be available at `localhost:9090`.
 
-Inside the cluster, the Prometheus server is available via the `prometheus-operator-server.monitoring` DNS name.
+Inside the cluster, the Prometheus server is available via the `prometheus-kube-prometheus-prometheus.monitoring` DNS name.
 
 
 ### Exposing the Alert Manager
@@ -97,11 +97,11 @@ Inside the cluster, the Prometheus server is available via the `prometheus-opera
 You can also access the Prometheus alert manager, by forwarding the following port:
 
 ```
-export POD_NAME=$(kubectl get pods --namespace monitoring -l "app=alertmanager" -o jsonpath="{.items[0].metadata.name}")
+export POD_NAME=$(kubectl get pods --namespace monitoring -l "app.kubernetes.io/name=alertmanager" -o jsonpath="{.items[0].metadata.name}")
 kubectl --namespace monitoring port-forward $POD_NAME --address 0.0.0.0 9093
 ```
 
-Inside the cluster, the Prometheus alert manager can be accessed via `prometheus-operator-server.monitoring`.
+Inside the cluster, the Prometheus alert manager can be accessed via `prometheus-kube-prometheus-alertmanager.monitoring`.
 
 
 ## Pre-Existing Grafana Integration and Pre-Requisites
@@ -219,19 +219,14 @@ grafana-7575c4b7b5-2cbvw                                  1/1     Running   0   
 prometheus-grafana-5b458bf78c-tpqrl                       2/2     Running   0          20m
 prometheus-kube-prometheus-operator-576f4bf45b-w5j9m      2/2     Running   0          20m
 prometheus-kube-state-metrics-c65b87574-tsx24             1/1     Running   0          20m
-prometheus-operator-alertmanager-655b8bc7bf-hc6fd         2/2     Running   0          79m
-prometheus-operator-kube-state-metrics-69fcc8d48c-tmn8j   1/1     Running   0          79m
-prometheus-operator-node-exporter-28qz9                   1/1     Running   0          79m
-prometheus-operator-pushgateway-888f886ff-bxxtw           1/1     Running   0          79m
-prometheus-operator-server-7686fc69bd-mlvsx               2/2     Running   0          79m
 prometheus-prometheus-kube-prometheus-prometheus-0        3/3     Running   1          20m
-prometheus-prometheus-node-exporter-jbsm2                 0/1     Pending   0          20m
+prometheus-prometheus-node-exporter-jbsm2                 1/1     Running   0          20m
 ```
 
 
 ## Enable Prometheus Auto Binding in Cluster
 
-To allow the StackGres operator to discover available [Prometheus](https://github.com/prometheus-operator/prometheus-operator/blob/primary/Documentation/api.md#prometheus) instances, to create required [ServiceMonitors](https://github.com/prometheus-operator/prometheus-operator/blob/primary/Documentation/api.md#servicemonitor), to store StackGres stats in existing Prometheus instances (only for those that are created through the [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator)), you have to set the field `.spec.prometheusAutobind` to `true` in your [SGCluster]({{% relref "06-crd-reference/01-sgcluster" %}}):
+To allow the StackGres operator to discover available [Prometheus](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#prometheus) instances, to create required [ServiceMonitors](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#servicemonitor), to store StackGres stats in existing Prometheus instances (only for those that are created through the [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator)), you have to set the field `.spec.configurations.observability.prometheusAutobind` to `true` in your [SGCluster]({{% relref "06-crd-reference/01-sgcluster" %}}):
 
 ```yaml
 apiVersion: stackgres.io/v1

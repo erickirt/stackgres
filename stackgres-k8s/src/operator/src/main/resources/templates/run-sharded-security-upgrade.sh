@@ -10,7 +10,7 @@ run_op() {
   kubectl annotate "$SHARDED_CLUSTER_CRD_NAME" "$SHARDED_CLUSTER_NAME" \
     --overwrite "$VERSION_KEY=$OPERATOR_VERSION"
 
-  rm -f /tmp/current-dbops
+  rm -f /tmp/current-dbops /tmp/completed-dbops
   local CLUSTER_NAME
   local DBOPS_NAME
   for CLUSTER_NAME in $CLUSTER_NAMES
@@ -61,7 +61,7 @@ EOF
           COMPLETED=false
           continue
         fi
-        printf %s "$DBOPS_NAME" >> /tmp/completed-dbops
+        printf '%s\n' "$DBOPS_NAME" >> /tmp/completed-dbops
         update_status
         if printf %s "$DBOPS_STATUS" | grep -q " $DBOPS_FAILED "
         then
@@ -76,7 +76,7 @@ EOF
     then
       break
     fi
-    sleep 2
+    retry_backoff
   done
 
   echo "Sharded DbOps $NORMALIZED_OP_NAME completed"
@@ -102,7 +102,7 @@ update_status() {
     RESTARTED_CLUSTERS="$(echo "$CLUSTER_NAMES" | tr ' ' '\n' \
       | while read CLUSTER
         do
-          if printf '%s' "$DBOPS_STATUSES" | grep -q "^$CLUSTER/$DBOPS_COMPLETED$"
+          if printf '%s' "$DBOPS_STATUSES" | grep -q "^$CLUSTER/.* $DBOPS_COMPLETED .*$"
           then
             echo "$CLUSTER"
           fi

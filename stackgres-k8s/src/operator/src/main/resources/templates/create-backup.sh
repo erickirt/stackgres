@@ -24,7 +24,7 @@ run() {
   set +x
   while (kill -0 "$PID" && kill -0 "$TRY_LOCK_PID") 2>/dev/null
   do
-    true
+    sleep 1
   done
   )
 
@@ -264,20 +264,26 @@ EOF
     then
       DRY_RUN_CLIENT=$(kubectl version --client=true -o json | jq -r 'if (.clientVersion.minor | sub("[^0-9].*$";"") | tonumber) < 18 then "true" else "client" end')
       echo "Updating backup CR"
-      retry kubectl get "$BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$BACKUP_NAME" -o yaml > /tmp/backup-found
-      {
-        cat /tmp/backup-found
-        echo "$BACKUP_STATUS_YAML"
-      } | kubectl create --dry-run="$DRY_RUN_CLIENT" -f - -o json > /tmp/backup-to-patch
-      if ! retry kubectl patch "$BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$BACKUP_NAME" -o json \
-        --type merge --patch-file /tmp/backup-to-patch | tee /tmp/backup-update 2>&1
-      then
+      while true
+      do
+        retry kubectl get "$BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$BACKUP_NAME" -o yaml > /tmp/backup-found
+        {
+          cat /tmp/backup-found
+          echo "$BACKUP_STATUS_YAML"
+        } | kubectl create --dry-run="$DRY_RUN_CLIENT" -f - -o json > /tmp/backup-to-patch
+        if ! kubectl patch "$BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$BACKUP_NAME" -o json \
+          --type merge --patch-file /tmp/backup-to-patch > /tmp/backup-update 2>&1
+        then
+          if in_not_conflict "$(cat /tmp/backup-update)"
+          then
+            cat /tmp/backup-update
+            exit 1
+          fi
+          retry_backoff
+        fi
         cat /tmp/backup-update
-        echo
-        exit 1
-      fi
-      cat /tmp/backup-update
-      echo
+        break
+      done
     else
       BACKUP_ALREADY_COMPLETED=true
     fi
@@ -364,7 +370,7 @@ SELECT
   CASE WHEN pg_is_in_recovery() THEN upper(
     lpad(to_hex((SELECT timeline_id FROM pg_control_checkpoint()))::text, 8, '0')
     || lpad(to_hex(lsn_high)::text, 8, '0')
-    || lpad(to_hex(lsn_low - 1
+    || lpad(to_hex((lsn_low - 1)
       / (SELECT bytes_per_wal_segment::bigint FROM pg_control_init()))::text, 8, '0'))
   ELSE (pg_walfile_name_offset(lsn)).file_name END,
   (lsn_high << 32) | lsn_low
@@ -385,7 +391,7 @@ SELECT
   CASE WHEN pg_is_in_recovery() THEN upper(
     lpad(to_hex((SELECT timeline_id FROM pg_control_checkpoint()))::text, 8, '0')
     || lpad(to_hex(lsn_high)::text, 8, '0')
-    || lpad(to_hex(lsn_low - 1
+    || lpad(to_hex((lsn_low - 1)
       / (SELECT bytes_per_wal_segment::bigint FROM pg_control_init()))::text, 8, '0'))
   ELSE (pg_walfile_name_offset(lsn)).file_name END,
   (lsn_high << 32) | lsn_low
@@ -463,8 +469,7 @@ EOF
         break
       fi
       if [ "x$(jq -r 'if .status.error != null then .status.error.message else "" end' /tmp/backup-volumesnapshot)" != x ] \
-        && ! jq -r '.status.error.message' /tmp/backup-volumesnapshot \
-          | grep -qF 'the object has been modified; please apply your changes to the latest version and try again'
+        && is_not_conflict "$(jq -r '.status.error.message' /tmp/backup-volumesnapshot)"
       then
         cat /tmp/backup-volumesnapshot
         echo 'Backup failed due to error in VolumeSnapshot'
@@ -476,9 +481,9 @@ EOF
       fi
       if is_timeout_expired BACKUP
       then
-        echo "Backup failed due to timeout ($BACKUP_TIMEOUT) while waiting VolumeSpanshot to be ready"
+        echo "Backup failed due to timeout ($BACKUP_TIMEOUT) while waiting VolumeSnapshot to be ready"
         retry kubectl patch "$BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$BACKUP_NAME" --type json --patch '[
-          {"op":"replace","path":"/status/process/failure","value":'"Backup failed due to timeout ($BACKUP_TIMEOUT) while waiting VolumeSpanshot to be ready"'}
+          {"op":"replace","path":"/status/process/failure","value":'"$(printf 'Backup failed due to timeout (%s) while waiting VolumeSnapshot to be ready' "$BACKUP_TIMEOUT" | to_json_string)"'}
           ]'
         kill "$(cat /tmp/backup-tail-pid)" || true
         exit 1
@@ -531,7 +536,7 @@ EOF
     then
       echo 'Backup failed while running pg_backup_stop'
       retry kubectl patch "$BACKUP_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$BACKUP_NAME" --type json --patch '[
-        {"op":"replace","path":"/status/process/failure","value":'"$({ printf 'Backup failed while running pg_backup_stop:\n'; cat /tmp/backup-stop; } | to_json_string)"'}
+        {"op":"replace","path":"/status/process/failure","value":'"$({ printf 'Backup failed while running pg_backup_stop:\n'; cat /tmp/backup-psql-out; } | to_json_string)"'}
         ]'
       kill "$(cat /tmp/backup-tail-pid)" || true
       exit 1

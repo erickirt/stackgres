@@ -49,6 +49,7 @@ import io.stackgres.common.labels.LabelFactoryForCluster;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.ResourceGenerator;
 import io.stackgres.operator.conciliation.backup.BackupConfiguration;
+import io.stackgres.operator.conciliation.backup.BackupRetry;
 import io.stackgres.operator.conciliation.backup.StackGresBackupContext;
 import io.stackgres.operator.conciliation.factory.ResourceFactory;
 import io.stackgres.operator.conciliation.factory.VolumePair;
@@ -342,6 +343,18 @@ public class BackupJob
                         .orElse("300"))
                     .build(),
                     new EnvVarBuilder()
+                    .withName("RETRY_DELAY")
+                    .withValue(BackupRetry.getRetryDelay(backupConfig.retryDelay()))
+                    .build(),
+                    new EnvVarBuilder()
+                    .withName("RETRY_LIMIT")
+                    .withValue(BackupRetry.getRetryLimit(backupConfig.retryLimit()))
+                    .build(),
+                    new EnvVarBuilder()
+                    .withName("RETRY_MAX_DELAY")
+                    .withValue(BackupRetry.getRetryMaxDelay(backupConfig.retryMaxDelay()))
+                    .build(),
+                    new EnvVarBuilder()
                     .withName("VOLUME_SNAPSHOT_CRD_NAME")
                     .withValue(VolumeSnapshotUtil.VOLUME_SNAPSHOT_CRD_NAME)
                     .build(),
@@ -438,6 +451,14 @@ public class BackupJob
                     new EnvVarBuilder()
                     .withName("LOCK_POLL_INTERVAL")
                     .withValue(OperatorProperty.LOCK_POLL_INTERVAL.getString())
+                    .build(),
+                    new EnvVarBuilder()
+                    .withName("LOCK_GET_RETRIES")
+                    .withValue(OperatorProperty.LOCK_GET_RETRIES.getString())
+                    .build(),
+                    new EnvVarBuilder()
+                    .withName("LOCK_GET_RETRY_DELAY")
+                    .withValue(OperatorProperty.LOCK_GET_RETRY_DELAY.getString())
                     .build(),
                     new EnvVarBuilder()
                     .withName("LOCK_LEASE_NAMESPACE")

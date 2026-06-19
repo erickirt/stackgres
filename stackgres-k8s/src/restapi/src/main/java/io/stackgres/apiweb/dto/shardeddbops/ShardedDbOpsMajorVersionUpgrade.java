@@ -9,6 +9,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import io.stackgres.apiweb.dto.cluster.ClusterExtension;
+import io.stackgres.apiweb.dto.cluster.ClusterInstalledExtension;
 import io.stackgres.common.StackGresUtil;
 
 @RegisterForReflection
@@ -16,6 +18,8 @@ import io.stackgres.common.StackGresUtil;
 public class ShardedDbOpsMajorVersionUpgrade {
 
   private String postgresVersion;
+
+  private List<ClusterExtension> postgresExtensions;
 
   private String sgPostgresConfig;
 
@@ -27,6 +31,10 @@ public class ShardedDbOpsMajorVersionUpgrade {
 
   private Boolean check;
 
+  private List<ClusterInstalledExtension> toInstallPostgresExtensions;
+
+  private Integer maxErrorsAfterUpgrade;
+
   public String getPostgresVersion() {
     return postgresVersion;
   }
@@ -37,6 +45,14 @@ public class ShardedDbOpsMajorVersionUpgrade {
 
   public String getSgPostgresConfig() {
     return sgPostgresConfig;
+  }
+
+  public List<ClusterExtension> getPostgresExtensions() {
+    return postgresExtensions;
+  }
+
+  public void setPostgresExtensions(List<ClusterExtension> postgresExtensions) {
+    this.postgresExtensions = postgresExtensions;
   }
 
   public void setSgPostgresConfig(String sgPostgresConfig) {
@@ -73,6 +89,23 @@ public class ShardedDbOpsMajorVersionUpgrade {
 
   public void setCheck(Boolean check) {
     this.check = check;
+  }
+
+  public List<ClusterInstalledExtension> getToInstallPostgresExtensions() {
+    return toInstallPostgresExtensions;
+  }
+
+  public void setToInstallPostgresExtensions(
+      List<ClusterInstalledExtension> toInstallPostgresExtensions) {
+    this.toInstallPostgresExtensions = toInstallPostgresExtensions;
+  }
+
+  public Integer getMaxErrorsAfterUpgrade() {
+    return maxErrorsAfterUpgrade;
+  }
+
+  public void setMaxErrorsAfterUpgrade(Integer maxErrorsAfterUpgrade) {
+    this.maxErrorsAfterUpgrade = maxErrorsAfterUpgrade;
   }
 
   @Override

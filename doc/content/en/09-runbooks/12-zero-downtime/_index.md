@@ -198,7 +198,7 @@ The scripts are mounted in a custom volume mount from a ConfigMap. The `before_s
  by Patroni synchronously and blocks the primary instance from being stopped by a switchover or a restart
  until the PAUSE command is sent to the PgBouncer instance. This allows the connection to complete the
  ongoing transactions before the primary goes offline. The `on_role_change` script is executed
- asynchronically by Patroni and do not block the promotion of a primary. It actually waits for the instance
+ asynchronously by Patroni and do not block the promotion of a primary. It actually waits for the instance
  to be converted to primary and then sends the RESUME command so that connection sent to the instance
  will be able to write to the primary:
 
@@ -266,7 +266,7 @@ spec:
 EOF
 ```
 
-Wait for the Job to be started and print some progress of the benchmark, then create an restart SGDbOps that
+Wait for the Job to be started and print some progress of the benchmark, then create a restart SGDbOps that
  will restart the replica, perform a switchover and then will restart the primary.
 
 ```yaml

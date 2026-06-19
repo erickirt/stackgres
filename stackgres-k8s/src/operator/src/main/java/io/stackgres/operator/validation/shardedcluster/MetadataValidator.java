@@ -279,7 +279,7 @@ public class MetadataValidator implements ShardedClusterValidator {
           }
 
           final Map<String, String> serviceAccount =
-              Objects.requireNonNullElseGet(annotations.getAllResources(), Map::of);
+              Objects.requireNonNullElseGet(annotations.getServiceAccount(), Map::of);
           for (var entry : serviceAccount.entrySet()) {
             checkAnnotation(annotationServiceAccountPath, entry.getKey());
           }
@@ -291,19 +291,19 @@ public class MetadataValidator implements ShardedClusterValidator {
           }
 
           final Map<String, String> coordinatorPrimaryService =
-              Objects.requireNonNullElseGet(annotations.getAllResources(), Map::of);
+              Objects.requireNonNullElseGet(annotations.getCoordinatorPrimaryService(), Map::of);
           for (var entry : coordinatorPrimaryService.entrySet()) {
             checkAnnotation(annotationCoordinatorPrimaryServicePath, entry.getKey());
           }
 
           final Map<String, String> coordinatorAnyService =
-              Objects.requireNonNullElseGet(annotations.getAllResources(), Map::of);
+              Objects.requireNonNullElseGet(annotations.getCoordinatorAnyService(), Map::of);
           for (var entry : coordinatorAnyService.entrySet()) {
             checkAnnotation(annotationCoordinatorAnyServicePath, entry.getKey());
           }
 
           final Map<String, String> workersPrimariesService =
-              Objects.requireNonNullElseGet(annotations.getAllResources(), Map::of);
+              Objects.requireNonNullElseGet(annotations.getWorkersPrimariesService(), Map::of);
           for (var entry : workersPrimariesService.entrySet()) {
             checkAnnotation(annotationWorkersPrimariesServicePath, entry.getKey());
           }

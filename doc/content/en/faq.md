@@ -24,7 +24,8 @@ No, this won’t happen. That's our promise. We respect others who switch to or 
 
 ## What PostgreSQL versions are supported?
 
-As of now, PostgreSQL major version 11 and 12. Version 13 will be added soon.
+As of now, PostgreSQL major versions from {{% postgres-min-version %}} to {{% postgres-max-version %}}.
+Check the [Versions page]({{% relref "01-introduction/06-versions" %}}) for the complete list of supported versions.
 
 ## Where can I run StackGres?
 
@@ -40,7 +41,7 @@ Yes, we use [pgbouncer](https://www.pgbouncer.org/). Most Postgres DBaaS solutio
 
 ## What “OS” are container images based on? Why not Alpine?
 
-All StackGres container images are built on the [Red Hat Universal Base Image](https://developers.redhat.com/products/rhel/ubi/) (UBI) version 8, which is derived from [RHEL 8](https://www.redhat.com/en/enterprise-linux-8). Red Hat Universal Base Images (UBI) are OCI-compliant container base operating system images with complementary runtime languages and packages that are freely redistributable. UBI lets developers create the image once and deploy anywhere using enterprise-grade packages. For more information read the official [UBI-FAQ](https://developers.redhat.com/articles/ubi-faq/).
+All StackGres container images are built on the [Red Hat Universal Base Image](https://developers.redhat.com/products/rhel/ubi/) (UBI), which is derived from [RHEL](https://www.redhat.com/en/technologies/linux-platforms/enterprise-linux). Red Hat Universal Base Images (UBI) are OCI-compliant container base operating system images with complementary runtime languages and packages that are freely redistributable. UBI lets developers create the image once and deploy anywhere using enterprise-grade packages. For more information read the official [UBI-FAQ](https://developers.redhat.com/articles/ubi-faq/).
 Alpine images are even smaller than UBI. However, they have significant disadvantages. They:
 
 - Use musl libc, which might trigger performance and/or compatibility problems with PostgreSQL and other components of its ecosystem, including third-party extensions.

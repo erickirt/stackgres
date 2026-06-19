@@ -20,7 +20,12 @@ public enum DbOpsStatusCondition {
   DBOPS_ROLLOUT_COMPLETED(Type.ROLLOUT_COMPLETED, Status.TRUE, "RolloutCompleted"),
   DBOPS_FALSE_ROLLOUT_COMPLETED(Type.ROLLOUT_COMPLETED, Status.FALSE, "RolloutNotCompleted"),
   DBOPS_COMPLETED(Type.COMPLETED, Status.TRUE, "OperationCompleted"),
-  DBOPS_FALSE_COMPLETED(Type.COMPLETED, Status.FALSE, "OperationNotCompleted");
+  DBOPS_FALSE_COMPLETED(Type.COMPLETED, Status.FALSE, "OperationNotCompleted"),
+  DBOPS_WAITING_ROLLBACK_AFTER_FAILED(
+      Type.WAITING_ROLLBACK, Status.TRUE, "WaitingRollbackAfterFailed"),
+  DBOPS_WAITING_ROLLBACK_AFTER_SUCCEEDED(
+      Type.WAITING_ROLLBACK, Status.TRUE, "WaitingRollbackAfterSucceeded"),
+  DBOPS_FALSE_WAITING_ROLLBACK(Type.WAITING_ROLLBACK, Status.FALSE, "NotWaitingRollback");
 
   private final String type;
   private final String status;
@@ -46,7 +51,8 @@ public enum DbOpsStatusCondition {
     RUNNING("Running"),
     FAILED("Failed"),
     ROLLOUT_COMPLETED("RolloutCompleted"),
-    COMPLETED("Completed");
+    COMPLETED("Completed"),
+    WAITING_ROLLBACK("WaitingRollback");
 
     private final String type;
 

@@ -63,6 +63,34 @@ public interface ShardedDbOpsUtil {
         .orElseGet(() -> String.valueOf(Integer.MAX_VALUE));
   }
 
+  static String getRetryDelay(StackGresShardedDbOps dbOps) {
+    return Optional.of(dbOps)
+        .map(StackGresShardedDbOps::getSpec)
+        .map(StackGresShardedDbOpsSpec::getRetryDelay)
+        .map(Duration::parse)
+        .map(Duration::toMillis)
+        .map(Object::toString)
+        .orElse("1000");
+  }
+
+  static String getRetryLimit(StackGresShardedDbOps dbOps) {
+    return Optional.of(dbOps)
+        .map(StackGresShardedDbOps::getSpec)
+        .map(StackGresShardedDbOpsSpec::getRetryLimit)
+        .map(Object::toString)
+        .orElse("10");
+  }
+
+  static String getRetryMaxDelay(StackGresShardedDbOps dbOps) {
+    return Optional.of(dbOps)
+        .map(StackGresShardedDbOps::getSpec)
+        .map(StackGresShardedDbOpsSpec::getRetryMaxDelay)
+        .map(Duration::parse)
+        .map(Duration::toMillis)
+        .map(Object::toString)
+        .orElse("60000");
+  }
+
   static String getKebabCaseOperation(StackGresShardedDbOps dbOps) {
     return UPPERCASE_LETTER_PATTERN
         .matcher(dbOps.getSpec().getOp())

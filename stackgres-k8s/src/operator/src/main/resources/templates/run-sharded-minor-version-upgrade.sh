@@ -7,7 +7,16 @@ run_op() {
 
   echo "Starting sharded dbops $NORMALIZED_OP_NAME"
 
-  rm -f /tmp/current-dbops
+  echo "Setting postgres version $TARGET_POSTGRES_VERSION for $SHARDED_CLUSTER_CRD_KIND $SHARDED_CLUSTER_NAME"
+  if ! kubectl patch "$SHARDED_CLUSTER_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_CLUSTER_NAME" --type merge \
+    -p "{\"spec\":{\"postgres\":{\"version\":$(printf %s "$TARGET_POSTGRES_VERSION" | to_json_string)}}}" \
+    > /tmp/dbops-update-sharded-cluster 2>&1
+  then
+    echo "FAILURE=$NORMALIZED_OP_NAME failed. Can not update $SHARDED_CLUSTER_CRD_KIND: $(cat /tmp/dbops-update-sharded-cluster)" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
+    exit 1
+  fi
+
+  rm -f /tmp/current-dbops /tmp/completed-dbops
   local CLUSTER_NAME
   local DBOPS_NAME
   for CLUSTER_NAME in $CLUSTER_NAMES
@@ -32,7 +41,7 @@ spec:
   op: minorVersionUpgrade
   minorVersionUpgrade:
     method: $METHOD
-    postgresVersion: $POSTGRES_VERSION
+    postgresVersion: $(printf %s "$TARGET_POSTGRES_VERSION" | to_json_string)
 EOF
 )"
     if ! printf %s "$DBOPS_YAML" | kubectl replace --force -f - > /tmp/dbops-create-dbops 2>&1
@@ -43,27 +52,38 @@ EOF
     cat /tmp/dbops-create-dbops
   done
 
-  for DBOPS_NAME in $(cat /tmp/current-dbops)
+  echo "Waiting for SGDbOps $(cat /tmp/current-dbops | tr '\n' ' ' | tr -s ' ') to complete"
+  touch /tmp/completed-dbops
+  while true
   do
-    echo "Waiting for SGDbOps $DBOPS_NAME to complete"
-    while true
+    local COMPLETED=true
+    for DBOPS_NAME in $(cat /tmp/current-dbops)
     do
-      DBOPS_STATUS="$(kubectl get "$DBOPS_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$DBOPS_NAME" \
-        --template '{{ range .status.conditions }}{{ if eq .status "true" }}{{ .type }}{{ end }}{{ end }}')"
-      if printf %s "$DBOPS_STATUS" | grep -q "^\($DBOPS_COMPLETED\|$DBOPS_FAILED\)$"
+      if ! grep -qxF "$DBOPS_NAME" /tmp/completed-dbops
       then
-        sleep 2
-        continue
+        DBOPS_STATUS="$(kubectl get "$DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$DBOPS_NAME" \
+          --template '{{ range .status.conditions }}{{ if eq .status "True" }} {{ .type }} {{ end }}{{ end }}')"
+        if ! printf %s "$DBOPS_STATUS" | grep -q " \($DBOPS_COMPLETED\|$DBOPS_FAILED\) "
+        then
+          COMPLETED=false
+          continue
+        fi
+        printf '%s\n' "$DBOPS_NAME" >> /tmp/completed-dbops
+        update_status
+        if printf %s "$DBOPS_STATUS" | grep -q " $DBOPS_FAILED "
+        then
+          echo "...$DBOPS_NAME failed"
+          echo "FAILURE=$NORMALIZED_OP_NAME failed. SGDbOps $DBOPS_NAME failed" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
+          exit 1
+        fi
+        echo "...$DBOPS_NAME completed"
       fi
-      update_status
-      if printf %s "$DBOPS_STATUS" | grep -q "^$DBOPS_FAILED$"
-      then
-        echo "FAILURE=$NORMALIZED_OP_NAME failed. SGDbOps $DBOPS_NAME failed" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
-        exit 1
-      fi
-      break
     done
-    echo "...$DBOPS_NAME completed"
+    if "$COMPLETED"
+    then
+      break
+    fi
+    retry_backoff
   done
 
   echo "Sharded DbOps $NORMALIZED_OP_NAME completed"
@@ -75,21 +95,21 @@ update_status() {
     PENDING_TO_RESTART_CLUSTERS="$CLUSTER_NAMES"
     RESTARTED_CLUSTERS=""
   else
-    DBOPS_STATUSES="$(kubectl get "$DBOPS_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" -l "$DBOPS_LABELS" \
-      --template '{{ range .items }}{{ .spec.sgCluster }}/{{ range .status.conditions }}{{ if eq .status "true" }}{{ .type }}{{ end }}{{ end }}{{ "\n" }}{{ end }}')"
-    PENDING_TO_RESTART_CLUSTERS="$(echo "$CLUSTER_NAMES" \
+    DBOPS_STATUSES="$(kubectl get "$DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" -l "$DBOPS_LABELS" \
+      --template '{{ range .items }}{{ .spec.sgCluster }}/{{ range .status.conditions }}{{ if eq .status "True" }} {{ .type }} {{ end }}{{ end }}{{ "\n" }}{{ end }}')"
+    PENDING_TO_RESTART_CLUSTERS="$(echo "$CLUSTER_NAMES" | tr ' ' '\n' | grep -vxF '' \
       | while read CLUSTER
         do
-          if ! printf '%s' "$DBOPS_STATUSES" | cut -d / -f 1 | grep -q "^$CLUSTER$"
-            || ! printf '%s' "$DBOPS_STATUSES" | grep -q "^$CLUSTER/$DBOPS_COMPLETED$"
+          if ! printf '%s' "$DBOPS_STATUSES" | cut -d / -f 1 | grep -q "^$CLUSTER$" \
+            || ! printf '%s' "$DBOPS_STATUSES" | grep -q "^$CLUSTER/.* $DBOPS_COMPLETED .*$"
           then
             echo "$CLUSTER"
           fi
         done)"
-    RESTARTED_CLUSTERS="$(echo "$CLUSTER_NAMES" \
+    RESTARTED_CLUSTERS="$(echo "$CLUSTER_NAMES" | tr ' ' '\n' \
       | while read CLUSTER
         do
-          if printf '%s' "$DBOPS_STATUSES" | grep -q "^$CLUSTER/$DBOPS_COMPLETED$"
+          if printf '%s' "$DBOPS_STATUSES" | grep -q "^$CLUSTER/.* $DBOPS_COMPLETED .*$"
           then
             echo "$CLUSTER"
           fi
@@ -101,17 +121,19 @@ update_status() {
   then
     echo '<none>'
   else
-    echo "$PENDING_TO_RESTART_CLUSTERS" | sed 's/^/ - /'
+    echo "$PENDING_TO_RESTART_CLUSTERS" | tr ' ' '\n' | grep -vxF '' | sed 's/^/ - /'
   fi
   echo
 
-  OPERATION="$(kubectl get "$SHARDED_DBOPS_CRD_NAME.$CRD_GROUP" -n "$CLUSTER_NAMESPACE" "$SHARDED_DBOPS_NAME" \
+  OPERATION="$(kubectl get "$SHARDED_DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_DBOPS_NAME" \
     --template='{{ if .status.minorVersionUpgrade }}replace{{ else }}add{{ end }}')"
   kubectl patch "$SHARDED_DBOPS_CRD_NAME" -n "$CLUSTER_NAMESPACE" "$SHARDED_DBOPS_NAME" --type=json \
     -p "$(cat << EOF
 [
   {"op":"$OPERATION","path":"/status/minorVersionUpgrade","value":{
-      "pendingToRestartClusters": [$(
+      "sourcePostgresVersion": $(printf %s "$SOURCE_POSTGRES_VERSION" | to_json_string),
+      "targetPostgresVersion": $(printf %s "$TARGET_POSTGRES_VERSION" | to_json_string),
+      "pendingToRestartSgClusters": [$(
         FIRST=true
         for CLUSTER in $PENDING_TO_RESTART_CLUSTERS
         do
@@ -124,7 +146,7 @@ update_status() {
           fi
         done
         )],
-      "restartedClusters": [$(
+      "restartedSgClusters": [$(
         FIRST=true
         for CLUSTER in $RESTARTED_CLUSTERS
         do

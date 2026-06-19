@@ -8,8 +8,12 @@ package io.stackgres.operator.conciliation.factory.shardeddbops;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgconfig.StackGresConfig;
@@ -111,6 +115,35 @@ abstract class ShardedDbOpsJobTestCase {
         .collect(Collectors.toUnmodifiableList());
 
     assertEquals(0, generatedResources.size());
+  }
+
+  @Test
+  void givenAContextWithASingleDbOps_itShouldGenerateAJobWithoutDuplicatedEnvVars() {
+    StackGresShardedDbOpsContext context = StackGresShardedDbOpsContext.builder()
+        .config(config)
+        .source(dbOps)
+        .foundShardedCluster(cluster)
+        .foundCoordinator(coordinator)
+        .foundProfile(clusterProfile)
+        .build();
+
+    dbOps.getSpec().setRunAt(null);
+    var generatedResources = dbOpsJobsGenerator.generateResource(context)
+        .collect(Collectors.toUnmodifiableList());
+
+    var job = (Job) generatedResources.getFirst();
+    Stream.concat(
+        job.getSpec().getTemplate().getSpec().getInitContainers().stream(),
+        job.getSpec().getTemplate().getSpec().getContainers().stream())
+        .forEach(container -> assertEquals(
+            List.of(),
+            container.getEnv().stream()
+                .collect(Collectors.groupingBy(EnvVar::getName, Collectors.counting()))
+                .entrySet().stream()
+                .filter(entry -> entry.getValue() > 1)
+                .map(Map.Entry::getKey)
+                .toList(),
+            "Container " + container.getName() + " has duplicated env vars"));
   }
 
   @Test

@@ -72,7 +72,14 @@ public class WebConsolePodSecurityFactory {
 
   public SecurityContext createRestapiSecurityContext(StackGresConfigContext context) {
     SecurityContextBuilder securityContextBuilder = new SecurityContextBuilder()
-        .withRunAsNonRoot(true);
+        .withRunAsNonRoot(true)
+        .withAllowPrivilegeEscalation(false)
+        .withNewCapabilities()
+        .withDrop("ALL")
+        .endCapabilities()
+        .withNewSeccompProfile()
+        .withType("RuntimeDefault")
+        .endSeccompProfile();
     if (!operatorContext.getBoolean(OperatorProperty.USE_ARBITRARY_USER)) {
       securityContextBuilder
           .withRunAsUser(
@@ -97,7 +104,14 @@ public class WebConsolePodSecurityFactory {
 
   public SecurityContext createAdminuiSecurityContext(StackGresConfigContext context) {
     SecurityContextBuilder securityContextBuilder = new SecurityContextBuilder()
-        .withRunAsNonRoot(true);
+        .withRunAsNonRoot(true)
+        .withAllowPrivilegeEscalation(false)
+        .withNewCapabilities()
+        .withDrop("ALL")
+        .endCapabilities()
+        .withNewSeccompProfile()
+        .withType("RuntimeDefault")
+        .endSeccompProfile();
     if (!operatorContext.getBoolean(OperatorProperty.USE_ARBITRARY_USER)) {
       securityContextBuilder
           .withRunAsUser(ADMINUI_USER)

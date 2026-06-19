@@ -60,11 +60,10 @@ spec:
 A simple way to target this correctly, is to verify the usage of Prepared Statements, on top of which `session` mode will be the only compatible.
 
 Some applications, do not handle connection closing properly, which may require to add certain timeouts for releasing server connections.
--->
 
 ## Changing Configuration
 
-The [SGPoolingConfig Customizing Pooling Configuration Section]({{% relref "06-crd-reference/04-sgpoolingconfig/#pgbouncer" %}}) explains the different options for scaling connections properly.
+The [SGPoolingConfig Customizing Pooling Configuration Section]({{% relref "06-crd-reference/04-sgpoolingconfig/#sgpoolingconfigspecpgbouncer" %}}) explains the different options for scaling connections properly.
 
 Check the following sections for more insights related to how to configure the connection pooler:
 

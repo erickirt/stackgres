@@ -156,6 +156,20 @@ public class DbOpsMajorVersionUpgradeJob extends AbstractDbOpsJob {
                 .orElse("false"))
             .build(),
             new EnvVarBuilder()
+            .withName("MANUAL_ROLLBACK")
+            .withValue(Optional.ofNullable(majorVersionUpgrade)
+                .map(StackGresDbOpsMajorVersionUpgrade::getManualRollback)
+                .map(String::valueOf)
+                .orElse("false"))
+            .build(),
+            new EnvVarBuilder()
+            .withName("MAX_ERRORS_AFTER_CONTINUE_ON_FAILURE")
+            .withValue(Optional.ofNullable(majorVersionUpgrade)
+                .map(StackGresDbOpsMajorVersionUpgrade::getMaxErrorsAfterContinueOnFailure)
+                .map(String::valueOf)
+                .orElse("0"))
+            .build(),
+            new EnvVarBuilder()
             .withName("CRD_GROUP")
             .withValue(CommonDefinition.GROUP)
             .build(),
@@ -234,6 +248,10 @@ public class DbOpsMajorVersionUpgradeJob extends AbstractDbOpsJob {
             new EnvVarBuilder()
             .withName("POSTGRES_VERSION_KEY")
             .withValue(StackGresContext.POSTGRES_VERSION_KEY)
+            .build(),
+            new EnvVarBuilder()
+            .withName("ROLLOUT_DBOPS_KEY")
+            .withValue(StackGresContext.ROLLOUT_DBOPS_KEY)
             .build(),
             new EnvVarBuilder()
             .withName("LOCK_DURATION")

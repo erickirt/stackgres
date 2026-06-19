@@ -162,7 +162,7 @@ Helm chart values are (mostly) mapped to the SGConfig custom resource that is st
 
 StackGres lets you control how the scheduler places its own control-plane Pods (the operator, the Web Console / REST API, and the OpenTelemetry collector) as well as the extensions cache StatefulSet.
 
-Each of these components supports the **complete** set of scheduling fields below, configured under its corresponding section of the [SGConfig spec]({{% relref "06-crd-reference/12-sgconfig#sgconfigspec" %}}) (mapped from the Helm chart `values.yaml`): `operator`, `restapi`, `collector` and `extensions.cache`.
+Each of these components supports the **complete** set of scheduling fields below. For the operator, the Web Console / REST API and the collector they are configured under the corresponding section of the [SGConfig spec]({{% relref "06-crd-reference/12-sgconfig#sgconfigspec" %}}) (mapped from the Helm chart `values.yaml`): `operator`, `restapi` and `collector`. For the extensions cache the fields are only available as Helm chart values under `extensions.cache` (the SGConfig `spec.extensions.cache` section does not include them).
 
 | Field | Description |
 |-------|-------------|

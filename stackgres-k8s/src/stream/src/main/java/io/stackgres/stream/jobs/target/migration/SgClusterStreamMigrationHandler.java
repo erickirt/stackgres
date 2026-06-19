@@ -387,7 +387,7 @@ public class SgClusterStreamMigrationHandler implements TargetEventHandler {
             lastLsn = lsn;
             counter = 0L;
           }
-          long kafkaPartition = (lastLsn << 32) & (counter & ((1 << 32) - 1));
+          long kafkaPartition = (lastLsn << 32) | (counter & 0xFFFFFFFFL);
           counter++;
           SinkRecord sinkRecord = new SinkRecord(
               sourceRecord.topic(),
@@ -827,6 +827,7 @@ public class SgClusterStreamMigrationHandler implements TargetEventHandler {
       var sourceSuperuserUsername = getSecretKeyValue(namespace, PatroniUtil.secretName(sourceClusterName), StackGresPasswordKeys.SUPERUSER_USERNAME_KEY);
       var sourceReplicationUsername = getSecretKeyValue(namespace, PatroniUtil.secretName(sourceClusterName), StackGresPasswordKeys.REPLICATION_USERNAME_KEY);
       var sourceAuthenticatorUsername = getSecretKeyValue(namespace, PatroniUtil.secretName(sourceClusterName), StackGresPasswordKeys.AUTHENTICATOR_USERNAME_KEY);
+      var sourceMonitorUsername = getSecretKeyValue(namespace, PatroniUtil.secretName(sourceClusterName), StackGresPasswordKeys.MONITOR_USERNAME_KEY);
 
       LOGGER.info("Importing DDL from source SGCluster {} for database {}", sourceClusterName, sourceClusterDatabase);
       executeCommand(session, SnapshotHelperQueries.IMPORT_DDL.readSql().formatted(
@@ -841,7 +842,8 @@ public class SgClusterStreamMigrationHandler implements TargetEventHandler {
                   .getSgCluster().getDdlImportRoleSkipFilter())
               .orElse("(" + sourceSuperuserUsername
                   + "|" + sourceReplicationUsername
-                  + "|" + sourceAuthenticatorUsername + ")")));
+                  + "|" + sourceAuthenticatorUsername
+                  + "|" + sourceMonitorUsername + ")")));
     }
 
     private void storeAndDropPrimaryKeys() {

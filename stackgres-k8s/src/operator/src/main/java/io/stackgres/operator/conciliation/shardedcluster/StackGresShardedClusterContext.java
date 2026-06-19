@@ -50,15 +50,21 @@ public interface StackGresShardedClusterContext
 
   Optional<StackGresPoolingConfig> getCoordinatorPoolingConfig();
 
-  Optional<StackGresInstanceProfile> getWorkersProfile();
-
-  Optional<StackGresPostgresConfig> getWorkersPostgresConfig();
-
-  Optional<StackGresPoolingConfig> getWorkersPoolingConfig();
-
   List<StackGresCluster> getWorkers();
 
+  List<Tuple2<Integer, Optional<StackGresInstanceProfile>>> getWorkersProfiles();
+
+  List<Tuple2<Integer, Optional<StackGresPostgresConfig>>> getWorkersPostgresConfigs();
+
+  List<Tuple2<Integer, Optional<StackGresPoolingConfig>>> getWorkersPoolingConfigs();
+
   List<StackGresCluster> getQueryRouters();
+
+  List<Tuple2<Integer, Optional<StackGresInstanceProfile>>> getQueryRoutersProfiles();
+
+  List<Tuple2<Integer, Optional<StackGresPostgresConfig>>> getQueryRoutersPostgresConfigs();
+
+  List<Tuple2<Integer, Optional<StackGresPoolingConfig>>> getQueryRoutersPoolingConfigs();
 
   Optional<Endpoints> getCoordinatorPrimaryEndpoints();
 

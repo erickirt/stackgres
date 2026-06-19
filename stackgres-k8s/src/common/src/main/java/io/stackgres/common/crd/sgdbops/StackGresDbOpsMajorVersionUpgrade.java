@@ -51,6 +51,10 @@ public class StackGresDbOpsMajorVersionUpgrade {
 
   private Integer maxErrorsAfterUpgrade;
 
+  private Boolean manualRollback;
+
+  private Integer maxErrorsAfterContinueOnFailure;
+
   @ReferencedField("backupPath")
   interface BackupPath extends FieldReference { }
 
@@ -148,9 +152,26 @@ public class StackGresDbOpsMajorVersionUpgrade {
     this.maxErrorsAfterUpgrade = maxErrorsAfterUpgrade;
   }
 
+  public Boolean getManualRollback() {
+    return manualRollback;
+  }
+
+  public void setManualRollback(Boolean manualRollback) {
+    this.manualRollback = manualRollback;
+  }
+
+  public Integer getMaxErrorsAfterContinueOnFailure() {
+    return maxErrorsAfterContinueOnFailure;
+  }
+
+  public void setMaxErrorsAfterContinueOnFailure(Integer maxErrorsAfterContinueOnFailure) {
+    this.maxErrorsAfterContinueOnFailure = maxErrorsAfterContinueOnFailure;
+  }
+
   @Override
   public int hashCode() {
-    return Objects.hash(backupPath, check, clone, link, maxErrorsAfterUpgrade, postgresExtensions,
+    return Objects.hash(backupPath, check, clone, link, manualRollback,
+        maxErrorsAfterContinueOnFailure, maxErrorsAfterUpgrade, postgresExtensions,
         postgresVersion, sgPostgresConfig, toInstallPostgresExtensions);
   }
 
@@ -165,6 +186,8 @@ public class StackGresDbOpsMajorVersionUpgrade {
     StackGresDbOpsMajorVersionUpgrade other = (StackGresDbOpsMajorVersionUpgrade) obj;
     return Objects.equals(backupPath, other.backupPath) && Objects.equals(check, other.check)
         && Objects.equals(clone, other.clone) && Objects.equals(link, other.link)
+        && Objects.equals(manualRollback, other.manualRollback)
+        && Objects.equals(maxErrorsAfterContinueOnFailure, other.maxErrorsAfterContinueOnFailure)
         && Objects.equals(maxErrorsAfterUpgrade, other.maxErrorsAfterUpgrade)
         && Objects.equals(postgresExtensions, other.postgresExtensions)
         && Objects.equals(postgresVersion, other.postgresVersion)

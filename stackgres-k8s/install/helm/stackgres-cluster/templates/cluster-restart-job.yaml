@@ -68,10 +68,26 @@ spec:
         cluster-namespace: '{{ .Release.Namespace }}'
     spec:
       serviceAccountName: {{ .Release.Name }}-cluster-restart
+      securityContext:
+        runAsNonRoot: true
       containers:
       - name: "{{ .Release.Name }}-fix-deployment-selector"
         image: {{ template "kubectl-image" . }}
         imagePullPolicy: "IfNotPresent"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
         command:
           - "/bin/bash"
           - "-ecx"

@@ -27,6 +27,7 @@ import io.stackgres.common.crd.sgcluster.StackGresClusterStatus;
 import io.stackgres.common.crd.sgdbops.StackGresDbOps;
 import io.stackgres.common.crd.sgdistributedlogs.StackGresDistributedLogs;
 import io.stackgres.common.crd.sgpgconfig.StackGresPostgresConfig;
+import io.stackgres.common.crd.sgshardeddbops.StackGresShardedDbOps;
 import io.stackgres.common.resource.CustomResourceFinder;
 import io.stackgres.operator.conciliation.dbops.StackGresDbOpsContext.Builder;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -73,7 +74,20 @@ public class DbOpsClusterMajorVersionUpgradeContextAppender {
         .filter(ownerReference -> ownerReference.getController() != null
             && ownerReference.getController())
         .findFirst();
-    if (foundOwnerReference.isPresent()) {
+    boolean ownedByShardedDbOps = Optional.of(dbOps)
+        .map(StackGresDbOps::getMetadata)
+        .map(ObjectMeta::getOwnerReferences)
+        .stream()
+        .flatMap(List::stream)
+        .anyMatch(ownerReference -> Objects.equals(
+            ownerReference.getKind(),
+            HasMetadata.getKind(StackGresShardedDbOps.class)));
+    boolean targetPostgresVersionAlreadySetOnCluster = Objects.equals(
+        dbOps.getSpec().getMajorVersionUpgrade().getPostgresVersion(),
+        cluster.getSpec().getPostgres().getVersion());
+    if (foundOwnerReference.isPresent()
+        && !ownedByShardedDbOps
+        && !targetPostgresVersionAlreadySetOnCluster) {
       OwnerReference ownerReference = foundOwnerReference.get();
       throw new IllegalArgumentException(
           "Can not perform major version upgrade on " + StackGresCluster.KIND + " managed by "

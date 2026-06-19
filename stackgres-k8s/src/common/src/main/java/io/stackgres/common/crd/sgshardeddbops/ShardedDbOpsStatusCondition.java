@@ -18,7 +18,12 @@ public enum ShardedDbOpsStatusCondition {
   DBOPS_LOCK_LOST(Type.FAILED, Status.TRUE, "OperationLockLost"),
   DBOPS_FALSE_FAILED(Type.FAILED, Status.FALSE, "OperationNotFailed"),
   DBOPS_COMPLETED(Type.COMPLETED, Status.TRUE, "OperationCompleted"),
-  DBOPS_FALSE_COMPLETED(Type.COMPLETED, Status.FALSE, "OperationNotCompleted");
+  DBOPS_FALSE_COMPLETED(Type.COMPLETED, Status.FALSE, "OperationNotCompleted"),
+  DBOPS_WAITING_ROLLBACK_AFTER_FAILED(
+      Type.WAITING_ROLLBACK, Status.TRUE, "WaitingRollbackAfterFailed"),
+  DBOPS_WAITING_ROLLBACK_AFTER_SUCCEEDED(
+      Type.WAITING_ROLLBACK, Status.TRUE, "WaitingRollbackAfterSucceeded"),
+  DBOPS_FALSE_WAITING_ROLLBACK(Type.WAITING_ROLLBACK, Status.FALSE, "NotWaitingRollback");
 
   private final String type;
   private final String status;
@@ -43,7 +48,8 @@ public enum ShardedDbOpsStatusCondition {
   public enum Type {
     RUNNING("Running"),
     FAILED("Failed"),
-    COMPLETED("Completed");
+    COMPLETED("Completed"),
+    WAITING_ROLLBACK("WaitingRollback");
 
     private final String type;
 

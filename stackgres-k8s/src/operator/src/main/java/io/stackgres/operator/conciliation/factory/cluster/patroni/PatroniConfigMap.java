@@ -199,7 +199,7 @@ public class PatroniConfigMap implements VolumeFactory<StackGresClusterContext> 
         .map(StackGresClusterReplicateFromCustomRestoreMethod::getParameters)
         .map(Unchecked.function(parameters -> yamlMapper.writeValueAsString(parameters)))
         .orElse(""));
-    data.put("CUSTOM_REPLICATION_METHOD_EXISTING_RECOVERY_CONF", 
+    data.put("CUSTOM_REPLICATION_METHOD_KEEP_EXISTING_RECOVERY_CONF",
         Optional.of(customRestoreMethod)
         .map(StackGresClusterReplicateFromCustomRestoreMethod::getKeepExistingRecoveryConf)
         .map(Object::toString)

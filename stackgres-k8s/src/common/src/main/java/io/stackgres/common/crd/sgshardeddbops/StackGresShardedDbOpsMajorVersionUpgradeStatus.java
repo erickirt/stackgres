@@ -25,6 +25,10 @@ public class StackGresShardedDbOpsMajorVersionUpgradeStatus extends ShardedDbOps
 
   private String targetPostgresVersion;
 
+  private String status;
+
+  private Boolean rollback;
+
   public String getSourcePostgresVersion() {
     return sourcePostgresVersion;
   }
@@ -41,11 +45,28 @@ public class StackGresShardedDbOpsMajorVersionUpgradeStatus extends ShardedDbOps
     this.targetPostgresVersion = targetPostgresVersion;
   }
 
+  public String getStatus() {
+    return status;
+  }
+
+  public void setStatus(String status) {
+    this.status = status;
+  }
+
+  public Boolean getRollback() {
+    return rollback;
+  }
+
+  public void setRollback(Boolean rollback) {
+    this.rollback = rollback;
+  }
+
   @Override
   public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
-    result = prime * result + Objects.hash(sourcePostgresVersion, targetPostgresVersion);
+    result = prime * result
+        + Objects.hash(rollback, sourcePostgresVersion, status, targetPostgresVersion);
     return result;
   }
 
@@ -62,7 +83,9 @@ public class StackGresShardedDbOpsMajorVersionUpgradeStatus extends ShardedDbOps
     }
     StackGresShardedDbOpsMajorVersionUpgradeStatus other =
         (StackGresShardedDbOpsMajorVersionUpgradeStatus) obj;
-    return Objects.equals(sourcePostgresVersion, other.sourcePostgresVersion)
+    return Objects.equals(rollback, other.rollback)
+        && Objects.equals(sourcePostgresVersion, other.sourcePostgresVersion)
+        && Objects.equals(status, other.status)
         && Objects.equals(targetPostgresVersion, other.targetPostgresVersion);
   }
 

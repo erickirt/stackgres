@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -84,6 +85,20 @@ class ReconciliationCycleTest {
     verify(reconciliator, times(2)).reconcile(any(), any());
   }
 
+  @Test
+  void ifResourceReconciliationReturnsException_aConfigErrorEventShouldBeSent() throws Exception {
+    reconciliationCycle = Mockito.spy(reconciliationCycle);
+    when(reconciliator.reconcile(any(), any()))
+        .thenReturn(new ReconciliationResult<>(new RuntimeException("reconciliation failed")));
+    ReconciliationCycleResult<?> result =
+        reconciliationCycle.reconciliationCycle(ImmutableList.of(Optional.of(resource)));
+    Assertions.assertFalse(result.success());
+    Assertions.assertEquals(Optional.empty(), result.getException());
+    Assertions.assertEquals(1, result.getContextExceptions().size());
+    verify(reconciliator, times(1)).reconcile(any(), any());
+    verify(reconciliationCycle, times(1)).onConfigError(any(), any(), any());
+  }
+
   class TestReconciliationCycle extends
       ReconciliationCycle<ResourceHandlerContext, TestCustomResource,
       ResourceHandlerSelector<ResourceHandlerContext>> {
@@ -104,7 +119,7 @@ class ReconciliationCycleTest {
     }
 
     @Override
-    protected ResourceHandlerContext getContextWithExistingResourcesOnly(
+    public ResourceHandlerContext getContextWithExistingResourcesOnly(
         ResourceHandlerContext context,
         List<Tuple2<HasMetadata, Optional<HasMetadata>>> existingResourcesOnly) {
       return null;
@@ -124,7 +139,7 @@ class ReconciliationCycleTest {
     }
 
     @Override
-    protected List<TestCustomResource> getExistingContextResources() {
+    public List<TestCustomResource> getExistingContextResources() {
       return null;
     }
 

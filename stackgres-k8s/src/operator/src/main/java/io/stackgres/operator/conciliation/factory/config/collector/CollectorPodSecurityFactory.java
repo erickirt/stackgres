@@ -42,7 +42,14 @@ public class CollectorPodSecurityFactory {
 
   public SecurityContext createCollectorSecurityContext(StackGresConfigContext context) {
     SecurityContextBuilder securityContextBuilder = new SecurityContextBuilder()
-        .withRunAsNonRoot(true);
+        .withRunAsNonRoot(true)
+        .withAllowPrivilegeEscalation(false)
+        .withNewCapabilities()
+        .withDrop("ALL")
+        .endCapabilities()
+        .withNewSeccompProfile()
+        .withType("RuntimeDefault")
+        .endSeccompProfile();
     if (!operatorContext.getBoolean(OperatorProperty.USE_ARBITRARY_USER)) {
       securityContextBuilder
           .withRunAsUser(COLLECTOR_USER)
@@ -53,7 +60,14 @@ public class CollectorPodSecurityFactory {
 
   public SecurityContext createCollectorControllerSecurityContext(StackGresConfigContext context) {
     SecurityContextBuilder securityContextBuilder = new SecurityContextBuilder()
-        .withRunAsNonRoot(true);
+        .withRunAsNonRoot(true)
+        .withAllowPrivilegeEscalation(false)
+        .withNewCapabilities()
+        .withDrop("ALL")
+        .endCapabilities()
+        .withNewSeccompProfile()
+        .withType("RuntimeDefault")
+        .endSeccompProfile();
     if (!operatorContext.getBoolean(OperatorProperty.USE_ARBITRARY_USER)) {
       securityContextBuilder
           .withRunAsUser(KUBECTL_USER)

@@ -13,7 +13,7 @@ S3, GCP, Azure Blob, and S3-compatible object storages are supported as on cloud
 
 ## Cluster Backup Configuration
 
-All the configuration options related to backups can be found at the [SGCluster backups section]({{% relref "06-crd-reference/01-sgcluster/#backups" %}}).
+All the configuration options related to backups can be found at the [SGCluster backups section]({{% relref "06-crd-reference/01-sgcluster/#sgclusterspecconfigurationsbackupsindex" %}}).
 When backups are configured, Postgres WAL files will start being archived in the specified storage at the specified path.
 Also, automatic backups can be scheduled and (in such case) a retention policy of backups is created.
 You will have to find out a time window and retention policy that fit your needs.
@@ -31,7 +31,7 @@ spec:
     - sgObjectStorage: # name of the referenced SGObjectStorage
       path: # leave this empty for the operator to fill it with a default value
             # and only configure if you restore the same cluster from its own backup
-      cronSchedule: '0 5 0 0 0'
+      cronSchedule: '0 5 * * *'
       retention: 5
       compression: # <lz4|lzma|brotli>
       performance:
@@ -40,7 +40,7 @@ spec:
         uploadDiskConcurrency: # 1 by default
 ```
 
-For more information, have a look at the [SGCluster backups section]({{% relref "06-crd-reference/01-sgcluster/#backups" %}}).
+For more information, have a look at the [SGCluster backups section]({{% relref "06-crd-reference/01-sgcluster/#sgclusterspecconfigurationsbackupsindex" %}}).
 
 
 ## Backup Storage
@@ -167,7 +167,7 @@ The backup associated to the SGBackup created in this way will not be deleted by
 
 ## Restoring from a Backup
 
-StackGres can restore a database from a StackGres backup by specifying the SGBackup resource name of the desired backup in the [restore section of the SGCluster]({{% relref "06-crd-reference/01-sgcluster/#restore" %}}).
+StackGres can restore a database from a StackGres backup by specifying the SGBackup resource name of the desired backup in the [restore section of the SGCluster]({{% relref "06-crd-reference/01-sgcluster/#sgclusterspecinitialdatarestore" %}}).
 Like this:
 
 ```yaml

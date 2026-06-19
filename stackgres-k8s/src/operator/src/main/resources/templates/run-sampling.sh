@@ -79,7 +79,7 @@ run_sampling() {
     return 1
   fi
   try_function_with_output psql -q -t -A -d "$DATABASE_NAME" \
-    -c "SELECT query_id, to_char(timestamp,'YYYY-MM-DD\"T\"HH:MM:SSZ') AS timestamp, query FROM sampling.queries"
+    -c "SELECT query_id, to_char(timestamp,'YYYY-MM-DD\"T\"HH24:MI:SSZ') AS timestamp, query FROM sampling.queries"
   if [ "$(cat "$SHARED_PATH/exit_code")" != 0 ]
   then
     create_event_service "BenchmarkFailed" "Warning" "Can not complete benchmark: $(cat "$SHARED_PATH/output")"
@@ -126,8 +126,8 @@ run_sampling() {
 try_drop_sampling_database() {
   (
   set +e
-  DROP_RETRY=3
-  while [ "$DROP_RETRY" -ge 0 ]
+  RETRY=0
+  while true
   do
     try_function_with_output psql -q \
       -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$DATABASE_NAME' AND pid != pg_backend_pid()" \
@@ -137,8 +137,12 @@ try_drop_sampling_database() {
       break
     fi
     create_event_service "DropDatabaseFailed" "Warning" "Can not drop $DATABASE_NAME database: $MESSAGE"
-    DROP_RETRY="$((DROP_RETRY - 1))"
-    sleep 3
+    retry_backoff "$RETRY"
+    RETRY="$((RETRY + 1))"
+    if retry_stop "$RETRY"
+    then
+      break
+    fi
   done
   )
 }

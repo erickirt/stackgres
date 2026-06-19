@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.stackgres.common.StackGresUtil;
+import io.stackgres.common.crd.ResourceRequirements;
 import io.sundr.builder.annotations.Buildable;
 
 @RegisterForReflection
@@ -29,6 +30,8 @@ public class StackGresConfigExtensionsCache {
   private StackGresConfigExtensionsCachePersistentVolume persistentVolume;
 
   private String hostPath;
+
+  private ResourceRequirements resources;
 
   public Boolean getEnabled() {
     return enabled;
@@ -62,9 +65,17 @@ public class StackGresConfigExtensionsCache {
     this.hostPath = hostPath;
   }
 
+  public ResourceRequirements getResources() {
+    return resources;
+  }
+
+  public void setResources(ResourceRequirements resources) {
+    this.resources = resources;
+  }
+
   @Override
   public int hashCode() {
-    return Objects.hash(enabled, hostPath, persistentVolume, preloadedExtensions);
+    return Objects.hash(enabled, hostPath, persistentVolume, preloadedExtensions, resources);
   }
 
   @Override
@@ -78,7 +89,8 @@ public class StackGresConfigExtensionsCache {
     StackGresConfigExtensionsCache other = (StackGresConfigExtensionsCache) obj;
     return Objects.equals(enabled, other.enabled) && Objects.equals(hostPath, other.hostPath)
         && Objects.equals(persistentVolume, other.persistentVolume)
-        && Objects.equals(preloadedExtensions, other.preloadedExtensions);
+        && Objects.equals(preloadedExtensions, other.preloadedExtensions)
+        && Objects.equals(resources, other.resources);
   }
 
   @Override

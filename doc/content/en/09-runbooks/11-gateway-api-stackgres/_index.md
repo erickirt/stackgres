@@ -57,7 +57,7 @@ my-db-config   ClusterIP   None            <none>        <none>              61m
 
 ## Configure Gateway API
 
-### 1. Install the Gateway API Controler:
+### 1. Install the Gateway API Controller:
 
 Even though GKE already provides a Gateway API controller, we'll use the Envoy controller.
 
@@ -153,7 +153,7 @@ EOF
 
 Once you configured the Gateway API, the last thing is to check if you have connection to your database cluster:
 
-We got the superuser passsword with the next command:
+We got the superuser password with the next command:
 
 ```bash
 PASSWORD=$(kubectl get secret -n my-db my-db --template '{{ printf "%s" (index .data "superuser-password" | base64decode) }}')

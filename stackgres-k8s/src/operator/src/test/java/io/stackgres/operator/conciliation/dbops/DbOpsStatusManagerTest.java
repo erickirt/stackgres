@@ -25,6 +25,7 @@ import io.fabric8.kubernetes.api.model.batch.v1.JobConditionBuilder;
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgdbops.DbOpsStatusCondition;
 import io.stackgres.common.crd.sgdbops.StackGresDbOps;
+import io.stackgres.common.crd.sgdbops.StackGresDbOpsMajorVersionUpgradeStatus;
 import io.stackgres.common.crd.sgdbops.StackGresDbOpsStatus;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.common.labels.LabelFactoryForCluster;
@@ -50,7 +51,7 @@ class DbOpsStatusManagerTest {
       .withNewStatus()
       .withConditions(
           new JobConditionBuilder()
-          .withType("Completed")
+          .withType("Complete")
           .withStatus("False")
           .build(),
           new JobConditionBuilder()
@@ -64,7 +65,7 @@ class DbOpsStatusManagerTest {
       .withNewStatus()
       .withConditions(
           new JobConditionBuilder()
-          .withType("Completed")
+          .withType("Complete")
           .withStatus("False")
           .build(),
           new JobConditionBuilder()
@@ -77,7 +78,7 @@ class DbOpsStatusManagerTest {
   private final Job completedJob = new JobBuilder()
       .withNewStatus()
       .withConditions(new JobConditionBuilder()
-          .withType("Completed")
+          .withType("Complete")
           .withStatus("True")
           .build(),
           new JobConditionBuilder()
@@ -162,7 +163,7 @@ class DbOpsStatusManagerTest {
     dbOps.setStatus(new StackGresDbOpsStatus());
     dbOps.getStatus().setConditions(List.of(
         DbOpsStatusCondition.DBOPS_FALSE_RUNNING.getCondition().setLastTransitionTime(),
-        DbOpsStatusCondition.DBOPS_FALSE_COMPLETED.getCondition(),
+        DbOpsStatusCondition.DBOPS_FALSE_COMPLETED.getCondition().setLastTransitionTime(),
         DbOpsStatusCondition.DBOPS_FAILED.getCondition().setLastTransitionTime()));
 
     when(jobFinder.findByNameAndNamespace(any(), any()))
@@ -174,7 +175,7 @@ class DbOpsStatusManagerTest {
         DbOpsStatusCondition.DBOPS_FALSE_RUNNING.getCondition(),
         dbOps.getStatus().getConditions());
     assertCondition(
-        DbOpsStatusCondition.DBOPS_COMPLETED.getCondition(),
+        DbOpsStatusCondition.DBOPS_FALSE_COMPLETED.getCondition(),
         dbOps.getStatus().getConditions());
     assertCondition(
         DbOpsStatusCondition.DBOPS_FAILED.getCondition(),
@@ -226,10 +227,6 @@ class DbOpsStatusManagerTest {
     assertCondition(
         DbOpsStatusCondition.DBOPS_COMPLETED.getCondition(),
         dbOps.getStatus().getConditions());
-    assertCondition(
-        DbOpsStatusCondition.DBOPS_FAILED.getCondition(),
-        dbOps.getStatus().getConditions(),
-        "Unexpected failure");
     verify(jobFinder, times(1)).findByNameAndNamespace(any(), any());
   }
 
@@ -245,7 +242,7 @@ class DbOpsStatusManagerTest {
         DbOpsStatusCondition.DBOPS_FALSE_RUNNING.getCondition(),
         dbOps.getStatus().getConditions());
     assertCondition(
-        DbOpsStatusCondition.DBOPS_COMPLETED.getCondition(),
+        DbOpsStatusCondition.DBOPS_FALSE_COMPLETED.getCondition(),
         dbOps.getStatus().getConditions());
     assertCondition(
         DbOpsStatusCondition.DBOPS_FAILED.getCondition(),
@@ -279,10 +276,46 @@ class DbOpsStatusManagerTest {
         DbOpsStatusCondition.DBOPS_COMPLETED.getCondition(),
         dbOps.getStatus().getConditions());
     assertCondition(
-        DbOpsStatusCondition.DBOPS_FAILED.getCondition(),
-        dbOps.getStatus().getConditions(),
-        "Unexpected failure");
+        DbOpsStatusCondition.DBOPS_FALSE_FAILED.getCondition(),
+        dbOps.getStatus().getConditions());
     verify(jobFinder, times(1)).findByNameAndNamespace(any(), any());
+  }
+
+  @Test
+  void majorVersionUpgradeWaitingForRollbackDecision_shouldSetWaitingRollbackCondition() {
+    StackGresDbOps mvu = Fixtures.dbOps().loadMajorVersionUpgrade().get();
+    mvu.setStatus(new StackGresDbOpsStatus());
+    var mvuStatus = new StackGresDbOpsMajorVersionUpgradeStatus();
+    mvuStatus.setPhase("wait-post-failed-upgrade-decision");
+    mvu.getStatus().setMajorVersionUpgrade(mvuStatus);
+
+    when(jobFinder.findByNameAndNamespace(any(), any()))
+        .thenReturn(Optional.of(runningJob));
+
+    statusManager.refreshCondition(mvu);
+
+    assertCondition(
+        DbOpsStatusCondition.DBOPS_WAITING_ROLLBACK_AFTER_FAILED.getCondition(),
+        mvu.getStatus().getConditions());
+  }
+
+  @Test
+  void majorVersionUpgradeWithRollbackDecision_shouldNotSetWaitingRollbackCondition() {
+    StackGresDbOps mvu = Fixtures.dbOps().loadMajorVersionUpgrade().get();
+    mvu.setStatus(new StackGresDbOpsStatus());
+    var mvuStatus = new StackGresDbOpsMajorVersionUpgradeStatus();
+    mvuStatus.setPhase("wait-post-failed-upgrade-decision");
+    mvuStatus.setRollback(false);
+    mvu.getStatus().setMajorVersionUpgrade(mvuStatus);
+
+    when(jobFinder.findByNameAndNamespace(any(), any()))
+        .thenReturn(Optional.of(runningJob));
+
+    statusManager.refreshCondition(mvu);
+
+    assertCondition(
+        DbOpsStatusCondition.DBOPS_FALSE_WAITING_ROLLBACK.getCondition(),
+        mvu.getStatus().getConditions());
   }
 
   private void assertCondition(Condition expectedCondition, List<? extends Condition> conditions) {

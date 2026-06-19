@@ -7,6 +7,7 @@ package io.stackgres.operator.conciliation.factory.cluster;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -17,13 +18,15 @@ import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.stackgres.common.ClusterContext;
 import io.stackgres.common.StackGresUtil;
 import io.stackgres.common.StackGresVolume;
+import io.stackgres.common.crd.sgcluster.StackGresCluster;
+import io.stackgres.common.crd.sgcluster.StackGresClusterDbOpsStatus;
+import io.stackgres.common.crd.sgcluster.StackGresClusterStatus;
 import io.stackgres.common.labels.LabelFactoryForCluster;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
 import io.stackgres.operator.conciliation.factory.ImmutableVolumePair;
 import io.stackgres.operator.conciliation.factory.VolumeFactory;
 import io.stackgres.operator.conciliation.factory.VolumePair;
-import io.stackgres.operator.initialization.DefaultClusterPostgresConfigFactory;
 import jakarta.inject.Singleton;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,13 +35,10 @@ import org.jetbrains.annotations.NotNull;
 public class MajorVersionUpgradeConfigMap implements VolumeFactory<StackGresClusterContext> {
 
   private final LabelFactoryForCluster labelFactory;
-  private final DefaultClusterPostgresConfigFactory defaultPostgresConfigFactory;
 
   public MajorVersionUpgradeConfigMap(
-      LabelFactoryForCluster labelFactory,
-      DefaultClusterPostgresConfigFactory defaultPostgresConfigFactory) {
+      LabelFactoryForCluster labelFactory) {
     this.labelFactory = labelFactory;
-    this.defaultPostgresConfigFactory = defaultPostgresConfigFactory;
   }
 
   public static String name(ClusterContext clusterContext) {
@@ -48,6 +48,13 @@ public class MajorVersionUpgradeConfigMap implements VolumeFactory<StackGresClus
 
   @Override
   public @NotNull Stream<VolumePair> buildVolumes(StackGresClusterContext context) {
+    if (Optional.of(context.getSource())
+        .map(StackGresCluster::getStatus)
+        .map(StackGresClusterStatus::getDbOps)
+        .map(StackGresClusterDbOpsStatus::getMajorVersionUpgrade)
+        .isEmpty()) {
+      return Stream.of();
+    }
     return Stream.of(
         ImmutableVolumePair.builder()
             .volume(buildVolume(context))
@@ -69,10 +76,11 @@ public class MajorVersionUpgradeConfigMap implements VolumeFactory<StackGresClus
   public @NotNull HasMetadata buildSource(StackGresClusterContext context) {
     Map<String, String> data = new HashMap<>();
 
-    data.put("postgresql.conf",
+    data.put(
+        "postgresql.conf",
         StackGresUtil.toPlainPostgresConfig(
             context.getPostgresConfig()
-            .orElseGet(() -> defaultPostgresConfigFactory.buildResource(context.getSource()))
+            .orElseThrow(() -> new RuntimeException("SGPostgresConfig not found"))
             .getSpec().getPostgresqlConf()));
 
     return new ConfigMapBuilder()

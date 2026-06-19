@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -197,7 +198,13 @@ public class PatroniCtlKubernetesInstance implements PatroniCtlInstance {
               .map(HashMap::new)
               .orElseGet(HashMap::new);
           var patroniOperation = Optional.ofNullable(annotations.get(StackGresContext.PATRONI_OPERATION_KEY))
-              .map(objectMapper::valueToTree)
+              .map(value -> {
+                try {
+                  return objectMapper.readTree(value);
+                } catch (JsonProcessingException ex) {
+                  return null;
+                }
+              })
               .filter(ObjectNode.class::isInstance)
               .map(ObjectNode.class::cast)
               .orElseGet(objectMapper::createObjectNode);
@@ -244,7 +251,7 @@ public class PatroniCtlKubernetesInstance implements PatroniCtlInstance {
         throw new RuntimeException("Restart operation timed out after "
             + patroniCtlTimeout.getSeconds() + " seconds");
       }
-      Unchecked.runnable(() -> Thread.sleep(1000));
+      Unchecked.runnable(() -> Thread.sleep(1000)).run();
     }
   }
 
@@ -286,7 +293,7 @@ public class PatroniCtlKubernetesInstance implements PatroniCtlInstance {
         throw new RuntimeException("Switchover operation timed out after "
             + patroniCtlTimeout.getSeconds() + " seconds");
       }
-      Unchecked.runnable(() -> Thread.sleep(1000));
+      Unchecked.runnable(() -> Thread.sleep(1000)).run();
     }
   }
 
@@ -407,6 +414,7 @@ public class PatroniCtlKubernetesInstance implements PatroniCtlInstance {
             "nosync",
             "nostream",
             "failover_priority")
+        .filter(labels::containsKey)
         .map(tag -> Map.entry(tag, new AnyType(labels.get(tag))))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)))
     .orElse(null);
@@ -431,8 +439,9 @@ public class PatroniCtlKubernetesInstance implements PatroniCtlInstance {
           }
           try {
             return String.valueOf(
-                Integer.parseInt(current.getStrVal())
-                - Integer.parseInt(member.getLagInMb().getStrVal()));
+                (Long.parseLong(current.getStrVal())
+                - Long.parseLong(member.getLagInMb().getStrVal()))
+                / (1024 * 1024));
           } catch (NumberFormatException ex) {
             return null;
           }

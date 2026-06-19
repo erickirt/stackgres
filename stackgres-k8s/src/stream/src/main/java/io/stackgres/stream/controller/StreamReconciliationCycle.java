@@ -132,7 +132,7 @@ public class StreamReconciliationCycle
   }
 
   @Override
-  protected StackGresStreamContext getContextWithExistingResourcesOnly(
+  public StackGresStreamContext getContextWithExistingResourcesOnly(
       StackGresStreamContext context,
       List<Tuple2<HasMetadata, Optional<HasMetadata>>> existingResourcesOnly) {
     return ImmutableStackGresStreamContext.copyOf(context)

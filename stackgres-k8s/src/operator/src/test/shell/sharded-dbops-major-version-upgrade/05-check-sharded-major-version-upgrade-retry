@@ -1,0 +1,16 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/sharded-dbops-major-version-upgrade/abstract-sharded-major-version-upgrade"
+
+shell_unit_test() {
+  EXCLUSIVE_OP=true
+  printf %s 'true' > "$TEST_TARGET_PATH/sharded-cluster-dbops-status-set"
+  printf %s ' Completed ' > "$TEST_TARGET_PATH/dbops-test-coord-status"
+  printf %s ' Completed ' > "$TEST_TARGET_PATH/dbops-test-shard0-status"
+  shell_unit_test_sharded_dbops
+  check_sharded_dbops_result || return 1
+  ! grep -qF '"sourcePostgresVersion":"15.5"' "$TEST_TARGET_PATH/sharded-cluster-patches"
+  grep -qF '"version":"16.2"' "$TEST_TARGET_PATH/sharded-cluster-patches"
+  grep -qF '"sourcePostgresVersion": "15.5"' "$TEST_TARGET_PATH/status-patches"
+  check_sharded_cluster_dbops_status_removed
+}

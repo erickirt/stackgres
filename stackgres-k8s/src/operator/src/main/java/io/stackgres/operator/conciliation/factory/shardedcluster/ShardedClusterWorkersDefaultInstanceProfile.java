@@ -23,6 +23,7 @@ import io.stackgres.operator.initialization.DefaultProfileFactory;
 import io.stackgres.operatorframework.resource.ResourceUtil;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import org.jooq.lambda.tuple.Tuple2;
 
 @Singleton
 @OperatorVersionBinder
@@ -44,21 +45,22 @@ public class ShardedClusterWorkersDefaultInstanceProfile
   public Stream<HasMetadata> generateResource(StackGresShardedClusterContext context) {
     return Stream
         .of(true)
-        .filter(ignored -> context.getWorkersProfile().isEmpty()
-            || context.getWorkersProfile()
-            .filter(instanceProfile -> labelFactory.defaultConfigLabels(context.getSource())
-                .entrySet()
-                .stream()
-                .allMatch(label -> Optional
-                    .ofNullable(instanceProfile.getMetadata().getLabels())
+        .filter(ignored -> context.getWorkersProfiles().stream().map(Tuple2::v2).anyMatch(Optional::isEmpty)
+            || context.getWorkersProfiles().stream().map(Tuple2::v2)
+            .anyMatch(workersProfile -> workersProfile
+                .filter(instanceProfile -> labelFactory.defaultConfigLabels(context.getSource())
+                    .entrySet()
                     .stream()
-                    .map(Map::entrySet)
-                    .flatMap(Set::stream)
-                    .anyMatch(label::equals)))
-            .map(instanceProfile -> instanceProfile.getMetadata().getOwnerReferences())
-            .stream()
-            .flatMap(List::stream)
-            .anyMatch(ResourceUtil.getControllerOwnerReference(context.getSource())::equals))
+                    .allMatch(label -> Optional
+                        .ofNullable(instanceProfile.getMetadata().getLabels())
+                        .stream()
+                        .map(Map::entrySet)
+                        .flatMap(Set::stream)
+                        .anyMatch(label::equals)))
+                .map(instanceProfile -> instanceProfile.getMetadata().getOwnerReferences())
+                .stream()
+                .flatMap(List::stream)
+                .anyMatch(ResourceUtil.getControllerOwnerReference(context.getSource())::equals)))
         .filter(ignored -> !context.getSource().getSpec().getCoordinator().getSgInstanceProfile()
             .equals(context.getSource().getSpec().getWorkers().getSgInstanceProfile()))
         .map(ignored -> getDefaultProfile(context.getSource()));

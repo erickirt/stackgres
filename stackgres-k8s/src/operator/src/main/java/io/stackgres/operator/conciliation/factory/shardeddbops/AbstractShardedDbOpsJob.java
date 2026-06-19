@@ -31,6 +31,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.stackgres.common.CdiUtil;
 import io.stackgres.common.KubectlUtil;
 import io.stackgres.common.LeaseLockUtil;
+import io.stackgres.common.OperatorProperty;
 import io.stackgres.common.ShardedClusterPath;
 import io.stackgres.common.ShardedDbOpsUtil;
 import io.stackgres.common.StackGresUtil;
@@ -304,6 +305,26 @@ public abstract class AbstractShardedDbOpsJob implements ShardedDbOpsJobFactory 
                             .withName("LOCK_LEASE_NAME")
                             .withValue(LeaseLockUtil.leaseNameForShardedCluster(
                                 context.getShardedCluster().getMetadata().getUid()))
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("LOCK_GET_RETRIES")
+                            .withValue(OperatorProperty.LOCK_GET_RETRIES.getString())
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("LOCK_GET_RETRY_DELAY")
+                            .withValue(OperatorProperty.LOCK_GET_RETRY_DELAY.getString())
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("RETRY_DELAY")
+                            .withValue(ShardedDbOpsUtil.getRetryDelay(dbOps))
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("RETRY_LIMIT")
+                            .withValue(ShardedDbOpsUtil.getRetryLimit(dbOps))
+                            .build(),
+                        new EnvVarBuilder()
+                            .withName("RETRY_MAX_DELAY")
+                            .withValue(ShardedDbOpsUtil.getRetryMaxDelay(dbOps))
                             .build())
                     .addAll(runEnvVars)
                     .build())

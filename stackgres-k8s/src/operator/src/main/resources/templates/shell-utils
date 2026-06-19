@@ -1,10 +1,13 @@
 #!/bin/sh
 
 LOCK_DURATION="${LOCK_DURATION:-60}"
-LOCK_SLEEP="${LOCK_SLEEP:-5}"
+LOCK_SLEEP="${LOCK_SLEEP:-${LOCK_POLL_INTERVAL:-5}}"
+LOCK_GET_RETRIES="${LOCK_GET_RETRIES:-5}"
+LOCK_GET_RETRY_DELAY="${LOCK_GET_RETRY_DELAY:-2}"
 QUEUE_NAME=create_event.pipe
 RETRY_DELAY="${RETRY_DELAY:-1000}"
 RETRY_LIMIT="${RETRY_LIMIT:-10}"
+RETRY_MAX_DELAY="${RETRY_MAX_DELAY:-60000}"
 
 SHELL="$(readlink /proc/$$/exe || true)"
 if ! command -v "$SHELL" >/dev/null 2>&1 \
@@ -31,6 +34,28 @@ maintain_lock() {
   done
 }
 
+# Reads the Lease into /tmp/lock-lease using the provided go-template.
+# A transient failure to reach the API server (e.g. a momentary 401/Unauthorized
+# or connection error under load) must NOT be mistaken for a lost lock, so the
+# read is retried LOCK_GET_RETRIES times (waiting LOCK_GET_RETRY_DELAY seconds in
+# between, which stays well within LOCK_DURATION) before giving up. The previous
+# CAS-based lock tolerated these failures implicitly; the Lease lock must do so
+# explicitly. Returns non-zero only when the Lease can not be read after retries.
+get_lease() {
+  local ATTEMPT=0
+  until kubectl get lease -n "$LOCK_LEASE_NAMESPACE" "$LOCK_LEASE_NAME" \
+    --template="$1" > /tmp/lock-lease 2>/tmp/lock-lease.err
+  do
+    cat /tmp/lock-lease.err
+    ATTEMPT="$((ATTEMPT + 1))"
+    if [ "$ATTEMPT" -ge "$LOCK_GET_RETRIES" ]
+    then
+      return 1
+    fi
+    sleep "$LOCK_GET_RETRY_DELAY"
+  done
+}
+
 # Lock implementation backed by a coordination.k8s.io/v1 Lease.
 # Required env vars:
 #   LOCK_LEASE_NAMESPACE  - namespace holding the Lease (typically the cluster namespace)
@@ -38,7 +63,9 @@ maintain_lock() {
 #   SERVICE_ACCOUNT       - service account of the worker pod
 #   POD_NAME              - worker pod name
 #   LOCK_DURATION         - lease duration in seconds
-#   LOCK_SLEEP            - renewal interval in seconds
+#   LOCK_SLEEP            - renewal interval in seconds (defaults to LOCK_POLL_INTERVAL)
+#   LOCK_GET_RETRIES      - times to retry reading the Lease on transient API errors
+#   LOCK_GET_RETRY_DELAY  - seconds to wait between Lease read retries
 try_lock() {
   if [ -z "$LOCK_LEASE_NAMESPACE" ] || [ -z "$LOCK_LEASE_NAME" ] \
     || [ -z "$POD_NAME" ] || [ -z "$SERVICE_ACCOUNT" ]
@@ -55,10 +82,8 @@ try_lock() {
   LEASE_TRANSITIONS={{ with .spec.leaseTransitions }}{{ . }}{{ else }}0{{ end }}
   RESOURCE_VERSION={{ .metadata.resourceVersion }}
   '
-  if ! kubectl get lease -n "$LOCK_LEASE_NAMESPACE" "$LOCK_LEASE_NAME" \
-    --template="$TEMPLATE" > /tmp/lock-lease 2>/tmp/lock-lease.err
+  if ! get_lease "$TEMPLATE"
   then
-    cat /tmp/lock-lease.err
     return 1
   fi
   . /tmp/lock-lease
@@ -109,10 +134,8 @@ try_lock() {
   then
     # Refetch the lease; if we still hold it the patch failure was a transient
     # CAS conflict and we retry. Otherwise the lock has been taken by someone else.
-    if ! kubectl get lease -n "$LOCK_LEASE_NAMESPACE" "$LOCK_LEASE_NAME" \
-      --template="$TEMPLATE" > /tmp/lock-lease 2>/tmp/lock-lease.err
+    if ! get_lease "$TEMPLATE"
     then
-      cat /tmp/lock-lease.err
       return 1
     fi
     . /tmp/lock-lease
@@ -144,10 +167,8 @@ release_lock() {
   HOLDER_IDENTITY={{ with .spec.holderIdentity }}{{ . }}{{ end }}
   RESOURCE_VERSION={{ .metadata.resourceVersion }}
   '
-  if ! kubectl get lease -n "$LOCK_LEASE_NAMESPACE" "$LOCK_LEASE_NAME" \
-    --template="$TEMPLATE" > /tmp/lock-lease 2>/tmp/lock-lease.err
+  if ! get_lease "$TEMPLATE"
   then
-    cat /tmp/lock-lease.err
     return 0
   fi
   . /tmp/lock-lease
@@ -342,15 +363,45 @@ retry() {
   local BACKOFF
   until "$@"
   do
-    if [ "$RETRY" -ge "$RETRY_LIMIT" ]
+    if retry_stop "$RETRY"
     then
-      >&2 echo "Failed $@ after retrying $RETRY_LIMIT times"
       return 1
     fi
-    BACKOFF="$(( (RETRY_DELAY << RETRY > 60 * 1000 ? 60 * 1000 : RETRY_DELAY << RETRY) / 1000 ))"
+    BACKOFF="$(retry_backoff_delay "$RETRY")"
     >&2 echo "Will retry command after backoff of $BACKOFF seconds ($((RETRY_LIMIT - RETRY)) retry left)"
     sleep "$BACKOFF"
     RETRY="$((RETRY+1))"
-    sleep 5
   done      
+}
+
+retry_forever() {
+  until "$@"
+  do
+    retry_backoff
+  done
+}
+
+is_not_conflict() {
+  local OUTPUT="$1"
+  ! printf %s "$OUTPUT" | grep -q 'the object has been modified'
+}
+
+retry_backoff() {
+  local RETRY="${1:-0}"
+  sleep "$(retry_backoff_delay "$RETRY")"
+}
+
+retry_backoff_delay() {
+  local RETRY="${1:0}"
+  printf %s "$(( (RETRY_DELAY << RETRY > RETRY_MAX_DELAY ? RETRY_MAX_DELAY : RETRY_DELAY << RETRY) / 1000 ))"
+}
+
+retry_stop() {
+  local RETRY="${1:-0}"
+  if [ "$RETRY" -ge "$RETRY_LIMIT" ]
+  then
+    >&2 echo "Failed $@ after retrying $RETRY_LIMIT times"
+    return 0
+  fi
+  return 1
 }

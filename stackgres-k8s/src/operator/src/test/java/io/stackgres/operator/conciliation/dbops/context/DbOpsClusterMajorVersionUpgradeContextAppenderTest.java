@@ -217,4 +217,48 @@ class DbOpsClusterMajorVersionUpgradeContextAppenderTest {
         ex.getMessage());
   }
 
+  @Test
+  void givenManagedClusterAndDbOpsOwnedByShardedDbOps_shouldPass() throws ValidationFailed {
+    cluster.getMetadata().setOwnerReferences(List.of(
+        new OwnerReferenceBuilder()
+        .withKind("SGShardedCluster")
+        .withName("test")
+        .withController(true)
+        .build()));
+    dbOps.getMetadata().setOwnerReferences(List.of(
+        new OwnerReferenceBuilder()
+        .withKind("SGShardedDbOps")
+        .withName("test")
+        .build()));
+    dbOps.getSpec().getMajorVersionUpgrade().setPostgresVersion(FIRST_PG_MINOR_VERSION);
+
+    when(postgresConfigFinder.findByNameAndNamespace(
+        dbOps.getSpec().getMajorVersionUpgrade().getSgPostgresConfig(),
+        dbOps.getMetadata().getNamespace()))
+        .thenReturn(Optional.of(postgresConfig));
+
+    contextAppender.appendContext(dbOps, cluster, contextBuilder);
+  }
+
+  @Test
+  void givenManagedClusterWithTargetPostgresVersionAlreadySet_shouldPass()
+      throws ValidationFailed {
+    cluster.getMetadata().setOwnerReferences(List.of(
+        new OwnerReferenceBuilder()
+        .withKind("SGShardedCluster")
+        .withName("test")
+        .withController(true)
+        .build()));
+    dbOps.getSpec().getMajorVersionUpgrade().setPostgresVersion(FIRST_PG_MINOR_VERSION);
+
+    cluster.getSpec().getPostgres().setVersion(FIRST_PG_MINOR_VERSION);
+
+    when(postgresConfigFinder.findByNameAndNamespace(
+        dbOps.getSpec().getMajorVersionUpgrade().getSgPostgresConfig(),
+        dbOps.getMetadata().getNamespace()))
+        .thenReturn(Optional.of(postgresConfig));
+
+    contextAppender.appendContext(dbOps, cluster, contextBuilder);
+  }
+
 }

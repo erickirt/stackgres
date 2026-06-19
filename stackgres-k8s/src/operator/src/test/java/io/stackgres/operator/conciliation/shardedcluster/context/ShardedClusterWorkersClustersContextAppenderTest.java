@@ -5,6 +5,8 @@
 
 package io.stackgres.operator.conciliation.shardedcluster.context;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 import java.util.List;
@@ -12,9 +14,11 @@ import java.util.Optional;
 
 import io.stackgres.common.crd.sgcluster.StackGresCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
+import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterWorker;
 import io.stackgres.common.fixture.Fixtures;
 import io.stackgres.operator.conciliation.shardedcluster.StackGresShardedClusterContext;
 import io.stackgres.testutil.JsonUtil;
+import org.jooq.lambda.tuple.Tuple3;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,32 +38,87 @@ class ShardedClusterWorkersClustersContextAppenderTest {
   private StackGresShardedClusterContext.Builder contextBuilder;
 
   @Mock
-  private ShardedClusterWorkersPrimaryEndpointsContextAppender
-      shardedClusterWorkersPrimaryEndpointsContextAppender;
+  private ShardedClusterWorkersInstanceProfileContextAppender
+      shardedClusterWorkersInstanceProfileContextAppender;
 
   @Mock
-  private ShardedClusterQueryRoutersPrimaryEndpointsContextAppender
-      shardedClusterQueryRoutersPrimaryEndpointsContextAppender;
+  private ShardedClusterWorkersPostgresConfigContextAppender
+      shardedClusterWorkersPostgresConfigContextAppender;
+
+  @Mock
+  private ShardedClusterWorkersPoolingConfigContextAppender
+      shardedClusterWorkersPoolingConfigContextAppender;
+
+  @Mock
+  private ShardedClusterWorkersPrimaryEndpointsContextAppender
+      shardedClusterWorkersPrimaryEndpointsContextAppender;
 
   @BeforeEach
   void setUp() {
     cluster = Fixtures.shardedCluster().loadDefault().get();
     contextAppender = new ShardedClusterWorkersClustersContextAppender(
+        shardedClusterWorkersInstanceProfileContextAppender,
+        shardedClusterWorkersPostgresConfigContextAppender,
+        shardedClusterWorkersPoolingConfigContextAppender,
         shardedClusterWorkersPrimaryEndpointsContextAppender,
-        shardedClusterQueryRoutersPrimaryEndpointsContextAppender,
         JsonUtil.jsonMapper());
   }
 
   @Test
   void givenCluster_shouldPass() {
-    contextAppender.appendContext(cluster, contextBuilder, Optional.empty());
+    final String postgresVersion = cluster.getSpec().getPostgres().getVersion();
+    contextAppender.appendContext(cluster, contextBuilder, postgresVersion, Optional.empty());
     ArgumentCaptor<List<StackGresCluster>> workers = ArgumentCaptor.captor();
     ArgumentCaptor<List<StackGresCluster>> queryRouters = ArgumentCaptor.captor();
     verify(contextBuilder).workers(workers.capture());
     verify(contextBuilder).queryRouters(queryRouters.capture());
-    verify(shardedClusterWorkersPrimaryEndpointsContextAppender).appendContext(workers.getValue(), contextBuilder);
-    verify(shardedClusterQueryRoutersPrimaryEndpointsContextAppender)
-        .appendContext(queryRouters.getValue(), contextBuilder);
+    assertEquals(cluster.getSpec().getWorkers().getClusters(), workers.getValue().size());
+    assertEquals(List.of(), queryRouters.getValue());
+    ArgumentCaptor<List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>>>
+        indexedWorkers = ArgumentCaptor.captor();
+    ArgumentCaptor<List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>>>
+        indexedQueryRouters = ArgumentCaptor.captor();
+    verify(shardedClusterWorkersInstanceProfileContextAppender).appendContext(
+        eq(cluster), eq(contextBuilder), indexedWorkers.capture(), indexedQueryRouters.capture());
+    assertEquals(
+        workers.getValue(),
+        indexedWorkers.getValue().stream().map(Tuple3::v3).toList());
+    assertEquals(
+        List.of(0, 1),
+        indexedWorkers.getValue().stream().map(Tuple3::v1).toList());
+    assertEquals(
+        queryRouters.getValue(),
+        indexedQueryRouters.getValue().stream().map(Tuple3::v3).toList());
+    verify(shardedClusterWorkersPostgresConfigContextAppender).appendContext(
+        cluster, contextBuilder, postgresVersion,
+        indexedWorkers.getValue(), indexedQueryRouters.getValue());
+    verify(shardedClusterWorkersPoolingConfigContextAppender).appendContext(
+        cluster, contextBuilder,
+        indexedWorkers.getValue(), indexedQueryRouters.getValue());
+    verify(shardedClusterWorkersPrimaryEndpointsContextAppender).appendContext(
+        workers.getValue(), queryRouters.getValue(), contextBuilder);
+  }
+
+  @Test
+  void givenClusterWithQueryRouters_shouldPass() {
+    cluster.getSpec().getCoordinator().setQueryRouterClusters(1);
+    final String postgresVersion = cluster.getSpec().getPostgres().getVersion();
+    contextAppender.appendContext(cluster, contextBuilder, postgresVersion, Optional.empty());
+    ArgumentCaptor<List<StackGresCluster>> queryRouters = ArgumentCaptor.captor();
+    verify(contextBuilder).queryRouters(queryRouters.capture());
+    assertEquals(1, queryRouters.getValue().size());
+    ArgumentCaptor<List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>>>
+        indexedWorkers = ArgumentCaptor.captor();
+    ArgumentCaptor<List<Tuple3<Integer, Optional<StackGresShardedClusterWorker>, StackGresCluster>>>
+        indexedQueryRouters = ArgumentCaptor.captor();
+    verify(shardedClusterWorkersInstanceProfileContextAppender).appendContext(
+        eq(cluster), eq(contextBuilder), indexedWorkers.capture(), indexedQueryRouters.capture());
+    assertEquals(
+        List.of(1024),
+        indexedQueryRouters.getValue().stream().map(Tuple3::v1).toList());
+    assertEquals(
+        queryRouters.getValue(),
+        indexedQueryRouters.getValue().stream().map(Tuple3::v3).toList());
   }
 
 }

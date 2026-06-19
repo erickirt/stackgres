@@ -2,6 +2,9 @@
 
 set -e
 
+rm -f "$PG_UPGRADE_PATH/.major-version-upgrade-fail" \
+  "$PG_UPGRADE_PATH/.major-version-upgrade-continue"
+
 if [ "$ROLLBACK" = true ]
 then
   if [ -f "$PG_UPGRADE_PATH/$SOURCE_VERSION/data/PG_VERSION" ]
@@ -140,7 +143,30 @@ then
     echo
     grep . *.{txt,log} */*.{txt,log} */*/*.{txt,log} */*/*/*.{txt,log} */*/*/*/*.{txt,log} 2>/dev/null | cat >&2
     echo
-    exit 1
+    if [ "$MANUAL_ROLLBACK" != true ]
+    then
+      echo "Major version upgrade failed"
+      exit 1
+    fi
+    # When manual rollback is enabled do not exit immediately. Sleep and wait for the major version
+    # upgrade Job to decide what to do by creating one of the sentinel files below. This keeps the
+    # init container (and therefore the Pod) alive so the major version upgrade can be inspected
+    # and, if desired, performed manually.
+    echo "Major version upgrade failed, waiting for the major version upgrade rollback decision"
+    while true
+    do
+      if [ -f "$PG_UPGRADE_PATH/.major-version-upgrade-fail" ]
+      then
+        echo "Major version upgrade failure confirmed"
+        exit 1
+      fi
+      if [ -f "$PG_UPGRADE_PATH/.major-version-upgrade-continue" ]
+      then
+        echo "Major version upgrade continue requested, assuming the upgrade was performed manually"
+        break
+      fi
+      sleep 1
+    done
   fi
   echo
   grep . *.{txt,log} */*.{txt,log} */*/*.{txt,log} */*/*/*.{txt,log} */*/*/*/*.{txt,log} 2>/dev/null | cat >&2

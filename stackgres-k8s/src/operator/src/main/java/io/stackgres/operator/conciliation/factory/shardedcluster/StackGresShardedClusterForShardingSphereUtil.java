@@ -66,11 +66,11 @@ public interface StackGresShardedClusterForShardingSphereUtil extends StackGresS
 
   class Util extends StackGresShardedClusterForUtil {
     @Override
-    protected void updateCoordinatorSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec) {
+    void updateCoordinatorSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec) {
     }
 
     @Override
-    protected void updateWorkerClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
+    void updateWorkerClusterSpec(StackGresShardedCluster cluster, StackGresClusterSpec spec, int index) {
       if (spec.getManagedSql() == null) {
         spec.setManagedSql(new StackGresClusterManagedSql());
       }
@@ -107,14 +107,14 @@ public interface StackGresShardedClusterForShardingSphereUtil extends StackGresS
   static StackGresCluster getCoordinatorCluster(
       StackGresShardedCluster cluster,
       Optional<StackGresShardedCluster> replicateCluster) {
-    return UTIL.getCoordinatorCluster(cluster, replicateCluster);
+    return UTIL.getBaseCoordinatorCluster(cluster, replicateCluster);
   }
 
   static StackGresCluster getWorkerCluster(
       StackGresShardedCluster cluster,
       int index,
       Optional<StackGresShardedCluster> replicateCluster) {
-    return UTIL.getWorkerCluster(cluster, index, replicateCluster);
+    return UTIL.getBaseWorkerCluster(cluster, index, replicateCluster);
   }
 
   static ComputeNode getCoordinatorComputeNode(

@@ -813,10 +813,12 @@ check_cluster_before_security_upgrade() {
     if [ "${CLUSTER_NAME#${CLUSTER_3_NAME}-}" != "$CLUSTER_NAME" ] \
       && [ "$PREVIOUS_VERSION_AS_NUMBER" -lt "$VERSION_AS_NUMBER_1_19_0" ]
     then
-      PREVIOUS_PATRONI_CONFIG="$(printf '%s' "$PREVIOUS_PATRONI_CONFIG" | jq -Sc '. 
+      PREVIOUS_PATRONI_CONFIG="$(printf '%s' "$PREVIOUS_PATRONI_CONFIG" | jq -Sc '.
         | .postgresql.parameters["cron.database_name"] = "postgres"
         | .postgresql.parameters["cron.host"] = "/var/run/postgresql"
         | .postgresql.parameters.shared_preload_libraries = "pg_cron, " + .postgresql.parameters.shared_preload_libraries
+        | del(.postgresql.parameters["citus.max_client_connections"])
+        | .postgresql.parameters.shared_preload_libraries = "citus, " + .postgresql.parameters.shared_preload_libraries
         ')"
     fi
 

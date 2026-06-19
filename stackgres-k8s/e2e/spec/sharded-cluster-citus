@@ -98,16 +98,6 @@ sharded_check() {
   else
     fail "Sharding workers service is not working"
   fi
-
-  try_function wait_until eval 'run_query -c "$CLUSTER_NAME-coord" -h "$CLUSTER_NAME-reads" -i 1 -p 5432 \
-    -d citus -q "SELECT setting FROM pg_settings WHERE name = '"'"'citus.max_client_connections'"'"'" | grep -xF 30'
-
-  if [ "$EXIT_CODE" = 0 ]
-  then
-    success "Setting citus.max_client_connections is correctly configured"
-  else
-    fail "Setting citus.max_client_connections is not correctly configured"
-  fi
 }
 
 pgbouncer_database_check() {

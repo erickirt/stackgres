@@ -4,7 +4,18 @@ $(document).ready(function(){
         // Get postgres extensions file
         $.ajax({
             url: "https://extensions.stackgres.io/postgres/repository/v2/index.json",
-        }).done(function(extIndex) {
+                }).done(function(extIndex) {
+            function escapeHtml(value) {
+                return String(value)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#39;");
+            }
+            function safeUrl(url) {
+                return /^https?:\/\//i.test(String(url)) ? escapeHtml(url) : "#";
+            }
             let extensions = extIndex.extensions
                 .sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0))
             let postgresVersions = extensions
@@ -32,7 +43,7 @@ $(document).ready(function(){
 
                 tableHtml += `
                     <tr>
-                        <td><a href="` + ext.url + `" target="_blank">` + ext.name + `</a></td>`;
+                        <td><a href="` + safeUrl(ext.url) + `" target="_blank">` + escapeHtml(ext.name) + `</a></td>`;
                 
                 tableHtml += '<td>' + postgresVersions
                   .reduce((tds, pg) => {
@@ -55,10 +66,10 @@ $(document).ready(function(){
                     if (!versions.length) {
                       return ""
                     }
-                    return tds + '<b>PG ' + pg + '</b>: ' + versions.join(", ") + '</br>'
+                    return tds + '<b>PG ' + escapeHtml(pg) + '</b>: ' + escapeHtml(versions.join(", ")) + '</br>'
                   }, "") + '</td>'
 
-                tableHtml += `<td class="capitalFirstLetter">` + ext.description + `</td>
+                tableHtml += `<td class="capitalFirstLetter">` + escapeHtml(ext.description) + `</td>
                 </tr>`;
 
 

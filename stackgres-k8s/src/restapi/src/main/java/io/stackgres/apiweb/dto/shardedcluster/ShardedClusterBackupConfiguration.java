@@ -42,6 +42,12 @@ public class ShardedClusterBackupConfiguration {
 
   private Integer maxRetries;
 
+  private String retryDelay;
+
+  private Integer retryLimit;
+
+  private String retryMaxDelay;
+
   private Boolean retainWalsForUnmanagedLifecycle;
 
   public Integer getRetention() {
@@ -146,6 +152,30 @@ public class ShardedClusterBackupConfiguration {
 
   public void setMaxRetries(Integer maxRetries) {
     this.maxRetries = maxRetries;
+  }
+
+  public String getRetryDelay() {
+    return retryDelay;
+  }
+
+  public void setRetryDelay(String retryDelay) {
+    this.retryDelay = retryDelay;
+  }
+
+  public Integer getRetryLimit() {
+    return retryLimit;
+  }
+
+  public void setRetryLimit(Integer retryLimit) {
+    this.retryLimit = retryLimit;
+  }
+
+  public String getRetryMaxDelay() {
+    return retryMaxDelay;
+  }
+
+  public void setRetryMaxDelay(String retryMaxDelay) {
+    this.retryMaxDelay = retryMaxDelay;
   }
 
   public Boolean getRetainWalsForUnmanagedLifecycle() {

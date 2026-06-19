@@ -14,8 +14,9 @@ import org.slf4j.LoggerFactory;
 public interface RetryUtil {
 
   static int calculateExponentialBackoffDelay(int initial, int maximum, int variation, int retry) {
-    return (int) Math.min(maximum, initial * Math.pow(Math.E, retry))
-        + (variation - new SecureRandom().nextInt(2 * variation));
+    final int jitter = variation <= 0 ? 0
+        : variation - new SecureRandom().nextInt(2 * variation);
+    return Math.max(0, (int) Math.min(maximum, initial * Math.pow(Math.E, retry)) + jitter);
   }
 
   /**
@@ -96,7 +97,7 @@ public interface RetryUtil {
       } catch (RuntimeException ex) {
         if (predicate.test((E) ex)) {
           try {
-            if (retryLimit != null && retryLimit.intValue() < retry) {
+            if (retryLimit != null && retryLimit.intValue() <= retry) {
               throw ex;
             }
             int delay = calculateExponentialBackoffDelay(initial, maximum, variation, retry++);

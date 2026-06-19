@@ -26,6 +26,7 @@ import io.stackgres.common.labels.ShardedClusterLabelMapper;
 import io.stackgres.operator.conciliation.shardedcluster.StackGresShardedClusterContext;
 import io.stackgres.operator.initialization.DefaultShardedClusterPostgresConfigFactory;
 import io.stackgres.operatorframework.resource.ResourceUtil;
+import org.jooq.lambda.tuple.Tuple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,7 +63,7 @@ class ShardedClusterWorkersDefaultPostgresConfigTest {
   void generateResource_whenConfigEmpty_shouldGenerateDefault() {
     cluster.getSpec().getWorkers().getConfigurations()
         .setSgPostgresConfig("workers-postgresconf");
-    when(context.getWorkersPostgresConfig()).thenReturn(Optional.empty());
+    when(context.getWorkersPostgresConfigs()).thenReturn(List.of(Tuple.tuple(0, Optional.empty())));
 
     List<HasMetadata> resources = factory.generateResource(context).toList();
 
@@ -83,7 +84,7 @@ class ShardedClusterWorkersDefaultPostgresConfigTest {
         .withOwnerReferences(List.of(ResourceUtil.getControllerOwnerReference(cluster)))
         .endMetadata()
         .build();
-    when(context.getWorkersPostgresConfig()).thenReturn(Optional.of(existingConfig));
+    when(context.getWorkersPostgresConfigs()).thenReturn(List.of(Tuple.tuple(0, Optional.of(existingConfig))));
 
     List<HasMetadata> resources = factory.generateResource(context).toList();
 
@@ -104,7 +105,7 @@ class ShardedClusterWorkersDefaultPostgresConfigTest {
         .withOwnerReferences(List.of(ResourceUtil.getControllerOwnerReference(cluster)))
         .endMetadata()
         .build();
-    when(context.getWorkersPostgresConfig()).thenReturn(Optional.of(existingConfig));
+    when(context.getWorkersPostgresConfigs()).thenReturn(List.of(Tuple.tuple(0, Optional.of(existingConfig))));
 
     List<HasMetadata> resources = factory.generateResource(context).toList();
 
@@ -113,7 +114,7 @@ class ShardedClusterWorkersDefaultPostgresConfigTest {
 
   @Test
   void generateResource_whenSameAsCoordinatorConfig_shouldNotGenerate() {
-    lenient().when(context.getWorkersPostgresConfig()).thenReturn(Optional.empty());
+    lenient().when(context.getWorkersPostgresConfigs()).thenReturn(List.of(Tuple.tuple(0, Optional.empty())));
 
     List<HasMetadata> resources = factory.generateResource(context).toList();
 

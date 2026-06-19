@@ -192,7 +192,14 @@ public abstract class ReconciliationCycle<T extends ResourceHandlerContext,
           ReconciliationResult<?> reconciliationResult =
               reconciliator.reconcile(client, contextWithExistingAndRequiredResources);
           if (!reconciliationResult.success()) {
-            contextExceptions.put(exisitingContextResource, reconciliationResult.getException());
+            final Exception ex = reconciliationResult.getException();
+            contextExceptions.put(exisitingContextResource, ex);
+            logger.error("{} failed reconciling {}", cycleName, contextId, ex);
+            try {
+              onConfigError(context, exisitingContextResource, ex);
+            } catch (RuntimeException rex) {
+              logger.error("{} failed sending event while reconciling {}", cycleName, contextId, rex);
+            }
           }
         } catch (Exception ex) {
           contextExceptions.put(exisitingContextResource, ex);
@@ -284,7 +291,7 @@ public abstract class ReconciliationCycle<T extends ResourceHandlerContext,
   protected abstract void onConfigError(T context,
       HasMetadata contextResource, Exception ex);
 
-  protected abstract T getContextWithExistingResourcesOnly(T context,
+  public abstract T getContextWithExistingResourcesOnly(T context,
       List<Tuple2<HasMetadata, Optional<HasMetadata>>> existingResourcesOnly);
 
   protected abstract List<HasMetadata> getRequiredResources(T context);
@@ -307,7 +314,7 @@ public abstract class ReconciliationCycle<T extends ResourceHandlerContext,
         .findAny();
   }
 
-  protected abstract List<H> getExistingContextResources();
+  public abstract List<H> getExistingContextResources();
 
   protected abstract H getExistingContextResource(H contextResource);
 

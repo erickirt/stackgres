@@ -1,0 +1,28 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/sharded-dbops/abstract-sharded-dbops"
+
+shell_unit_test() {
+  EXCLUSIVE_OP=true
+  LOCK_SLEEP=0
+  ! (shell_unit_test_sharded_dbops)
+  check_sharded_dbops_result
+}
+
+run_op() {
+  sleep 300
+}
+
+mock kubectl kubectl_mock_overwrite
+
+kubectl_mock_overwrite() {
+  mokked
+  case "$*" in
+    ("get lease -n $LOCK_LEASE_NAMESPACE $LOCK_LEASE_NAME --template="*)
+    return 1
+    ;;
+    *)
+    not_mokked
+    ;;
+  esac
+}

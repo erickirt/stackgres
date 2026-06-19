@@ -171,7 +171,7 @@ public class IoLimitsReconciliator extends SafeReconciliator<StackGresClusterCon
       String mountPoint = fields[4];
       Path normalizedMount = Path.of(mountPoint);
 
-      if (normalizedTarget.equals(normalizedMount)) {
+      if (normalizedTarget.startsWith(normalizedMount)) {
         if (bestMount == null || normalizedMount.toString().length() > bestMount.toString().length()) {
           bestMount = normalizedMount;
           bestMajMin = majMin;

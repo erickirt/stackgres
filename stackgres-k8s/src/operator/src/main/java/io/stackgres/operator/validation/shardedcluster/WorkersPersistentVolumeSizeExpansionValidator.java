@@ -76,17 +76,17 @@ public class WorkersPersistentVolumeSizeExpansionValidator
   }
 
   @Override
-  public void throwValidationError(String message) throws ValidationFailed {
+  protected void throwValidationError(String message) throws ValidationFailed {
     fail(message);
   }
 
   @Override
-  public ResourceFinder<StorageClass> getStorageClassFinder() {
+  protected ResourceFinder<StorageClass> getStorageClassFinder() {
     return finder;
   }
 
   @Override
-  public LabelFactoryForCluster getLabelFactory() {
+  protected LabelFactoryForCluster getLabelFactory() {
     return clusterLabelFactory;
   }
 
@@ -97,7 +97,7 @@ public class WorkersPersistentVolumeSizeExpansionValidator
   }
 
   @Override
-  public ResourceScanner<PersistentVolumeClaim> getPvcScanner() {
+  protected ResourceScanner<PersistentVolumeClaim> getPvcScanner() {
     return pvcScanner;
   }
 }

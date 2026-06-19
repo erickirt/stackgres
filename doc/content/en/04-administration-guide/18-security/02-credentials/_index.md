@@ -159,8 +159,14 @@ spec:
         $$;
     - name: create-database
       script: |
-        SELECT 'CREATE DATABASE myappdb OWNER myapp'
-        WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'myappdb');
+        CREATE EXTENSION IF NOT EXISTS dblink;
+        DO $$
+        BEGIN
+          IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'myappdb') THEN
+            PERFORM dblink_exec('', 'CREATE DATABASE myappdb OWNER myapp');
+          END IF;
+        END
+        $$;
 ```
 
 ### Storing Application Credentials

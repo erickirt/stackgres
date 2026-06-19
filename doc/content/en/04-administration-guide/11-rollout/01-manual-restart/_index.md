@@ -55,7 +55,7 @@ NAMESPACE=default
 SGCLUSTER=example
 ```
 
-> **NOTE**: If any error arises at any point during restart of a cluster please refer to our [Cluster Restart Troubleshooting section]({{% relref "troubleshooting.md/_index.md" %}})
+> **NOTE**: If any error arises at any point during restart of a cluster please refer to our [Cluster Restart Troubleshooting section]({{% relref "04-administration-guide/11-rollout/troubleshooting.md" %}})
 > to find solutions to common issues or, if [no similar issue exists](https://gitlab.com/ongresinc/stackgres/-/issues?scope=all&utf8=%E2%9C%93&state=all),
 > feel free to [open an issue on the StackGres project](https://gitlab.com/ongresinc/stackgres/-/issues/new?issue%5Bassignee_id%5D=&issue%5Bmilestone_id%5D=).
 

@@ -7,7 +7,7 @@ run_op() {
 
   echo "Starting sharded dbops $NORMALIZED_OP_NAME"
 
-  rm -f /tmp/current-dbops
+  rm -f /tmp/current-dbops /tmp/completed-dbops
   local CLUSTER_NAME
   local DBOPS_NAME
   for CLUSTER_NAME in $CLUSTER_NAMES
@@ -59,7 +59,7 @@ EOF
           COMPLETED=false
           continue
         fi
-        printf %s "$DBOPS_NAME" >> /tmp/completed-dbops
+        printf '%s\n' "$DBOPS_NAME" >> /tmp/completed-dbops
         update_status
         if printf %s "$DBOPS_STATUS" | grep -q " $DBOPS_FAILED "
         then
@@ -74,7 +74,7 @@ EOF
     then
       break
     fi
-    sleep 2
+    retry_backoff
   done
 
   echo "Sharded DbOps $NORMALIZED_OP_NAME completed"

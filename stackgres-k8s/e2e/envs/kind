@@ -3,10 +3,10 @@
 KIND_NAME="${KIND_NAME:-kind}"
 KIND_NODES="${KIND_NODES:-1}"
 KIND_LOCK_PATH="${KIND_LOCK_PATH:-$TARGET_PATH/kind-lock}"
-KIND_CONTAINERD_CACHE_PATH="${K8S_CACHE_PATH:-$KIND_CONTAINERD_CACHE_PATH}"
+KIND_CONTAINERD_CACHE_PATH="${K8S_CACHE_HOST_PATH:-$KIND_CONTAINERD_CACHE_PATH}"
 KIND_CONTAINERD_CACHE_RESET="${K8S_CACHE_RESET:-$KIND_CONTAINERD_CACHE_RESET}"
-KIND_LOG_PATH="${KIND_LOG_PATH:-$TARGET_PATH/kind-logs}"
-KIND_LOG_RESOURCES_POLICY_PATH="${KIND_LOG_RESOURCES_POLICY_PATH:-$TARGET_PATH/kind-apiserver-audit-policy}"
+KIND_LOG_HOST_PATH="${KIND_LOG_HOST_PATH:-$TARGET_PATH/kind-logs}"
+KIND_LOG_RESOURCES_POLICY_HOST_PATH="${KIND_LOG_RESOURCES_POLICY_HOST_PATH:-$TARGET_PATH/kind-apiserver-audit-policy}"
 KIND_EXPANDABLE_STORAGE_CLASSNAME="${EXPANDABLE_STORAGE_CLASSNAME:-expandable-sc}"
 K8S_IP_FAMILY="${K8S_IP_FAMILY:-ipv4}"
 KIND_0_15_0="${KIND_0_15_0:-kind-0.15.0}"
@@ -16,9 +16,19 @@ KIND_0_25_0="${KIND_0_25_0:-kind-0.25.0}"
 KIND_0_26_0="${KIND_0_26_0:-kind-0.26.0}"
 KIND_0_29_0="${KIND_0_29_0:-kind-0.29.0}"
 KIND_0_31_0="${KIND_0_31_0:-kind-0.31.0}"
+KIND_0_32_0="${KIND_0_32_0:-kind-0.32.0}"
 
 check_kind_version() {
   if [ "$(echo "$K8S_VERSION" | tr . '\n' | head -n 2 | xargs -I @ printf '%05d' @)" \
+      -ge "$(echo "1.33" | tr . '\n' | xargs -I @ printf '%05d' @)" ]
+  then
+    KIND="$KIND_0_32_0"
+    if ! "$KIND" version | grep -q -F 'kind v0.32.0 '
+    then
+      echo "To run Kubernetes 1.33+ kind v0.32.0 is required"
+      return 1
+    fi
+  elif [ "$(echo "$K8S_VERSION" | tr . '\n' | head -n 2 | xargs -I @ printf '%05d' @)" \
       -ge "$(echo "1.31" | tr . '\n' | xargs -I @ printf '%05d' @)" ]
   then
     KIND="$KIND_0_31_0"
@@ -220,7 +230,8 @@ reset_k8s() {
   delete_k8s
   if [ "$KIND_LOG_RESOURCES" = true ]
   then
-    cat << EOF > "$KIND_LOG_RESOURCES_POLICY_PATH"
+    cat << EOF | docker run --rm -i -u 0 -v "${KIND_LOG_RESOURCES_POLICY_HOST_PATH%/*}:/source" alpine \
+      sh -c "cat > '/source/${KIND_LOG_RESOURCES_POLICY_HOST_PATH##*/}'"
 # Log all requests at the RequestResponse level.
 apiVersion: audit.k8s.io/v1
 kind: Policy
@@ -355,24 +366,26 @@ INNER_EOF
   fi
   if [ -n "$KIND_CONTAINERD_CACHE_PATH" ]
   then
-    mkdir -p "$KIND_CONTAINERD_CACHE_PATH"
+    docker run --rm -u 0 -v "/:/source" alpine \
+      mkdir -p "/source/$KIND_CONTAINERD_CACHE_PATH"
     cat << INNER_EOF
-  - hostPath: $(realpath "$KIND_CONTAINERD_CACHE_PATH")
+  - hostPath: $KIND_CONTAINERD_CACHE_PATH
     containerPath: /containerd-cache
 INNER_EOF
   fi
   if [ "$KIND_LOG" = true ]
   then
-    mkdir -p "$KIND_LOG_PATH"
+    docker run --rm -u 0 -v "${KIND_LOG_HOST_PATH%/*}:/source" alpine \
+      mkdir -p "/source/${KIND_LOG_HOST_PATH##*/}"
     cat << INNER_EOF
-  - hostPath: $KIND_LOG_PATH
+  - hostPath: $KIND_LOG_HOST_PATH
     containerPath: /var/log
 INNER_EOF
   fi
   if [ "$KIND_LOG_RESOURCES" = true ]
   then
     cat << INNER_EOF
-  - hostPath: $KIND_LOG_RESOURCES_POLICY_PATH
+  - hostPath: $KIND_LOG_RESOURCES_POLICY_HOST_PATH
     containerPath: /etc/kubernetes/policies/audit-policy.yaml
     readOnly: true
 INNER_EOF
@@ -832,9 +845,10 @@ get_kind_image() {
 
 get_kind_images() {
   cat << EOF
-v1.35.0@sha256:452d707d4862f52530247495d180205e029056831160e22870e37e3f6c1ac31f
-v1.34.3@sha256:08497ee19eace7b4b5348db5c6a1591d7752b164530a36f855cb0f2bdcbadd48
-v1.33.7@sha256:d26ef333bdb2cbe9862a0f7c3803ecc7b4303d8cea8e814b481b09949d353040
+v1.36.1@sha256:3489c7674813ba5d8b1a9977baea8a6e553784dab7b84759d1014dbd78f7ebd5
+v1.35.5@sha256:ce977ae6d65918d0b58a5f8b5e940429c2ce42fa3a5619ec2bbc60b949c0ac95
+v1.34.8@sha256:02722c2dedddcfc00febf5d27fbeb9b7b2c14294c82109ff4a85d89ac9ba3256
+v1.33.12@sha256:3f5c8443c620245e4d355cfe09e96a91ead32ceaa569d3f1ca9edf0cb2fe2ff4
 v1.32.11@sha256:5fc52d52a7b9574015299724bd68f183702956aa4a2116ae75a63cb574b35af8
 v1.31.14@sha256:6f86cf509dbb42767b6e79debc3f2c32e4ee01386f0489b3b2be24b0a55aac2b
 v1.30.13@sha256:397209b3d947d154f6641f2d0ce8d473732bd91c87d9575ade99049aa33cd648

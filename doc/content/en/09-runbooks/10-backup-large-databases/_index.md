@@ -20,7 +20,7 @@ So here come snapshots, ultimately they are photos of the current state of your 
 ## StackGres
 
 In StackGres, we provide the user with automated backups for PostgreSQL, those backups can be created using snapshots or using Wal-G. The latter option works very well but is constricted to the issues mentioned above when used against very large databases. A way to circumvent that is by using snapshots. Snapshots are provided in StackGres by using Kubernetes VolumeSnapshots called through the CSI driver of your storage of choice.
-In this example we have are using ZFS as our filesystem and OpenEBS with a ZFS CSI driver and MinIO to schedule backups using snapshots and doing PTIR (point-in-time-recovery).
+In this example we are using ZFS as our filesystem and OpenEBS with a ZFS CSI driver and MinIO to schedule backups using snapshots and doing PITR (point-in-time-recovery).
 
 ## Requirements
 

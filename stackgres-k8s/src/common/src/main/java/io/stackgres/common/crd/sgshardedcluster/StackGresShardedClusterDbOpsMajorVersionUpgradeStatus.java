@@ -5,6 +5,7 @@
 
 package io.stackgres.common.crd.sgshardedcluster;
 
+import java.util.List;
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -31,6 +32,8 @@ public class StackGresShardedClusterDbOpsMajorVersionUpgradeStatus {
   @NotNull
   private String sourceSgPostgresConfig;
 
+  private List<String> sgDbOps;
+
   public String getSourcePostgresVersion() {
     return sourcePostgresVersion;
   }
@@ -55,9 +58,18 @@ public class StackGresShardedClusterDbOpsMajorVersionUpgradeStatus {
     this.sourceSgPostgresConfig = sourceSgPostgresConfig;
   }
 
+  public List<String> getSgDbOps() {
+    return sgDbOps;
+  }
+
+  public void setSgDbOps(List<String> sgDbOps) {
+    this.sgDbOps = sgDbOps;
+  }
+
   @Override
   public int hashCode() {
-    return Objects.hash(sourcePostgresVersion, sourceSgPostgresConfig, targetPostgresVersion);
+    return Objects.hash(sgDbOps, sourcePostgresVersion, sourceSgPostgresConfig,
+        targetPostgresVersion);
   }
 
   @Override
@@ -70,7 +82,8 @@ public class StackGresShardedClusterDbOpsMajorVersionUpgradeStatus {
     }
     StackGresShardedClusterDbOpsMajorVersionUpgradeStatus other =
         (StackGresShardedClusterDbOpsMajorVersionUpgradeStatus) obj;
-    return Objects.equals(sourcePostgresVersion, other.sourcePostgresVersion)
+    return Objects.equals(sgDbOps, other.sgDbOps)
+        && Objects.equals(sourcePostgresVersion, other.sourcePostgresVersion)
         && Objects.equals(sourceSgPostgresConfig, other.sourceSgPostgresConfig)
         && Objects.equals(targetPostgresVersion, other.targetPostgresVersion);
   }

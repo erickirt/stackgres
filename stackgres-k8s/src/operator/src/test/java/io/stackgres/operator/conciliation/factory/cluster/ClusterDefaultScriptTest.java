@@ -50,19 +50,20 @@ class ClusterDefaultScriptTest {
   }
 
   @Test
-  void generateResource_defaultFlavor_shouldGenerateTwoScriptEntries() {
+  void generateResource_defaultFlavor_shouldGenerateThreeScriptEntries() {
     List<HasMetadata> resources = clusterDefaultScript.generateResource(context).toList();
 
     assertEquals(1, resources.size());
     StackGresScript script = (StackGresScript) resources.getFirst();
     List<StackGresScriptEntry> entries = script.getSpec().getScripts();
-    assertEquals(2, entries.size());
+    assertEquals(3, entries.size());
     assertEquals("prometheus-postgres-exporter-init", entries.get(0).getName());
     assertEquals("password-update", entries.get(1).getName());
+    assertEquals("prometheus-postgres-exporter-grants", entries.get(2).getName());
   }
 
   @Test
-  void generateResource_babelfishFlavor_shouldGenerateFiveScriptEntries() {
+  void generateResource_babelfishFlavor_shouldGenerateSixScriptEntries() {
     cluster.getSpec().getPostgres().setFlavor("babelfish");
 
     List<HasMetadata> resources = clusterDefaultScript.generateResource(context).toList();
@@ -70,12 +71,13 @@ class ClusterDefaultScriptTest {
     assertEquals(1, resources.size());
     StackGresScript script = (StackGresScript) resources.getFirst();
     List<StackGresScriptEntry> entries = script.getSpec().getScripts();
-    assertEquals(5, entries.size());
+    assertEquals(6, entries.size());
     assertEquals("prometheus-postgres-exporter-init", entries.get(0).getName());
     assertEquals("babelfish-user", entries.get(1).getName());
     assertEquals("babelfish-database", entries.get(2).getName());
     assertEquals("babelfish-init", entries.get(3).getName());
     assertEquals("password-update", entries.get(4).getName());
+    assertEquals("prometheus-postgres-exporter-grants", entries.get(5).getName());
   }
 
   @Test

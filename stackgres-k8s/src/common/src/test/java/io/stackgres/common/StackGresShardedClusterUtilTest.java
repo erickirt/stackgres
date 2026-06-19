@@ -8,6 +8,7 @@ package io.stackgres.common;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.stackgres.common.crd.sgcluster.StackGresClusterPostgres;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedCluster;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterCoordinator;
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
@@ -22,6 +23,8 @@ class StackGresShardedClusterUtilTest {
     cluster.setSpec(new StackGresShardedClusterSpec());
     cluster.getSpec().setCoordinator(new StackGresShardedClusterCoordinator());
     cluster.getSpec().setWorkers(new StackGresShardedClusterWorkers());
+    cluster.getSpec().setPostgres(new StackGresClusterPostgres());
+    cluster.getSpec().getPostgres().setVersion("16.4");
     return cluster;
   }
 
@@ -150,20 +153,81 @@ class StackGresShardedClusterUtilTest {
   }
 
   @Test
-  void coordinatorConfigName_default_returnsCoordinatorClusterName() {
+  void coordinatorConfigName_default_returnsCoordinatorClusterNameWithMajorVersionSuffix() {
     assertEquals(
-        "stackgres-coord",
+        "stackgres-coord-16",
         StackGresShardedClusterUtil.coordinatorConfigName(newCluster()));
   }
 
   @Test
-  void coordinatorConfigName_whenCoordinatorClusterNameSet_usesIt() {
+  void coordinatorConfigName_whenCoordinatorClusterNameSet_usesItWithMajorVersionSuffix() {
     var cluster = newCluster();
     cluster.getSpec().getCoordinator().setClusterName("custom-coordinator");
 
     assertEquals(
-        "custom-coordinator",
+        "custom-coordinator-16",
         StackGresShardedClusterUtil.coordinatorConfigName(cluster));
+  }
+
+  @Test
+  void workerConfigName_default_returnsWorkerClusterNameWithMajorVersionSuffix() {
+    assertEquals(
+        "stackgres-worker0-16",
+        StackGresShardedClusterUtil.workerConfigName(newCluster(), 0));
+    assertEquals(
+        "stackgres-worker2-16",
+        StackGresShardedClusterUtil.workerConfigName(newCluster(), 2));
+  }
+
+  @Test
+  void workerConfigName_whenTemplateSet_usesItWithMajorVersionSuffix() {
+    var cluster = newCluster();
+    cluster.getSpec().getWorkers().setClusterNameTemplate("custom-worker");
+
+    assertEquals(
+        "custom-worker1-16",
+        StackGresShardedClusterUtil.workerConfigName(cluster, 1));
+  }
+
+  @Test
+  void queryRouterConfigName_default_returnsQueryRouterClusterNameWithMajorVersionSuffix() {
+    assertEquals(
+        "stackgres-router0-16",
+        StackGresShardedClusterUtil.queryRouterConfigName(newCluster(), 1024));
+    assertEquals(
+        "stackgres-router3-16",
+        StackGresShardedClusterUtil.queryRouterConfigName(newCluster(), 1027));
+  }
+
+  @Test
+  void queryRouterConfigName_whenTemplateSet_usesItWithMajorVersionSuffix() {
+    var cluster = newCluster();
+    cluster.getSpec().getCoordinator().setQueryRouterClusterNameTemplate("custom-router");
+
+    assertEquals(
+        "custom-router0-16",
+        StackGresShardedClusterUtil.queryRouterConfigName(cluster, 1024));
+  }
+
+  @Test
+  void coordinatorConfigName_withTargetVersion_usesTargetMajorVersionSuffix() {
+    assertEquals(
+        "stackgres-coord-17",
+        StackGresShardedClusterUtil.coordinatorConfigName(newCluster(), "17.10"));
+  }
+
+  @Test
+  void workerConfigName_withTargetVersion_usesTargetMajorVersionSuffix() {
+    assertEquals(
+        "stackgres-worker2-17",
+        StackGresShardedClusterUtil.workerConfigName(newCluster(), 2, "17.10"));
+  }
+
+  @Test
+  void queryRouterConfigName_withTargetVersion_usesTargetMajorVersionSuffix() {
+    assertEquals(
+        "stackgres-router0-17",
+        StackGresShardedClusterUtil.queryRouterConfigName(newCluster(), 1024, "17.10"));
   }
 
   @Test

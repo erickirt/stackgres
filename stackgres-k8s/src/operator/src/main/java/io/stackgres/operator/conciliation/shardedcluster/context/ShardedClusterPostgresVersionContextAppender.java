@@ -41,7 +41,6 @@ public class ShardedClusterPostgresVersionContextAppender
 
   private final EventEmitter<StackGresShardedCluster> eventController;
   private final ShardedClusterCoordinatorPostgresConfigContextAppender clusterCoordinatorPostgresConfigContextAppender;
-  private final ShardedClusterWorkersPostgresConfigContextAppender clusterWorkersPostgresConfigContextAppender;
   private final ShardedClusterRestoreBackupContextAppender clusterRestoreBackupContextAppender;
   private final ShardedClusterReplicateFromContextAppender shardedClusterReplicateFromContextAppender;
   private final ShardedClusterCoordinatorClusterContextAppender clusterCoordinatorContextAppender;
@@ -52,7 +51,6 @@ public class ShardedClusterPostgresVersionContextAppender
   public ShardedClusterPostgresVersionContextAppender(
       EventEmitter<StackGresShardedCluster> eventController,
       ShardedClusterCoordinatorPostgresConfigContextAppender clusterCoordinatorPostgresConfigContextAppender,
-      ShardedClusterWorkersPostgresConfigContextAppender clusterWorkersPostgresConfigContextAppender,
       ShardedClusterRestoreBackupContextAppender clusterRestoreBackupContextAppender,
       ShardedClusterReplicateFromContextAppender shardedClusterReplicateFromContextAppender,
       ShardedClusterCoordinatorClusterContextAppender clusterCoordinatorContextAppender,
@@ -61,7 +59,6 @@ public class ShardedClusterPostgresVersionContextAppender
     this(
         eventController,
         clusterCoordinatorPostgresConfigContextAppender,
-        clusterWorkersPostgresConfigContextAppender,
         clusterRestoreBackupContextAppender,
         shardedClusterReplicateFromContextAppender,
         clusterCoordinatorContextAppender,
@@ -73,7 +70,6 @@ public class ShardedClusterPostgresVersionContextAppender
   public ShardedClusterPostgresVersionContextAppender(
       EventEmitter<StackGresShardedCluster> eventController,
       ShardedClusterCoordinatorPostgresConfigContextAppender clusterCoordinatorPostgresConfigContextAppender,
-      ShardedClusterWorkersPostgresConfigContextAppender clusterWorkersPostgresConfigContextAppender,
       ShardedClusterRestoreBackupContextAppender clusterRestoreBackupContextAppender,
       ShardedClusterReplicateFromContextAppender shardedClusterReplicateFromContextAppender,
       ShardedClusterCoordinatorClusterContextAppender clusterCoordinatorContextAppender,
@@ -82,7 +78,6 @@ public class ShardedClusterPostgresVersionContextAppender
       Map<StackGresComponent, Map<StackGresVersion, List<String>>> supportedPostgresVersions) {
     this.eventController = eventController;
     this.clusterCoordinatorPostgresConfigContextAppender = clusterCoordinatorPostgresConfigContextAppender;
-    this.clusterWorkersPostgresConfigContextAppender = clusterWorkersPostgresConfigContextAppender;
     this.clusterRestoreBackupContextAppender = clusterRestoreBackupContextAppender;
     this.shardedClusterReplicateFromContextAppender = shardedClusterReplicateFromContextAppender;
     this.clusterCoordinatorContextAppender = clusterCoordinatorContextAppender;
@@ -171,11 +166,10 @@ public class ShardedClusterPostgresVersionContextAppender
       cluster.getStatus().setPostgresVersion(version);
       cluster.getStatus().setBuildVersion(buildVersion);
       clusterCoordinatorPostgresConfigContextAppender.appendContext(cluster, contextBuilder, version);
-      clusterWorkersPostgresConfigContextAppender.appendContext(cluster, contextBuilder, version);
       clusterRestoreBackupContextAppender.appendContext(cluster, contextBuilder, version);
       var replicateCluster = shardedClusterReplicateFromContextAppender.appendContext(cluster, contextBuilder);
       var coordinator = clusterCoordinatorContextAppender.appendContext(cluster, contextBuilder, replicateCluster);
-      clusterWorkersContextAppender.appendContext(cluster, contextBuilder, replicateCluster);
+      clusterWorkersContextAppender.appendContext(cluster, contextBuilder, version, replicateCluster);
       clusterExtensionsContextAppender.appendContext(cluster, contextBuilder, version,
           buildVersion, previousVersion, previousBuildVersion, coordinator);
     }
