@@ -519,8 +519,8 @@ install_operator_only() {
         || true)}" \
     --set extensions.cache.hostPath="$(
       # shellcheck disable=SC2015
-      [ "$EXTENSIONS_CACHE_ENABLED" = true ] && [ -n "$EXTENSIONS_CACHE_NODE_PATH" ] \
-        && printf '%s' "$EXTENSIONS_CACHE_NODE_PATH" \
+      [ "$EXTENSIONS_CACHE_ENABLED" = true ] && [ -n "$EXTENSIONS_CACHE_HOST_PATH" ] \
+        && printf '%s' "$EXTENSIONS_CACHE_HOST_PATH" \
         || printf null)" \
     $(set_helm_values_for_developer) \
     $E2E_OPERATOR_OPTS "$@"
@@ -670,8 +670,8 @@ upgrade_operator() {
         || true)}" \
     --set extensions.cache.hostPath="$(
       # shellcheck disable=SC2015
-      [ "$EXTENSIONS_CACHE_ENABLED" = true ] && [ -n "$EXTENSIONS_CACHE_NODE_PATH" ] \
-        && printf '%s' "$EXTENSIONS_CACHE_NODE_PATH" \
+      [ "$EXTENSIONS_CACHE_ENABLED" = true ] && [ -n "$EXTENSIONS_CACHE_HOST_PATH" ] \
+        && printf '%s' "$EXTENSIONS_CACHE_HOST_PATH" \
         || printf null)" \
     --reuse-values \
     $(set_helm_values_for_developer) \
@@ -807,8 +807,8 @@ upgrade_operator_from_private_repository() {
           || true)}" \
       --set extensions.cache.hostPath="$(
         # shellcheck disable=SC2015
-        [ "$EXTENSIONS_CACHE_ENABLED" = true ] && [ -n "$EXTENSIONS_CACHE_NODE_PATH" ] \
-          && printf '%s' "$EXTENSIONS_CACHE_NODE_PATH" \
+        [ "$EXTENSIONS_CACHE_ENABLED" = true ] && [ -n "$EXTENSIONS_CACHE_HOST_PATH" ] \
+          && printf '%s' "$EXTENSIONS_CACHE_HOST_PATH" \
           || printf null)" \
       "$@"
 }
