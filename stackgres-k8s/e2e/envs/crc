@@ -55,7 +55,7 @@ update_crc_config() {
     then
       return 1
     fi
-    wait_until -t 180 eval "crc status | grep '^OpenShift:[[:space:]]\+Running[[:space:]]'"
+    wait_until -t 180 eval "crc status | grep '^OpenShift:[[:space:]]\+\(Starting\|Running\)[[:space:]]'"
     wait_until -t 60 eval "timeout -s KILL 10s $CRC_LOGIN_COMMAND > /dev/null 2>&1"
   fi
 
