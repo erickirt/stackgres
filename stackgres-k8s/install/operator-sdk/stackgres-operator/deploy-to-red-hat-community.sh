@@ -7,6 +7,6 @@ PROJECT_NAME="stackgres-community"
 RENAME_CSV=true
 DO_PIN_IMAGES=true
 OPERATOR_BUNDLE_IMAGE_TAG_SUFFIX=-openshift
-DO_ONBOARD_FBC=true
+DO_ADD_FBC=true
 
 . "$(dirname "$0")/deploy.sh"

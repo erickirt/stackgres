@@ -7,5 +7,6 @@ PROJECT_NAME="stackgres"
 DO_PIN_IMAGES=false
 PREVIOUS_VERSION=none
 DO_ONBOARD_FBC=false
+DO_ADD_FBC=false
 
 . "$(dirname "$0")/deploy.sh"

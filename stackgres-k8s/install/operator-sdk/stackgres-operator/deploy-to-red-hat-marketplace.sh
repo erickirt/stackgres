@@ -6,7 +6,7 @@ FORK_GIT_URL="${FORK_GIT_URL:-$1}"
 PROJECT_NAME="stackgres"
 DO_PIN_IMAGES=true
 OPERATOR_BUNDLE_IMAGE_TAG_SUFFIX=-openshift
-DO_ONBOARD_FBC=true
+DO_ADD_FBC=true
 
 deploy_extra_steps() {
   yq -y -s '.[0] * .[1]' \

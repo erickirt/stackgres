@@ -24,6 +24,20 @@ STACKGRES_WITH_RC_VERSIONS="$({ printf '%s\n' "$STACKGRES_VERSIONS"; } 2>/dev/nu
       echo "$BUNDLE_VERSION"
       PREVIOUS_BUNDLE_VERSION="$BUNDLE_VERSION"
     done
+    # Append release candidates for an upcoming minor that has no stable
+    # release yet (e.g. 1.19.0-rc1 before 1.19.0 exists), so the candidate
+    # channel can still offer the latest pre-release.
+    LATEST_STABLE_MINOR="${PREVIOUS_BUNDLE_VERSION%.*}"
+    { printf '%s\n' "$STACKGRES_RC_VERSIONS"; } 2>/dev/null \
+      | while read RC_VERSION
+        do
+          if [ "${RC_VERSION%.*}" != "$LATEST_STABLE_MINOR" ] \
+            && [ "$(printf '%s\n%s\n' "${RC_VERSION%.*}" "$LATEST_STABLE_MINOR" \
+              | sort -V | tail -n 1)" = "${RC_VERSION%.*}" ]
+          then
+            echo "$RC_VERSION"
+          fi
+        done
     })"
 LATEST_STACKGRES_VERSION="$({ printf '%s\n' "$STACKGRES_VERSIONS"; } 2>/dev/null | tail -n 1)"
 LATEST_STACKGRES_RC_VERSION="$({ printf '%s\n' "$STACKGRES_RC_VERSIONS"; } 2>/dev/null | tail -n 1)"
@@ -32,46 +46,49 @@ then
   LATEST_STACKGRES_VERSION="$LATEST_STACKGRES_RC_VERSION"
 fi
 
+# Print the olm.template.basic for the operator (package + channels + bundles).
+# This is the single source of truth for the version graph; both the test
+# catalog (build_catalog) and the submitted catalog (deploy.sh DO_ADD_FBC)
+# render from it. Customizable via the environment:
+#   PACKAGE_NAME       olm.package name           (default: stackgres)
+#   BUNDLE_NAME_PREFIX CSV name prefix in channels (default: stackgres)
+#   DEFAULT_CHANNEL    package default channel     (default: stable)
+#   ICON               JSON icon object, optional  (e.g. yq -c '.spec.icon[0]' csv)
+build_template() {
+  BUNDLE_TYPE="${1:-}"
+  PACKAGE_NAME="${PACKAGE_NAME:-stackgres}"
+  BUNDLE_NAME_PREFIX="${BUNDLE_NAME_PREFIX:-stackgres}"
+  DEFAULT_CHANNEL="${DEFAULT_CHANNEL:-stable}"
+  TEMPLATE_PATH="$TARGET_PATH/operator-template-$PACKAGE_NAME"
+  rm -rf "$TEMPLATE_PATH"
+  mkdir -p "$TEMPLATE_PATH"
+  get_channels | yq -s -c . > "$TEMPLATE_PATH/channels.yaml"
+  get_bundles | yq -c . > "$TEMPLATE_PATH/bundles.yaml"
+  {
+    printf 'schema: olm.template.basic\n'
+    printf 'entries:\n'
+    printf '  - schema: olm.package\n'
+    printf '    name: %s\n' "$PACKAGE_NAME"
+    printf '    defaultChannel: %s\n' "$DEFAULT_CHANNEL"
+    [ -z "${ICON:-}" ] || printf '    icon: %s\n' "$ICON"
+  } > "$TEMPLATE_PATH/header.yaml"
+  yq -s -y '.[1] as $channels | .[2] as $bundles | .[0] | .entries = .entries + $channels + $bundles' \
+    "$TEMPLATE_PATH/header.yaml" \
+    "$TEMPLATE_PATH/channels.yaml" \
+    "$TEMPLATE_PATH/bundles.yaml"
+}
+
 build_catalog() {
   BUNDLE_TYPE="${1:-}"
   CATALOG_IMAGE_NAME="quay.io/stackgres/operator-catalog:$LATEST_STACKGRES_VERSION$BUNDLE_TYPE"
-  CATALOG_PATH="$TARGET_PATH/operator-catalog"
+  CATALOG_PATH="$TARGET_PATH/operator-catalog-$PACKAGE_NAME"
+  TEMPLATE="$(build_template "$BUNDLE_TYPE")"
   rm -rf "$CATALOG_PATH"
   mkdir -p "$CATALOG_PATH/operator-catalog"
   opm generate dockerfile "$CATALOG_PATH/operator-catalog"
-  echo "StackGres Operator Catalog $LATEST_STACKGRES_VERSION" > "$CATALOG_PATH/README.md"
-  opm init stackgres \
-    --default-channel=stable \
-    --description="$CATALOG_PATH/README.md" \
-    --output yaml > "$CATALOG_PATH/operator-catalog/operator.yaml"
-  STACKGRES_ENTRIES="$(get_stable_entries)"
-  STACKGRES_WITH_RC_ENTRIES="$(get_candidate_entries)"
-  for BUNDLE_VERSION in $STACKGRES_VERSIONS
-  do
-    if ! { printf '%s\n' "$STACKGRES_ENTRIES"; } 2>/dev/null | grep -q "^$BUNDLE_VERSION "
-    then
-      continue
-    fi
-    BUNDLE_IMAGE_NAME="quay.io/stackgres/operator-bundle:$BUNDLE_VERSION$BUNDLE_TYPE"
-    opm render "$BUNDLE_IMAGE_NAME" \
-      --output=yaml >> "$CATALOG_PATH/operator-catalog/operator.yaml"
-  done
-  for BUNDLE_VERSION in $STACKGRES_RC_VERSIONS
-  do
-    if ! { printf '%s\n' "$STACKGRES_WITH_RC_ENTRIES"; } 2>/dev/null | grep -q "^$BUNDLE_VERSION "
-    then
-      continue
-    fi
-    BUNDLE_IMAGE_NAME="quay.io/stackgres/operator-bundle:$BUNDLE_VERSION$BUNDLE_TYPE"
-    opm render "$BUNDLE_IMAGE_NAME" \
-      --output=yaml >> "$CATALOG_PATH/operator-catalog/operator.yaml"
-  done
-  cat << EOF >> "$CATALOG_PATH/operator-catalog/operator.yaml"
----
-$(get_channel stable "$STACKGRES_ENTRIES")
----
-$(get_channel candidate "$STACKGRES_WITH_RC_ENTRIES")
-EOF
+  printf '%s\n' "$TEMPLATE" > "$CATALOG_PATH/operator-catalog.template.yaml"
+  opm alpha render-template basic "$CATALOG_PATH/operator-catalog.template.yaml" \
+    --output=yaml > "$CATALOG_PATH/operator-catalog/operator.yaml"
   opm validate "$CATALOG_PATH/operator-catalog"
   (
   cd "$CATALOG_PATH"
@@ -91,7 +108,7 @@ get_channels() {
 ---
 $(get_channel stable "$STACKGRES_ENTRIES")
 ---
-$(get_channel candidate "$STACKGRES_ENTRIES")
+$(get_channel candidate "$STACKGRES_WITH_RC_ENTRIES")
 EOF
 }
 
@@ -155,7 +172,7 @@ get_channel() {
   { printf '%s\n' "$ENTRIES"; } 2>/dev/null > "$CATALOG_PATH/$NAME-entries"
   cat << EOF
 schema: olm.channel
-package: stackgres
+package: ${PACKAGE_NAME:-stackgres}
 name: $NAME
 entries:
 $(
@@ -181,18 +198,18 @@ get_channel_entry() {
     local BUNDLE_SKIPS_VERSIONS=
   fi
   cat << EOF
-  - name: stackgres.v$BUNDLE_VERSION
+  - name: ${BUNDLE_NAME_PREFIX:-stackgres}.v$BUNDLE_VERSION
 EOF
   if [ -n "$BUNDLE_REPLACES_VERSION" ]
   then
     cat << EOF
-    replaces: stackgres.v$BUNDLE_REPLACES_VERSION
+    replaces: ${BUNDLE_NAME_PREFIX:-stackgres}.v$BUNDLE_REPLACES_VERSION
     skips:
 $(
     for SKIPS_BUNDLE_VERSION in $BUNDLE_SKIPS_VERSIONS
     do
       cat << INNER_EOF
-      - stackgres.$SKIPS_BUNDLE_VERSION
+      - ${BUNDLE_NAME_PREFIX:-stackgres}.v$SKIPS_BUNDLE_VERSION
 INNER_EOF
     done
 )

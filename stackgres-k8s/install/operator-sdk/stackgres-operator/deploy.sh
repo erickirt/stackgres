@@ -50,6 +50,8 @@ git -C "$UPSTREAM_GIT_PATH" fetch
 git -C "$UPSTREAM_GIT_PATH" reset --hard HEAD
 git -C "$UPSTREAM_GIT_PATH" checkout main
 git -C "$UPSTREAM_GIT_PATH" reset --hard origin/main
+git -C "$UPSTREAM_GIT_PATH" stash save --keep-index --include-untracked
+git -C "$UPSTREAM_GIT_PATH" stash drop || true
 
 if ! [ -d "$FORK_GIT_PATH" ] || ! git -C "$FORK_GIT_PATH" remote -v | tr -s '[:blank:]' ' ' | grep -qF "origin $FORK_GIT_URL "
 then
@@ -67,6 +69,8 @@ git -C "$FORK_GIT_PATH" fetch upstream
 git -C "$FORK_GIT_PATH" reset --hard HEAD
 git -C "$FORK_GIT_PATH" checkout main
 git -C "$FORK_GIT_PATH" reset --hard upstream/main
+git -C "$FORK_GIT_PATH" stash save --keep-index --include-untracked
+git -C "$FORK_GIT_PATH" stash drop || true
 
 if [ "$(git -C "$FORK_GIT_PATH" rev-list --max-parents=0 HEAD)" != "$(git -C "$UPSTREAM_GIT_PATH" rev-list --max-parents=0 HEAD)" ]
 then
@@ -167,6 +171,45 @@ then
   fi
 fi
 
+if [ "$DO_ADD_FBC" = true ]
+then
+  CATALOG_NAMES="$(yq -c \
+    '.annotations["com.redhat.openshift.versions"] / "-" | map(sub("^v4\\.";"")|tonumber)|[range(.[0];.[1]+1)]|map("v4." + (.|tostring))' \
+    openshift-operator-bundle/metadata/annotations.yaml)"
+  # ci.yaml: map the single basic template to every supported OCP catalog.
+  cp ci-"$UPSTREAM_SUFFIX".yaml "$FORK_GIT_PATH/operators/$PROJECT_NAME/ci.yaml"
+  cat << EOF >> "$FORK_GIT_PATH/operators/$PROJECT_NAME/ci.yaml"
+fbc:
+  enabled: true
+  version_promotion_strategy: always
+  catalog_mapping:
+    - template_name: catalog.yaml
+      catalog_names: $CATALOG_NAMES
+      type: olm.template.basic
+EOF
+  # Build the olm.template.basic. This is the single source of truth for the
+  # version graph and is produced by the same build-catalog.sh code that builds
+  # the test catalog ('build-catalog.sh build_catalog'), so both stay in sync.
+  mkdir -p "$FORK_GIT_PATH/operators/$PROJECT_NAME/catalog-templates"
+  PACKAGE_NAME="$PROJECT_NAME" \
+  BUNDLE_NAME_PREFIX="$([ "$RENAME_CSV" = true ] && printf %s "$PROJECT_NAME" || printf stackgres)" \
+  DEFAULT_CHANNEL=stable \
+  ICON="$(yq -c '.spec.icon[0]' "$FORK_GIT_PATH/operators/$PROJECT_NAME/$STACKGRES_VERSION/manifests/stackgres.clusterserviceversion.yaml")" \
+    sh build-catalog.sh build_template "$OPERATOR_BUNDLE_IMAGE_TAG_SUFFIX" \
+    > "$FORK_GIT_PATH/operators/$PROJECT_NAME/catalog-templates/catalog.yaml"
+  # Render the catalog once and write it for every supported OCP version. opm
+  # runs locally (no container), so this never creates root-owned files.
+  RENDERED_CATALOG="$(opm alpha render-template basic \
+    "$FORK_GIT_PATH/operators/$PROJECT_NAME/catalog-templates/catalog.yaml" --output=yaml)"
+  for CATALOG_NAME in $(printf %s "$CATALOG_NAMES" | yq -r '.[]')
+  do
+    mkdir -p "$FORK_GIT_PATH/catalogs/$CATALOG_NAME/$PROJECT_NAME"
+    printf '%s\n' "$RENDERED_CATALOG" \
+      > "$FORK_GIT_PATH/catalogs/$CATALOG_NAME/$PROJECT_NAME/catalog.yaml"
+    opm validate "$FORK_GIT_PATH/catalogs/$CATALOG_NAME/$PROJECT_NAME"
+  done
+fi
+
 if [ "$FORK_GIT_PATH/operators/$PROJECT_NAME/$STACKGRES_VERSION"/manifests/stackgres.clusterserviceversion.yaml \
   != "$FORK_GIT_PATH/operators/$PROJECT_NAME/$STACKGRES_VERSION"/manifests/"${PROJECT_NAME}.clusterserviceversion.yaml" ]
 then
@@ -186,59 +229,13 @@ find "$FORK_GIT_PATH/operators/$PROJECT_NAME/$STACKGRES_VERSION" -name '*.yaml' 
 
 operator-sdk bundle validate "$FORK_GIT_PATH/operators/$PROJECT_NAME/$STACKGRES_VERSION"
 
-git -C "$FORK_GIT_PATH" add "operators/$PROJECT_NAME/$STACKGRES_VERSION"
-if [ "$DO_ONBOARD_FBC" = true ]
-then
-  cat << EOF >> "$FORK_GIT_PATH/operators/$PROJECT_NAME/$STACKGRES_VERSION/release-config.yaml"
----
-merge: true
-catalog_templates:
-  - template_name: catalog.yaml
-    channels:
-      - stable
-      - candidate
-    replaces: stackgres.v$PREVIOUS_VERSION
-EOF
-  wget https://raw.githubusercontent.com/redhat-openshift-ecosystem/operator-pipelines/main/fbc/Makefile -O "$FORK_GIT_PATH/operators/$PROJECT_NAME/Makefile"
-  sed -i 's/podman run/docker run/' "$FORK_GIT_PATH/operators/$PROJECT_NAME/Makefile"
-  make -c "$FORK_GIT_PATH/operators/$PROJECT_NAME" fbc-onboarding
-  git -C "$FORK_GIT_PATH" add "operators/$PROJECT_NAME/catalog-templates"
-  git -C "$FORK_GIT_PATH" add "operators/$PROJECT_NAME/ci.yaml"
-  git -C "$FORK_GIT_PATH" add "operators/$PROJECT_NAME/Makefile"
-  git -C "$FORK_GIT_PATH" add "catalogs"/v4.*/"$PROJECT_NAME"
-fi
-# This is a hack and (probably) will be removed sooner than later
 if [ "$DO_ADD_FBC" = true ]
-  cat << EOF >> "$FORK_GIT_PATH/operators/$PROJECT_NAME/ci.yaml"
-fbc:
-  enabled: true
-  version_promotion_strategy: always
-  catalog_mapping:
-    - template_name: catalog.yaml
-      catalog_names: $(yq -c \
-        '.annotations["com.redhat.openshift.versions"] / "-" | map(sub("^v4\\.";"")|tonumber)|[range(.[0];.[1]+1)]|map("v4." + (.|tostring))' \
-        openshift-operator-bundle/metadata/annotations.yaml)
-      type: olm.template.basic
-EOF
-  mkdir -p "$FORK_GIT_PATHoperators/$PROJECT_NAME/catalog-templates"
-  cat << EOF > "$FORK_GIT_PATHoperators/$PROJECT_NAME/catalog.yaml"
----
-schema: olm.template.basic
-entries:
-- defaultChannel: stable
-  icon: $(yq -c '.spec.icon[0]' "$FORK_GIT_PATH/operators/$PROJECT_NAME/$STACKGRES_VERSION/manifests/stackgres.clusterserviceversion.yaml")
-  name: $(yq '.metadata.name|sub("^(?<name>[^.]+).*$";"\(.name)")' "$FORK_GIT_PATH/operators/$PROJECT_NAME/$STACKGRES_VERSION/manifests/stackgres.clusterserviceversion.yaml")
-  schema: olm.package
-EOF
-  sh build-catalog.sh get_channels | yq -c . > "$FORK_GIT_PATH/operators/$PROJECT_NAME/channels.yaml"
-  sh build-catalog.sh get_bundles | yq -c . > "$FORK_GIT_PATH/operators/$PROJECT_NAME/bundles.yaml"
-  yq -s -y '.[1] as $cannels | .[2] as $bundles | .[0] | .entries = .entries + $channels + $bundles' \
-    "$FORK_GIT_PATHoperators/$PROJECT_NAME/catalog.yaml" \
-    "$FORK_GIT_PATH/operators/$PROJECT_NAME/channels.yaml" \
-    "$FORK_GIT_PATHoperators/$PROJECT_NAME/bundles.yaml" \
-    > "$FORK_GIT_PATHoperators/$PROJECT_NAME/catalog-templates/catalog.yaml"
+then
   git -C "$FORK_GIT_PATH" add "operators/$PROJECT_NAME/catalog-templates"
+  git -C "$FORK_GIT_PATH" add "$PWD/$FORK_GIT_PATH/catalogs"/v4.*/"$PROJECT_NAME"
 fi
+
+git -C "$FORK_GIT_PATH" add "operators/$PROJECT_NAME/$STACKGRES_VERSION"
 git -C "$FORK_GIT_PATH" add "operators/$PROJECT_NAME/ci.yaml"
 git -C "$FORK_GIT_PATH" status
 git -C "$FORK_GIT_PATH" commit -s -m "operator $PROJECT_NAME (${STACKGRES_VERSION})"
