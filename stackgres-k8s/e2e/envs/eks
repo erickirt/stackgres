@@ -115,6 +115,11 @@ EOF
 }
 
 reset_k8s() {
+  if [ "$K8S_SKIP_RESET" = "true" ]
+  then
+    exit 1
+  fi
+
   check_eks_version
 
   echo "Setting up eks environment $K8S_EKS_NAME..."
