@@ -64,7 +64,7 @@ spec:
       size: '32Mi'
     scheduling:
       nodeSelector:
-        $NODE_LABEL_KEY: $NODE_LABEL_VALUE"
+        $NODE_LABEL_KEY: "$NODE_LABEL_VALUE"
   nonProductionOptions:
     disableClusterPodAntiAffinity: true
 EOF
