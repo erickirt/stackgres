@@ -53,7 +53,7 @@ spec:
       size: '128Mi'
     scheduling:
       nodeSelector:
-        $NODE_LABEL_KEY: $NODE_LABEL_VALUE"
+        $NODE_LABEL_KEY: "$NODE_LABEL_VALUE"
   sgInstanceProfile: 'size-s'
   nonProductionOptions:
     disableClusterPodAntiAffinity: true
