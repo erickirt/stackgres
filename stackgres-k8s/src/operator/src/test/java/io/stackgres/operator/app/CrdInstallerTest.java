@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResourceBuilder;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ListOptions;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.AnyNamespaceOperation;
@@ -100,11 +101,9 @@ class CrdInstallerTest {
       return emptyOperation;
     });
     when(emptyOperation.inAnyNamespace()).thenReturn(emptyAnyNamespaceOperation);
-    when(emptyAnyNamespaceOperation.list()).thenReturn(emptyOperationList);
+    when(emptyAnyNamespaceOperation.list(any(ListOptions.class))).thenReturn(emptyOperationList);
     when(operation.inAnyNamespace()).thenReturn(anyNamespaceOperation);
-    when(anyNamespaceOperation.list()).thenReturn(operationList);
-    when(operation.inAnyNamespace()).thenReturn(anyNamespaceOperation);
-    when(anyNamespaceOperation.list()).thenReturn(operationList);
+    when(anyNamespaceOperation.list(any(ListOptions.class))).thenReturn(operationList);
     when(operationList.getItems()).thenReturn(List.of(
         new GenericKubernetesResourceBuilder()
         .withKind("SGCluster")
@@ -134,9 +133,9 @@ class CrdInstallerTest {
       return emptyOperation;
     });
     when(emptyOperation.inAnyNamespace()).thenReturn(emptyAnyNamespaceOperation);
-    when(emptyAnyNamespaceOperation.list()).thenReturn(emptyOperationList);
+    when(emptyAnyNamespaceOperation.list(any(ListOptions.class))).thenReturn(emptyOperationList);
     when(operation.inAnyNamespace()).thenReturn(anyNamespaceOperation);
-    when(anyNamespaceOperation.list()).thenReturn(operationList);
+    when(anyNamespaceOperation.list(any(ListOptions.class))).thenReturn(operationList);
     when(operationList.getItems()).thenReturn(List.of(
         new GenericKubernetesResourceBuilder()
         .withKind("SGCluster")
