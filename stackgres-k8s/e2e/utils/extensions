@@ -35,10 +35,10 @@ cache_extensions_index() {
     if [ "$EXTENSIONS_CACHE_ENABLED" = true ] && [ -n "$EXTENSIONS_CACHE_HOST_PATH" ]
     then
       docker run --rm -v "$EXTENSIONS_CACHE_HOST_PATH:/extensions" alpine \
-        sh -c 'cat /extensions/local-extensions-index.json' | jq . > "$TARGET_PATH/extensions-index.json" \
+        sh -c 'cat /extensions/local-extensions-index.json 2>/dev/null' | jq . > "$TARGET_PATH/extensions-index.json" \
         || true
       docker run --rm -v "$EXTENSIONS_CACHE_HOST_PATH:/extensions" alpine \
-        sh -c 'cat /extensions/local-extensions-hashes.json' | jq . > "$TARGET_PATH/extensions-hashes.json" \
+        sh -c 'cat /extensions/local-extensions-hashes.json 2>/dev/null' | jq . > "$TARGET_PATH/extensions-hashes.json" \
         || true
     fi
     if [ ! -s "$TARGET_PATH/extensions-index.json" ]
@@ -50,7 +50,7 @@ cache_extensions_index() {
     then
       curl -s -f "$(get_extensions_metadata_url hashes.json)" \
         > "$TARGET_PATH/extensions-hashes.json"
-      rm "$TARGET_PATH/extensions-unwrapped-hashes.json"
+      rm -f "$TARGET_PATH/extensions-unwrapped-hashes.json"
     fi
     if [ ! -f "$TARGET_PATH/extensions-unwrapped-hashes.json" ]
     then

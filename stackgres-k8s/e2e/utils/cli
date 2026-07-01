@@ -532,7 +532,7 @@ cli_init_e2e_variables() {
   K8S_REUSE=true
   K8S_EXTRA_PORT=30100:9443:0.0.0.0:tcp
   K8S_USE_INTERNAL_REPOSITORY=true
-  K8S_CACHE_HOST_PATH="${K8S_CACHE_HOST_PATH:-~/".stackgres/${KIND_NAME:-kind}-cache"}"
+  K8S_CACHE_HOST_PATH="${K8S_CACHE_HOST_PATH:-"$HOME/.stackgres/${KIND_NAME:-kind}-cache"}"
   KIND_LOG_HOST_PATH="${K8S_CACHE_HOST_PATH}/logs"
   KIND_LOG_RESOURCES_POLICY_HOST_PATH="${K8S_CACHE_HOST_PATH}/kind-apiserver-audit-policy"
   EXTENSIONS_CACHE_ENABLED=true
@@ -545,6 +545,7 @@ cli_init_e2e_variables() {
   E2E_SKIP_LOAD_COMPONENTS=true
   E2E_SKIP_LOAD_EXTENSIONS=true
   E2E_SKIP_UPGRADE_FROM_PREVIOUS_OPERATOR=true
+  E2E_SPEC_TRY_UNINSTALL_ON_FAILURE=true
   E2E_OPERATOR_OPTS="--set-string authentication.password=st4ckgr3s --set-string adminui.service.type=NodePort --set adminui.service.nodePort=30100 --set developer.enableJvmDebug=true $E2E_OPERATOR_OPTS"
   E2E_OPERATOR_BUNDLE_SGCONFIG='{"spec":{"authentication":{"password":"st4ckgr3s"},"adminui":{"service":{"type":"NodePort","nodePort":30100}},"developer":{"enableJvmDebug":true}}}'
   E2E_OPERATOR_BUNDLE_EXTRA_ENV_JSON='{"name":"DEBUG_OPERATOR","value":"true"},'
@@ -599,6 +600,7 @@ cli_export_e2e_variables() {
     E2E_REUSE_OPERATOR_PODS \
     E2E_SKIP_OPERATOR_INSTALL \
     E2E_SKIP_SPEC_UNINSTALL \
+    E2E_SPEC_TRY_UNINSTALL_ON_FAILURE \
     E2E_OPERATOR_PULL_POLICY \
     E2E_FORCE_IMAGE_PULL \
     E2E_SKIP_OPERATOR_LOAD \

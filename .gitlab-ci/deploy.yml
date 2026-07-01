@@ -24,6 +24,7 @@
       do
         export IMAGE_PUSH_NAME="$IMAGE_PUSH_REGISTRY/$IMAGE_NAME:$IMAGE_PUSH_TAG"
         skopeo copy --all --format v2s2 \
+          --authfile="$HOME/.docker/config.json" \
           "docker://$IMAGE_PULL_NAME" \
           "docker://$IMAGE_PUSH_NAME"
       done
