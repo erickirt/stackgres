@@ -29,6 +29,11 @@ set_up_resource_group(){
 }
 
 reset_k8s() {
+  if [ "$K8S_SKIP_RESET" = "true" ]
+  then
+    exit 1
+  fi
+
   set_up_resource_group
 
   if [ -z "$SP_APP_ID" ] || [ -z "$SP_PASSWORD" ]

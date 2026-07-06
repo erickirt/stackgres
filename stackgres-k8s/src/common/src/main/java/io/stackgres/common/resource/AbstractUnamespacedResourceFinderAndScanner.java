@@ -5,6 +5,8 @@
 
 package io.stackgres.common.resource;
 
+import static io.stackgres.common.kubernetesclient.KubernetesClientUtil.listPaginated;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,17 +46,13 @@ public abstract class AbstractUnamespacedResourceFinderAndScanner<T extends HasM
 
   @Override
   public List<T> getResources() {
-    return getOperation(client)
-        .list()
-        .getItems();
+    return listPaginated(getOperation(client));
   }
 
   @Override
   public List<T> getResourcesWithLabels(Map<String, String> labels) {
-    return getOperation(client)
-        .withLabels(labels)
-        .list()
-        .getItems();
+    return listPaginated(getOperation(client)
+        .withLabels(labels));
   }
 
   @Override

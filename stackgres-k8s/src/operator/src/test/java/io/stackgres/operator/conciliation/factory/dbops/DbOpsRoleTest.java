@@ -78,7 +78,11 @@ class DbOpsRoleTest {
   }
 
   @Test
-  void generateResource_whenAlreadyCompleted_shouldReturnEmpty() {
+  void generateResource_whenAlreadyCompleted_shouldStillContainResources() {
+    // The RBAC must outlive the operation completion: the Job is kept after completion and
+    // its pod may still be running, so pruning the ServiceAccount/Role/RoleBinding here
+    // would make the pod's in-flight Kubernetes calls fail with 403 (e.g. a spurious lease
+    // lock loss). The resources are garbage collected with the SGDbOps instead.
     Condition condition = new Condition();
     condition.setType("Completed");
     condition.setStatus("True");
@@ -88,7 +92,10 @@ class DbOpsRoleTest {
 
     List<HasMetadata> resources = dbOpsRole.generateResource(context).toList();
 
-    assertTrue(resources.isEmpty());
+    assertEquals(3, resources.size());
+    assertTrue(resources.stream().anyMatch(ServiceAccount.class::isInstance));
+    assertTrue(resources.stream().anyMatch(Role.class::isInstance));
+    assertTrue(resources.stream().anyMatch(RoleBinding.class::isInstance));
   }
 
   @Test

@@ -8,10 +8,18 @@ package io.stackgres.common.kubernetesclient;
 import static io.stackgres.common.RetryUtil.retry;
 import static io.stackgres.common.RetryUtil.retryWithLimit;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.ListMeta;
+import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.dsl.Listable;
 import io.stackgres.common.OperatorProperty;
 import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
@@ -20,6 +28,13 @@ import org.slf4j.LoggerFactory;
 public interface KubernetesClientUtil {
 
   static Logger LOGGER = LoggerFactory.getLogger(KubernetesClientUtil.class);
+
+  /**
+   * Default number of resources retrieved on each paginated LIST call. May be overridden through
+   * the {@code stackgres.listLimit} property. A value lesser than or equal to {@code 0} disables
+   * pagination falling back to a single unbounded LIST call.
+   */
+  static int DEFAULT_LIST_LIMIT = 500;
 
   /**
    * Return true when exception is a conflict (409) error.
@@ -76,6 +91,58 @@ public interface KubernetesClientUtil {
         OperatorProperty.ERROR_INITIAL_SLEEP_MILLISECONDS.getIntOrDefault(3000),
         OperatorProperty.ERROR_MAX_SLEEP_MILLISECONDS.getIntOrDefault(30000),
         OperatorProperty.ERROR_SLEEP_MILLISECONDS.getIntOrDefault(1000));
+  }
+
+  /**
+   * List all the resources matching the given operation transparently paginating the Kubernetes
+   * API {@code LIST} call using the {@code limit} and {@code continue} parameters.
+   *
+   * <p>This turns a single unbounded LIST (served directly from etcd and potentially very large)
+   * into multiple bounded LIST calls, reducing the memory and load pressure on the Kubernetes API
+   * server and avoiding request timeouts on large installations.</p>
+   *
+   * <p>The page size is taken from the {@code stackgres.listLimit} property (defaulting to
+   * {@link #DEFAULT_LIST_LIMIT}). When it is lesser than or equal to {@code 0} pagination is
+   * disabled and a single unbounded LIST is performed.</p>
+   *
+   * <p>Any label or field selector already applied to the operation (e.g. through
+   * {@code withLabels(...)}) is preserved on each paginated call.</p>
+   */
+  @SuppressWarnings("unchecked")
+  static <T extends HasMetadata> List<T> listPaginated(
+      Listable<? extends KubernetesResourceList<T>> listable) {
+    return (List<T>) listPaginatedHasMetadata(listable);
+  }
+
+  /**
+   * Same as {@link #listPaginated(Listable)} but returning a {@code List<HasMetadata>}. Useful when
+   * the concrete resource type can not be inferred (e.g. when the operation is typed with a wildcard
+   * upper bounded by {@link HasMetadata}).
+   */
+  static List<HasMetadata> listPaginatedHasMetadata(
+      Listable<? extends KubernetesResourceList<? extends HasMetadata>> listable) {
+    final int limit = OperatorProperty.LIST_LIMIT.getIntOrDefault(DEFAULT_LIST_LIMIT);
+    if (limit <= 0) {
+      return new ArrayList<>(listable.list().getItems());
+    }
+    final List<HasMetadata> items = new ArrayList<>();
+    String continueToken = null;
+    do {
+      final KubernetesResourceList<? extends HasMetadata> list = listable.list(
+          new ListOptionsBuilder()
+          .withLimit((long) limit)
+          .withContinue(continueToken)
+          .build());
+      final List<? extends HasMetadata> pageItems = list.getItems();
+      if (pageItems != null) {
+        items.addAll(pageItems);
+      }
+      continueToken = Optional.ofNullable(list.getMetadata())
+          .map(ListMeta::getContinue)
+          .filter(Predicate.not(String::isBlank))
+          .orElse(null);
+    } while (continueToken != null);
+    return items;
   }
 
   static <I> List<I> listOrEmptyOnForbiddenOrNotFound(Supplier<List<I>> supplier) {

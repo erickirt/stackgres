@@ -58,6 +58,7 @@ reuse_k8s() {
 }
 
 config_k8s() {
+  kubectl annotate storageclass gp2 storageclass.kubernetes.io/is-default-class=true
   eksctl utils associate-iam-oidc-provider --region="$K8S_EKS_REGION" --cluster="$K8S_EKS_NAME" --approve
   eksctl create iamserviceaccount \
       --region "$K8S_EKS_REGION" \
@@ -115,6 +116,11 @@ EOF
 }
 
 reset_k8s() {
+  if [ "$K8S_SKIP_RESET" = "true" ]
+  then
+    exit 1
+  fi
+
   check_eks_version
 
   echo "Setting up eks environment $K8S_EKS_NAME..."

@@ -22,15 +22,45 @@ acquire_lock() {
   try_lock true
 }
 
+# Renews the lease every LOCK_SLEEP seconds. A renewal failure is only fatal when the
+# lease has been confirmed taken over by another holder or has expired (try_lock returns
+# 2); a transient failure to reach the API server (try_lock returns 1) must NOT be
+# mistaken for a lost lock while the lease is still validly held: it is tolerated and
+# retried until either the renewal succeeds again or the lease can no longer possibly be
+# held by us, i.e. LOCK_DURATION seconds elapse without a successful renewal. This mirrors
+# the renew deadline of Kubernetes lease based leader election and prevents a momentary
+# API hiccup from aborting a long running operation (e.g. a major version upgrade) that
+# still safely holds the lock.
 maintain_lock() {
+  local LAST_RENEW ATTEMPT RC
+  LAST_RENEW="$(date +%s)"
   while true
   do
     sleep "$LOCK_SLEEP"
-    try_lock false
-    if [ "$?" != 0 ]
-    then
+    # Captured before the renewal so that, on success, the deadline is computed from a
+    # time no later than the renewTime actually written: we always give up at or before
+    # the lease really expires, never after, so two holders can not overlap.
+    ATTEMPT="$(date +%s)"
+    # The exit code is captured with `|| RC=$?` so that a non-zero renewal result does
+    # not abort the loop under `set -e` (run-dbops.sh runs maintain_lock with set -e):
+    # whether a failure is fatal is decided below from RC, not by set -e.
+    RC=0
+    try_lock false || RC="$?"
+    case "$RC" in
+      (0)
+      LAST_RENEW="$ATTEMPT"
+      ;;
+      (2)
       return 1
-    fi
+      ;;
+      (*)
+      if [ "$(( $(date +%s) - LAST_RENEW ))" -ge "$LOCK_DURATION" ]
+      then
+        echo "Could not renew lease $LOCK_LEASE_NAME within $LOCK_DURATION seconds, giving up the lock"
+        return 1
+      fi
+      ;;
+    esac
   done
 }
 
@@ -106,14 +136,17 @@ try_lock() {
         return $?
       fi
     else
+      # Confirmed loss: the lease is held by another identity (return 2 so maintain_lock
+      # gives up the lock immediately instead of treating it as a transient failure).
       echo "Lease already held by $HOLDER_IDENTITY until $(date -d @"$EXPIRY_TIMESTAMP" -Iseconds --utc)"
-      return 1
+      return 2
     fi
   else
     if ! "$AQUIRE" && [ "$CURRENT_TIMESTAMP" -gt "$EXPIRY_TIMESTAMP" ]
     then
+      # Confirmed loss: our own lease has expired (return 2, see above).
       echo "Lease expired!"
-      return 1
+      return 2
     fi
   fi
   local NOW_RFC3339
@@ -151,7 +184,8 @@ try_lock() {
       try_lock true
       return $?
     fi
-    return 1
+    # Confirmed loss: the lease was taken over by another holder while we renewed.
+    return 2
   fi
 }
 

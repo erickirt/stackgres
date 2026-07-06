@@ -1,0 +1,49 @@
+#!/bin/sh
+
+. "$TEST_SHELL_PATH/dbops/abstract-dbops"
+
+# A transient failure to read the Lease while renewing the lock (e.g. a momentary
+# API server hiccup under load during a long operation like a major version upgrade)
+# must NOT be mistaken for a lost lock: the lease is still validly held until
+# renewTime + LOCK_DURATION, so maintain_lock has to keep retrying until either the
+# renewal succeeds again or the lease can no longer be held by us. Here the first
+# renewal reads fail and then recover; the lease is never taken over nor expired, so
+# the operation must complete normally without LOCK_LOST.
+shell_unit_test() {
+  EXCLUSIVE_OP=true
+  LOCK_SLEEP=1
+  LOCK_GET_RETRIES=1
+  LOCK_GET_RETRY_DELAY=0
+  echo 0 > "$TEST_TARGET_PATH/lock_get_count"
+  shell_unit_test_dbops
+  check_dbops_result
+  grep -q '^LOCK_LOST=false$' "$SHARED_PATH/$KEBAB_OP_NAME.out"
+  grep -q '^EXIT_CODE=0$' "$SHARED_PATH/$KEBAB_OP_NAME.out"
+}
+
+run_op() {
+  sleep 4
+}
+
+mock kubectl kubectl_mock_overwrite
+
+kubectl_mock_overwrite() {
+  mokked
+  case "$*" in
+    ("get lease -n $LOCK_LEASE_NAMESPACE $LOCK_LEASE_NAME --template="*)
+    local GET_COUNT
+    GET_COUNT="$(cat "$TEST_TARGET_PATH/lock_get_count")"
+    echo "$((GET_COUNT + 1))" > "$TEST_TARGET_PATH/lock_get_count"
+    # First read acquires the lock; the next two renewal reads simulate a transient
+    # API server outage; every read after that recovers (handled by the base mock).
+    if [ "$GET_COUNT" -ge 1 ] && [ "$GET_COUNT" -le 2 ]
+    then
+      return 1
+    fi
+    not_mokked
+    ;;
+    *)
+    not_mokked
+    ;;
+  esac
+}

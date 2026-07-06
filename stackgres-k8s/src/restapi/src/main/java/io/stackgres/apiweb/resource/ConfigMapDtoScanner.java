@@ -5,6 +5,8 @@
 
 package io.stackgres.apiweb.resource;
 
+import static io.stackgres.common.kubernetesclient.KubernetesClientUtil.listPaginated;
+
 import java.util.List;
 import java.util.Map;
 
@@ -27,21 +29,21 @@ public class ConfigMapDtoScanner implements ResourceScanner<ConfigMapDto> {
 
   @Override
   public List<ConfigMapDto> getResources() {
-    return client.configMaps().list().getItems().stream()
+    return listPaginated(client.configMaps()).stream()
         .map(ConfigMapMapper::map)
         .toList();
   }
 
   @Override
   public List<ConfigMapDto> getResourcesWithLabels(Map<String, String> labels) {
-    return client.configMaps().withLabels(labels).list().getItems().stream()
+    return listPaginated(client.configMaps().withLabels(labels)).stream()
         .map(ConfigMapMapper::map)
         .toList();
   }
 
   @Override
   public List<ConfigMapDto> getResourcesInNamespace(String namespace) {
-    return client.configMaps().inNamespace(namespace).list().getItems().stream()
+    return listPaginated(client.configMaps().inNamespace(namespace)).stream()
         .map(ConfigMapMapper::map)
         .toList();
   }

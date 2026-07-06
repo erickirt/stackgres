@@ -5,6 +5,8 @@
 
 package io.stackgres.apiweb.resource;
 
+import static io.stackgres.common.kubernetesclient.KubernetesClientUtil.listPaginated;
+
 import java.util.List;
 import java.util.Map;
 
@@ -27,21 +29,21 @@ public class SecretDtoScanner implements ResourceScanner<SecretDto> {
 
   @Override
   public List<SecretDto> getResources() {
-    return client.secrets().list().getItems().stream()
+    return listPaginated(client.secrets()).stream()
         .map(SecretMapper::map)
         .toList();
   }
 
   @Override
   public List<SecretDto> getResourcesWithLabels(Map<String, String> labels) {
-    return client.secrets().withLabels(labels).list().getItems().stream()
+    return listPaginated(client.secrets().withLabels(labels)).stream()
         .map(SecretMapper::map)
         .toList();
   }
 
   @Override
   public List<SecretDto> getResourcesInNamespace(String namespace) {
-    return client.secrets().inNamespace(namespace).list().getItems().stream()
+    return listPaginated(client.secrets().inNamespace(namespace)).stream()
         .map(SecretMapper::map)
         .toList();
   }
