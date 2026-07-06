@@ -5,16 +5,16 @@
   ubi8_micro_image: registry.access.redhat.com/ubi8/ubi-micro:1782810419
   ubi9_minimal_image: registry.access.redhat.com/ubi9/ubi-minimal:1782797355
   admin_ui_build_image: registry.access.redhat.com/ubi8/nodejs-20:1-1778648142
-  admin_ui_nginx_image: registry.access.redhat.com/ubi8/nginx-124:1782362271
+  admin_ui_nginx_image: registry.access.redhat.com/ubi8/nginx-124:1782937527
   pglambda_nodejs_image: registry.access.redhat.com/ubi8/nodejs-18:1-140
 .pinned_images:
   ci_image: &ci_image registry.gitlab.com/ongresinc/stackgres/ci@sha256:1d9b332cdc075a00841bf6ee7a7c53ce27ee0f46f14937eba87c3fa85037624c
-  jdk_build_image: &jdk_build_image registry.gitlab.com/ongresinc/stackgres/builder@sha256:44734ffbac48cdcfabebb1fa3dce60804669b7877c5e6ef98cd0c713d11ab4ec
+  jdk_build_image: &jdk_build_image registry.gitlab.com/ongresinc/stackgres/builder@sha256:1c60f1afb53a382a5037c49e52e01bc3a07ae6f904ad94509df27ea2622acb51
   jdk_runtime_image: &jdk_runtime_image registry.access.redhat.com/ubi9/openjdk-21@sha256:a7a263e496bdc62bc7b9e8704d7e9ed5fd391418927fd505f56c8ba8c2e7197a
   ubi8_micro_image: &ubi8_micro_image registry.access.redhat.com/ubi8/ubi-micro@sha256:a75feff77922ee018f8247d38de068d45f38b6eada96b57aa178986df73068a4
   ubi9_minimal_image: &ubi9_minimal_image registry.access.redhat.com/ubi9/ubi-minimal@sha256:463cae32c6f6f5594b11a5c22de275016bd8545ce58a6373388e8b24f13fc15c
   admin_ui_build_image: &admin_ui_build_image registry.access.redhat.com/ubi8/nodejs-20@sha256:7abf4acec0ad770ded216a3cfd45a533998c66056f487b5d5396a98ecbdf0512
-  admin_ui_nginx_image: &admin_ui_nginx_image registry.access.redhat.com/ubi8/nginx-124@sha256:a2912e90e51745e3864d6219a0bc2a81c5998f3e8bfdda73f2ce6ef297521f31
+  admin_ui_nginx_image: &admin_ui_nginx_image registry.access.redhat.com/ubi8/nginx-124@sha256:21037a7392f5654f02c18d5a5475428ae3a747e40b5af9661d47efc17762afe1
   pglambda_nodejs_image: &pglambda_nodejs_image registry.access.redhat.com/ubi8/nodejs-18@sha256:77d47e5c63e2a45a5d6a5546b145278f04a1a20fcf01b8a3ffaeb1f49056cf11
 build_repository: registry.gitlab.com/ongresinc/stackgres/build
 platforms:
