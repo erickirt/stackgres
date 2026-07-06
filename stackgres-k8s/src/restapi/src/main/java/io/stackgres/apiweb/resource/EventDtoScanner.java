@@ -5,6 +5,8 @@
 
 package io.stackgres.apiweb.resource;
 
+import static io.stackgres.common.kubernetesclient.KubernetesClientUtil.listPaginated;
+
 import java.util.List;
 import java.util.Map;
 
@@ -27,21 +29,21 @@ public class EventDtoScanner implements ResourceScanner<EventDto> {
 
   @Override
   public List<EventDto> getResources() {
-    return client.v1().events().list().getItems().stream()
+    return listPaginated(client.v1().events()).stream()
         .map(EventMapper::map)
         .toList();
   }
 
   @Override
   public List<EventDto> getResourcesWithLabels(Map<String, String> labels) {
-    return client.v1().events().withLabels(labels).list().getItems().stream()
+    return listPaginated(client.v1().events().withLabels(labels)).stream()
         .map(EventMapper::map)
         .toList();
   }
 
   @Override
   public List<EventDto> getResourcesInNamespace(String namespace) {
-    return client.v1().events().inNamespace(namespace).list().getItems().stream()
+    return listPaginated(client.v1().events().inNamespace(namespace)).stream()
         .map(EventMapper::map)
         .toList();
   }

@@ -93,6 +93,12 @@ run() {
     elif [ "$EXCLUSIVE_OP" = true ] && ! kill -0 "$TRY_LOCK_PID" 2>/dev/null
     then
       kill_with_childs "$TIMEOUT_PID"
+      # Surface why the lock was lost (the reason is written by maintain_lock/try_lock to
+      # the try-lock file, which is otherwise not part of the container output): without
+      # it a lost lock is indistinguishable between a takeover, an expiry or an inability
+      # to renew, making failures like a spurious lock loss impossible to diagnose.
+      echo "Lock lost:"
+      cat "$SHARED_PATH/try-lock"
       echo "LOCK_LOST=true" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
       echo "TIMED_OUT=false" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"
       echo "EXIT_CODE=1" >> "$SHARED_PATH/$KEBAB_OP_NAME.out"

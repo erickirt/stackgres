@@ -5,6 +5,8 @@
 
 package io.stackgres.operator.app;
 
+import static io.stackgres.common.kubernetesclient.KubernetesClientUtil.listPaginated;
+
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.List;
@@ -110,17 +112,12 @@ public class CrdInstaller {
     return Optional.of(allowedNamespaces)
         .filter(Predicate.not(List::isEmpty))
         .map(allowedNamespaces -> allowedNamespaces.stream()
-            .flatMap(allowedNamespace -> Optional
-                .ofNullable(genericKubernetesResources
-                    .inNamespace(allowedNamespace)
-                    .list()
-                    .getItems()).stream())
+            .flatMap(allowedNamespace -> listPaginated(genericKubernetesResources
+                .inNamespace(allowedNamespace)).stream())
             .reduce(Seq.<GenericKubernetesResource>of(), (seq, items) -> seq.append(items), (u, v) -> v)
             .toList())
-        .orElseGet(() -> genericKubernetesResources
-            .inAnyNamespace()
-            .list()
-            .getItems());
+        .orElseGet(() -> listPaginated(genericKubernetesResources
+            .inAnyNamespace()));
   }
 
   public void installCustomResourceDefinitions() {

@@ -6,6 +6,7 @@
 package io.stackgres.operator.conciliation;
 
 import static io.stackgres.common.kubernetesclient.KubernetesClientUtil.listOrEmptyOnForbiddenOrNotFound;
+import static io.stackgres.common.kubernetesclient.KubernetesClientUtil.listPaginatedHasMetadata;
 
 import java.util.List;
 import java.util.Map;
@@ -49,11 +50,10 @@ public abstract class AbstractDeployedResourcesScanner<T extends CustomResource<
         .values()
         .stream()
         .filter(op -> !genericLabels.isEmpty())
-        .<HasMetadata>flatMap(streamList(op -> listOrEmptyOnForbiddenOrNotFound(() -> op.apply(client)
+        .<HasMetadata>flatMap(streamList(op -> listOrEmptyOnForbiddenOrNotFound(
+            () -> listPaginatedHasMetadata(op.apply(client)
             .inNamespace(config.getMetadata().getNamespace())
-            .withLabels(genericLabels)
-            .list()
-            .getItems())))
+            .withLabels(genericLabels)))))
         .toList();
     final List<HasMetadata> inNamespaceRequired = requiredResources
         .stream()
@@ -85,18 +85,16 @@ public abstract class AbstractDeployedResourcesScanner<T extends CustomResource<
             .filter(Predicate.not(List::isEmpty))
             .map(allowedNamespaces -> allowedNamespaces.stream()
                 .flatMap(allowedNamespace -> Optional.of(
-                    listOrEmptyOnForbiddenOrNotFound(() -> op.apply(client)
+                    listOrEmptyOnForbiddenOrNotFound(
+                        () -> listPaginatedHasMetadata(op.apply(client)
                         .inNamespace(allowedNamespace)
-                        .withLabels(crossNamespaceLabels)
-                        .list()
-                        .getItems())).stream())
+                        .withLabels(crossNamespaceLabels)))).stream())
                 .reduce(Seq.<HasMetadata>of(), (seq, items) -> seq.append(items), (u, v) -> v)
                 .toList())
-            .orElseGet(() -> listOrEmptyOnForbiddenOrNotFound(() -> op.apply(client)
+            .orElseGet(() -> listOrEmptyOnForbiddenOrNotFound(
+                () -> listPaginatedHasMetadata(op.apply(client)
                 .inAnyNamespace()
-                .withLabels(crossNamespaceLabels)
-                .list()
-                .getItems())
+                .withLabels(crossNamespaceLabels)))
                 .stream()
                 .map(HasMetadata.class::cast)
                 .toList()))

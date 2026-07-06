@@ -6,6 +6,7 @@
 package io.stackgres.common.resource;
 
 import static io.stackgres.common.kubernetesclient.KubernetesClientUtil.listOrEmptyOnForbiddenOrNotFound;
+import static io.stackgres.common.kubernetesclient.KubernetesClientUtil.listPaginated;
 
 import java.util.List;
 import java.util.Map;
@@ -61,11 +62,9 @@ public abstract class AbstractCustomResourceScanner<T extends CustomResource<?, 
                     .withName(crdName)
                     .get() != null))
                 .filter(crdFound -> crdFound)
-                .map(crdFound -> listOrEmptyOnForbiddenOrNotFound(() -> client
+                .map(crdFound -> listOrEmptyOnForbiddenOrNotFound(() -> listPaginated(client
                     .resources(customResourceClass, customResourceListClass)
-                    .inNamespace(allowedNamespace)
-                    .list()
-                    .getItems()))
+                    .inNamespace(allowedNamespace))))
                 .stream())
             .reduce(Seq.<T>of(), (seq, items) -> seq.append(items), (u, v) -> v)
             .toList())
@@ -76,10 +75,9 @@ public abstract class AbstractCustomResourceScanner<T extends CustomResource<?, 
                 .withName(crdName)
                 .get() != null))
             .filter(crdFound -> crdFound)
-            .map(crdFound -> client.resources(customResourceClass, customResourceListClass)
-                .inAnyNamespace()
-                .list()
-                .getItems()));
+            .map(crdFound -> listPaginated(client
+                .resources(customResourceClass, customResourceListClass)
+                .inAnyNamespace())));
   }
 
   @Override
@@ -92,10 +90,9 @@ public abstract class AbstractCustomResourceScanner<T extends CustomResource<?, 
             .withName(crdName)
             .get() != null))
         .filter(crdFound -> crdFound)
-        .map(crdFound -> client.resources(customResourceClass, customResourceListClass)
-            .inNamespace(namespace)
-            .list()
-            .getItems());
+        .map(crdFound -> listPaginated(client
+            .resources(customResourceClass, customResourceListClass)
+            .inNamespace(namespace)));
   }
 
   @Override
@@ -103,25 +100,21 @@ public abstract class AbstractCustomResourceScanner<T extends CustomResource<?, 
     return Optional.of(allowedNamespaces)
         .filter(Predicate.not(List::isEmpty))
         .map(allowedNamespaces -> allowedNamespaces.stream()
-            .flatMap(allowedNamespace -> Optional
-                .ofNullable(client.resources(customResourceClass, customResourceListClass)
-                    .inNamespace(allowedNamespace)
-                    .list()
-                    .getItems()).stream())
+            .flatMap(allowedNamespace -> listPaginated(client
+                .resources(customResourceClass, customResourceListClass)
+                .inNamespace(allowedNamespace)).stream())
             .reduce(Seq.<T>of(), (seq, items) -> seq.append(items), (u, v) -> v)
             .toList())
-        .orElseGet(() -> client.resources(customResourceClass, customResourceListClass)
-            .inAnyNamespace()
-            .list()
-            .getItems());
+        .orElseGet(() -> listPaginated(client
+            .resources(customResourceClass, customResourceListClass)
+            .inAnyNamespace()));
   }
 
   @Override
   public List<T> getResources(@Nullable String namespace) {
-    return client.resources(customResourceClass, customResourceListClass)
-        .inNamespace(namespace)
-        .list()
-        .getItems();
+    return listPaginated(client
+        .resources(customResourceClass, customResourceListClass)
+        .inNamespace(namespace));
   }
 
   @Override
@@ -129,28 +122,24 @@ public abstract class AbstractCustomResourceScanner<T extends CustomResource<?, 
     return Optional.of(allowedNamespaces)
         .filter(Predicate.not(List::isEmpty))
         .map(allowedNamespaces -> allowedNamespaces.stream()
-            .flatMap(allowedNamespace -> Optional
-                .ofNullable(client.resources(customResourceClass, customResourceListClass)
-                    .inNamespace(allowedNamespace)
-                    .list()
-                    .getItems()).stream())
+            .flatMap(allowedNamespace -> listPaginated(client
+                .resources(customResourceClass, customResourceListClass)
+                .inNamespace(allowedNamespace)).stream())
             .reduce(Seq.<T>of(), (seq, items) -> seq.append(items), (u, v) -> v)
             .toList())
-        .orElseGet(() -> client.resources(customResourceClass, customResourceListClass)
+        .orElseGet(() -> listPaginated(client
+            .resources(customResourceClass, customResourceListClass)
             .inAnyNamespace()
-            .withLabels(labels)
-            .list()
-            .getItems());
+            .withLabels(labels)));
   }
 
   @Override
   public @NotNull List<@NotNull T> getResourcesWithLabels(
       String namespace, Map<String, String> labels) {
-    return client.resources(customResourceClass, customResourceListClass)
+    return listPaginated(client
+        .resources(customResourceClass, customResourceListClass)
         .inNamespace(namespace)
-        .withLabels(labels)
-        .list()
-        .getItems();
+        .withLabels(labels));
   }
 
 }

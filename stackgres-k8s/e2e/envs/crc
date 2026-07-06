@@ -55,7 +55,7 @@ update_crc_config() {
     then
       return 1
     fi
-    wait_until -t 180 eval "crc status | grep '^OpenShift:[[:space:]]\+Running[[:space:]]'"
+    wait_until -t 180 eval "crc status | grep '^OpenShift:[[:space:]]\+\(Starting\|Running\)[[:space:]]'"
     wait_until -t 60 eval "timeout -s KILL 10s $CRC_LOGIN_COMMAND > /dev/null 2>&1"
   fi
 
@@ -67,6 +67,10 @@ update_crc_config() {
   ~/.crc/bin/oc/oc adm policy add-scc-to-user hostmount-anyuid -n local-path-storage -z local-path-provisioner-service-account
   kubectl get storageclass -o name | xargs -I % kubectl annotate % --overwrite storageclass.kubernetes.io/is-default-class=false
   kubectl annotate storageclass local-path --overwrite storageclass.kubernetes.io/is-default-class=true
+  ~/.crc/bin/oc/oc get clusterversion version -o=jsonpath='{ .spec.capabilities.additionalEnabledCapabilities }' | grep -qF '"CloudCredential"' \
+    || ~/.crc/bin/oc/oc patch clusterversion version --type=json -p '[{"op": "add", "path": "/spec/capabilities/additionalEnabledCapabilities/-", "value": "CloudCredential"}]'
+  ~/.crc/bin/oc/oc patch clusterversion version --type='json' -p='[{"op": "replace", "path": "/spec/overrides/0/unmanaged", "value": false}]'
+  ~/.crc/bin/oc/oc patch clusterversion version --type='json' -p='[{"op": "replace", "path": "/spec/overrides/1/unmanaged", "value": false}]'
 }
 
 update_k8s_config() {
