@@ -1,19 +1,5 @@
 #!/bin/sh
 
-# Regression test for the operator leader-election lock.
-#
-# It isolates the running operator from the Kubernetes API server with a deny-all
-# NetworkPolicy AND resets the operator's already-established API server connections
-# (a NetworkPolicy only blocks *new* connections; conntrack keeps existing ones alive),
-# then verifies that:
-#   1. the operator was holding the leader lease,
-#   2. the lease is lost while the operator cannot reach the API server, and
-#   3. the operator re-acquires and renews the lease once connectivity is restored.
-#
-# Step 3 is the actual regression guard: the previous LeaderElector-based implementation
-# completed its election future on loss and never re-acquired, so the operator stayed idle
-# as a non-leader forever.
-
 e2e_exclusive_lock() {
   true
 }
@@ -29,12 +15,6 @@ OPERATOR_REGRESSION_LOCK_POLL_INTERVAL="${OPERATOR_REGRESSION_LOCK_POLL_INTERVAL
 OPERATOR_REGRESSION_NETTOOLS_IMAGE="${OPERATOR_REGRESSION_NETTOOLS_IMAGE:-nicolaka/netshoot:v0.13}"
 
 e2e_test_install() {
-  if [ "$E2E_USE_LOCAL_OPERATOR" = true ]
-  then
-    echo "Skipping $SPEC_NAME install: it requires an in-cluster operator pod"
-    return
-  fi
-
   k8s_cleanup_namespace "$OPERATOR_NAMESPACE"
   k8s_async_cleanup
 
@@ -42,14 +22,7 @@ e2e_test_install() {
 
   install_operator_only
 
-  echo "Shortening operator lock timings (duration=${OPERATOR_REGRESSION_LOCK_DURATION}s," \
-    "poll=${OPERATOR_REGRESSION_LOCK_POLL_INTERVAL}s) for a fast, deterministic test"
-  kubectl set env -n "$OPERATOR_NAMESPACE" deployment/stackgres-operator \
-    LOCK_DURATION="$OPERATOR_REGRESSION_LOCK_DURATION" \
-    LOCK_POLL_INTERVAL="$OPERATOR_REGRESSION_LOCK_POLL_INTERVAL"
-
   wait_pods_running "$OPERATOR_NAMESPACE" 2
-  wait_until operator_holds_lease
 }
 
 e2e_test_uninstall() {
@@ -70,24 +43,74 @@ e2e_test_uninstall() {
 }
 
 e2e_test() {
-  if [ "$E2E_USE_LOCAL_OPERATOR" = true ]
+  if [ "$E2E_USE_LOCAL_OPERATOR" != true ] \
+    && [ "$(echo "$K8S_VERSION" | tr . '\n' | head -n 2 | xargs -I @ printf '%05d' @)" \
+        -ge "$(echo "1.25" | tr . '\n' | xargs -I @ printf '%05d' @)" ]
   then
-    echo "Skipping $SPEC_NAME: it requires an in-cluster operator pod" \
-      "(E2E_USE_LOCAL_OPERATOR=true)"
-    return
+    run_test "Operator acquires the leader lease at startup" \
+      check_operator_holds_lease_initially
+
+    run_test "Operator loses the leader lease when isolated from the API server" \
+      check_operator_loses_lease_when_isolated
+
+    run_test "Operator re-establishes the leader lease once connectivity is restored" \
+      check_operator_reestablishes_lease
   fi
-
-  run_test "Operator acquires the leader lease at startup" \
-    check_operator_holds_lease_initially
-
-  run_test "Operator loses the leader lease when isolated from the API server" \
-    check_operator_loses_lease_when_isolated
-
-  run_test "Operator re-establishes the leader lease once connectivity is restored" \
-    check_operator_reestablishes_lease
 }
 
-## Helpers ####################################################################
+check_operator_holds_lease_initially() {
+  kubectl set env -n "$OPERATOR_NAMESPACE" deployment/stackgres-operator \
+    LOCK_DURATION="$OPERATOR_REGRESSION_LOCK_DURATION" \
+    LOCK_POLL_INTERVAL="$OPERATOR_REGRESSION_LOCK_POLL_INTERVAL"
+  kubectl rollout status -n "$OPERATOR_NAMESPACE" deploy/stackgres-operator --timeout="${E2E_TIMEOUT}s"
+
+  if wait_until operator_holds_lease
+  then
+    success "Operator pod $(operator_pod_name) holds lease $OPERATOR_NAMESPACE/$OPERATOR_LEASE_NAME"
+  else
+    fail "Operator did not acquire the leader lease $OPERATOR_NAMESPACE/$OPERATOR_LEASE_NAME"
+  fi
+}
+
+check_operator_loses_lease_when_isolated() {
+  local POD RENEW_BEFORE
+  POD="$(operator_pod_name)"
+  RENEW_BEFORE="$(lease_field .spec.renewTime)"
+  # Persist for the recovery check (each run_test runs in its own subshell).
+  printf %s "$POD" > "$LOG_PATH/operator-regression-pod"
+  printf %s "$RENEW_BEFORE" > "$LOG_PATH/operator-regression-renew-before"
+
+  echo "Isolating operator pod $POD from the API server with a deny-all NetworkPolicy"
+  create_operator_deny_network_policy
+
+  echo "Resetting the operator's established API server connections"
+  kill_operator_api_connections "$POD"
+
+  # No renewals can happen now, so the lease must expire within its (short) duration.
+  if wait_until -t "$(( OPERATOR_REGRESSION_LOCK_DURATION * 4 + 30 ))" operator_lost_lease
+  then
+    success "Leader lease expired: the isolated operator stopped renewing it (was renewTime=$RENEW_BEFORE)"
+  else
+    fail "Leader lease is still held while the operator is isolated from the API server"
+  fi
+}
+
+check_operator_reestablishes_lease() {
+  local RENEW_BEFORE
+  RENEW_BEFORE="$(cat "$LOG_PATH/operator-regression-renew-before" 2>/dev/null)"
+
+  echo "Restoring connectivity by removing the deny NetworkPolicy"
+  kubectl delete networkpolicy -n "$OPERATOR_NAMESPACE" "$OPERATOR_REGRESSION_DENY_NETPOL" \
+    --ignore-not-found
+
+  echo "Waiting for the operator to re-acquire and renew the leader lease"
+  if wait_until -t 180 operator_reacquired_lease
+  then
+    success "Operator re-established the leader lease (renewTime advanced past $RENEW_BEFORE)"
+  else
+    fail "Operator did not re-establish the leader lease after connectivity was restored"
+  fi
+}
 
 operator_pod_name() {
   kubectl get pods -n "$OPERATOR_NAMESPACE" -l app=stackgres-operator \
@@ -163,55 +186,4 @@ EOF
     --profile=general --custom="$PROFILE" \
     -- sh -c "ss -K dst $APISERVER_IP; echo 'remaining established:'; \
       ss -tn state established dst $APISERVER_IP"
-}
-
-## Checks #####################################################################
-
-check_operator_holds_lease_initially() {
-  if wait_until operator_holds_lease
-  then
-    success "Operator pod $(operator_pod_name) holds lease $OPERATOR_NAMESPACE/$OPERATOR_LEASE_NAME"
-  else
-    fail "Operator did not acquire the leader lease $OPERATOR_NAMESPACE/$OPERATOR_LEASE_NAME"
-  fi
-}
-
-check_operator_loses_lease_when_isolated() {
-  local POD RENEW_BEFORE
-  POD="$(operator_pod_name)"
-  RENEW_BEFORE="$(lease_field .spec.renewTime)"
-  # Persist for the recovery check (each run_test runs in its own subshell).
-  printf %s "$POD" > "$LOG_PATH/operator-regression-pod"
-  printf %s "$RENEW_BEFORE" > "$LOG_PATH/operator-regression-renew-before"
-
-  echo "Isolating operator pod $POD from the API server with a deny-all NetworkPolicy"
-  create_operator_deny_network_policy
-
-  echo "Resetting the operator's established API server connections"
-  kill_operator_api_connections "$POD"
-
-  # No renewals can happen now, so the lease must expire within its (short) duration.
-  if wait_until -t "$(( OPERATOR_REGRESSION_LOCK_DURATION * 4 + 30 ))" operator_lost_lease
-  then
-    success "Leader lease expired: the isolated operator stopped renewing it (was renewTime=$RENEW_BEFORE)"
-  else
-    fail "Leader lease is still held while the operator is isolated from the API server"
-  fi
-}
-
-check_operator_reestablishes_lease() {
-  local RENEW_BEFORE
-  RENEW_BEFORE="$(cat "$LOG_PATH/operator-regression-renew-before" 2>/dev/null)"
-
-  echo "Restoring connectivity by removing the deny NetworkPolicy"
-  kubectl delete networkpolicy -n "$OPERATOR_NAMESPACE" "$OPERATOR_REGRESSION_DENY_NETPOL" \
-    --ignore-not-found
-
-  echo "Waiting for the operator to re-acquire and renew the leader lease"
-  if wait_until -t 180 operator_reacquired_lease
-  then
-    success "Operator re-established the leader lease (renewTime advanced past $RENEW_BEFORE)"
-  else
-    fail "Operator did not re-establish the leader lease after connectivity was restored"
-  fi
 }
