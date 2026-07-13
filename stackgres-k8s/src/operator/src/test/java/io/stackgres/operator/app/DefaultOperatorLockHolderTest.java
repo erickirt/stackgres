@@ -8,13 +8,16 @@ package io.stackgres.operator.app;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import java.time.Duration;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
+import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
+import io.fabric8.kubernetes.api.model.coordination.v1.LeaseBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.stackgres.operator.app.DefaultOperatorLockHolder.LeaseAction;
 import io.stackgres.operator.conciliation.AbstractReconciliator;
 import io.stackgres.operator.configuration.OperatorPropertyContext;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,13 +27,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Lightweight unit tests for the operator lock holder bookkeeping. The full
- * leader-election lifecycle (start/stop/onStartLeading/onStopLeading) is
- * covered by integration / e2e tests since it depends on a live or mocked
- * Kubernetes API server and the fabric8 LeaderElector loop.
+ * Unit tests for the operator lock holder. These cover the in-memory bookkeeping
+ * (register / startReconciliation / stop), the timing-guard, and the side-effect-free
+ * compare-and-swap decision ({@link DefaultOperatorLockHolder#decideLeaseAction}). The
+ * decision function is where the recovery behaviour lives, so it is exercised here directly;
+ * the surrounding API-server I/O and the multi-replica election lifecycle remain covered by
+ * integration / e2e tests.
  */
 @ExtendWith(MockitoExtension.class)
 class DefaultOperatorLockHolderTest {
+
+  private static final String ME = "stackgres-operator/stackgres-operator-0";
+  private static final String OTHER = "stackgres-operator/stackgres-operator-1";
+  private static final int LEASE_DURATION = 30;
 
   @Mock
   private KubernetesClient client;
@@ -46,6 +55,17 @@ class DefaultOperatorLockHolderTest {
   @BeforeEach
   void setUp() {
     operatorLockHolder = new DefaultOperatorLockHolder(client, context);
+  }
+
+  private Lease leaseHeldBy(String holder, ZonedDateTime renewTime) {
+    return new LeaseBuilder()
+        .withNewSpec()
+        .withHolderIdentity(holder)
+        .withLeaseDurationSeconds(LEASE_DURATION)
+        .withRenewTime(renewTime)
+        .withLeaseTransitions(0)
+        .endSpec()
+        .build();
   }
 
   @Test
@@ -71,32 +91,57 @@ class DefaultOperatorLockHolderTest {
   }
 
   @Test
-  void computeRenewDeadlineFitsWithinLeaseDuration() {
-    Duration lease = Duration.ofSeconds(30);
-    Duration retry = Duration.ofSeconds(5);
-    Duration renew = DefaultOperatorLockHolder.computeRenewDeadline(lease, retry);
-    // fabric8 requires lease > renew > retry * (1 + JITTER_FACTOR)
-    assertTrue(renew.compareTo(lease) < 0, "renew must be < lease");
-    long minRenewMillis = retry.toMillis() + (long) Math.ceil(retry.toMillis() * 1.21d) + 1L;
-    assertTrue(renew.toMillis() >= minRenewMillis,
-        "renew must clear retry + jitter (min " + minRenewMillis + "ms)");
+  void validateLockTimingsAcceptsDurationLargerThanPollInterval() {
+    DefaultOperatorLockHolder.validateLockTimings(30, 2);
   }
 
   @Test
-  void computeRenewDeadlineDefaultsToTwoThirdsOfLease() {
-    // For LOCK_DURATION=60, LOCK_POLL_INTERVAL=2 the two-thirds heuristic should win
-    // over the (retry + jitter) lower bound.
-    Duration renew = DefaultOperatorLockHolder.computeRenewDeadline(
-        Duration.ofSeconds(60), Duration.ofSeconds(2));
-    assertEquals(40_000L, renew.toMillis());
-  }
-
-  @Test
-  void computeRenewDeadlineRejectsTooSmallLease() {
-    // retry + jitter would push renew past the lease duration.
+  void validateLockTimingsRejectsDurationNotLargerThanPollInterval() {
     assertThrows(IllegalArgumentException.class,
-        () -> DefaultOperatorLockHolder.computeRenewDeadline(
-            Duration.ofSeconds(2), Duration.ofSeconds(2)));
+        () -> DefaultOperatorLockHolder.validateLockTimings(2, 2));
+    assertThrows(IllegalArgumentException.class,
+        () -> DefaultOperatorLockHolder.validateLockTimings(2, 5));
+  }
+
+  @Test
+  void decidesToCreateWhenLeaseIsAbsent() {
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    assertEquals(LeaseAction.CREATE,
+        DefaultOperatorLockHolder.decideLeaseAction(null, ME, now));
+  }
+
+  @Test
+  void decidesToRenewWhenLeaseIsAlreadyHeldByMe() {
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    assertEquals(LeaseAction.RENEW,
+        DefaultOperatorLockHolder.decideLeaseAction(leaseHeldBy(ME, now), ME, now));
+  }
+
+  @Test
+  void decidesToLoseWhenLeaseIsHeldByAnotherValidHolder() {
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    assertEquals(LeaseAction.LOSE,
+        DefaultOperatorLockHolder.decideLeaseAction(leaseHeldBy(OTHER, now), ME, now));
+  }
+
+  @Test
+  void decidesToAcquireWhenAnotherHoldersLeaseHasExpired() {
+    // The recovery path the previous LeaderElector-based implementation never took: once a
+    // foreign holder's lease expires, the polling loop takes it over instead of staying idle.
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    Lease expired = leaseHeldBy(OTHER, now.minusSeconds(LEASE_DURATION + 5));
+    assertEquals(LeaseAction.ACQUIRE,
+        DefaultOperatorLockHolder.decideLeaseAction(expired, ME, now));
+  }
+
+  @Test
+  void decidesToAcquireWhenMyOwnLeaseHasExpired() {
+    // A lease that was ours but lapsed (e.g. after a connectivity gap) is re-acquired rather
+    // than treated as still held.
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    Lease expired = leaseHeldBy(ME, now.minusSeconds(LEASE_DURATION + 5));
+    assertEquals(LeaseAction.ACQUIRE,
+        DefaultOperatorLockHolder.decideLeaseAction(expired, ME, now));
   }
 
 }

@@ -5,30 +5,45 @@
 
 package io.stackgres.operator.app;
 
-import java.time.Duration;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
+import java.util.Optional;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
+import io.fabric8.kubernetes.api.model.coordination.v1.LeaseBuilder;
+import io.fabric8.kubernetes.api.model.coordination.v1.LeaseSpec;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
-import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfigBuilder;
-import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElector;
-import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.LeaseLock;
 import io.quarkus.runtime.Quarkus;
 import io.stackgres.common.LeaseLockUtil;
 import io.stackgres.common.OperatorProperty;
+import io.stackgres.common.kubernetesclient.KubernetesClientUtil;
 import io.stackgres.operator.conciliation.AbstractReconciliator;
 import io.stackgres.operator.configuration.OperatorPropertyContext;
 import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Holds the operator leader lock as a Kubernetes {@link Lease}, maintained through a
+ * compare-and-swap loop that talks to the API server directly (no fabric8
+ * {@code LeaderElector}/{@code LeaseLock} intermediates).
+ *
+ * <p>A single-threaded scheduler runs {@link #tryHoldLock()} every
+ * {@link OperatorProperty#LOCK_POLL_INTERVAL} seconds. Each tick reads the Lease and, when it
+ * is held by us or free/expired, renews or acquires it with an optimistic-locked write
+ * (resourceVersion precondition) — the compare-and-swap. Because the loop polls forever, a
+ * lock lost to a transient API-server outage is re-acquired as soon as it expires, instead of
+ * leaving the operator stuck as a non-leader (the failure mode of the previous
+ * {@code LeaderElector}-based implementation, whose election future completed on loss and was
+ * never restarted).
+ */
 @Singleton
 public class DefaultOperatorLockHolder implements OperatorLockHolder {
 
@@ -39,20 +54,18 @@ public class DefaultOperatorLockHolder implements OperatorLockHolder {
 
   private final KubernetesClient client;
   private final OperatorPropertyContext context;
-  private final ExecutorService executorService;
+  private final ScheduledExecutorService executorService;
 
   private final AtomicBoolean leader = new AtomicBoolean(false);
   private final AtomicBoolean doReconciliation = new AtomicBoolean(false);
   private final List<AbstractReconciliator<?, ?>> reconciliators = new ArrayList<>();
-
-  private CompletableFuture<?> electionFuture;
 
   protected DefaultOperatorLockHolder(
       KubernetesClient client,
       OperatorPropertyContext context) {
     this.client = client;
     this.context = context;
-    this.executorService = Executors.newSingleThreadExecutor(
+    this.executorService = Executors.newSingleThreadScheduledExecutor(
         r -> new Thread(r, "OperatorLockHolder"));
   }
 
@@ -79,46 +92,22 @@ public class DefaultOperatorLockHolder implements OperatorLockHolder {
 
   @Override
   public void start() {
-    LOGGER.info("Starting Operator Lock Reconciliation using Lease {}/{}",
-        operatorNamespace(), OPERATOR_LEASE_NAME);
     final int leaseDurationSeconds = context.getInt(OperatorProperty.LOCK_DURATION);
     final int retryPeriodSeconds = context.getInt(OperatorProperty.LOCK_POLL_INTERVAL);
-    final Duration leaseDuration = Duration.ofSeconds(leaseDurationSeconds);
-    final Duration retryPeriod = Duration.ofSeconds(retryPeriodSeconds);
-    final Duration renewDeadline = computeRenewDeadline(leaseDuration, retryPeriod);
-
-    final LeaseLock lock = new LeaseLock(
-        operatorNamespace(),
-        OPERATOR_LEASE_NAME,
-        holderIdentity());
-
-    final LeaderElector elector = new LeaderElector(
-        client,
-        new LeaderElectionConfigBuilder()
-            .withName(OPERATOR_LEASE_NAME)
-            .withLock(lock)
-            .withLeaseDuration(leaseDuration)
-            .withRenewDeadline(renewDeadline)
-            .withRetryPeriod(retryPeriod)
-            .withReleaseOnCancel(true)
-            .withLeaderCallbacks(new LeaderCallbacks(
-                this::onStartLeading,
-                this::onStopLeading,
-                this::onNewLeader))
-            .build(),
-        executorService);
-
-    electionFuture = elector.start();
+    validateLockTimings(leaseDurationSeconds, retryPeriodSeconds);
+    LOGGER.info("Starting Operator Lock Reconciliation using Lease {}/{}",
+        operatorNamespace(), OPERATOR_LEASE_NAME);
+    executorService.scheduleWithFixedDelay(
+        this::tryHoldLock,
+        0,
+        retryPeriodSeconds,
+        TimeUnit.SECONDS);
   }
 
   @Override
   public void stop() {
-    if (electionFuture != null) {
-      LOGGER.info("Stopping Operator Lock Reconciliation");
-      electionFuture.cancel(true);
-      electionFuture = null;
-    }
     if (!executorService.isShutdown()) {
+      LOGGER.info("Stopping Operator Lock Reconciliation");
       executorService.shutdown();
     }
     try {
@@ -128,6 +117,7 @@ public class DefaultOperatorLockHolder implements OperatorLockHolder {
     } catch (Exception ex) {
       LOGGER.error("An error occurred during shutdown of operator lock reconciliator", ex);
     }
+    releaseLock();
   }
 
   @Override
@@ -136,42 +126,164 @@ public class DefaultOperatorLockHolder implements OperatorLockHolder {
       return;
     }
     try {
-      var deleted = client.leases()
-          .inNamespace(operatorNamespace())
-          .withName(OPERATOR_LEASE_NAME)
-          .delete();
-      if (deleted != null && !deleted.isEmpty()) {
-        LOGGER.info("Lease {}/{} was forcibly deleted",
-            operatorNamespace(), OPERATOR_LEASE_NAME);
+      final String holderIdentity = holderIdentity();
+      Lease lease = getLease();
+      Optional<String> currentHolder = LeaseLockUtil.getHolderIdentity(lease);
+      if (currentHolder.isEmpty()
+          || currentHolder.get().equals(holderIdentity)
+          || !LeaseLockUtil.isHeld(lease)) {
+        return;
       }
+      clearHolder(lease);
+      LOGGER.info("Lease {}/{} held by {} was forcibly released",
+          operatorNamespace(), OPERATOR_LEASE_NAME, currentHolder.get());
     } catch (KubernetesClientException ex) {
-      LOGGER.warn("Could not forcibly delete operator Lease {}/{}: {}",
+      LOGGER.warn("Could not forcibly release operator Lease {}/{}: {}",
           operatorNamespace(), OPERATOR_LEASE_NAME, ex.getMessage());
     }
   }
 
-  private void onStartLeading() {
-    LOGGER.info("Lease on {}/{} was acquired. I am the leader!",
-        operatorNamespace(), OPERATOR_LEASE_NAME);
-    leader.set(true);
-    if (doReconciliation.get()) {
-      this.reconciliators.forEach(AbstractReconciliator::reconcileAll);
+  void tryHoldLock() {
+    try {
+      final String holderIdentity = holderIdentity();
+      final Lease lease = getLease();
+      final ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+      switch (decideLeaseAction(lease, holderIdentity, now)) {
+        case CREATE -> acquireByCreate(holderIdentity, now);
+        case RENEW, ACQUIRE -> acquireByUpdate(lease, holderIdentity, now);
+        case LOSE -> onLockLost(lease);
+        default -> { /* nothing to do */ }
+      }
+    } catch (KubernetesClientException ex) {
+      if (KubernetesClientUtil.isConflict(ex)) {
+        LOGGER.debug("Conflict while holding operator Lease {}/{}, will retry on next poll",
+            operatorNamespace(), OPERATOR_LEASE_NAME);
+      } else {
+        LOGGER.error("Reconciliation of operator lock failed", ex);
+      }
+    } catch (Exception ex) {
+      LOGGER.error("Reconciliation of operator lock failed", ex);
     }
   }
 
-  private void onStopLeading() {
-    LOGGER.warn("Lease on {}/{} was lost", operatorNamespace(), OPERATOR_LEASE_NAME);
-    boolean wasLeader = leader.getAndSet(false);
-    if (wasLeader && context.getBoolean(OperatorProperty.FORCE_UNLOCK_OPERATOR)) {
-      LOGGER.error("Lease was lost while forcing unlock operator, exiting");
-      Quarkus.asyncExit(1);
+  /**
+   * The action this replica must take for the current Lease state, given who we are and the
+   * current time. Kept side-effect free so the lock decision can be unit-tested without a live
+   * API server: {@code CREATE} (Lease absent), {@code RENEW} (already ours), {@code ACQUIRE}
+   * (free or expired — take it over) or {@code LOSE} (held by another valid holder).
+   */
+  enum LeaseAction {
+    CREATE, RENEW, ACQUIRE, LOSE
+  }
+
+  static LeaseAction decideLeaseAction(Lease lease, String holderIdentity, ZonedDateTime now) {
+    if (lease == null) {
+      return LeaseAction.CREATE;
+    }
+    if (LeaseLockUtil.isHeldBy(lease, holderIdentity, now)) {
+      return LeaseAction.RENEW;
+    }
+    if (!LeaseLockUtil.isHeld(lease, now)) {
+      return LeaseAction.ACQUIRE;
+    }
+    return LeaseAction.LOSE;
+  }
+
+  private void acquireByCreate(String holderIdentity, ZonedDateTime now) {
+    Lease lease = new LeaseBuilder()
+        .withNewMetadata()
+        .withNamespace(operatorNamespace())
+        .withName(OPERATOR_LEASE_NAME)
+        .endMetadata()
+        .withNewSpec()
+        .withHolderIdentity(holderIdentity)
+        .withLeaseDurationSeconds(context.getInt(OperatorProperty.LOCK_DURATION))
+        .withAcquireTime(now)
+        .withRenewTime(now)
+        .withLeaseTransitions(0)
+        .endSpec()
+        .build();
+    client.leases()
+        .inNamespace(operatorNamespace())
+        .resource(lease)
+        .create();
+    onLockAcquired();
+  }
+
+  private void acquireByUpdate(Lease lease, String holderIdentity, ZonedDateTime now) {
+    final LeaseSpec spec = Optional.ofNullable(lease.getSpec()).orElseGet(LeaseSpec::new);
+    lease.setSpec(spec);
+    if (!holderIdentity.equals(spec.getHolderIdentity())) {
+      spec.setAcquireTime(now);
+      spec.setLeaseTransitions(Optional.ofNullable(spec.getLeaseTransitions()).orElse(0) + 1);
+    }
+    spec.setHolderIdentity(holderIdentity);
+    spec.setRenewTime(now);
+    spec.setLeaseDurationSeconds(context.getInt(OperatorProperty.LOCK_DURATION));
+    client.leases()
+        .inNamespace(operatorNamespace())
+        .resource(lease)
+        .lockResourceVersion(lease.getMetadata().getResourceVersion())
+        .update();
+    onLockAcquired();
+  }
+
+  private void onLockAcquired() {
+    if (leader.compareAndSet(false, true)) {
+      LOGGER.info("Lease on {}/{} was acquired. I am the leader!",
+          operatorNamespace(), OPERATOR_LEASE_NAME);
+      if (doReconciliation.get()) {
+        this.reconciliators.forEach(AbstractReconciliator::reconcileAll);
+      }
     }
   }
 
-  private void onNewLeader(String newLeaderIdentity) {
-    if (!holderIdentity().equals(newLeaderIdentity)) {
-      LOGGER.info("Operator Lease is held by {}", newLeaderIdentity);
+  private void onLockLost(Lease lease) {
+    if (leader.compareAndSet(true, false)) {
+      LOGGER.warn("Lease on {}/{} was lost, now held by {}",
+          operatorNamespace(), OPERATOR_LEASE_NAME,
+          LeaseLockUtil.getHolderIdentity(lease).orElse("<unknown>"));
+      if (context.getBoolean(OperatorProperty.FORCE_UNLOCK_OPERATOR)) {
+        LOGGER.error("Lease was lost while forcing unlock operator, exiting");
+        Quarkus.asyncExit(1);
+      }
     }
+  }
+
+  private void releaseLock() {
+    if (!leader.get()) {
+      return;
+    }
+    try {
+      final String holderIdentity = holderIdentity();
+      Lease lease = getLease();
+      if (LeaseLockUtil.isHeldBy(lease, holderIdentity)) {
+        clearHolder(lease);
+        LOGGER.info("Lease on {}/{} was released", operatorNamespace(), OPERATOR_LEASE_NAME);
+      }
+    } catch (KubernetesClientException ex) {
+      LOGGER.warn("Could not release operator Lease {}/{}: {}",
+          operatorNamespace(), OPERATOR_LEASE_NAME, ex.getMessage());
+    } finally {
+      leader.set(false);
+    }
+  }
+
+  private void clearHolder(Lease lease) {
+    lease.getSpec().setHolderIdentity(null);
+    lease.getSpec().setRenewTime(null);
+    client.leases()
+        .inNamespace(operatorNamespace())
+        .resource(lease)
+        .lockResourceVersion(lease.getMetadata().getResourceVersion())
+        .update();
+  }
+
+  private Lease getLease() {
+    return client.leases()
+        .inNamespace(operatorNamespace())
+        .withName(OPERATOR_LEASE_NAME)
+        .get();
   }
 
   private String holderIdentity() {
@@ -185,22 +297,15 @@ public class DefaultOperatorLockHolder implements OperatorLockHolder {
   }
 
   /**
-   * fabric8's LeaderElectorBuilder requires renewDeadline > retryPeriod * (1 + JITTER_FACTOR)
-   * and leaseDuration > renewDeadline. Pick a renew deadline that satisfies both bounds.
+   * The lease duration must exceed the poll interval so the holder gets at least one renewal
+   * opportunity within each lease window; otherwise the lock could expire between polls.
    */
-  static Duration computeRenewDeadline(Duration leaseDuration, Duration retryPeriod) {
-    long lease = leaseDuration.toMillis();
-    long retry = retryPeriod.toMillis();
-    long minRenew = retry + (long) Math.ceil(retry * 1.21d) + 1L;
-    long preferred = Math.max(minRenew, lease * 2L / 3L);
-    long maxRenew = lease - 1L;
-    if (preferred >= maxRenew) {
+  static void validateLockTimings(int leaseDurationSeconds, int retryPeriodSeconds) {
+    if (leaseDurationSeconds <= retryPeriodSeconds) {
       throw new IllegalArgumentException(
-          "LOCK_DURATION (" + leaseDuration.toSeconds() + "s) must be larger than"
-              + " LOCK_POLL_INTERVAL (" + retryPeriod.toSeconds() + "s)"
-              + " to leave room for renew deadline (need at least " + (preferred + 1) + "ms)");
+          "LOCK_DURATION (" + leaseDurationSeconds + "s) must be larger than"
+              + " LOCK_POLL_INTERVAL (" + retryPeriodSeconds + "s)");
     }
-    return Duration.ofMillis(preferred);
   }
 
 }
