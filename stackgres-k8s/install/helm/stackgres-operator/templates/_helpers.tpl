@@ -9,12 +9,8 @@
 {{- printf "%s/ongres/kubectl:v1.30.14-build-6.52" .Values.containerRegistry -}}
 {{- else if semverCompare ">=1.27" .Capabilities.KubeVersion.Version -}}
 {{- printf "%s/ongres/kubectl:v1.28.15-build-6.52" .Values.containerRegistry -}}
-{{- else if semverCompare ">=1.24" .Capabilities.KubeVersion.Version -}}
+{{- else if semverCompare ">=1.25" .Capabilities.KubeVersion.Version -}}
 {{- printf "%s/ongres/kubectl:v1.25.16-build-6.52" .Values.containerRegistry -}}
-{{- else if semverCompare ">=1.21" .Capabilities.KubeVersion.Version -}}
-{{- printf "%s/ongres/kubectl:v1.22.17-build-6.52" .Values.containerRegistry -}}
-{{- else if semverCompare ">=1.18" .Capabilities.KubeVersion.Version -}}
-{{- printf "%s/ongres/kubectl:v1.19.16-build-6.52" .Values.containerRegistry -}}
 {{- else -}}
 {{- printf "%s/ongres/kubectl:v1.36.1-build-6.52" .Values.containerRegistry -}}
 {{- end -}}

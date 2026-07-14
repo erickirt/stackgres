@@ -56,7 +56,6 @@ import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterConfigura
 import io.stackgres.common.crd.sgshardedcluster.StackGresShardedClusterSpec;
 import io.stackgres.common.labels.LabelFactoryForCluster;
 import io.stackgres.common.labels.LabelFactoryForShardedCluster;
-import io.stackgres.operator.conciliation.KubernetesVersionBinder;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.ResourceGenerator;
 import io.stackgres.operator.conciliation.backup.BackupRetry;
@@ -73,7 +72,6 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @OperatorVersionBinder
-@KubernetesVersionBinder(from = "1.21")
 public class ShardedBackupCronJob
     implements ResourceGenerator<StackGresShardedClusterContext> {
 
