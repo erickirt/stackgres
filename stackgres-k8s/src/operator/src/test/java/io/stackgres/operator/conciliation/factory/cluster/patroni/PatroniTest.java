@@ -5,6 +5,7 @@
 
 package io.stackgres.operator.conciliation.factory.cluster.patroni;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -175,6 +176,38 @@ class PatroniTest {
     assertTrue(patroniContainer.getReadinessProbe().getHttpGet()
             .getPort().getIntVal() == EnvoyUtil.PATRONI_PORT,
         "When envoy is disabled, readiness probe should use the direct Patroni port");
+    assertTrue(patroniContainer.getLivenessProbe().getHttpGet()
+            .getPort().getIntVal() == EnvoyUtil.PATRONI_PORT,
+        "Liveness probe should always use the direct Patroni port");
+    assertTrue(patroniContainer.getStartupProbe().getHttpGet()
+            .getPort().getIntVal() == EnvoyUtil.PATRONI_PORT,
+        "Startup probe should always use the direct Patroni port");
+  }
+
+  @Test
+  void givenACluster_itShouldProbePatroniLivenessDirectly() {
+    Container patroniContainer = patroni.getContainer(clusterContainerContext);
+
+    var livenessProbe = patroniContainer.getLivenessProbe();
+    assertEquals("/liveness", livenessProbe.getHttpGet().getPath());
+    assertEquals(EnvoyUtil.PATRONI_PORT, livenessProbe.getHttpGet().getPort().getIntVal());
+    assertEquals(0, livenessProbe.getInitialDelaySeconds());
+    assertEquals(20, livenessProbe.getPeriodSeconds());
+    assertEquals(5, livenessProbe.getTimeoutSeconds());
+    assertEquals(6, livenessProbe.getFailureThreshold());
+  }
+
+  @Test
+  void givenACluster_itShouldGetStartupProbe() {
+    Container patroniContainer = patroni.getContainer(clusterContainerContext);
+
+    var startupProbe = patroniContainer.getStartupProbe();
+    assertEquals("/liveness", startupProbe.getHttpGet().getPath());
+    assertEquals(EnvoyUtil.PATRONI_PORT, startupProbe.getHttpGet().getPort().getIntVal());
+    assertEquals(5, startupProbe.getPeriodSeconds());
+    assertEquals(2, startupProbe.getTimeoutSeconds());
+    assertEquals(60, startupProbe.getFailureThreshold());
+    assertEquals(1, startupProbe.getSuccessThreshold());
   }
 
   @Test

@@ -183,7 +183,6 @@ public class Patroni implements ContainerFactory<ClusterContainerContext> {
         .map(StackGresClusterPods::getDisableEnvoy)
         .orElse(false);
     final int patroniPort = isEnvoyDisabled ? EnvoyUtil.PATRONI_PORT : EnvoyUtil.PATRONI_ENTRY_PORT;
-    final int controllerPort = 8080;
 
     return new ContainerBuilder()
         .withName(StackGresContainer.PATRONI.getName())
@@ -233,16 +232,27 @@ public class Patroni implements ContainerFactory<ClusterContainerContext> {
                 .map(Probe::getFailureThreshold)
                 .orElse(6))
             .build())
+        .withStartupProbe(new ProbeBuilder()
+            .withNewHttpGet()
+            .withPath("/liveness")
+            .withPort(new IntOrString(EnvoyUtil.PATRONI_PORT))
+            .withScheme("HTTP")
+            .endHttpGet()
+            .withPeriodSeconds(5)
+            .withTimeoutSeconds(2)
+            .withFailureThreshold(60)
+            .withSuccessThreshold(1)
+            .build())
         .withLivenessProbe(new ProbeBuilder(cluster.getSpec().getPods().getLivenessProbe())
             .withNewHttpGet()
-            .withPath("/controller/liveness")
-            .withPort(new IntOrString(controllerPort))
+            .withPath("/liveness")
+            .withPort(new IntOrString(EnvoyUtil.PATRONI_PORT))
             .withScheme("HTTP")
             .endHttpGet()
             .withInitialDelaySeconds(
                 Optional.ofNullable(cluster.getSpec().getPods().getLivenessProbe())
                 .map(Probe::getInitialDelaySeconds)
-                .orElse(15))
+                .orElse(0))
             .withPeriodSeconds(
                 Optional.ofNullable(cluster.getSpec().getPods().getLivenessProbe())
                 .map(Probe::getPeriodSeconds)
