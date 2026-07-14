@@ -1,3 +1,21 @@
+<!--
+Pending release notes from #3189, to be folded into the next release block
+by the release process (then delete this comment).
+
+NEW FEATURES AND CHANGES:
+
+* Bump minimum supported Kubernetes version to 1.25
+* Probe Patroni's /liveness endpoint directly from the liveness probe of the patroni container, removing the cluster controller proxying, and add a startup probe to cover Patroni's startup window
+* Retune the patroni container liveness probe defaults and the default Patroni ttl so that fencing completes before leader-lock expiry
+
+NOTES (behavior changes that must be called out):
+
+* The minimum supported Kubernetes version is now 1.25 (previously 1.18). On Kubernetes 1.25 to 1.27 make sure the ProbeTerminationGracePeriod feature gate is not disabled (it is enabled by default); it is GA from 1.28. Heads-up: a later StackGres release plans to raise the minimum to Kubernetes 1.28, where this feature is always on.
+* The default Patroni ttl changed from 30 to 45. This also affects existing clusters that have not set an explicit ttl value, and applies to them immediately after the operator upgrade (it is Patroni dynamic configuration). It may add up to approximately 15 seconds to TTL-driven failover after a hard primary loss. If you have copied the previous default ttl 30 explicitly into your SGCluster spec, remove it or raise it to at least 45: with the new probe timings it no longer guarantees fencing before leader-lock expiry.
+* The liveness probe defaults are tighter (periodSeconds 5, timeoutSeconds 2, failureThreshold 3, probe-level terminationGracePeriodSeconds 3). A false-positive liveness failure (highly unlikely, and by itself a red flag, it means Patroni has failed to respond three times within the last 15 seconds from its HA loop) now allows only 3 seconds for clean termination and may therefore cause Postgres crash recovery (which is safe). Clusters running under tight CPU limits with sustained saturation should consider relaxing the liveness probe timings and raising ttl accordingly (see https://stackgres.io/doc/latest/administration/patroni/fencing/).
+* Probe changes modify the Pod template but do not restart any Pod automatically (the StatefulSet uses the OnDelete update strategy): they apply on the next restart of each cluster (pending-restart flow or an SGDbOps restart). The upgrade ordering is favorable: the increased ttl applies immediately while the tighter probes apply only after a restart, and that intermediate state is conservative.
+-->
+
 # :rocket: Release 1.19.0-rc3 (2026-07-07)
 
 ## :notepad_spiral: NOTES
