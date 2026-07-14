@@ -232,16 +232,28 @@ public class Patroni implements ContainerFactory<ClusterContainerContext> {
                 .map(Probe::getFailureThreshold)
                 .orElse(6))
             .build())
-        .withStartupProbe(new ProbeBuilder()
+        .withStartupProbe(new ProbeBuilder(cluster.getSpec().getPods().getStartupProbe())
             .withNewHttpGet()
             .withPath("/liveness")
             .withPort(new IntOrString(EnvoyUtil.PATRONI_PORT))
             .withScheme("HTTP")
             .endHttpGet()
-            .withPeriodSeconds(5)
-            .withTimeoutSeconds(2)
-            .withFailureThreshold(60)
-            .withSuccessThreshold(1)
+            .withPeriodSeconds(
+                Optional.ofNullable(cluster.getSpec().getPods().getStartupProbe())
+                .map(Probe::getPeriodSeconds)
+                .orElse(5))
+            .withTimeoutSeconds(
+                Optional.ofNullable(cluster.getSpec().getPods().getStartupProbe())
+                .map(Probe::getTimeoutSeconds)
+                .orElse(2))
+            .withFailureThreshold(
+                Optional.ofNullable(cluster.getSpec().getPods().getStartupProbe())
+                .map(Probe::getFailureThreshold)
+                .orElse(180))
+            .withSuccessThreshold(
+                Optional.ofNullable(cluster.getSpec().getPods().getStartupProbe())
+                .map(Probe::getSuccessThreshold)
+                .orElse(1))
             .build())
         .withLivenessProbe(new ProbeBuilder(cluster.getSpec().getPods().getLivenessProbe())
             .withNewHttpGet()
@@ -249,10 +261,10 @@ public class Patroni implements ContainerFactory<ClusterContainerContext> {
             .withPort(new IntOrString(EnvoyUtil.PATRONI_PORT))
             .withScheme("HTTP")
             .endHttpGet()
-            .withInitialDelaySeconds(
-                Optional.ofNullable(cluster.getSpec().getPods().getLivenessProbe())
-                .map(Probe::getInitialDelaySeconds)
-                .orElse(0))
+            // The startup probe owns the startup window: Kubernetes only begins the liveness
+            // initialDelay after the startup probe first succeeds, so a user-supplied delay here
+            // would reopen an unprotected post-start window and break the fencing margin. Force 0.
+            .withInitialDelaySeconds(0)
             .withPeriodSeconds(
                 Optional.ofNullable(cluster.getSpec().getPods().getLivenessProbe())
                 .map(Probe::getPeriodSeconds)
