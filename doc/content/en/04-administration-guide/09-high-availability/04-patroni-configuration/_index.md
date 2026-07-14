@@ -30,7 +30,7 @@ spec:
   configurations:
     patroni:
       dynamicConfig:
-        ttl: 30
+        ttl: 45
         loop_wait: 10
         retry_timeout: 10
         maximum_lag_on_failover: 1048576
@@ -57,16 +57,22 @@ StackGres manages certain Patroni fields internally. The following fields in `dy
 
 ```yaml
 dynamicConfig:
-  ttl: 30
+  ttl: 45
   loop_wait: 10
   retry_timeout: 10
   maximum_lag_on_failover: 1048576
 ```
 
-- `ttl`: The TTL (in seconds) for the leader key. Default is 30.
+- `ttl`: The TTL (in seconds) for the leader key. Default is 45.
 - `loop_wait`: The number of seconds the main loop sleeps. Default is 10.
 - `retry_timeout`: Timeout for DCS and PostgreSQL operation retries. Default is 10.
 - `maximum_lag_on_failover`: Maximum WAL lag in bytes for a replica to be eligible for failover.
+
+> The default `ttl` is `45` (it was `30` before 1.19). StackGres sizes the liveness-probe
+> fencing budget against this value, so lowering `ttl` — or copying the old `30` into your spec —
+> can break fencing before leader-lock expiry. See
+> [Liveness Probe and Fencing]({{% relref "04-administration-guide/09-high-availability/05-liveness-fencing" %}})
+> before changing `ttl`, `loop_wait`, or `retry_timeout`.
 
 **Custom pg_hba rules:**
 
@@ -131,7 +137,7 @@ spec:
   configurations:
     patroni:
       dynamicConfig:
-        ttl: 30
+        ttl: 45
         loop_wait: 10
         retry_timeout: 10
         maximum_lag_on_failover: 1048576

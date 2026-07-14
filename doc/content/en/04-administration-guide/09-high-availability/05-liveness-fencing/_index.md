@@ -6,9 +6,9 @@ description: How StackGres uses Kubernetes probes to fence Postgres when Patroni
 showToc: true
 ---
 
-To prevent split brain scenarios, a Patroni instance that failes to renew the leader lock fences Postgres before any leader election may happen. This strict time ordering, layered on top of the lineraizable properties of the underlying DCS, allows to guarantee split brain prevention given that Patroni fences Postgres.
+To prevent split brain scenarios, a Patroni instance that fails to renew the leader lock fences Postgres before any leader election may happen. This strict time ordering, layered on top of the linearizable properties of the underlying DCS, underpins split brain prevention as long as Patroni itself fences Postgres.
 
-But what if Patroni becomes wholly unresponsive (process suspension, deadlock, or starvation) while Postgres remains writable? This could actually prevent Patroni fencing Postgres. To prevent this from happening StackGres also fences Postgres through the Kubernetes [liveness probe](https://kubernetes.io/docs/concepts/workloads/pods/probes/) of the `patroni` container. If the probe fails, the kubelet restarts the container, before another cluster member can acquire leadership. The default configuration guarantees this ordering with a nominal five-second margin over a conservative time budget, under the explicit assumption that the kubelet and the container runtime remain healthy and responsive (node-level watchdogs, covered at the end of this page, bound the exposure when that assumption fails). If you override any of the involved parameters, you must keep the margin inequality below satisfied.
+But what if Patroni becomes wholly unresponsive (process suspension or REST-server starvation) while Postgres remains writable? This could actually prevent Patroni fencing Postgres. To prevent this from happening StackGres also fences Postgres through the Kubernetes [liveness probe](https://kubernetes.io/docs/concepts/workloads/pods/probes/) of the `patroni` container. If the probe fails, the kubelet restarts the container, before another cluster member can acquire leadership. The default configuration is budgeted to complete this ordering with a nominal five-second margin over a conservative time budget, under the explicit assumption that the kubelet and the container runtime remain healthy and responsive (node-level watchdogs, covered at the end of this page, bound the exposure when that assumption fails). This budget applies to faults that make the `/liveness` endpoint stop responding promptly; see [What this fences, and what it does not](#what-this-fences-and-what-it-does-not) for the boundary. If you override any of the involved parameters, you must keep the margin inequality below satisfied.
 
 
 ## The liveness probe acts as a Kubernetes-native watchdog
@@ -20,16 +20,25 @@ Instead, StackGres configures a liveness probe against Patroni's [`/liveness` RE
 This mechanism is defense in depth, not a general replacement for independent node fencing: liveness probes can themselves fail to act, for example on an OOM-ed node, and node- or VM-wide suspension may also suspend the kubelet and the container runtime.
 
 
+## What this fences, and what it does not
+
+The probe budget below is designed around faults that make Patroni's `/liveness` endpoint (port 8009) stop answering **promptly**. It does not fence every conceivable Patroni fault before the leader lock expires. In detail:
+
+- **Fenced within the budget.** Whole-process suspension (`SIGSTOP`), REST-server starvation, a crash, or anything else that makes port 8009 unresponsive: the probe times out and, after `failureThreshold` consecutive failures, the container is restarted. This is the fault class the timing below is budgeted for.
+- **Not fenced strictly before expiry: an HA-loop-only wedge with a responsive REST thread.** Patroni's [`/liveness`](https://patroni.readthedocs.io/en/latest/rest_api.html) returns `503` for a primary only once its HA loop has been stale for **more than `ttl`** (Patroni's own source notes this will probably be after the leader key has already expired). If Patroni's HA loop wedges while its REST thread keeps answering `200`, the probe does not start failing until around leader-key expiry, so this mechanism cannot fence that case ahead of expiry. Patroni's own election safeguards (a candidate must observe the leader key as vacated and win the DCS race) remain the backstop here; the liveness probe does not add a fence-before-expiry guarantee for it.
+- **Startup window.** While the startup probe has not yet succeeded for the first time, the kubelet keeps the liveness probe disabled (standard Kubernetes behavior). A freeze that lands in that window is bounded by the startup-probe budget (`failureThreshold × periodSeconds`, 900 seconds with the defaults), not by `ttl`. The startup probe is deliberately generous because Patroni can legitimately take a long time to become live (for example when restoring from a backup); if your clusters never have a slow startup you may lower `SGCluster.spec.pods.startupProbe.failureThreshold` or `periodSeconds` to shrink this window.
+
+
 ## Default probe and Patroni timing configuration
 
-The liveness probe and the Patroni timings can be customized (see [SGCluster.spec.pods.livenessProbe]({{% relref "06-crd-reference/01-sgcluster" %}}) and [SGCluster.spec.configurations.patroni.dynamicConfig]({{% relref "06-crd-reference/01-sgcluster" %}})):
+The startup probe, the liveness probe, and the Patroni timings can be customized (see [SGCluster.spec.pods.startupProbe]({{% relref "06-crd-reference/01-sgcluster" %}}), [SGCluster.spec.pods.livenessProbe]({{% relref "06-crd-reference/01-sgcluster" %}}) and [SGCluster.spec.configurations.patroni.dynamicConfig]({{% relref "06-crd-reference/01-sgcluster" %}})):
 
-| Setting | Startup probe (fixed) | Liveness probe (default) |
+| Setting | Startup probe (default) | Liveness probe (default) |
 |---------|-----------------------|--------------------------|
 | endpoint | Patroni's `/liveness` on `:8009` | Patroni's `/liveness` on `:8009` |
 | periodSeconds | 5 | 5 |
 | timeoutSeconds | 2 | 2 |
-| failureThreshold | 60 | 3 |
+| failureThreshold | 180 | 3 |
 | successThreshold | 1 | 1 |
 | terminationGracePeriodSeconds | - | 3 |
 
@@ -42,7 +51,7 @@ The liveness probe and the Patroni timings can be customized (see [SGCluster.spe
 
 ## Overrides must satisfy the fencing margin inequality
 
-Fencing is only guaranteed to complete before the leader lock expires if the following inequality holds:
+For the fault class this mechanism fences (see [What this fences, and what it does not](#what-this-fences-and-what-it-does-not)), fencing is budgeted to complete before the leader lock expires only if the following inequality holds:
 
 ```
 ttl >= loop_wait
@@ -80,4 +89,4 @@ Everything above assumes a responsive kubelet: an unresponsive kubelet neither e
 - From Kubernetes 1.32, the kubelet supports a [systemd watchdog](https://kubernetes.io/docs/reference/node/systemd-watchdog/) (beta, `SystemdWatchdog` feature gate, enabled by default): systemd passes the polling period configured with `WatchdogSec` in the kubelet unit down to the kubelet through the standard `WATCHDOG_USEC` environment variable, and restarts the kubelet if it fails to call `sd_notify` within that period.
 - systemd implements the analogous mechanism for the host itself (see [`RuntimeWatchdogSec`](https://manpages.debian.org/testing/systemd/systemd-system.conf.5.en.html)): backed by a hardware or software watchdog device, it reboots the host if systemd (PID 1) stops petting the device.
 
-These layers bound the split-brain exposure window; they do not preserve the fence-before-lock-expiry guarantee. With a frozen kubelet, fencing completes only after `WatchdogSec` (detection) plus the kubelet restart plus the probe windows described above --a total that does not fit within the `ttl` budget for realistic `WatchdogSec` values. Without them, however, the window is unbounded (it lasts until the kubelet recovers or the node is manually fenced). Where you control the nodes, configure `WatchdogSec` as low as practical, and a hardware watchdog where available, to minimize that window.
+These layers bound the split-brain exposure window; they do not preserve the fence-before-lock-expiry guarantee. With a frozen kubelet, fencing completes only after `WatchdogSec` (detection) plus the kubelet restart plus the probe windows described above — a total that does not fit within the `ttl` budget for realistic `WatchdogSec` values. Without them, however, the window is unbounded (it lasts until the kubelet recovers or the node is manually fenced). Where you control the nodes, configure `WatchdogSec` as low as practical, and a hardware watchdog where available, to minimize that window.
