@@ -192,9 +192,10 @@ class PatroniTest {
     assertEquals("/liveness", livenessProbe.getHttpGet().getPath());
     assertEquals(EnvoyUtil.PATRONI_PORT, livenessProbe.getHttpGet().getPort().getIntVal());
     assertEquals(0, livenessProbe.getInitialDelaySeconds());
-    assertEquals(20, livenessProbe.getPeriodSeconds());
-    assertEquals(5, livenessProbe.getTimeoutSeconds());
-    assertEquals(6, livenessProbe.getFailureThreshold());
+    assertEquals(5, livenessProbe.getPeriodSeconds());
+    assertEquals(2, livenessProbe.getTimeoutSeconds());
+    assertEquals(3, livenessProbe.getFailureThreshold());
+    assertEquals(3L, livenessProbe.getTerminationGracePeriodSeconds());
   }
 
   @Test

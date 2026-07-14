@@ -256,15 +256,19 @@ public class Patroni implements ContainerFactory<ClusterContainerContext> {
             .withPeriodSeconds(
                 Optional.ofNullable(cluster.getSpec().getPods().getLivenessProbe())
                 .map(Probe::getPeriodSeconds)
-                .orElse(20))
+                .orElse(5))
             .withTimeoutSeconds(
                 Optional.ofNullable(cluster.getSpec().getPods().getLivenessProbe())
                 .map(Probe::getTimeoutSeconds)
-                .orElse(5))
+                .orElse(2))
             .withFailureThreshold(
                 Optional.ofNullable(cluster.getSpec().getPods().getLivenessProbe())
                 .map(Probe::getFailureThreshold)
-                .orElse(6))
+                .orElse(3))
+            .withTerminationGracePeriodSeconds(
+                Optional.ofNullable(cluster.getSpec().getPods().getLivenessProbe())
+                .map(Probe::getTerminationGracePeriodSeconds)
+                .orElse(3L))
             .build())
         .withPorts(getContainerPorts(cluster))
         .build();

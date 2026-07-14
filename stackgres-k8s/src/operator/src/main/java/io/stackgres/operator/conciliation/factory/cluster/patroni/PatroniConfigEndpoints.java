@@ -144,7 +144,7 @@ public class PatroniConfigEndpoints
         .map(Unchecked.function(config -> objectMapper.treeToValue(config, PatroniConfig.class)))
         .orElseGet(PatroniConfig::new);
     if (patroniConf.getTtl() == null) {
-      patroniConf.setTtl(30);
+      patroniConf.setTtl(45);
     }
     if (patroniConf.getLoopWait() == null) {
       patroniConf.setLoopWait(10);
