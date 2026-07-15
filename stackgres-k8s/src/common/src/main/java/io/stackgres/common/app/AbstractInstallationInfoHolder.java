@@ -29,7 +29,7 @@ public abstract class AbstractInstallationInfoHolder {
     if (INSTALLATION_INFO.get() == null) {
       String retrievedId = retrieveInstallationId();
       InstallationInfo retrievedInfo = new InstallationInfo(
-          retrievedId, client.getKubernetesVersion().toString());
+          retrievedId, client.getKubernetesVersion().getGitVersion());
       InstallationInfo updatedInfo = INSTALLATION_INFO.updateAndGet(
           info -> info != null ? info : retrievedInfo);
       updateInstallationId(updatedInfo.id());
