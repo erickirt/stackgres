@@ -31,6 +31,7 @@ e2e_test_install() {
   VERSION_AS_NUMBER_1_17_2="$(get_version_as_number 1.17.2-SNAPSHOT)"
   VERSION_AS_NUMBER_1_18_0RC1="$(get_version_as_number 1.18.0-rc1)"
   VERSION_AS_NUMBER_1_19_0="$(get_version_as_number 1.19.0-SNAPSHOT)"
+  VERSION_AS_NUMBER_1_19_0RC4="$(get_version_as_number 1.19.0-rc4)"
 
   CLUSTER_CRD="sgclusters.stackgres.io"
 
@@ -797,9 +798,15 @@ check_cluster_before_security_upgrade() {
         | del(.postgresql.parameters.ssl_key_file)
         ')"
     fi
+    if [ "$PREVIOUS_VERSION_AS_NUMBER" -lt "$VERSION_AS_NUMBER_1_19_0RC4" ]
+    then
+      PREVIOUS_PATRONI_CONFIG="$(printf '%s' "$PREVIOUS_PATRONI_CONFIG" | jq -Sc '.
+        | .ttl = 45
+        ')"
+    fi
     if [ "$PREVIOUS_VERSION_AS_NUMBER" -lt "$VERSION_AS_NUMBER_1_17_2" ]
     then
-      PREVIOUS_PATRONI_CONFIG="$(printf '%s' "$PREVIOUS_PATRONI_CONFIG" | jq -Sc '. 
+      PREVIOUS_PATRONI_CONFIG="$(printf '%s' "$PREVIOUS_PATRONI_CONFIG" | jq -Sc '.
         | .postgresql.parameters.listen_addresses = "localhost,::1"
         | .postgresql.pg_hba = (.postgresql.pg_hba|[.[0:5][], "host all all ::/0 md5", .[5:][], "host replication replicator ::/0 md5"])
         ')"
