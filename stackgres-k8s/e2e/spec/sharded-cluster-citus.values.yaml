@@ -18,6 +18,7 @@ cluster:
           name: sql-scripts-sakila-schema
           key: create-sakila-schema.sql
     - database: citus
+      retryOnError: true
       script: |
         CREATE TABLE query_router_test(i int);
         SELECT create_distributed_table('query_router_test','i');
