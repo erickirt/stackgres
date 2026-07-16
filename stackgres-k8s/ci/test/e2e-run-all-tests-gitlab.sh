@@ -16,7 +16,7 @@ set -e
 
 export E2E_SHELL="${E2E_SHELL:-sh}"
 export E2E_ENV="${E2E_ENV:-kind}"
-export E2E_PARALLELISM="${E2E_PARALLELISM:-32}"
+export E2E_PARALLELISM="${E2E_PARALLELISM:-$(( $(getconf _NPROCESSORS_ONLN) / 8 ))}"
 export K8S_VERSION="${K8S_VERSION:-1.32}"
 export K8S_FROM_DIND=true
 export K8S_REUSE="${K8S_REUSE:-false}"
