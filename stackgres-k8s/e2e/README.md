@@ -52,7 +52,7 @@ Some environment variables allow to control how e2e test behave:
 * `EXTENSIONS_REPOSITORY_URL`: Allow to set a different URL for extensions repository.
 * `E2E_ENV`: This set the environment to script to use in order to setup the kubernetes cluster (default: kind).
 * `E2E_TIMEOUT`: Some operation wait on pods to be running or terminated. This environment variable controls the timeout in seconds of those operations (default: 3 minutes).
-* `E2E_PARALLELISM`: The number of test to run in parallel with `run-all-tests.sh` (default: `getconf _NPROCESSORS_ONLN`).
+* `E2E_PARALLELISM`: The number of test to run in parallel with `run-all-tests.sh` (default: `$(( $(getconf _NPROCESSORS_ONLN) / 8 ))`).
 * `E2E_BUILD_IMAGES`: To avoid rebuilding the operator set this environment variable to false (default: true).
 * `E2E_FORCE_IMAGE_PULL`: To force operator and components image pull from registries before tests starts.
 * `E2E_OPERATOR_REGISTRY`: The operator images repository to pull images from and rename to required images.
