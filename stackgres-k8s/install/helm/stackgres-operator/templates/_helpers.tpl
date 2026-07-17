@@ -1,18 +1,18 @@
 {{- define "kubectl-image" }}
 {{- if semverCompare ">=1.35" .Capabilities.KubeVersion.Version -}}
-{{- printf "%s/ongres/kubectl:v1.36.1-build-6.52" .Values.containerRegistry -}}
+{{- printf "%s/ongres/kubectl:v1.36.2-build-6.53" .Values.containerRegistry -}}
 {{- else if semverCompare ">=1.33" .Capabilities.KubeVersion.Version -}}
-{{- printf "%s/ongres/kubectl:v1.34.8-build-6.52" .Values.containerRegistry -}}
+{{- printf "%s/ongres/kubectl:v1.34.9-build-6.53" .Values.containerRegistry -}}
 {{- else if semverCompare ">=1.32" .Capabilities.KubeVersion.Version -}}
-{{- printf "%s/ongres/kubectl:v1.33.12-build-6.52" .Values.containerRegistry -}}
+{{- printf "%s/ongres/kubectl:v1.33.13-build-6.53" .Values.containerRegistry -}}
 {{- else if semverCompare ">=1.30" .Capabilities.KubeVersion.Version -}}
-{{- printf "%s/ongres/kubectl:v1.30.14-build-6.52" .Values.containerRegistry -}}
+{{- printf "%s/ongres/kubectl:v1.30.14-build-6.53" .Values.containerRegistry -}}
 {{- else if semverCompare ">=1.27" .Capabilities.KubeVersion.Version -}}
-{{- printf "%s/ongres/kubectl:v1.28.15-build-6.52" .Values.containerRegistry -}}
+{{- printf "%s/ongres/kubectl:v1.28.15-build-6.53" .Values.containerRegistry -}}
 {{- else if semverCompare ">=1.25" .Capabilities.KubeVersion.Version -}}
-{{- printf "%s/ongres/kubectl:v1.25.16-build-6.52" .Values.containerRegistry -}}
+{{- printf "%s/ongres/kubectl:v1.25.16-build-6.53" .Values.containerRegistry -}}
 {{- else -}}
-{{- printf "%s/ongres/kubectl:v1.36.1-build-6.52" .Values.containerRegistry -}}
+{{- printf "%s/ongres/kubectl:v1.36.2-build-6.53" .Values.containerRegistry -}}
 {{- end -}}
 {{- end -}}
 
