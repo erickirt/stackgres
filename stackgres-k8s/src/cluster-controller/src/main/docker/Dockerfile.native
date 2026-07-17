@@ -13,9 +13,9 @@ FROM scratch AS copy
     COPY --from=patroni_3_3_3 /usr/lib64/python3.11/site-packages /usr/lib/patroni-3.3.3
     COPY --from=patroni_3_3_3 /usr/lib/python3.11/site-packages /usr/lib/patroni-3.3.3
 
-    COPY --from=patroni_4_1_0 /usr/bin/patronictl /usr/bin/patronictl-4.1.4
-    COPY --from=patroni_4_1_0 /usr/lib64/python3.12/site-packages /usr/lib/patroni-4.1.4
-    COPY --from=patroni_4_1_0 /usr/lib/python3.12/site-packages /usr/lib/patroni-4.1.4
+    COPY --from=patroni_4_1_4 /usr/bin/patronictl /usr/bin/patronictl-4.1.4
+    COPY --from=patroni_4_1_4 /usr/lib64/python3.12/site-packages /usr/lib/patroni-4.1.4
+    COPY --from=patroni_4_1_4 /usr/lib/python3.12/site-packages /usr/lib/patroni-4.1.4
 
 FROM scratch AS app
     COPY 'src/main/docker/LICENCE' '/licenses/stackgres'
