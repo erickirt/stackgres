@@ -448,6 +448,23 @@ EOF
         -ge "$(echo "1.22" | tr . '\n' | xargs -I @ printf '%05d' @)" ]
     then
       kubectl replace --force -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.4/manifests/tigera-operator.yaml
+      # The tigera-operator image is the only Calico image pulled by its own
+      # in-cluster Deployment instead of through the architecture-aware image
+      # loaders. With a persistent containerd cache the node can serve a stale
+      # or wrong-architecture image for it (observed on arm64 as
+      # `exec: "operator": executable file not found in $PATH`), which leaves
+      # the cluster without a CNI so every pod stays Pending and the operator
+      # install times out. Force a host-architecture pull of the operator image
+      # onto the node and restart the Deployment so it starts from it.
+      wait_until kubectl get deployment tigera-operator -n tigera-operator
+      TIGERA_OPERATOR_IMAGE="$(kubectl get deployment tigera-operator -n tigera-operator \
+        -o jsonpath='{.spec.template.spec.containers[0].image}')"
+      if [ -n "$TIGERA_OPERATOR_IMAGE" ]
+      then
+        try_function pull_image_k8s "$TIGERA_OPERATOR_IMAGE"
+        "$RESULT" || echo "Warning: could not pre-pull $TIGERA_OPERATOR_IMAGE for host platform"
+        kubectl rollout restart deployment/tigera-operator -n tigera-operator
+      fi
       wait_until kubectl  replace --force -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.4/manifests/custom-resources.yaml
       kubectl patch installations.operator.tigera.io default --type json \
         -p '[{"op":"replace","path":"/spec/calicoNetwork/ipPools/0/cidr","value":"'"$K8S_POD_CIDR"'"}]'
