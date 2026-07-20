@@ -39,7 +39,6 @@ import io.stackgres.common.crd.sgcluster.StackGresClusterSpec;
 import io.stackgres.common.crd.sgcluster.StackGresClusterStatus;
 import io.stackgres.common.crd.sgcluster.StackGresReplicationInitializationMode;
 import io.stackgres.common.labels.LabelFactoryForCluster;
-import io.stackgres.operator.conciliation.KubernetesVersionBinder;
 import io.stackgres.operator.conciliation.OperatorVersionBinder;
 import io.stackgres.operator.conciliation.ResourceGenerator;
 import io.stackgres.operator.conciliation.cluster.StackGresClusterContext;
@@ -53,7 +52,6 @@ import org.slf4j.LoggerFactory;
 
 @Singleton
 @OperatorVersionBinder
-@KubernetesVersionBinder(from = "1.23")
 public class ClusterStatefulSet
     implements ResourceGenerator<StackGresClusterContext> {
 

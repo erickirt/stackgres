@@ -18,7 +18,7 @@ StackGres Cluster
 
 ## Requirements
 
-Kubernetes: `1.18.0-0 - 1.27.x-0`
+Kubernetes: `1.25.0-0 - 1.36.x-0`
 
 ## Values
 

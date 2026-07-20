@@ -99,8 +99,8 @@ EOF
     operatorframework.io/arch.arm64: supported
     operatorframework.io/os.linux: supported
   relatedImages:
-  - image: quay.io/ongres/kubectl:v1.31.3-build-6.38
-    name: kubectl_1_31_3
+  - image: quay.io/ongres/kubectl:v1.36.2-build-6.53
+    name: kubectl_1_36_2
   - image: quay.io/stackgres/operator:${VERSION}
     name: stackgres-operator
   - image: quay.io/stackgres/restapi:${VERSION}

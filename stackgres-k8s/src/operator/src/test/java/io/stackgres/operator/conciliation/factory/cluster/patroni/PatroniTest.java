@@ -5,6 +5,7 @@
 
 package io.stackgres.operator.conciliation.factory.cluster.patroni;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,6 +20,7 @@ import java.util.Map;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
+import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.stackgres.common.ClusterPath;
@@ -175,6 +177,69 @@ class PatroniTest {
     assertTrue(patroniContainer.getReadinessProbe().getHttpGet()
             .getPort().getIntVal() == EnvoyUtil.PATRONI_PORT,
         "When envoy is disabled, readiness probe should use the direct Patroni port");
+    assertTrue(patroniContainer.getLivenessProbe().getHttpGet()
+            .getPort().getIntVal() == EnvoyUtil.PATRONI_PORT,
+        "Liveness probe should always use the direct Patroni port");
+    assertTrue(patroniContainer.getStartupProbe().getHttpGet()
+            .getPort().getIntVal() == EnvoyUtil.PATRONI_PORT,
+        "Startup probe should always use the direct Patroni port");
+  }
+
+  @Test
+  void givenACluster_itShouldProbePatroniLivenessDirectly() {
+    Container patroniContainer = patroni.getContainer(clusterContainerContext);
+
+    var livenessProbe = patroniContainer.getLivenessProbe();
+    assertEquals("/liveness", livenessProbe.getHttpGet().getPath());
+    assertEquals(EnvoyUtil.PATRONI_PORT, livenessProbe.getHttpGet().getPort().getIntVal());
+    assertEquals(0, livenessProbe.getInitialDelaySeconds());
+    assertEquals(5, livenessProbe.getPeriodSeconds());
+    assertEquals(2, livenessProbe.getTimeoutSeconds());
+    assertEquals(3, livenessProbe.getFailureThreshold());
+    assertEquals(3L, livenessProbe.getTerminationGracePeriodSeconds());
+  }
+
+  @Test
+  void givenACluster_itShouldGetStartupProbe() {
+    Container patroniContainer = patroni.getContainer(clusterContainerContext);
+
+    var startupProbe = patroniContainer.getStartupProbe();
+    assertEquals("/liveness", startupProbe.getHttpGet().getPath());
+    assertEquals(EnvoyUtil.PATRONI_PORT, startupProbe.getHttpGet().getPort().getIntVal());
+    assertEquals(5, startupProbe.getPeriodSeconds());
+    assertEquals(2, startupProbe.getTimeoutSeconds());
+    assertEquals(180, startupProbe.getFailureThreshold());
+    assertEquals(1, startupProbe.getSuccessThreshold());
+  }
+
+  @Test
+  void givenAClusterWithStartupProbeOverride_itShouldHonorTheOverride() {
+    cluster.getSpec().getPods().setStartupProbe(new ProbeBuilder()
+        .withPeriodSeconds(1)
+        .withTimeoutSeconds(3)
+        .withFailureThreshold(120)
+        .build());
+
+    Container patroniContainer = patroni.getContainer(clusterContainerContext);
+
+    var startupProbe = patroniContainer.getStartupProbe();
+    assertEquals("/liveness", startupProbe.getHttpGet().getPath());
+    assertEquals(EnvoyUtil.PATRONI_PORT, startupProbe.getHttpGet().getPort().getIntVal());
+    assertEquals(1, startupProbe.getPeriodSeconds());
+    assertEquals(3, startupProbe.getTimeoutSeconds());
+    assertEquals(120, startupProbe.getFailureThreshold());
+    assertEquals(1, startupProbe.getSuccessThreshold());
+  }
+
+  @Test
+  void givenAClusterWithLivenessInitialDelayOverride_itShouldForceZero() {
+    cluster.getSpec().getPods().setLivenessProbe(new ProbeBuilder()
+        .withInitialDelaySeconds(120)
+        .build());
+
+    Container patroniContainer = patroni.getContainer(clusterContainerContext);
+
+    assertEquals(0, patroniContainer.getLivenessProbe().getInitialDelaySeconds());
   }
 
   @Test

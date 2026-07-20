@@ -2,7 +2,7 @@ ARG BASE_IMAGE
 
 FROM quay.io/ongres/patroni:v3.2.2-pg16.2-build-6.30 AS patroni_3_2_2
 FROM quay.io/ongres/patroni:v3.3.3-pg16.4-build-6.37 AS patroni_3_3_3
-FROM quay.io/ongres/patroni:v4.1.0-pg18.0-build-6.44 AS patroni_4_1_0
+FROM quay.io/ongres/patroni:v4.1.4-pg18.4-build-6.53 AS patroni_4_1_4
 
 FROM scratch AS copy
     COPY --from=patroni_3_2_2 /usr/bin/patronictl /usr/bin/patronictl-3.2.2
@@ -13,9 +13,9 @@ FROM scratch AS copy
     COPY --from=patroni_3_3_3 /usr/lib64/python3.11/site-packages /usr/lib/patroni-3.3.3
     COPY --from=patroni_3_3_3 /usr/lib/python3.11/site-packages /usr/lib/patroni-3.3.3
 
-    COPY --from=patroni_4_1_0 /usr/bin/patronictl /usr/bin/patronictl-4.1.0
-    COPY --from=patroni_4_1_0 /usr/lib64/python3.12/site-packages /usr/lib/patroni-4.1.0
-    COPY --from=patroni_4_1_0 /usr/lib/python3.12/site-packages /usr/lib/patroni-4.1.0
+    COPY --from=patroni_4_1_4 /usr/bin/patronictl /usr/bin/patronictl-4.1.4
+    COPY --from=patroni_4_1_4 /usr/lib64/python3.12/site-packages /usr/lib/patroni-4.1.4
+    COPY --from=patroni_4_1_4 /usr/lib/python3.12/site-packages /usr/lib/patroni-4.1.4
 
 FROM scratch AS app
     COPY 'src/main/docker/LICENCE' '/licenses/stackgres'
@@ -33,7 +33,7 @@ FROM "$BASE_IMAGE"
   RUN microdnf install -y python3.9 python3.11 python3.12 libpq && \
     sed -i "5i sys.path.append('/usr/lib/patroni-3.2.2')" /usr/bin/patronictl-3.2.2 && \
     sed -i "5i sys.path.append('/usr/lib/patroni-3.3.3')" /usr/bin/patronictl-3.3.3 && \
-    sed -i "5i sys.path.append('/usr/lib/patroni-4.1.0')" /usr/bin/patronictl-4.1.0 && \
+    sed -i "5i sys.path.append('/usr/lib/patroni-4.1.4')" /usr/bin/patronictl-4.1.4 && \
     echo 'jboss:x:1000:' >> /etc/group && \
     echo 'jboss:!::' >> /etc/gshadow && \
     echo 'jboss:x:1000:1000::/app:/bin/bash' >> /etc/passwd && \
