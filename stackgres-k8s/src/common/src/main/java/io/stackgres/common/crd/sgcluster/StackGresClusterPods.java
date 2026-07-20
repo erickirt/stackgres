@@ -85,6 +85,8 @@ public class StackGresClusterPods {
 
   private Probe livenessProbe;
 
+  private Probe startupProbe;
+
   private String statefulSetServiceName;
 
   @JsonProperty("setHostnameAsFQDN")
@@ -276,6 +278,14 @@ public class StackGresClusterPods {
     this.livenessProbe = livenessProbe;
   }
 
+  public Probe getStartupProbe() {
+    return startupProbe;
+  }
+
+  public void setStartupProbe(Probe startupProbe) {
+    this.startupProbe = startupProbe;
+  }
+
   public String getStatefulSetServiceName() {
     return statefulSetServiceName;
   }
@@ -322,8 +332,8 @@ public class StackGresClusterPods {
         customInitEnv, customInitEnvFrom, customInitVolumeMounts, customVolumeMounts, customVolumes,
         disableConnectionPooling, disableEnvoy, disableMetricsExporter, disablePostgresUtil,
         dnsConfig, dnsPolicy, hostNetwork, livenessProbe, managementPolicy, persistentVolume,
-        readinessProbe, resources, scheduling, setHostnameAsFqdn, statefulSetServiceName,
-        terminationGracePeriodSeconds, updateStrategy);
+        readinessProbe, resources, scheduling, setHostnameAsFqdn, startupProbe,
+        statefulSetServiceName, terminationGracePeriodSeconds, updateStrategy);
   }
 
   @Override
@@ -357,6 +367,7 @@ public class StackGresClusterPods {
         && Objects.equals(resources, other.resources)
         && Objects.equals(scheduling, other.scheduling)
         && Objects.equals(setHostnameAsFqdn, other.setHostnameAsFqdn)
+        && Objects.equals(startupProbe, other.startupProbe)
         && Objects.equals(statefulSetServiceName, other.statefulSetServiceName)
         && Objects.equals(terminationGracePeriodSeconds, other.terminationGracePeriodSeconds)
         && Objects.equals(updateStrategy, other.updateStrategy);

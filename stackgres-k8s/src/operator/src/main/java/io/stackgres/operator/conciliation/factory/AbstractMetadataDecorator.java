@@ -81,9 +81,7 @@ public abstract class AbstractMetadataDecorator<T> implements Decorator<T> {
     return Map.of(
         StatefulSet.class, this::decorateSts,
         Job.class, this::decorateJob,
-        CronJob.class, this::decorateCronJob,
-        io.fabric8.kubernetes.api.model.batch.v1beta1.CronJob.class,
-        this::decorateCronJobV1Beta1);
+        CronJob.class, this::decorateCronJob);
   }
 
   protected void decorateSts(
@@ -157,39 +155,6 @@ public abstract class AbstractMetadataDecorator<T> implements Decorator<T> {
         .ofNullable(cronJob.getSpec())
         .map(CronJobSpec::getJobTemplate)
         .map(JobTemplateSpec::getSpec)
-        .map(JobSpec::getTemplate)
-        .ifPresent(podTemplate -> {
-          final ObjectMeta podTemplateMetadata = Optional
-              .ofNullable(podTemplate.getMetadata())
-              .orElseGet(ObjectMeta::new);
-          podTemplate.setMetadata(podTemplateMetadata);
-          decorateResourceMetadata(podTemplateMetadata, context);
-        });
-
-    decorateResourceMetadata(cronJob.getMetadata(), context);
-  }
-
-  protected void decorateCronJobV1Beta1(
-      T context,
-      HasMetadata resource) {
-    io.fabric8.kubernetes.api.model.batch.v1beta1.CronJob cronJob =
-        (io.fabric8.kubernetes.api.model.batch.v1beta1.CronJob) resource;
-
-    Optional
-        .ofNullable(cronJob.getSpec())
-        .map(io.fabric8.kubernetes.api.model.batch.v1beta1.CronJobSpec::getJobTemplate)
-        .ifPresent(jobTemplate -> {
-          final ObjectMeta jobTemplateMetadata = Optional
-              .ofNullable(jobTemplate.getMetadata())
-              .orElseGet(ObjectMeta::new);
-          jobTemplate.setMetadata(jobTemplateMetadata);
-          decorateResourceMetadata(jobTemplateMetadata, context);
-        });
-
-    Optional
-        .ofNullable(cronJob.getSpec())
-        .map(io.fabric8.kubernetes.api.model.batch.v1beta1.CronJobSpec::getJobTemplate)
-        .map(io.fabric8.kubernetes.api.model.batch.v1beta1.JobTemplateSpec::getSpec)
         .map(JobSpec::getTemplate)
         .ifPresent(podTemplate -> {
           final ObjectMeta podTemplateMetadata = Optional

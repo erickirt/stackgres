@@ -114,7 +114,7 @@ class PatroniConfigEndpointsTest {
     PostgresDefaultValues.getDefaultValues(version).forEach(
         (key, value) -> assertTrue(patroniConfig.getPostgresql().getParameters().containsKey(key),
             "Patroni config for postgres does not contain parameter " + key));
-    assertEquals(30, patroniConfig.getTtl());
+    assertEquals(45, patroniConfig.getTtl());
     assertEquals(10, patroniConfig.getLoopWait());
     assertEquals(10, patroniConfig.getRetryTimeout());
     assertTrue(patroniConfig.getPostgresql().getUsePgRewind());
@@ -145,7 +145,7 @@ class PatroniConfigEndpointsTest {
     PostgresDefaultValues.getDefaultValues(version).forEach(
         (key, value) -> assertTrue(patroniConfig.getPostgresql().getParameters().containsKey(key),
             "Patroni config for postgres does not contain parameter " + key));
-    assertEquals(30, patroniConfig.getTtl());
+    assertEquals(45, patroniConfig.getTtl());
     assertEquals(10, patroniConfig.getLoopWait());
     assertEquals(10, patroniConfig.getRetryTimeout());
     assertTrue(patroniConfig.getPostgresql().getUsePgRewind());
@@ -183,7 +183,7 @@ class PatroniConfigEndpointsTest {
     PostgresDefaultValues.getDefaultValues(version).forEach(
         (key, value) -> assertTrue(patroniConfig.getPostgresql().getParameters().containsKey(key),
             "Patroni config for postgres does not contain parameter " + key));
-    assertEquals(30, patroniConfig.getTtl());
+    assertEquals(45, patroniConfig.getTtl());
     assertEquals(10, patroniConfig.getLoopWait());
     assertEquals(10, patroniConfig.getRetryTimeout());
     assertTrue(patroniConfig.getPostgresql().getUsePgRewind());
@@ -222,7 +222,7 @@ class PatroniConfigEndpointsTest {
     PostgresDefaultValues.getDefaultValues(version).forEach(
         (key, value) -> assertTrue(patroniConfig.getPostgresql().getParameters().containsKey(key),
             "Patroni config for postgres does not contain parameter " + key));
-    assertEquals(30, patroniConfig.getTtl());
+    assertEquals(45, patroniConfig.getTtl());
     assertEquals(10, patroniConfig.getLoopWait());
     assertEquals(10, patroniConfig.getRetryTimeout());
     assertTrue(patroniConfig.getPostgresql().getUsePgRewind());
@@ -264,7 +264,7 @@ class PatroniConfigEndpointsTest {
     PostgresDefaultValues.getDefaultValues(version).forEach(
         (key, value) -> assertTrue(patroniConfig.getPostgresql().getParameters().containsKey(key),
             "Patroni config for postgres does not contain parameter " + key));
-    assertEquals(30, patroniConfig.getTtl());
+    assertEquals(45, patroniConfig.getTtl());
     assertEquals(10, patroniConfig.getLoopWait());
     assertEquals(10, patroniConfig.getRetryTimeout());
     assertTrue(patroniConfig.getPostgresql().getUsePgRewind());
@@ -308,7 +308,7 @@ class PatroniConfigEndpointsTest {
     PostgresDefaultValues.getDefaultValues(version).forEach(
         (key, value) -> assertTrue(patroniConfig.getPostgresql().getParameters().containsKey(key),
             "Patroni config for postgres does not contain parameter " + key));
-    assertEquals(30, patroniConfig.getTtl());
+    assertEquals(45, patroniConfig.getTtl());
     assertEquals(10, patroniConfig.getLoopWait());
     assertEquals(10, patroniConfig.getRetryTimeout());
     assertTrue(patroniConfig.getPostgresql().getUsePgRewind());

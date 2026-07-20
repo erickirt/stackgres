@@ -183,7 +183,6 @@ public class Patroni implements ContainerFactory<ClusterContainerContext> {
         .map(StackGresClusterPods::getDisableEnvoy)
         .orElse(false);
     final int patroniPort = isEnvoyDisabled ? EnvoyUtil.PATRONI_PORT : EnvoyUtil.PATRONI_ENTRY_PORT;
-    final int controllerPort = 8080;
 
     return new ContainerBuilder()
         .withName(StackGresContainer.PATRONI.getName())
@@ -233,28 +232,55 @@ public class Patroni implements ContainerFactory<ClusterContainerContext> {
                 .map(Probe::getFailureThreshold)
                 .orElse(6))
             .build())
-        .withLivenessProbe(new ProbeBuilder(cluster.getSpec().getPods().getLivenessProbe())
+        .withStartupProbe(new ProbeBuilder(cluster.getSpec().getPods().getStartupProbe())
             .withNewHttpGet()
-            .withPath("/controller/liveness")
-            .withPort(new IntOrString(controllerPort))
+            .withPath("/liveness")
+            .withPort(new IntOrString(EnvoyUtil.PATRONI_PORT))
             .withScheme("HTTP")
             .endHttpGet()
-            .withInitialDelaySeconds(
-                Optional.ofNullable(cluster.getSpec().getPods().getLivenessProbe())
-                .map(Probe::getInitialDelaySeconds)
-                .orElse(15))
+            .withPeriodSeconds(
+                Optional.ofNullable(cluster.getSpec().getPods().getStartupProbe())
+                .map(Probe::getPeriodSeconds)
+                .orElse(5))
+            .withTimeoutSeconds(
+                Optional.ofNullable(cluster.getSpec().getPods().getStartupProbe())
+                .map(Probe::getTimeoutSeconds)
+                .orElse(2))
+            .withFailureThreshold(
+                Optional.ofNullable(cluster.getSpec().getPods().getStartupProbe())
+                .map(Probe::getFailureThreshold)
+                .orElse(180))
+            .withSuccessThreshold(
+                Optional.ofNullable(cluster.getSpec().getPods().getStartupProbe())
+                .map(Probe::getSuccessThreshold)
+                .orElse(1))
+            .build())
+        .withLivenessProbe(new ProbeBuilder(cluster.getSpec().getPods().getLivenessProbe())
+            .withNewHttpGet()
+            .withPath("/liveness")
+            .withPort(new IntOrString(EnvoyUtil.PATRONI_PORT))
+            .withScheme("HTTP")
+            .endHttpGet()
+            // The startup probe owns the startup window: Kubernetes only begins the liveness
+            // initialDelay after the startup probe first succeeds, so a user-supplied delay here
+            // would reopen an unprotected post-start window and break the fencing margin. Force 0.
+            .withInitialDelaySeconds(0)
             .withPeriodSeconds(
                 Optional.ofNullable(cluster.getSpec().getPods().getLivenessProbe())
                 .map(Probe::getPeriodSeconds)
-                .orElse(20))
+                .orElse(5))
             .withTimeoutSeconds(
                 Optional.ofNullable(cluster.getSpec().getPods().getLivenessProbe())
                 .map(Probe::getTimeoutSeconds)
-                .orElse(5))
+                .orElse(2))
             .withFailureThreshold(
                 Optional.ofNullable(cluster.getSpec().getPods().getLivenessProbe())
                 .map(Probe::getFailureThreshold)
-                .orElse(6))
+                .orElse(3))
+            .withTerminationGracePeriodSeconds(
+                Optional.ofNullable(cluster.getSpec().getPods().getLivenessProbe())
+                .map(Probe::getTerminationGracePeriodSeconds)
+                .orElse(3L))
             .build())
         .withPorts(getContainerPorts(cluster))
         .build();

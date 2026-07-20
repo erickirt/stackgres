@@ -1,3 +1,58 @@
+# :rocket: Release 1.19.0-rc4 (2026-07-17)
+
+## :notepad_spiral: NOTES
+
+StackGres 1.19.0-rc4 is out! :confetti_ball: :champagne: 
+
+> This release candidate change the supported Kubernetes version range to 1.25 onwards (previously 1.18 onwards). On Kubernetes 1.25 to 1.27 make sure the ProbeTerminationGracePeriod feature gate is not disabled (it is enabled by default); it is GA from 1.28.
+> The default Patroni ttl changed from `30` to `45` seconds. This also affects existing clusters that have not set an explicit ttl value, and applies to them immediately after the operator upgrade (it is Patroni dynamic configuration). It may add up to approximately 15 seconds to TTL-driven failover after a hard primary loss. If you have copied the previous default ttl 30 explicitly into your SGCluster spec, remove it or raise it to at least 45: with the new probe timings it no longer guarantees fencing before leader-lock expiry.
+> The liveness probe defaults are tighter (periodSeconds 5, timeoutSeconds 2, failureThreshold 3, probe-level terminationGracePeriodSeconds 3). A false-positive liveness failure (highly unlikely, and by itself a red flag, it means Patroni failed three consecutive liveness probes, a nominal worst-case detection latency of about 17 seconds after the fault) now allows only 3 seconds for clean termination and may therefore cause Postgres crash recovery (which is safe). Clusters running under tight CPU limits with sustained saturation should consider relaxing the liveness probe timings and raising ttl accordingly (see https://stackgres.io/doc/latest/administration/patroni/fencing/).
+> The patroni container liveness probe now always starts with initialDelaySeconds 0: the startup probe owns the startup window, so any initialDelaySeconds set in SGCluster.spec.pods.livenessProbe is ignored (a non-zero value would reopen an unprotected post-start window and break the fencing margin).
+> Probe changes modify the Pod template but do not restart any Pod automatically (the StatefulSet uses the OnDelete update strategy): they apply on the next restart of each cluster (pending-restart flow or an SGDbOps restart). The upgrade ordering is favorable: the increased ttl applies immediately while the tighter probes apply only after a restart, and that intermediate state is conservative.
+
+So, what you are waiting for to try this release and have a look to the future of StackGres! 
+
+## :sparkles: NEW FEATURES AND CHANGES
+
+* Bump minimum supported Kubernetes version to 1.25
+* Update components
+* Update base images
+* Probe Patroni's /liveness endpoint directly from the liveness probe of the patroni container, removing the cluster controller proxying, and add a startup probe to cover Patroni's startup window
+* Expose the patroni container startup probe through SGCluster.spec.pods.startupProbe (and the equivalent SGShardedCluster pods sections), defaulting to the values StackGres already used
+* Retune the patroni container liveness probe defaults and the default Patroni ttl so that fencing completes before leader-lock expiry
+
+## Web Console
+
+Nothing new here! :eyes:
+
+## :bug: FIXES
+
+* SGBackup, SGDbOps, SGShardedBackup and SGShardedDbOps where not reconciled on owner Pod events
+* Remove obsolete keys cert.key, cert.crt, cert.jwtRsaKey, cert.jwtRsaPub, cert.webKey, cert.webCrt or grafana.urls from helm chart default values preventing installation on K8s 1.25+ (this was also backpatched to 1.18.8 deployed release)
+
+## Web Console
+
+Nothing new here! :eyes:
+
+## :construction: KNOWN ISSUES
+
+* Backups may be restored with inconsistencies when performed with a Postgres instance running on a different architecture ([#1539](https://gitlab.com/ongresinc/stackgres/-/issues/1539))
+
+## :up: UPGRADE
+
+To upgrade from a previous installation of the StackGres operator's helm chart you will have to upgrade the helm chart release.
+ For more detailed information please refer to [our documentation](https://stackgres.io/doc/latest/install/helm/upgrade/#upgrade-operator).
+
+To upgrade StackGres operator's (upgrade only works starting from 1.1 version or above) helm chart issue the following commands (replace namespace and release name if you used something different):
+
+`helm upgrade -n "stackgres" "stackgres-operator" https://stackgres.io/downloads/stackgres-k8s/stackgres/1.19.0-rc4/helm/stackgres-operator.tgz`
+
+> IMPORTANT: This release is incompatible with previous `alpha` or `beta` versions. Upgrading from those versions will require uninstalling completely StackGres including all clusters and StackGres CRDs (those in `stackgres.io` group) first.
+
+Thank you for all the issues created, ideas, and code contributions by the StackGres Community!
+
+## :twisted_rightwards_arrows: [FULL LIST OF COMMITS](https://gitlab.com/ongresinc/stackgres/-/commits/1.19.0-rc4)
+
 # :rocket: Release 1.19.0-rc3 (2026-07-07)
 
 ## :notepad_spiral: NOTES
