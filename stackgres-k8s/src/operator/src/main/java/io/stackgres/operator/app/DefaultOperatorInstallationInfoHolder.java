@@ -83,8 +83,7 @@ public class DefaultOperatorInstallationInfoHolder
           .inNamespace(operatorNamespace)
           .resource(currentConfig)
           .lockResourceVersion(currentConfig.getMetadata().getResourceVersion())
-          .update();
-      
+          .updateStatus();
     });
   }
 
