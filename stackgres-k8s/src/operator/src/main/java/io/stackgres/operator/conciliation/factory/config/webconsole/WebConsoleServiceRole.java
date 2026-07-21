@@ -5,7 +5,6 @@
 
 package io.stackgres.operator.conciliation.factory.config.webconsole;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -57,11 +56,7 @@ public class WebConsoleServiceRole
             .map(StackGresConfigDeploy::getRestapi)
             .orElse(true)
             || (context.getWebConsoleServiceAccount()
-                .filter(serviceAccount -> Optional
-                    .ofNullable(serviceAccount.getMetadata().getOwnerReferences())
-                    .stream()
-                    .flatMap(List::stream)
-                    .noneMatch(ResourceUtil.getControllerOwnerReference(context.getSource())::equals))
+                .filter(resource -> !ResourceUtil.isOwnedBy(resource, context.getSource()))
                 .isPresent()
                 && OperatorProperty.DISABLE_RESTAPI_SERVICE_ACCOUNT_IF_NOT_EXISTS.getBoolean()))) {
       return Stream.of();

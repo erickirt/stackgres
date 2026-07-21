@@ -5,7 +5,6 @@
 
 package io.stackgres.operator.conciliation.factory.shardedcluster;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -55,10 +54,8 @@ public class ShardedClusterCoordinatorDefaultPostgresConfig
                     .map(Map::entrySet)
                     .flatMap(Set::stream)
                     .anyMatch(label::equals)))
-            .map(postgresConfig -> postgresConfig.getMetadata().getOwnerReferences())
             .stream()
-            .flatMap(List::stream)
-            .anyMatch(ResourceUtil.getControllerOwnerReference(context.getSource())::equals))
+            .anyMatch(resource -> ResourceUtil.isOwnedBy(resource, context.getSource())))
         .map(ignored -> getDefaultConfig(context.getSource()));
   }
 
