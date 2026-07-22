@@ -311,4 +311,19 @@ public interface ResourceUtil {
     return "system:serviceaccount:" + serviceAccont + ":";
   }
 
+  static boolean isOwnedBy(HasMetadata resource, HasMetadata config) {
+    return isOwnedBy(resource, config, HasMetadata.getKind(config.getClass()));
+  }
+
+  static boolean isOwnedBy(HasMetadata resource, HasMetadata config, String kind) {
+    return resource.getMetadata().getOwnerReferences() != null
+        && resource.getMetadata().getOwnerReferences()
+        .stream()
+        .anyMatch(ownerReference -> ownerReference.getKind().equals(kind)
+            && ownerReference.getName().equals(config.getMetadata().getName())
+            && ownerReference.getUid().equals(config.getMetadata().getUid())
+            && ownerReference.getController() != null
+            && ownerReference.getController());
+  }
+
 }

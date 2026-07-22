@@ -371,14 +371,14 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>, R ex
       LOGGER.debug("Checking reconciliation status of {}", configId);
       ReconciliationResult result = conciliator.evalReconciliationState(config);
       if (!result.isUpToDate()) {
-        LOGGER.info("{} it's not up to date. Reconciling", configId);
+        LOGGER.debug("{} it's not up to date. Reconciling", configId);
 
         result.getCreations()
             .stream()
             .sorted(ReconciliationOperations.RESOURCES_COMPARATOR)
             .forEach(resource -> {
               try {
-                LOGGER.info("Creating {} {}.{}",
+                LOGGER.debug("Found resource to create {} {}.{}",
                     resource.getKind(),
                     resource.getMetadata().getNamespace(),
                     resource.getMetadata().getName());
@@ -402,7 +402,7 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>, R ex
                 Tuple2::v1, ReconciliationOperations.RESOURCES_COMPARATOR))
             .forEach(resource -> {
               try {
-                LOGGER.info("Patching {} {}.{}",
+                LOGGER.debug("Found resource to patch {} {}.{}",
                     resource.v2.getKind(),
                     resource.v2.getMetadata().getNamespace(),
                     resource.v2.getMetadata().getName());
@@ -418,7 +418,7 @@ public abstract class AbstractReconciliator<T extends CustomResource<?, ?>, R ex
             .sorted(Collections.reverseOrder(
                 ReconciliationOperations.RESOURCES_COMPARATOR))
             .forEach(resource -> {
-              LOGGER.info("Deleting resource {}.{} of kind: {}",
+              LOGGER.debug("Found resource to delete {}.{} of kind: {}",
                   resource.getMetadata().getNamespace(),
                   resource.getMetadata().getName(),
                   resource.getKind());
