@@ -47,6 +47,10 @@ public class DefaultOperatorInstallationInfoHolder
     if (config == null) {
       throw new RuntimeException("Config not found");
     }
+    if (config.getStatus() != null
+        && config.getStatus().getInstallationId() != null) {
+      return config.getStatus().getInstallationId();
+    }
     SecureRandom random = new SecureRandom();
     byte[] bytes = new byte[4];
 
@@ -83,8 +87,7 @@ public class DefaultOperatorInstallationInfoHolder
           .inNamespace(operatorNamespace)
           .resource(currentConfig)
           .lockResourceVersion(currentConfig.getMetadata().getResourceVersion())
-          .update();
-      
+          .updateStatus();
     });
   }
 

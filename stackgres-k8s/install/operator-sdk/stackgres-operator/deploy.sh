@@ -149,14 +149,32 @@ fi
 
 if [ "x$PREVIOUS_VERSION" != xnone ]
 then
-  PREVIOUS_VERSION="${PREVIOUS_VERSION:-$(
-    ls -1d "$FORK_GIT_PATH/operators/$PROJECT_NAME"/*/manifests \
-      | cut -d / -f 5 | grep -v '.-rc.' | sort -t ' ' -k 1Vr | head -n 1)}"
+  if [ -z "$PREVIOUS_VERSION" ]
+  then
+    PREVIOUS_VERSION="$(
+      ls -1d "$FORK_GIT_PATH/operators/$PROJECT_NAME"/*/manifests \
+        | cut -d / -f 5 | grep -v '.-\(rc\|beta\|alpha\).' | sort -t ' ' -k 1Vr | head -n 1)"
+    echo "Previous version detected from repository: $PREVIOUS_VERSION"
+  else
+    echo "Previous version detected from PREVIOUS_VERSION environtment variable: $PREVIOUS_VERSION"
+  fi
   if [ ! -d "$FORK_GIT_PATH/operators/$PROJECT_NAME/$PREVIOUS_VERSION" ] || [ "x$PREVIOUS_VERSION" = x ]
   then
-    echo "Can not detect previous version. Set environment variable PREVIOUS_VERSION to set the previous version, or set it to "none" if no previous version is available"
+    >&2 echo "Can not detect previous version. Set environment variable PREVIOUS_VERSION to set the previous version, or set it to "none" if no previous version is available"
     exit 1
   fi
+  PREVIOUS_STABLE_VERSION="$(
+    ls -1d "$FORK_GIT_PATH/operators/$PROJECT_NAME"/*/manifests \
+      | cut -d / -f 5 | grep -v '.-\(rc\|beta\|alpha\).' | sort -t ' ' -k 1Vr | head -n 1)"
+  echo "Previous stable version detected from repository: $PREVIOUS_STABLE_VERSION"
+  PREVIOUS_CANDIDATE_VERSION="$(
+    ls -1d "$FORK_GIT_PATH/operators/$PROJECT_NAME"/*/manifests \
+      | cut -d / -f 5 | grep -v '.-\(beta\|alpha\).' | sort -t ' ' -k 1Vr | head -n 1)"
+  echo "Previous candidate version detected from repository: $PREVIOUS_CANDIDATE_VERSION"
+  PREVIOUS_FAST_VERSION="$(
+    ls -1d "$FORK_GIT_PATH/operators/$PROJECT_NAME"/*/manifests \
+      | cut -d / -f 5 | sort -t ' ' -k 1Vr | head -n 1)"
+  echo "Previous fast version detected from repository: $PREVIOUS_FAST_VERSION"
 fi
 
 echo "Copying new files to path operators/$PROJECT_NAME/$STACKGRES_VERSION from quay.io/stackgres/operator-bundle:$OPERATOR_BUNDLE_IMAGE_TAG"
@@ -209,7 +227,7 @@ then
         DIGEST="$(docker buildx imagetools inspect "$IMAGE" | grep '^Digest:' | tr -d ' ' | cut -d : -f 2-)"
         if [ -z "$DIGEST" ]
         then
-          echo "Digest not found for image $IMAGE"
+          >&2 echo "Digest not found for image $IMAGE"
           exit 1
         fi
         IMAGE_NAME="${IMAGE%%:*}"
@@ -232,7 +250,7 @@ if [ "x$PREVIOUS_VERSION" != xnone ]
 then
   if [ ! -d "$FORK_GIT_PATH/operators/$PROJECT_NAME/$PREVIOUS_VERSION" ] || [ "x$PREVIOUS_VERSION" = x ]
   then
-    echo "Can not detect previous version. Set environment variable PREVIOUS_VERSION to set the previous version, or set it to "none" if no previous version is available"
+    >&2 echo "Can not detect previous version. Set environment variable PREVIOUS_VERSION to set the previous version, or set it to "none" if no previous version is available"
     exit 1
   fi
   if command -v set_previous_version_override > /dev/null 2>&1
@@ -309,7 +327,13 @@ then
         then
           REPLACES=
         else
-          REPLACES="$(channel_head "$CHANNEL" "$TEMPLATE_FILE")"
+          if [ "$USE_CHANNEL_HEAD" = true ]
+          then
+            REPLACES="$(channel_head "$CHANNEL" "$TEMPLATE_FILE")"
+          else
+            CHANNEL_UPPERCASE="$(printf %s "$CHANNEL" | tr 'a-z' 'A-Z')"
+            REPLACES="$(eval "printf %s \"\$PREVIOUS_${CHANNEL_UPPERCASE}_VERSION\"")"
+          fi
         fi
         # Set replaces only when the target is present in this template; otherwise
         # the new bundle becomes the channel head in that catalog.
@@ -317,6 +341,10 @@ then
           && grep -qF "name: $REPLACES" "$TEMPLATE_FILE"
         then
           echo "    replaces: $REPLACES"
+        else
+          >&2 echo "Version $REPLACES in not present in $TEMPLATE_FILE."
+          >&2 echo "This may mean that the catalog has not yet been updated by Red Hat. You will have to wait before creating the PR :("
+          exit 1
         fi
       done
     done
